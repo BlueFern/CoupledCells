@@ -1,0 +1,7 @@
+The Makefile is for MPICH 1.2.0
+If your system supports only MPICH, use the run command "mpirun".
+Otherwise, make sure that you are using the MPICH mpirun by
+providing the full path. 
+The examples are designed to use 5 or 6 processes.
+
+July 2000.
