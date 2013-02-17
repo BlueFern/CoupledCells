@@ -9,8 +9,8 @@
 
 #define 	UP1		0
 #define		UP2		1
-#define		DOWN1	3
-#define		DOWN2	4
+#define		DOWN1	2
+#define		DOWN2	3
 
 void check_flag(int err, FILE* errfile, const char* errmsg, int rank){
 	if (err !=MPI_SUCCESS) {
@@ -25,8 +25,8 @@ int main(int argc, char *argv[])
 	      MPI_Init(&argc, &argv);
 	      int rank,size, new_rank,new_size, cart_rank,cart_size;
 	  	int
-	  		m	=	2,
-	  		n	=	4;
+	  		m	=	5,
+	  		n	=	5;
 
 	      int nbrs[4], dims[2], periods[2], reorder=0, coords[2];
 	      int outbuf, inbuf[4]={MPI_PROC_NULL,MPI_PROC_NULL,MPI_PROC_NULL,MPI_PROC_NULL},
@@ -104,6 +104,7 @@ int main(int argc, char *argv[])
 
 for (int i=0; i<4; i++)
 	nbr[remote][i] = MPI_PROC_NULL;
+
 	       //In the case of n being EVEN
 
 	if (scheme == 0) {
@@ -129,14 +130,59 @@ for (int i=0; i<4; i++)
 		//The right daughter artery edge
 		else if ((rank >= offset_R) && (rank < (offset_R + n))) {
 			if ((rank - offset_R) < (n / 2)) {
-				nbr[remote][DOWN1] = (offset_L + (n-1)) + (rank - offset_R);
-				nbr[remote][DOWN2] = (offset_L + (n-1)) + (rank - offset_R);
+				nbr[remote][DOWN1] = (offset_L + (n-1)) - (rank - offset_R);
+				nbr[remote][DOWN2] = (offset_L + (n-1)) - (rank - offset_R);
 			} else if ((rank - offset_R) >= (n / 2)) {
 				nbr[remote][DOWN1] = rank - offset_R;
 				nbr[remote][DOWN2] = rank - offset_R;
 			}
 		}
 	}
+
+    //In the case of n being ODD
+
+	if (scheme != 0) {
+		//The parent artery edge
+		if ((rank >= 0) && (rank < n)) {
+			if ((rank - offset_P) < ((n - 1) / 2)) {
+				nbr[remote][UP1] = offset_L + (rank - offset_P);
+				nbr[remote][UP2] = offset_L + (rank - offset_P);
+			} else if ((rank - offset_P) > ((n - 1) / 2)) {
+				nbr[remote][UP1] = offset_R + (rank - offset_P);
+				nbr[remote][UP2] = offset_R + (rank - offset_P);
+			} else if ((rank - offset_P) == ((n - 1) / 2)) {
+				nbr[remote][UP1] = offset_L + (rank - offset_P);
+				nbr[remote][UP2] = offset_R + (rank - offset_P);
+			}
+		}
+		//The left daughter artery edge
+		else if ((rank >= offset_L) && (rank < offset_L + n)) {
+			if ((rank - offset_L) < ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (rank - offset_L);
+				nbr[remote][DOWN2] = (rank - offset_L);
+			} else if ((rank - offset_L) > ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (offset_R + (n-1)) - (rank - offset_L);
+				nbr[remote][DOWN2] = (offset_R + (n-1)) - (rank - offset_L);
+			} else if ((rank - offset_L) == ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (rank - offset_L);
+				nbr[remote][DOWN2] = (offset_R + (n-1)) - (rank - offset_L);
+			}
+		}
+		//The right daughter artery edge
+		else if ((rank >= offset_R) && (rank < offset_R + n)) {
+			if ((rank - offset_R) < ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (offset_L + (n-1)) - (rank - offset_R);
+				nbr[remote][DOWN2] = (offset_L + (n-1)) - (rank - offset_R);
+			} else if ((rank - offset_R) > ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = rank - offset_R;
+				nbr[remote][DOWN2] = rank - offset_R;
+			} else if ((rank - offset_R) == ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (offset_L + (n-1)) - (rank - offset_R);
+				nbr[remote][DOWN2] = rank - offset_R;
+			}
+		}
+	}
+
 	fprintf(log,
 			"\n[%d -> %d -> %d]  coords (%d , %d)\t (u,d,l,r) (%d, %d, %d, %d)\n[%d -> %d] (UP1: %d, UP2: %d, DOWN1: %d, DOWN2: %d)\n",
 			rank, new_rank, cart_rank, coords[0], coords[1], nbrs[UP],
