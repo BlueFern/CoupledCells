@@ -1,4 +1,6 @@
 #include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
 #define		UP		0
 #define		DOWN	1
 #define 	LEFT	2
@@ -12,12 +14,13 @@ void check_flag(int err, FILE* errfile, const char* errmsg, int rank){
 }
 int main(int argc, char *argv[])
 {
-	int
-		m	=	2,
-		n	=	3;
+
 	/* Starts MPI processes ... */
 	      MPI_Init(&argc, &argv);
 	      int rank,size, new_rank,new_size, cart_rank,cart_size;
+	  	int
+	  		m	=	6,
+	  		n	=	4;
 
 	      int nbrs[4], dims[2], periods[2], reorder=0, coords[2];
 	      int outbuf, inbuf[4]={MPI_PROC_NULL,MPI_PROC_NULL,MPI_PROC_NULL,MPI_PROC_NULL},
@@ -30,14 +33,21 @@ int main(int argc, char *argv[])
 	      MPI_Comm_rank(MPI_COMM_WORLD, &rank);  /* get current process id */
 	      MPI_Comm_size(MPI_COMM_WORLD, &size);    /* get number of processes */
 
+	      char filename[30];
+	      sprintf(filename, "log%d", rank);
+	      FILE *log;
+	      log = fopen(filename, "w+");
 
-	      int color = int(rank/(2*3));
-	      int key	=	0;
+	      int color = int(rank/(m*n));
+	      int key	=	color*((m*n)-1);
 
 	     check_flag(MPI_Comm_split(MPI_COMM_WORLD,color,key,&newcomm),stdout, "Comm-split failed",rank);
 	     MPI_Comm_rank(newcomm, &new_rank);  /* get current process id */
 	     MPI_Comm_size(newcomm, &size);    /* get number of processes */
-	     //printf("[%d] color=%d, key=%d, new_rank=%d\n",rank,color,key,new_rank);
+	          if((color==0)||(color==2))
+	     	     fprintf(log,"[%d] color=%d, key=%d, comm_size = %d\t new_rank=%d\n",rank,color,key,size,new_rank);
+	     else if (color==1)
+	    	 	 fprintf(stdout,"[%d] color=%d, key=%d, comm_size = %d\t new_rank=%d\n",rank,color,key,size,new_rank);
 
 	     	dims[0]		=m;
 	     	dims[1]		=n;
@@ -47,14 +57,12 @@ int main(int argc, char *argv[])
 
 	     check_flag(MPI_Cart_create(newcomm, 2, dims, periods, reorder,
 					&comm), stdout, "failed at cart create",rank);
-	     check_flag(MPI_Comm_rank(comm, &cart_rank), stdout,
+/*	     check_flag(MPI_Comm_rank(comm, &cart_rank), stdout,
 			"failed at comm rank",rank);
 	     check_flag(MPI_Cart_coords(comm, cart_rank, 2, coords), stdout,
 			"failed at cart coords",rank);
-	     char filename[30];
-	     sprintf(filename,"log%d.txt",rank);
-	     FILE	*log;
-	     log=fopen(filename,"w+");
+
+
 	     MPI_Barrier(MPI_COMM_WORLD);
 
 
@@ -71,9 +79,10 @@ int main(int argc, char *argv[])
 	          MPI_Irecv(&inbuf[i], 1, MPI_INT, source, tag, comm, &reqs[i+4]);
 	          }
 	       MPI_Waitall(8, reqs, status);
-	       fprintf(log,"\n[%d -> %d -> %d]  coords (%d , %d)\t (u,d,l,r) (%d, %d, %d, %d)\n",rank,new_rank,cart_rank,coords[0],coords[1],nbrs[UP],nbrs[DOWN],nbrs[LEFT],nbrs[RIGHT]);
-
+	       fprintf(log,"\n\n[%d -> %d -> %d]  coords (%d , %d)\t (u,d,l,r) (%d, %d, %d, %d)\n",rank,new_rank,cart_rank,coords[0],coords[1],nbrs[UP],nbrs[DOWN],nbrs[LEFT],nbrs[RIGHT]);
+*/
 	     fclose(log);
+
 	     MPI_Finalize();
 
 }
