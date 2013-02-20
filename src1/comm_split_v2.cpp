@@ -9,8 +9,8 @@
 
 #define 	UP1		0
 #define		UP2		1
-#define		DOWN1	3
-#define		DOWN2	4
+#define		DOWN1	2
+#define		DOWN2	3
 
 void check_flag(int err, FILE* errfile, const char* errmsg, int rank){
 	if (err !=MPI_SUCCESS) {
@@ -25,12 +25,8 @@ int main(int argc, char *argv[])
 	      MPI_Init(&argc, &argv);
 	      int rank,size, new_rank,new_size, cart_rank,cart_size;
 	  	int
-<<<<<<< HEAD
-	  		m	=	6,
-=======
-	  		m	=	2,
->>>>>>> 2e8796f47c33dee0f77b02026fef2b3cf1124316
-	  		n	=	4;
+	  		m	=	5,
+	  		n	=	5;
 
 	      int nbrs[4], dims[2], periods[2], reorder=0, coords[2];
 	      int outbuf, inbuf[4]={MPI_PROC_NULL,MPI_PROC_NULL,MPI_PROC_NULL,MPI_PROC_NULL},
@@ -54,18 +50,11 @@ int main(int argc, char *argv[])
 	     check_flag(MPI_Comm_split(MPI_COMM_WORLD,color,key,&newcomm),stdout, "Comm-split failed",rank);
 	     MPI_Comm_rank(newcomm, &new_rank);  /* get current process id */
 	     MPI_Comm_size(newcomm, &size);    /* get number of processes */
-<<<<<<< HEAD
-	          if((color==0)||(color==2))
-	     	     fprintf(log,"[%d] color=%d, key=%d, comm_size = %d\t new_rank=%d\n",rank,color,key,size,new_rank);
-	     else if (color==1)
-	    	 	 fprintf(stdout,"[%d] color=%d, key=%d, comm_size = %d\t new_rank=%d\n",rank,color,key,size,new_rank);
-=======
 	     //     if((color==0)||(color==2))
 		//if (color==1)
 	     	//     fprintf(log,"[%d] color=%d, key=%d, comm_size = %d\t new_rank=%d\n",rank,color,key,size,new_rank);
 	     //else if (color==1)
 	    //	 	 fprintf(stdout,"[%d] color=%d, key=%d, comm_size = %d\t new_rank=%d\n",rank,color,key,size,new_rank);
->>>>>>> 2e8796f47c33dee0f77b02026fef2b3cf1124316
 
 	     	dims[0]		=m;
 	     	dims[1]		=n;
@@ -75,7 +64,7 @@ int main(int argc, char *argv[])
 
 	     check_flag(MPI_Cart_create(newcomm, 2, dims, periods, reorder,
 					&comm), stdout, "failed at cart create",rank);
-/*	     check_flag(MPI_Comm_rank(comm, &cart_rank), stdout,
+	     check_flag(MPI_Comm_rank(comm, &cart_rank), stdout,
 			"failed at comm rank",rank);
 	     check_flag(MPI_Cart_coords(comm, cart_rank, 2, coords), stdout,
 			"failed at cart coords",rank);
@@ -97,10 +86,6 @@ int main(int argc, char *argv[])
 	          MPI_Irecv(&inbuf[i], 1, MPI_INT, source, tag, comm, &reqs[i+4]);
 	          }
 	       MPI_Waitall(8, reqs, status);
-<<<<<<< HEAD
-	       fprintf(log,"\n\n[%d -> %d -> %d]  coords (%d , %d)\t (u,d,l,r) (%d, %d, %d, %d)\n",rank,new_rank,cart_rank,coords[0],coords[1],nbrs[UP],nbrs[DOWN],nbrs[LEFT],nbrs[RIGHT]);
-*/
-=======
 
 	     //Identifying remote neighbours
 
@@ -119,6 +104,7 @@ int main(int argc, char *argv[])
 
 for (int i=0; i<4; i++)
 	nbr[remote][i] = MPI_PROC_NULL;
+
 	       //In the case of n being EVEN
 
 	if (scheme == 0) {
@@ -144,14 +130,59 @@ for (int i=0; i<4; i++)
 		//The right daughter artery edge
 		else if ((rank >= offset_R) && (rank < (offset_R + n))) {
 			if ((rank - offset_R) < (n / 2)) {
-				nbr[remote][DOWN1] = (offset_L + (n-1)) + (rank - offset_R);
-				nbr[remote][DOWN2] = (offset_L + (n-1)) + (rank - offset_R);
+				nbr[remote][DOWN1] = (offset_L + (n-1)) - (rank - offset_R);
+				nbr[remote][DOWN2] = (offset_L + (n-1)) - (rank - offset_R);
 			} else if ((rank - offset_R) >= (n / 2)) {
 				nbr[remote][DOWN1] = rank - offset_R;
 				nbr[remote][DOWN2] = rank - offset_R;
 			}
 		}
 	}
+
+    //In the case of n being ODD
+
+	if (scheme != 0) {
+		//The parent artery edge
+		if ((rank >= 0) && (rank < n)) {
+			if ((rank - offset_P) < ((n - 1) / 2)) {
+				nbr[remote][UP1] = offset_L + (rank - offset_P);
+				nbr[remote][UP2] = offset_L + (rank - offset_P);
+			} else if ((rank - offset_P) > ((n - 1) / 2)) {
+				nbr[remote][UP1] = offset_R + (rank - offset_P);
+				nbr[remote][UP2] = offset_R + (rank - offset_P);
+			} else if ((rank - offset_P) == ((n - 1) / 2)) {
+				nbr[remote][UP1] = offset_L + (rank - offset_P);
+				nbr[remote][UP2] = offset_R + (rank - offset_P);
+			}
+		}
+		//The left daughter artery edge
+		else if ((rank >= offset_L) && (rank < offset_L + n)) {
+			if ((rank - offset_L) < ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (rank - offset_L);
+				nbr[remote][DOWN2] = (rank - offset_L);
+			} else if ((rank - offset_L) > ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (offset_R + (n-1)) - (rank - offset_L);
+				nbr[remote][DOWN2] = (offset_R + (n-1)) - (rank - offset_L);
+			} else if ((rank - offset_L) == ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (rank - offset_L);
+				nbr[remote][DOWN2] = (offset_R + (n-1)) - (rank - offset_L);
+			}
+		}
+		//The right daughter artery edge
+		else if ((rank >= offset_R) && (rank < offset_R + n)) {
+			if ((rank - offset_R) < ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (offset_L + (n-1)) - (rank - offset_R);
+				nbr[remote][DOWN2] = (offset_L + (n-1)) - (rank - offset_R);
+			} else if ((rank - offset_R) > ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = rank - offset_R;
+				nbr[remote][DOWN2] = rank - offset_R;
+			} else if ((rank - offset_R) == ((n - 1) / 2)) {
+				nbr[remote][DOWN1] = (offset_L + (n-1)) - (rank - offset_R);
+				nbr[remote][DOWN2] = rank - offset_R;
+			}
+		}
+	}
+
 	fprintf(log,
 			"\n[%d -> %d -> %d]  coords (%d , %d)\t (u,d,l,r) (%d, %d, %d, %d)\n[%d -> %d] (UP1: %d, UP2: %d, DOWN1: %d, DOWN2: %d)\n",
 			rank, new_rank, cart_rank, coords[0], coords[1], nbrs[UP],
@@ -159,7 +190,6 @@ for (int i=0; i<4; i++)
 			nbr[remote][UP1], nbr[remote][UP2], nbr[remote][DOWN1],
 			nbr[remote][DOWN2]);
 
->>>>>>> 2e8796f47c33dee0f77b02026fef2b3cf1124316
 	     fclose(log);
 
 	     MPI_Finalize();
