@@ -25,8 +25,8 @@ int main(int argc, char *argv[])
 	      MPI_Init(&argc, &argv);
 	      int rank,size, new_rank,new_size, cart_rank,cart_size;
 	  	int
-	  		m	=	5,
-	  		n	=	5;
+	  		m	=	6,
+	  		n	=	6;
 
 	      int nbrs[4], dims[2], periods[2], reorder=0, coords[2];
 	      int outbuf, inbuf[4]={MPI_PROC_NULL,MPI_PROC_NULL,MPI_PROC_NULL,MPI_PROC_NULL},
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	     check_flag(MPI_Cart_shift(comm, 1, 1, &nbrs[LEFT], &nbrs[RIGHT]),stdout,"failed at cart left right",rank);
 
 	     int tag	=	1;
-
+	     outbuf		=	cart_rank;
 	     for (int i=0; i<4; i++) {
 	          dest = nbrs[i];
 	          source = nbrs[i];
@@ -190,8 +190,78 @@ for (int i=0; i<4; i++)
 			nbr[remote][UP1], nbr[remote][UP2], nbr[remote][DOWN1],
 			nbr[remote][DOWN2]);
 
+	int		tag_remote	=	2,
+			tag_P_L = 12,
+			tag_L_R = 23,
+			tag_R_P = 31;
+
+	//organizing sudo buffers
+	double buffer[4], recv_buffer[4];
+	if ((rank >= 0) && (rank < n)){
+		buffer[UP1]	=	0.1;
+		buffer[UP2]	=	0.2;
+	}
+	else if ((rank >= offset_L) && (rank < offset_L + n)){
+		buffer[DOWN1] 	= 	0.01;
+		buffer[DOWN2]	=	0.02;
+	}
+	else if ((rank >= offset_R) && (rank < offset_R + n)){
+		buffer[DOWN1]	=	0.001;
+		buffer[DOWN2]	=	0.002;
+	}
+
+	//setting up the framework for communicating edge data of each branch to the relevant coupling edge located remotely on the other branch.
+	int src[4],destn[4];
+	for (int i=0; i<4; i++){
+		src[i]	=	nbr[remote][i];
+		destn[i]=	nbr[remote][i];
+	}
+
+
+	for (int i=0; i<4; i++){
+		MPI_Irecv(&recv_buffer[i], 1, MPI_DOUBLE, src[i], tag_remote, MPI_COMM_WORLD, &reqs[i+4]);
+		MPI_Isend(&buffer[i], 1, MPI_DOUBLE, destn[i], tag_remote, MPI_COMM_WORLD, &reqs[i]);
+	}
+    MPI_Waitall(8, reqs, status);
+
+for (int i=0; i<4; i++)
+    fprintf(log,"source=%d\tdest=%d\tstatus.src=%d\trcv=%lf\n",src[i],destn[i],status[i+4].MPI_SOURCE,recv_buffer[i]);
+
+
+
+
+
+
+
+
 	     fclose(log);
 
 	     MPI_Finalize();
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
