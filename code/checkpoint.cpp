@@ -363,9 +363,13 @@ void final_checkpoint(checkpoint_handle *check, grid_parms, double t1, double t2
 void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,grid_parms grid){
 
 
-	fprintf(check->logptr, "Rank=%d\tcoords= %d,%d\tnbrs(u,d,l,r)=%d %d %d %d\n\n",
-		grid.rank, grid.coords[0], grid.coords[1], grid.nbrs[UP],
-		grid.nbrs[DOWN], grid.nbrs[LEFT], grid.nbrs[RIGHT]);
+	fprintf(check->logptr,
+			"Rank=%d\tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d) \t remote: (up1,up2,l,r)=(%d %d %d %d\n\n",
+			grid.rank, grid.coords[0], grid.coords[1], grid.nbrs[local][UP],
+			grid.nbrs[local][DOWN], grid.nbrs[local][LEFT],
+			grid.nbrs[local][RIGHT], grid.nbrs[remote][UP1],
+			grid.nbrs[remote][UP2], grid.nbrs[remote][DOWN1],
+			grid.nbrs[remote][DOWN2]);
 
 					///Write my local information in my rank's logfile
 					fprintf(check->logptr,
