@@ -532,17 +532,6 @@ void single_cell(double t, double y[], grid_parms grid,celltype1** smc, celltype
 	const double k7 = 300.00;
 	const double BT = 120.00;
 
-	/*Parameter for incorporating stretch activated caclium channels in EC*/
-	const double fe = 0.013351;
-	const double alfa = 36.50;
-	const double eps = 0.9;
-	const double mu = 1e-5;
-	const double L = 65e-6;
-	const double N = 1e12;
-	const double T = 310;
-	const double boltz = 1.3807e-23;
-	const double qmax = 2.1442;
-
 	int i, j, k;
 
 //EVALUATING SINGLE CELL FLUXES :::::::For SMC::::::::
