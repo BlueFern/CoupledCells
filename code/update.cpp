@@ -24,10 +24,10 @@ void check_flag(int err, FILE* errfile, const char* errmsg){
 }
 
 void determin_source_destination(int source[], int dest[]){
-	if (grid.nbrs[UP] >= 0) {
-				dest[UP] = grid.nbrs[UP];
-				source[UP] = grid.nbrs[UP];
-			} else if (grid.nbrs[UP] < 0) {
+	if (grid.nbrs[local][UP] >= 0) {
+				dest[UP] = grid.nbrs[local][UP];
+				source[UP] = grid.nbrs[local][UP];
+			} else if (grid.nbrslocal][UP] < 0) {
 				dest[UP] = grid.rank;//MPI_PROC_NULL;
 				source[UP] = grid.rank;//MPI_PROC_NULL;
 			}
@@ -181,9 +181,54 @@ check_flag(
 				dest[RIGHT], tag_2, grid.comm, &reqs[RIGHT2]), logptr,
 		"Send message operation for RIGHT2");
 
-
-
 	MPI_Waitall(16, reqs, stats);
+
+int remote_source[4],remote_dest[4];
+MPI_Request		remote_req[8];
+MPI_Status		remote_status[8];
+
+if ( (grid.branch_tag==P)||(grid.branch_tag==L)||(grid.branch_tag==R) ){
+	for (int i=0; i<4 i++){
+		remote_source[i]	=	nbrs[remote][i];
+		remote_dest[i]		=	nbrs[remote][i];
+	}
+
+	check_flag(
+			MPI_Irecv(&recvbuf[UP1][0], grid.num_elements_recv_right, MPI_DOUBLE,
+					remote_source[UP1], tag_remote, grid.universe, &reqs[4 + UP1]), logptr,
+			"Receive message operation for remote UP1");
+	check_flag(
+				MPI_Irecv(&recvbuf[UP2][0], grid.num_elements_recv_right, MPI_DOUBLE,
+						remote_source[UP2], tag_remote, grid.universe, &reqs[4 + UP2]), logptr,
+				"Receive message operation for remote UP2");
+	check_flag(
+				MPI_Irecv(&recvbuf[DOWN1][0], grid.num_elements_recv_right, MPI_DOUBLE,
+						remote_source[DOWN1], tag_remote, grid.universe, &reqs[4 + DOWN1]), logptr,
+				"Receive message operation for remote DOWN1");
+	check_flag(
+				MPI_Irecv(&recvbuf[DOWN2][0], grid.num_elements_recv_right, MPI_DOUBLE,
+						remote_source[DOWN2], tag_remote, grid.universe, &reqs[4 + DOWN2]), logptr,
+				"Receive message operation for remote DOWN2");
+
+
+	check_flag(
+			MPI_Isend(sendbuf[UP1], grid.num_elements_send_right, MPI_DOUBLE,
+					remote_dest[UP1], tag_remote, grid.universe, &reqs[UP1]), logptr,
+			"Send message operation for remote UP1");
+	check_flag(
+				MPI_Isend(sendbuf[UP2], grid.num_elements_send_right, MPI_DOUBLE,
+						remote_dest[UP2], tag_remote, grid.universe, &reqs[UP2]), logptr,
+				"Send message operation for remote UP2");
+	check_flag(
+				MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_right, MPI_DOUBLE,
+						remote_dest[DOWN1], tag_remote, grid.universe, &reqs[DOWN1]), logptr,
+				"Send message operation for remote DOWN1");
+	check_flag(
+				MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_right, MPI_DOUBLE,
+						remote_dest[DOWN2], tag_remote, grid.universe, &reqs[DOWN2]), logptr,
+				"Send message operation for remote DOWN2");
+
+}
 
 	communication_update_recvbuf(logptr);
 }//end of update_async()
@@ -407,6 +452,7 @@ void communication_update_sendbuf(FILE* logptr)
 	}
 }	// end of communication_update_sendbuf()
 
+
 /*******************************************************************************************/
 void communication_update_recvbuf(FILE* logptr)
 /*******************************************************************************************/
@@ -472,12 +518,24 @@ void communication_update_recvbuf(FILE* logptr)
 //Updating RECEIVE BUFFERwith SMC information  to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 
-	for (int i = (int) recvbuf[DOWN1][0]; i <= (int) recvbuf[DOWN1][1]; i++) {
-		int j = grid.num_smc_axially + 1;
-		smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
-		smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
-		smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
-		k += grid.num_coupling_species_smc;
+	if (grid.flip_array[DOWN1] == 0) {
+		for (int i = (int) recvbuf[DOWN1][0]; i <= (int) recvbuf[DOWN1][1];
+				i++) {
+			int j = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
+	} else if (grid.flip_array[DOWN1] == 1) {
+		int start = (int) recvbuf[DOWN2][0], end = (int) recvbuf[DOWN2][1]
+		for (int i = end; i <= start; i--) {
+			int j = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
 	}
 //Setting up the offset to transfer the EC info into RECEIVE BUFFER
 	buf_offset = grid.added_info_in_send_buf
@@ -485,20 +543,31 @@ void communication_update_recvbuf(FILE* logptr)
 					* (recvbuf[DOWN1][1] - recvbuf[DOWN1][0] + 1);
 //Updating RECEIVE BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
-
-	for (int i = (int) recvbuf[DOWN1][2]; i <= (int) recvbuf[DOWN1][3]; i++) {
-		int j = grid.num_ec_axially + 1;
-		ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
-		ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
-		ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
-		k += grid.num_coupling_species_ec;
+	if (grid.flip_array[DOWN1] == 0) {
+		for (int i = (int) recvbuf[DOWN1][2]; i <= (int) recvbuf[DOWN1][3];
+				i++) {
+			int j = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
+	} else if (grid.flip_array[DOWN1] == 1) {
+		int start = (int) recvbuf[DOWN2][2], end = (int) recvbuf[DOWN2][3];
+		for (int i = end ; i <= start;	i--) {
+			int j = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
 	}
 
 ///DOWN2
 	buf_offset = grid.added_info_in_send_buf;
 //Updating RECEIVE BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
-
+if (grid.flip_array[DOWN2]==0){
 	for (int i = (int) recvbuf[DOWN2][0]; i <= (int) recvbuf[DOWN2][1]; i++) {
 		int j = grid.num_smc_axially + 1;
 		smc[i][j].p[smc_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
@@ -506,6 +575,17 @@ void communication_update_recvbuf(FILE* logptr)
 		smc[i][j].p[smc_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
 		k += grid.num_coupling_species_smc;
 	}
+}
+else if (grid.flip_array[DOWN2]==1){
+	int start = (int) recvbuf[DOWN1][0] , end = (int) recvbuf[DOWN1][1];
+	for (int i = end ; i <= start; i--) {
+			int j = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
+}
 
 //Setting up the offset to transfer the EC info into RECEIVE BUFFER
 	buf_offset = grid.added_info_in_send_buf
@@ -513,7 +593,7 @@ void communication_update_recvbuf(FILE* logptr)
 					* (recvbuf[DOWN2][1] - recvbuf[DOWN2][0] + 1);
 //Updating RECEIVE BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
-
+if (grid.flip_array[DOWN2] == 0){
 	for (int i = (int) recvbuf[DOWN2][2]; i <= (int) recvbuf[DOWN2][3]; i++) {
 		int j = grid.num_ec_axially + 1;
 		ec[i][j].q[ec_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
@@ -521,6 +601,17 @@ void communication_update_recvbuf(FILE* logptr)
 		ec[i][j].q[ec_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
 		k += grid.num_coupling_species_ec;
 	}
+}
+else if (grid.flip_array[DOWN2]==1){
+	int start =  (int) recvbuf[DOWN1][2], end = (int) recvbuf[DOWN1][3];
+	for (int i = end; i <= start; i--) {
+			int j = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
+}
 
 ///LEFT direction	///
 ///LEFT1

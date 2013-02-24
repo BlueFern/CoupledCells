@@ -160,11 +160,16 @@ int main(int argc, char* argv[]) {
 
 	//check whether number of processors in circumferential direction are EVEN or ODD.
 	grid.scheme = grid.n % 2;
+	for(int i=0; i<4; i++){
+		grid.flip_array[i]	=	0;
+	}
+	grid.branch_tag		=	0;
 
 	//If number of processors in circumferentail dimension are EVEN
 	if (grid.scheme == 0) {
 		//For parent branch edge
 		if ((grid.universal_rank >= 0) && (grid.universal_rank < grid.n)) {
+			grid.branch_tag	=	P;
 			if ((grid.universal_rank - grid.offset_P) < (grid.n / 2)) {
 				grid.nbrs[remote][UP1] = grid.offset_L
 						+ (grid.universal_rank - grid.offset_P);
@@ -179,6 +184,7 @@ int main(int argc, char* argv[]) {
 			//For Left daughter branch edge
 		} else if ((grid.universal_rank >= grid.offset_L)
 				&& (grid.universal_rank < (grid.offset_L + grid.n))) {
+			grid.branch_tag	=	L;
 			if ((grid.universal_rank - grid.offset_L) < (grid.n / 2)) {
 				grid.nbrs[remote][DOWN1] = grid.universal_rank - grid.offset_L;
 				grid.nbrs[remote][DOWN2] = grid.universal_rank - grid.offset_L;
@@ -187,16 +193,21 @@ int main(int argc, char* argv[]) {
 						- (grid.universal_rank - grid.offset_L);
 				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1))
 						- (grid.universal_rank - grid.offset_L);
+				grid.flip_array[DOWN1]	=	1;
+				grid.flip_array[DOWN2]	=	1;
 			}
 		}
 		//For Right daughter branch edge
 		else if ((grid.universal_rank >= grid.offset_R)
 				&& (grid.universal_rank < (grid.offset_R + grid.n))) {
+			grid.branch_tag	=	R;
 			if ((grid.universal_rank - grid.offset_R) < (grid.n / 2)) {
 				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
 						- (grid.universal_rank - grid.offset_R);
 				grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n - 1))
 						- (grid.universal_rank - grid.offset_R);
+				grid.flip_array[DOWN1]	=	1;
+				grid.flip_array[DOWN2]	=	1;
 			} else if ((grid.universal_rank - grid.offset_R) >= (grid.n / 2)) {
 				grid.nbrs[remote][DOWN1] = grid.universal_rank - grid.offset_R;
 				grid.nbrs[remote][DOWN2] = grid.universal_rank - grid.offset_R;
@@ -209,6 +220,7 @@ int main(int argc, char* argv[]) {
 	if (grid.scheme != 0) {
 		//The parent artery edge
 		if ((grid.universal_rank >= 0) && (grid.universal_rank < grid.n)) {
+			grid.branch_tag	=	P;
 			if ((grid.universal_rank - grid.offset_P) < ((grid.n - 1) / 2)) {
 				grid.nbrs[remote][UP1] = grid.offset_L + (grid.universal_rank - grid.offset_P);
 				grid.nbrs[remote][UP2] = grid.offset_L + (grid.universal_rank - grid.offset_P);
@@ -222,28 +234,38 @@ int main(int argc, char* argv[]) {
 		}
 		//The left daughter artery edge
 		else if ((grid.universal_rank >= grid.offset_L) && (grid.universal_rank < grid.offset_L + grid.n)) {
+			grid.branch_tag	=	L;
 			if ((grid.universal_rank - grid.offset_L) < ((grid.n - 1) / 2)) {
 				grid.nbrs[remote][DOWN1] = (grid.universal_rank - grid.offset_L);
 				grid.nbrs[remote][DOWN2] = (grid.universal_rank - grid.offset_L);
 			} else if ((grid.universal_rank - grid.offset_L) > ((grid.n - 1) / 2)) {
 				grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n-1)) - (grid.universal_rank - grid.offset_L);
 				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n-1)) - (grid.universal_rank - grid.offset_L);
+				grid.flip_array[DOWN1]	=	1;
+				grid.flip_array[DOWN2]	=	1;
 			} else if ((grid.universal_rank - grid.offset_L) == ((grid.n - 1) / 2)) {
 				grid.nbrs[remote][DOWN1] = (grid.universal_rank - grid.offset_L);
 				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n-1)) - (grid.universal_rank - grid.offset_L);
+				grid.flip_array[DOWN1]	=	0;
+				grid.flip_array[DOWN2]	=	1;
 			}
 		}
 		//The right daughter artery edge
 		else if ((grid.universal_rank >= grid.offset_R) && (grid.universal_rank < grid.offset_R + grid.n)) {
+			grid.branch_tag	=	R;
 			if ((grid.universal_rank - grid.offset_R) < ((grid.n - 1) / 2)) {
 				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n-1)) - (grid.universal_rank - grid.offset_R);
 				grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n-1)) - (grid.universal_rank - grid.offset_R);
+				grid.flip_array[DOWN1]	=	1;
+				grid.flip_array[DOWN2]	=	1;
 			} else if ((grid.universal_rank - grid.offset_R) > ((grid.n - 1) / 2)) {
 				grid.nbrs[remote][DOWN1] = grid.universal_rank - grid.offset_R;
 				grid.nbrs[remote][DOWN2] = grid.universal_rank - grid.offset_R;
 			} else if ((grid.universal_rank - grid.offset_R) == ((grid.n - 1) / 2)) {
 				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n-1)) - (grid.universal_rank - grid.offset_R);
 				grid.nbrs[remote][DOWN2] = grid.universal_rank - grid.offset_R;
+				grid.flip_array[DOWN1]	=	1;
+				grid.flip_array[DOWN2]	=	0;
 			}
 		}
 	}

@@ -6,6 +6,9 @@
 
 using namespace std;
 
+#define local	0
+#define remote 1
+
 #define UP1    0
 #define UP2		1
 #define DOWN1  2
@@ -20,6 +23,9 @@ using namespace std;
 #define LEFT	2
 #define RIGHT	3
 
+#define P 		1		//parent
+#define L 		2		//Left branch
+#define R		3		//Right brach
 // helper functions for exponentiation to integer powers
 #define P2(x) ((x)*(x))
 #define P4(x) ((x)*(x)*(x)*(x))
@@ -75,8 +81,11 @@ typedef struct {
 			added_info_in_send_buf,
 			///this is global and local MPI information
 			numtasks, universal_rank, rank, color,key,
+			//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
+			//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
+			branch_tag,
 			///variables for remote MPI information (P=parent, L & R = Left & Right branch respectively)
-			scheme,offset_P,offset_L,offset_R,
+			scheme,offset_P,offset_L,offset_R,flip_array[4],
 			///number of elements being sent and received
 			num_elements_send_up, num_elements_send_down,
 			num_elements_send_left, num_elements_send_right,
