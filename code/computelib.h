@@ -152,14 +152,14 @@ void Initialize_koeingsberger_ec(grid_parms,double*,celltype2**);
 void map_GhostCells_to_cells(celltype1**, celltype2**, grid_parms);
 void map_solver_to_cells(grid_parms grid,double y[], celltype1** smc, celltype2** ec);
 
-void communicate_num_recv_elements_to_nbrs(FILE*);
-void communication_update_sendbuf(FILE*);
-void communication_update_recvbuf(FILE*);
+grid_parms communicate_num_recv_elements_to_nbrs(FILE* logptr, grid_parms grid);
+void communication_update_sendbuf(FILE* logptr,grid_parms grid,double** sendbuf, celltype1** smc, celltype2** ec);
+void communication_update_recvbuf(FILE* logptr,grid_parms grid,double** recvbuf, celltype1** smc, celltype2** ec);
 void single_cell(double t,double y[], grid_parms grid, celltype1** smc, celltype2** ec);
 void coupling(double t,double y[], grid_parms grid, celltype1** smc, celltype2** ec,conductance cpl_cef);
-void determin_source_destination(int*, int*);
+void determin_source_destination(grid_parms grid, int source[], int dest[]);
 
-void communication_async_send_recv(FILE*);
+void communication_async_send_recv(FILE* logptr, grid_parms grid, double** sendbuf, double** recvbuf,celltype1** smc, celltype2** ec);
 
 ///Checkpoint functions.
 checkpoint_handle* initialise_checkpoint(int);
@@ -182,13 +182,13 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 		int total, double TOL, double* thres, int file_write_per_unit_time,
 		checkpoint_handle *check);
 ///These are debugging functions, not used in production runs.
-void print_domains(FILE*);
-void print_send_buffer(FILE*);
-void print_recv_buffer(FILE*);
-void print_compare(FILE*, double, double*,celltype1** smc, celltype2** ec);
+void print_domains(FILE* logptr,grid_parms grid,celltype1** smc, celltype2** ec);
+void print_send_buffer(FILE* logptr,grid_parms grid, double** sendbuf);
+void print_recv_buffer(FILE* logptr,grid_parms grid, double** recvbuf);
+void print_compare(FILE* logptr, double t, double y[],grid_parms grid, celltype1** smc, celltype2** ec);
 
 
-
+void communication_update_recvbuf_modified(FILE* logptr,grid_parms grid,double** recvbuf, celltype1** smc, celltype2** ec);
 
 
 

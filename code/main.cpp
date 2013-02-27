@@ -32,10 +32,11 @@ void* checked_malloc(size_t bytes, FILE* errfile, const char* errmsg){
 int main(int argc, char* argv[]) {
 
 //// These are input parameters for the simulation
-	int m = 5,	///number of grid points in axial direction
-			n = 5,	///number of grid points in circumferential direction
-			e = 2,	///number of ECs per node
-			s = 3;	///number of SMCs per node
+	int
+	m = 6,	///number of grid points in axial direction
+	n = 4,	///number of grid points in circumferential direction
+	e = 3,	///number of ECs per node
+	s = 4;	///number of SMCs per node
 
 	for (int i = 0; i < argc; i++) {
 		if (argv[i][0] == '-') {
@@ -118,14 +119,14 @@ int main(int argc, char* argv[]) {
 			"failed at cart left right");
 
 ///Initialize checkpoint routine which opens files
-	checkpoint_handle *check = initialise_checkpoint(grid.rank);
+	checkpoint_handle *check = initialise_checkpoint(grid.universal_rank);
 
 
 
 
 ///Each tasks now calculates the number of ECs per node.
-	if (grid.m != (grid.numtasks / grid.n))
-		e = grid.m / grid.numtasks;
+//	if (grid.m != (grid.numtasks / grid.n))
+//		e = grid.m / grid.numtasks;
 
 ///Each tasks now calculates the number of ECs per node.
 	///topological information of a functional block of coupled cells. This is the minimum required to simulate a relevant coupled topology.
@@ -503,8 +504,12 @@ int main(int argc, char* argv[]) {
 
 
 	///Call communication to the number of elements to be recieved by neighbours and allocate memory of recvbuf for each direction accordingly.
-		communicate_num_recv_elements_to_nbrs(stdout);
+		grid = communicate_num_recv_elements_to_nbrs(check->logptr,grid);
 		///memory allocation
+
+		fprintf(check->logptr,"recvbuf (u,d,l,r): (%d,%d,%d,%d)\n",
+				grid.num_elements_recv_up,grid.num_elements_recv_down,grid.num_elements_recv_left,grid.num_elements_recv_right);
+
 
 	/// data to receive from the neighbour in UP direction
 	recvbuf[UP1] = (double*) checked_malloc(
@@ -566,16 +571,18 @@ int main(int argc, char* argv[]) {
 		Initialize_koeingsberger_smc(grid,y,smc);
 		Initialize_koeingsberger_ec(grid,y,ec);
 
-
 		map_solver_to_cells(grid,y,smc,ec);
 
 
-int state 	=  couplingParms(CASE,&cpl_cef);
-//dump_rank_info(check,cpl_cef,grid);
 
+
+int state 	=  couplingParms(CASE,&cpl_cef);
+dump_rank_info(check,cpl_cef,grid);
+communication_async_send_recv(check->logptr,grid,sendbuf,recvbuf,smc,ec);
+print_domains(check->logptr,grid,smc,ec);
 double t1	=	MPI_Wtime();
 
-	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
+	//rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
 
 	//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
 

@@ -172,30 +172,42 @@ void Initialize_koeingsberger_smc(grid_parms grid, double y[], celltype1** smc)
 {
 	int k = 0, offset;
 
-		for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-			for (int j = 1; j <= grid.num_smc_axially; j++) {
-				if (i > 1)
-					k = ((i - 1) * grid.neq_smc_axially);
-				else if (i == 1)
-					k = 0;
-				y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.01;
-				y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.01;
-				y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.01;
-				y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.01;
-				y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.01;
-			}
+	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+		for (int j = 1; j <= grid.num_smc_axially; j++) {
+			if (i > 1)
+				k = ((i - 1) * grid.neq_smc_axially);
+			else if (i == 1)
+				k = 0;
+		/*	y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.01;
+			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.01;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.01;
+			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.01;
+			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.01;
+			if ((grid.branch_tag = P) || (grid.branch_tag = L)
+					|| (grid.branch_tag = R)) {*/
+				y[k + ((j - 1) * grid.neq_smc) + smc_Ca] =
+						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000001;
+				y[k + ((j - 1) * grid.neq_smc) + smc_SR] =
+						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000002;
+				y[k + ((j - 1) * grid.neq_smc) + smc_Vm] =
+						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000003;
+				y[k + ((j - 1) * grid.neq_smc) + smc_w] =
+						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000004;
+				y[k + ((j - 1) * grid.neq_smc) + smc_IP3] =
+						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000005;
+			//}
 		}
-
+	}
 
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells);
 			i++) {
 		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells);
 				j++) {
-			smc[i][j].p[smc_Ca] = 0.0;//0.23464;
-			smc[i][j].p[smc_SR] = 0.0;//1.2816;
-			smc[i][j].p[smc_Vm] = 0.0;//-27.031;
-			smc[i][j].p[smc_w] = 0.0;//0.29697;
-			smc[i][j].p[smc_IP3] = 0.0;//0.099996;
+			smc[i][j].p[smc_Ca] = 0.0;			//0.23464;
+			smc[i][j].p[smc_SR] = 0.0;			//1.2816;
+			smc[i][j].p[smc_Vm] = 0.0;			//-27.031;
+			smc[i][j].p[smc_w] = 0.0;			//0.29697;
+			smc[i][j].p[smc_IP3] = 0.0;			//0.099996;
 
 			for (int k = 1; k <= grid.num_fluxes_smc; k++) {
 				smc[i][j].A[k - 1] = 0.0;
@@ -214,25 +226,36 @@ void Initialize_koeingsberger_ec(grid_parms grid, double y[], celltype2** ec)
 int	k,offset = (grid.neq_smc * grid.num_smc_circumferentially
 					* grid.num_smc_axially);
 
-			for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-				for (int j = 1; j <= grid.num_ec_axially; j++) {
-					if (i > 1)
-						k = offset + ((i - 1) * grid.neq_ec_axially);
-					else if (i == 1)
-						k = offset + 0;
-					y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.01;
-					y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.01;
-					y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.01;
-					y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.01;
-				}
-			}
+	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+		for (int j = 1; j <= grid.num_ec_axially; j++) {
+			if (i > 1)
+				k = offset + ((i - 1) * grid.neq_ec_axially);
+			else if (i == 1)
+				k = offset + 0;
+			/*y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.01;
+			if ((grid.branch_tag = P) || (grid.branch_tag = L)
+					|| (grid.branch_tag = R)) {*/
+				y[k + ((j - 1) * grid.neq_ec) + ec_Ca] =
+						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000006;
+				y[k + ((j - 1) * grid.neq_ec) + ec_SR] =
+						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000007;
+				y[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
+						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000008;
+				y[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
+						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000009;
+			//}
+		}
+	}
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells);
 			i++) {
 		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells);
 				j++) {
-			ec[i][j].q[ec_Ca] = 1e-12;//0.12988;
+			ec[i][j].q[ec_Ca] = 0.0;//0.12988;
 			ec[i][j].q[ec_SR] = 0.0; //0.27952;
-			ec[i][j].q[ec_Vm] = 1e-12;//-38.713;
+			ec[i][j].q[ec_Vm] = 0.0;//-38.713;
 			ec[i][j].q[ec_IP3] = 0.0;//0.099996;
 
 			for (int k = 1; k <= grid.num_fluxes_ec; k++) {
@@ -275,33 +298,33 @@ void map_solver_to_cells(grid_parms grid,double y[], celltype1** smc, celltype2*
 	}*/
 
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-			for (int j = 1; j <= grid.num_smc_axially; j++) {
-				if (i > 1)
-					k = ((i - 1) * grid.neq_smc_axially);
-				else if (i == 1)
-					k = 0;
-				smc[i][j].p[0] = y[k + ((j - 1) * grid.neq_smc) + 0];
-				smc[i][j].p[1] = y[k + ((j - 1) * grid.neq_smc) + 1];
-				smc[i][j].p[2] = y[k + ((j - 1) * grid.neq_smc) + 2];
-				smc[i][j].p[3] = y[k + ((j - 1) * grid.neq_smc) + 3];
-				smc[i][j].p[4] = y[k + ((j - 1) * grid.neq_smc) + 4];
-			}
+		for (int j = 1; j <= grid.num_smc_axially; j++) {
+			if (i > 1)
+				k = ((i - 1) * grid.neq_smc_axially);
+			else if (i == 1)
+				k = 0;
+			smc[i][j].p[smc_Ca] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca];
+			smc[i][j].p[smc_SR] = y[k + ((j - 1) * grid.neq_smc) + smc_SR];
+			smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
+			smc[i][j].p[smc_w] = y[k + ((j - 1) * grid.neq_smc) + smc_w];
+			smc[i][j].p[smc_IP3] = y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
 		}
-		offset = (grid.neq_smc * grid.num_smc_circumferentially
-				* grid.num_smc_axially);
+	}
+	offset = (grid.neq_smc * grid.num_smc_circumferentially
+			* grid.num_smc_axially);
 
-		for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-			for (int j = 1; j <= grid.num_ec_axially; j++) {
-				if (i > 1)
-					k = offset + ((i - 1) * grid.neq_ec_axially);
-				else if (i == 1)
-					k = offset + 0;
-				ec[i][j].q[0] = y[k + ((j - 1) * grid.neq_ec) + 0];
-				ec[i][j].q[1] = y[k + ((j - 1) * grid.neq_ec) + 1];
-				ec[i][j].q[2] = y[k + ((j - 1) * grid.neq_ec) + 2];
-				ec[i][j].q[3] = y[k + ((j - 1) * grid.neq_ec) + 3];
-			}
+	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+		for (int j = 1; j <= grid.num_ec_axially; j++) {
+			if (i > 1)
+				k = offset + ((i - 1) * grid.neq_ec_axially);
+			else if (i == 1)
+				k = offset + 0;
+			ec[i][j].q[ec_Ca] = y[k + ((j - 1) * grid.neq_ec) + ec_Ca];
+			ec[i][j].q[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
+			ec[i][j].q[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
+			ec[i][j].q[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
 		}
+	}
 }
 /*******************************************************************************************/
 void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)

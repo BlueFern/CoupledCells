@@ -114,7 +114,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	rksuite.setup(total, tnow, y, tend, TOL, thres, method, "CT", false,
 			0.0, false);
 
-	communication_async_send_recv(stdout);
+	communication_async_send_recv(check->logptr,grid,sendbuf,recvbuf,smc,ec);
 	computeDerivatives(tnow, y, yp);
 	MPI_Barrier (MPI_COMM_WORLD);
 	while (tnow <= tfinal) {
@@ -133,9 +133,9 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
 		itteration++;
 		/// Call for interprocessor communication
-		communication_async_send_recv(stdout);
+		communication_async_send_recv(check->logptr,grid,sendbuf,recvbuf,smc,ec);
 		MPI_Barrier(MPI_COMM_WORLD);
-/*
+
 		if (itteration == 5) {
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s\n");
 		}
@@ -143,7 +143,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		if (itteration == 1e5) {
 			dump_JPLC(grid, ec, check, "Local agonist after t=100s\n");
 		}
-*/
+
 		if ((itteration % file_write_per_unit_time) == 0) {
 			checkpoint(check, grid, tnow, smc, ec,write_count);
 		write_count++;

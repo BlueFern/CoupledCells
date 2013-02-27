@@ -5,12 +5,12 @@
 #include <math.h>
 #include "computelib.h"
 
-extern	   conductance		cpl_cef;
+/*extern	   conductance		cpl_cef;
 extern	   celltype1** 		smc;
 extern	   celltype2** 		ec;
 extern 	   double       	**sendbuf,**recvbuf;
 extern	   grid_parms		grid;
-
+*/
 using namespace std;
 
 ///************************************/
@@ -23,53 +23,54 @@ void check_flag(int err, FILE* errfile, const char* errmsg){
 	}
 }
 
-void determin_source_destination(int source[], int dest[]){
+void determin_source_destination(grid_parms grid, int source[], int dest[]) {
 	if (grid.nbrs[local][UP] >= 0) {
-				dest[UP] = grid.nbrs[local][UP];
-				source[UP] = grid.nbrs[local][UP];
-			} else if (grid.nbrs[local][UP] < 0) {
-				dest[UP] = grid.rank;//MPI_PROC_NULL;
-				source[UP] = grid.rank;//MPI_PROC_NULL;
-			}
+		dest[UP] = grid.nbrs[local][UP];
+		source[UP] = grid.nbrs[local][UP];
+	} else if (grid.nbrs[local][UP] < 0) {
+		dest[UP] = grid.rank; //MPI_PROC_NULL;
+		source[UP] = grid.rank; //MPI_PROC_NULL;
+	}
 
-			if (grid.nbrs[local][DOWN] >= 0) {
-				dest[DOWN] = grid.nbrs[local][DOWN];
-				source[DOWN] = grid.nbrs[local][DOWN];
-			} else if (grid.nbrs[local][DOWN] < 0) {
-				dest[DOWN] = grid.rank;//MPI_PROC_NULL;
-				source[DOWN] = grid.rank;//MPI_PROC_NULL;
-			}
+	if (grid.nbrs[local][DOWN] >= 0) {
+		dest[DOWN] = grid.nbrs[local][DOWN];
+		source[DOWN] = grid.nbrs[local][DOWN];
+	} else if (grid.nbrs[local][DOWN] < 0) {
+		dest[DOWN] = grid.rank; //MPI_PROC_NULL;
+		source[DOWN] = grid.rank; //MPI_PROC_NULL;
+	}
 
-			if (grid.nbrs[LEFT] >= 0) {
-				dest[LEFT] = grid.nbrs[local][LEFT];
-				source[LEFT] = grid.nbrs[local][LEFT];
-			} else if (grid.nbrs[local][LEFT] < 0) {
-				dest[LEFT] = grid.rank;//MPI_PROC_NULL;
-				source[LEFT] = grid.rank;//MPI_PROC_NULL;
-			}
+	if (grid.nbrs[local][LEFT] >= 0) {
+		dest[LEFT] = grid.nbrs[local][LEFT];
+		source[LEFT] = grid.nbrs[local][LEFT];
+	} else if (grid.nbrs[local][LEFT] < 0) {
+		dest[LEFT] = grid.rank; //MPI_PROC_NULL;
+		source[LEFT] = grid.rank; //MPI_PROC_NULL;
+	}
 
-			if (grid.nbrs[local][RIGHT] >= 0) {
-				dest[RIGHT] = grid.nbrs[local][RIGHT];
-				source[RIGHT] = grid.nbrs[local][RIGHT];
-			} else if (grid.nbrs[local][RIGHT] < 0) {
-				dest[RIGHT] = grid.rank;//MPI_PROC_NULL;
-				source[RIGHT] =grid.rank;// MPI_PROC_NULL;
-			}
+	if (grid.nbrs[local][RIGHT] >= 0) {
+		dest[RIGHT] = grid.nbrs[local][RIGHT];
+		source[RIGHT] = grid.nbrs[local][RIGHT];
+	} else if (grid.nbrs[local][RIGHT] < 0) {
+		dest[RIGHT] = grid.rank; //MPI_PROC_NULL;
+		source[RIGHT] = grid.rank; // MPI_PROC_NULL;
+	}
 }
 /*******************************************************************************************/
-void communicate_num_recv_elements_to_nbrs(FILE* logptr)
+grid_parms communicate_num_recv_elements_to_nbrs(FILE* logptr, grid_parms grid)
 /*******************************************************************************************/
 {
 	int err;
-	MPI_Request reqs[8], req[4];
+	MPI_Request reqs[8];
 	MPI_Status stats[8];
 
 	int source[4], dest[4];
 	int tag;
 	int num[4];
-	determin_source_destination(source,dest);
+	determin_source_destination(grid,source,dest);
 
 	tag = 0;
+	int tmp[4];
 	check_flag(MPI_Irecv(&grid.num_elements_recv_up, 1, MPI_INT, source[UP], tag,
 			grid.cart_comm, &reqs[4 + UP]), logptr,"Irecv" );
 	check_flag(MPI_Isend(&grid.num_elements_send_up, 1, MPI_INT, dest[UP], tag,
@@ -89,9 +90,11 @@ void communicate_num_recv_elements_to_nbrs(FILE* logptr)
 
 	MPI_Waitall(8, reqs, stats);
 
+	return(grid);
+
 }
 /*******************************************************************************************/
-void communication_async_send_recv(FILE* logptr)
+void communication_async_send_recv(FILE* logptr, grid_parms grid, double** sendbuf, double** recvbuf,celltype1** smc, celltype2** ec)
 /*******************************************************************************************/
 {
 	/// For recording an error in communication. err can either be MPI_SUCCESS or !MPI_SUCCESS
@@ -106,9 +109,9 @@ void communication_async_send_recv(FILE* logptr)
 	int source[4],dest[4];
 	/// Message tag 1 and 2 representing segment 1 and 2 send or received by processor.
 	int tag_1=1,tag_2=2;
-	determin_source_destination(source,dest);
+	determin_source_destination(grid,source,dest);
 
-communication_update_sendbuf(logptr);
+communication_update_sendbuf(logptr,grid,sendbuf,smc,ec);
 	/// Communication block
 check_flag(
 		MPI_Irecv(&recvbuf[UP1][0], grid.num_elements_recv_up, MPI_DOUBLE,
@@ -196,56 +199,57 @@ if ((grid.branch_tag == P) || (grid.branch_tag == L)
 	}
 
 	check_flag(
-			MPI_Irecv(&recvbuf[UP1][0], grid.num_elements_recv_right,
+			MPI_Irecv(recvbuf[UP1], grid.num_elements_recv_up,
 					MPI_DOUBLE, remote_source[UP1], tag_remote_1,
 					grid.universe, &remote_req[4 + UP1]), logptr,
 			"Receive message operation for remote UP1");
 	check_flag(
-			MPI_Irecv(&recvbuf[UP2][0], grid.num_elements_recv_right,
+			MPI_Irecv(recvbuf[UP2], grid.num_elements_recv_up,
 					MPI_DOUBLE, remote_source[UP2], tag_remote_2,
 					grid.universe, &remote_req[4 + UP2]), logptr,
 			"Receive message operation for remote UP2");
 	check_flag(
-			MPI_Irecv(&recvbuf[DOWN1][0], grid.num_elements_recv_right,
+			MPI_Irecv(recvbuf[DOWN1], grid.num_elements_recv_down,
 					MPI_DOUBLE, remote_source[DOWN1], tag_remote_1,
 					grid.universe, &remote_req[4 + DOWN1]), logptr,
 			"Receive message operation for remote DOWN1");
 	check_flag(
-			MPI_Irecv(&recvbuf[DOWN2][0], grid.num_elements_recv_right,
+			MPI_Irecv(recvbuf[DOWN2], grid.num_elements_recv_down,
 					MPI_DOUBLE, remote_source[DOWN2], tag_remote_2,
 					grid.universe, &remote_req[4 + DOWN2]), logptr,
 			"Receive message operation for remote DOWN2");
 
 	check_flag(
-			MPI_Isend(sendbuf[UP1], grid.num_elements_send_right,
+			MPI_Isend(sendbuf[UP1], grid.num_elements_send_up,
 					MPI_DOUBLE, remote_dest[UP1], tag_remote_1, grid.universe,
 					&remote_req[UP1]), logptr,
 			"Send message operation for remote UP1");
 	check_flag(
-			MPI_Isend(sendbuf[UP2], grid.num_elements_send_right,
+			MPI_Isend(sendbuf[UP2], grid.num_elements_send_up,
 					MPI_DOUBLE, remote_dest[UP2], tag_remote_2, grid.universe,
 					&remote_req[UP2]), logptr,
 			"Send message operation for remote UP2");
 	check_flag(
-			MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_right,
+			MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_down,
 					MPI_DOUBLE, remote_dest[DOWN1], tag_remote_1,
 					grid.universe, &remote_req[DOWN1]), logptr,
 			"Send message operation for remote DOWN1");
 	check_flag(
-			MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_right,
+			MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_down,
 					MPI_DOUBLE, remote_dest[DOWN2], tag_remote_2,
 					grid.universe, &remote_req[DOWN2]), logptr,
 			"Send message operation for remote DOWN2");
 	MPI_Waitall(8, remote_req, remote_status);
 
 }
-
-	communication_update_recvbuf(logptr);
+fprintf(logptr,"After: \n");
+//print_recv_buffer(logptr,grid,recvbuf);
+	communication_update_recvbuf_modified(logptr,grid,recvbuf,smc,ec);
 }//end of update_async()
 
 
 /*******************************************************************************************/
-void communication_update_sendbuf(FILE* logptr)
+void communication_update_sendbuf(FILE* logptr,grid_parms grid,double** sendbuf, celltype1** smc, celltype2** ec)
 /*******************************************************************************************/
 {
 	int k, buf_offset;
@@ -462,9 +466,8 @@ void communication_update_sendbuf(FILE* logptr)
 	}
 }	// end of communication_update_sendbuf()
 
-
 /*******************************************************************************************/
-void communication_update_recvbuf(FILE* logptr)
+void communication_update_recvbuf(FILE* logptr,grid_parms grid,double** recvbuf, celltype1** smc, celltype2** ec)
 /*******************************************************************************************/
 {
 	int k, buf_offset;
@@ -528,24 +531,12 @@ void communication_update_recvbuf(FILE* logptr)
 //Updating RECEIVE BUFFERwith SMC information  to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 
-	if (grid.flip_array[DOWN1] == 0) {
-		for (int i = (int) recvbuf[DOWN1][0]; i <= (int) recvbuf[DOWN1][1];
-				i++) {
-			int j = grid.num_smc_axially + 1;
-			smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
-			smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
-			smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
-			k += grid.num_coupling_species_smc;
-		}
-	} else if (grid.flip_array[DOWN1] == 1) {
-		int start = (int) recvbuf[DOWN2][0], end = (int) recvbuf[DOWN2][1];
-		for (int i = end; i <= start; i--) {
-			int j = grid.num_smc_axially + 1;
-			smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
-			smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
-			smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
-			k += grid.num_coupling_species_smc;
-		}
+	for (int i = (int) recvbuf[DOWN1][0]; i <= (int) recvbuf[DOWN1][1]; i++) {
+		int j = grid.num_smc_axially + 1;
+		smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
 	}
 //Setting up the offset to transfer the EC info into RECEIVE BUFFER
 	buf_offset = grid.added_info_in_send_buf
@@ -553,31 +544,20 @@ void communication_update_recvbuf(FILE* logptr)
 					* (recvbuf[DOWN1][1] - recvbuf[DOWN1][0] + 1);
 //Updating RECEIVE BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
-	if (grid.flip_array[DOWN1] == 0) {
-		for (int i = (int) recvbuf[DOWN1][2]; i <= (int) recvbuf[DOWN1][3];
-				i++) {
-			int j = grid.num_ec_axially + 1;
-			ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
-			ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
-			ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
-			k += grid.num_coupling_species_ec;
-		}
-	} else if (grid.flip_array[DOWN1] == 1) {
-		int start = (int) recvbuf[DOWN2][2], end = (int) recvbuf[DOWN2][3];
-		for (int i = end ; i <= start;	i--) {
-			int j = grid.num_ec_axially + 1;
-			ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
-			ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
-			ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
-			k += grid.num_coupling_species_ec;
-		}
+
+	for (int i = (int) recvbuf[DOWN1][2]; i <= (int) recvbuf[DOWN1][3]; i++) {
+		int j = grid.num_ec_axially + 1;
+		ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
 	}
 
 ///DOWN2
 	buf_offset = grid.added_info_in_send_buf;
 //Updating RECEIVE BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
-if (grid.flip_array[DOWN2]==0){
+
 	for (int i = (int) recvbuf[DOWN2][0]; i <= (int) recvbuf[DOWN2][1]; i++) {
 		int j = grid.num_smc_axially + 1;
 		smc[i][j].p[smc_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
@@ -585,17 +565,6 @@ if (grid.flip_array[DOWN2]==0){
 		smc[i][j].p[smc_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
 		k += grid.num_coupling_species_smc;
 	}
-}
-else if (grid.flip_array[DOWN2]==1){
-	int start = (int) recvbuf[DOWN1][0] , end = (int) recvbuf[DOWN1][1];
-	for (int i = end ; i <= start; i--) {
-			int j = grid.num_smc_axially + 1;
-			smc[i][j].p[smc_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
-			smc[i][j].p[smc_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
-			smc[i][j].p[smc_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
-			k += grid.num_coupling_species_smc;
-		}
-}
 
 //Setting up the offset to transfer the EC info into RECEIVE BUFFER
 	buf_offset = grid.added_info_in_send_buf
@@ -603,7 +572,7 @@ else if (grid.flip_array[DOWN2]==1){
 					* (recvbuf[DOWN2][1] - recvbuf[DOWN2][0] + 1);
 //Updating RECEIVE BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
-if (grid.flip_array[DOWN2] == 0){
+
 	for (int i = (int) recvbuf[DOWN2][2]; i <= (int) recvbuf[DOWN2][3]; i++) {
 		int j = grid.num_ec_axially + 1;
 		ec[i][j].q[ec_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
@@ -611,17 +580,6 @@ if (grid.flip_array[DOWN2] == 0){
 		ec[i][j].q[ec_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
 		k += grid.num_coupling_species_ec;
 	}
-}
-else if (grid.flip_array[DOWN2]==1){
-	int start =  (int) recvbuf[DOWN1][2], end = (int) recvbuf[DOWN1][3];
-	for (int i = end; i <= start; i--) {
-			int j = grid.num_ec_axially + 1;
-			ec[i][j].q[ec_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
-			ec[i][j].q[ec_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
-			ec[i][j].q[ec_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
-			k += grid.num_coupling_species_ec;
-		}
-}
 
 ///LEFT direction	///
 ///LEFT1
@@ -731,143 +689,271 @@ else if (grid.flip_array[DOWN2]==1){
 	}
 }	// end of communication_update_recvbuf()
 
+/*******************************************************************************************/
+void communication_update_recvbuf_modified(FILE* logptr,grid_parms grid,double** recvbuf, celltype1** smc, celltype2** ec)
+/*******************************************************************************************/
+{
+	int k, buf_offset;
+///UP direction	///
+///UP1
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFERwith SMC information  to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) recvbuf[UP1][0]; i <= (int) recvbuf[UP1][1]; i++) {
+		int j = 0;
+		smc[i][j].p[smc_Ca] = recvbuf[UP1][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[UP1][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[UP1][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
+	}
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[UP1][1] - recvbuf[UP1][0] + 1);
+//Updating RECEIVE BUFFER with EC information to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
 
-void print_domains(FILE* logptr){
+	for (int i = (int) recvbuf[UP1][2]; i <= (int) recvbuf[UP1][3]; i++) {
+		int j = 0;
+		ec[i][j].q[ec_Ca] = recvbuf[UP1][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[UP1][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[UP1][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
+	}
 
-/*
-	fprintf(logptr,"****** SMC Domain ***********\n");
-	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells);
-			i++) {
-		fprintf(logptr," ------ i = %d -------------\n",i);
-		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells);
-				j++) {
-			fprintf(logptr, "[%d,%d]\t %2.5lf\t%2.5lf\t%2.5lf\t%2.5lf\t%2.5lf\t\t \t%2.5lf\t%2.5lf\t%2.5lf\n", i,
-					j, smc[i][j].p[smc_Ca], smc[i][j].p[smc_SR],
-					smc[i][j].p[smc_Vm], smc[i][j].p[smc_w],
-					smc[i][j].p[smc_IP3],smc[i][j].B[cpl_Ca],smc[i][j].B[cpl_Vm],smc[i][j].B[cpl_IP3]);
+///UP2
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) recvbuf[UP2][0]; i <= (int) recvbuf[UP2][1]; i++) {
+		int j = 0;
+		smc[i][j].p[smc_Ca] = recvbuf[UP2][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[UP2][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[UP2][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
+	}
+
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[UP2][1] - recvbuf[UP2][0] + 1);
+//Updating RECEIVE BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+
+	for (int i = (int) recvbuf[UP2][2]; i <= (int) recvbuf[UP2][3]; i++) {
+		int j = 0;
+		ec[i][j].q[ec_Ca] = recvbuf[UP2][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[UP2][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[UP2][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
+	}
+
+///DOWN direction	///
+///DOWN1
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFERwith SMC information  to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	if (grid.flip_array[DOWN1] == 0) {
+		for (int i = (int) recvbuf[DOWN1][0]; i <= (int) recvbuf[DOWN1][1];
+				i++) {
+			int j = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
+	} else if (grid.flip_array[DOWN1] == 1) {
+		int start = (int) recvbuf[DOWN2][0], end = (int) recvbuf[DOWN2][1];
+		for (int i = end; i >= start; i--) {
+			int j = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
 		}
 	}
-*/
 
-	fprintf(logptr,"****** EC Domain ***********\n");
-	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells);
-			i++) {
-		fprintf(logptr," ------ i = %d -------------\n",i);
-		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells);
-				j++) {
-			fprintf(logptr, "[%d,%d]\t %2.5lf\t%2.5lf\t%2.5lf\t%2.5lf\t\t \t%2.5lf\t%2.5lf\t%2.5lf\n", i,
-					j, ec[i][j].q[ec_Ca], ec[i][j].q[ec_SR],
-					ec[i][j].q[ec_Vm],ec[i][j].q[ec_IP3],ec[i][j].B[cpl_Ca],ec[i][j].B[cpl_Vm],ec[i][j].B[cpl_IP3]);
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[DOWN1][1] - recvbuf[DOWN1][0] + 1);
+//Updating RECEIVE BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	if (grid.flip_array[DOWN1] == 0) {
+		for (int i = (int) recvbuf[DOWN1][2]; i <= (int) recvbuf[DOWN1][3];
+				i++) {
+			int j = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
+	} else if (grid.flip_array[DOWN1] == 1) {
+		int start = (int) recvbuf[DOWN2][2], end = (int) recvbuf[DOWN2][3];
+		for (int i = end ; i >= start;	i--) {
+			int j = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
 		}
 	}
-}
 
-void print_send_buffer(FILE* logptr){
-
-	fprintf(logptr, "***Up direction***\n");
-	for (int i = 0; i < grid.num_elements_send_up; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, sendbuf[UP1][i],
-				sendbuf[UP2][i]);
+///DOWN2
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	if (grid.flip_array[DOWN2] == 0) {
+		for (int i = (int) recvbuf[DOWN2][0]; i <= (int) recvbuf[DOWN2][1];
+				i++) {
+			int j = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
+	} else if (grid.flip_array[DOWN2] == 1) {
+		int start = (int) recvbuf[DOWN1][0], end = (int) recvbuf[DOWN1][1];
+		for (int i = end; i >= start; i--) {
+			int j = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
 	}
-	fprintf(logptr, "***Down direction***\n");
-	for (int i = 0; i < grid.num_elements_send_down; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, sendbuf[DOWN1][i],
-				sendbuf[DOWN2][i]);
+
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[DOWN2][1] - recvbuf[DOWN2][0] + 1);
+//Updating RECEIVE BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	if (grid.flip_array[DOWN2] == 0) {
+		for (int i = (int) recvbuf[DOWN2][2]; i <= (int) recvbuf[DOWN2][3];
+				i++) {
+			int j = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
+	} else if (grid.flip_array[DOWN2] == 1) {
+		int start = (int) recvbuf[DOWN1][2], end = (int) recvbuf[DOWN1][3];
+		for (int i = end; i >= start; i--) {
+			int j = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
 	}
-	fprintf(logptr, "***Left direction***\n");
-	for (int i = 0; i < grid.num_elements_send_left; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, sendbuf[LEFT1][i],
-				sendbuf[LEFT2][i]);
+
+///LEFT direction	///
+///LEFT1
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+
+	for (int j = (int) recvbuf[LEFT1][0]; j <= (int) recvbuf[LEFT1][1]; j++) {
+		int i = 0;
+		smc[i][j].p[smc_Ca] = recvbuf[LEFT1][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[LEFT1][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[LEFT1][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
 	}
-	fprintf(logptr, "***Right direction***\n");
-	for (int i = 0; i < grid.num_elements_send_right; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, sendbuf[RIGHT1][i],
-				sendbuf[RIGHT2][i]);
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[LEFT1][1] - recvbuf[LEFT1][0] + 1);
+//Updating RECEIVE BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+
+	for (int j = (int) recvbuf[LEFT1][2]; j <= (int) recvbuf[LEFT1][3]; j++) {
+		int i = 0;
+		ec[i][j].q[ec_Ca] = recvbuf[LEFT1][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[LEFT1][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[LEFT1][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
 	}
-}
 
+///LEFT2
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER to be sent in LEFT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
 
-void print_recv_buffer(FILE* logptr){
-
-fprintf(logptr, "***Up direction***\n");
-	for (int i = 0; i < grid.num_elements_send_up; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, recvbuf[UP1][i],
-				recvbuf[UP2][i]);
+	for (int j = (int) recvbuf[LEFT2][0]; j <= (int) recvbuf[LEFT2][1]; j++) {
+		int i = 0;
+		smc[i][j].p[smc_Ca] = recvbuf[LEFT2][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[LEFT2][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[LEFT2][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
 	}
-	fprintf(logptr, "***Down direction***\n");
-	for (int i = 0; i < grid.num_elements_send_down; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, recvbuf[DOWN1][i],
-				recvbuf[DOWN2][i]);
+
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[LEFT2][1] - recvbuf[LEFT2][0] + 1);
+//Updating RECEIVE BUFFER to be sent in LEFT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) recvbuf[LEFT2][2]; j <= (int) recvbuf[LEFT2][3]; j++) {
+		int i = 0;
+		ec[i][j].q[ec_Ca] = recvbuf[LEFT2][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[LEFT2][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[LEFT2][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
 	}
-	fprintf(logptr, "***Left direction***\n");
-	for (int i = 0; i < grid.num_elements_send_left; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, recvbuf[LEFT1][i],
-				recvbuf[LEFT2][i]);
+
+///RIGHT direction	///
+///RIGHT1
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) recvbuf[RIGHT1][0]; j <= (int) recvbuf[RIGHT1][1]; j++) {
+		int 	i = grid.num_smc_circumferentially + 1;
+		smc[i][j].p[smc_Ca] = recvbuf[RIGHT1][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[RIGHT1][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[RIGHT1][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
 	}
-	fprintf(logptr, "***Right direction***\n");
-	for (int i = 0; i < grid.num_elements_send_right; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, recvbuf[RIGHT1][i],
-				recvbuf[RIGHT2][i]);
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[RIGHT1][1] - recvbuf[RIGHT1][0] + 1);
+//Updating RECEIVE BUFFER with EC information to be sent in RIGHT1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) recvbuf[RIGHT1][2]; j <= (int) recvbuf[RIGHT1][3]; j++) {
+		int 	i = grid.num_ec_circumferentially + 1;
+		ec[i][j].q[ec_Ca] = recvbuf[RIGHT1][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[RIGHT1][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[RIGHT1][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
 	}
-}
 
-void print_compare(FILE* logptr, double t, double y[],celltype1** smc, celltype2** ec){
-	if(grid.rank==0){
-		fprintf(logptr,"*** t = %lf***\n--------------SMC DOMAIN -------------\n",t);
-			int kk, off;
-			for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-
-				for (int j = 1; j <= grid.num_smc_axially; j++) {
-					if (i > 1)
-					kk = ((i - 1) * grid.neq_smc_axially);
-					else if (i == 1)
-					kk = 0;
-					/*fprintf(logptr,
-							"[%d,%d]\t %2.3lf\t %2.3lf\t %2.3lf\t\t [%d] %2.3lf\t [%d] %2.3lf\t [%d] %2.3lf\n",
-							i, j, smc[i][j].p[smc_Ca],smc[i][j].p[smc_Vm],smc[i][j].p[smc_IP3],
-							kk + ((j - 1) * grid.neq_smc) + smc_Ca,y[kk + ((j - 1) * grid.neq_smc) + smc_Ca],
-							kk + ((j - 1) * grid.neq_smc) + smc_Vm,y[kk + ((j - 1) * grid.neq_smc) + smc_Vm],
-							kk + ((j - 1) * grid.neq_smc) + smc_IP3,y[kk + ((j - 1) * grid.neq_smc) + smc_IP3]);*/
-
-					fprintf(logptr,
-												"SMC : [%d,%d]\t %2.3lf\t %2.3lf\t %2.3lf\t %2.3lf\t\n\n",
-												i, j, smc[i][j].p[smc_Vm],
-												smc[i][j].B[cpl_Ca],smc[i][j].B[cpl_Vm],smc[i][j].B[cpl_IP3]);
-					/*fprintf(logptr,
-										"[%d,%d]\t %2.3lf\t%2.3lf\t%2.3lf\t%2.3lf\t%2.3lf\t%2.3lf\t%2.3lf\t%2.3lf\t%2.3lf\t%2.3lf\t%2.3lf\t%2.3lf\n",
-										i, j, smc[i][j].A[J_IP3], smc[i][j].A[J_SERCA],
-										smc[i][j].A[J_CICR],smc[i][j].A[J_Extrusion],smc[i][j].A[J_Leak],smc[i][j].A[J_IP3_deg],
-										smc[i][j].A[J_VOCC],smc[i][j].A[J_Na_Ca],smc[i][j].A[J_Na_K],smc[i][j].A[J_Cl],smc[i][j].A[J_K],smc[i][j].A[K_activation]);*/
-				}
-			}
-			off = (grid.neq_smc * grid.num_smc_circumferentially
-					* grid.num_smc_axially);
-		//	fprintf(logptr,"--------------EC DOMAIN -------------\n");
-			for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-				for (int j = 1; j <= grid.num_ec_axially; j++) {
-					if (i > 1)
-					kk = off + ((i - 1) * grid.neq_ec_axially);
-					else if (i == 1)
-					kk = off + 0;
-			/*		fprintf(logptr,
-							"[%d,%d]\t %2.3lf\t %2.3lf\t %2.3lf\t\t [%d] %2.3lf\t [%d] %2.3lf\t [%d] %2.3lf\n",
-							i, j, ec[i][j].q[ec_Ca],ec[i][j].q[ec_Vm],ec[i][j].q[ec_IP3],
-							kk + ((j - 1) * grid.neq_ec) + ec_Ca,y[kk + ((j - 1) * grid.neq_ec) + ec_Ca],
-							kk + ((j - 1) * grid.neq_ec) + ec_Vm,y[kk + ((j - 1) * grid.neq_ec) + ec_Vm],
-							kk + ((j - 1) * grid.neq_ec) + ec_IP3,y[kk + ((j - 1) * grid.neq_ec) + ec_IP3]);*/
-				fprintf(logptr,
-						"EC : [%d,%d]\t %2.3lf\t %2.3lf\t %2.3lf\t %2.3lf\t\n\n",
-						i, j, ec[i][j].q[ec_Vm], ec[i][j].B[cpl_Ca],
-						ec[i][j].B[cpl_Vm], ec[i][j].B[cpl_IP3]);
-				}
-			}
+///RIGHT2
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) recvbuf[RIGHT2][0]; j <= (int) recvbuf[RIGHT2][1]; j++) {
+		int 	i = grid.num_smc_circumferentially + 1;
+		smc[i][j].p[smc_Ca] = recvbuf[RIGHT2][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[RIGHT2][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
 	}
-}
 
-
-
-
-
-
-
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[RIGHT2][1] - recvbuf[RIGHT2][0] + 1);
+//Updating RECEIVE BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) recvbuf[RIGHT2][2]; j <= (int) recvbuf[RIGHT2][3]; j++) {
+		int 	i = grid.num_ec_circumferentially + 1;
+		ec[i][j].q[ec_Ca] = recvbuf[RIGHT2][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[RIGHT2][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
+	}
+}	// end of communication_update_recvbuf()
 
