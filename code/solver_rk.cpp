@@ -72,9 +72,10 @@ void computeDerivatives(double t, double y[], double f[]) {
 			k = offset + 0;
 
 			if (t > 100.00) {
-				int remainder = grid.rank % grid.n;
+
 				ec[i][j].JPLC =grid.min_jplc+ (grid.max_jplc/
-						(1+ exp(-grid.gradient* (((j - 1)+ (((grid.rank- remainder)/ grid.n)* grid.num_ec_axially))- ((grid.num_ec_axially* grid.m)/ 2)))));
+						(1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
+
 			} else if (t <= 100.00)
 			ec[i][j].JPLC = grid.uniform_jplc;
 
