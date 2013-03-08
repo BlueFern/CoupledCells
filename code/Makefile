@@ -1,4 +1,4 @@
-CC=mpixlcxx
+CC=mpicxx
 DEBUG= -g
 CFLAGS=-c $(DEBUG)
 LDFLAGS=

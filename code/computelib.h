@@ -44,7 +44,19 @@ struct conductance{
 		IP3_ht_smc,			///heterocellular IP3 coupling between SMCs
 		IP3_ht_ec;			///heterocellular IP3 coupling between ECs
 	};
+struct node
+    {
+    int domain_type;				//am I a bifurcation or a straight segment?
+    int domain_start, domain_end;	//These are universal ranks from MPI_COMM_WORLD
+    int m, n;					//row and columns in my MPI_sub_world
+    double d, l;				//diameter and length scales
+    };
 
+struct my_tree
+    {
+    node internal_info;
+    node left_child, right_child, parent;
+    };
 typedef struct {
 	///General infomation on cell geometry and the geometric primitive constructed.
 		double hx_smc, hx_ec,hy_smc, hy_ec,
@@ -80,7 +92,7 @@ typedef struct {
 			///Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task
 			added_info_in_send_buf,
 			///this is global and local MPI information
-			numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank, rank, color,key,
+			numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank, rank, my_domain_color, my_domain_key, color,key,
 			//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
 			//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 			branch_tag,
@@ -94,8 +106,11 @@ typedef struct {
 	///Information for spatial variation in agonist
 	double
 	min_jplc, max_jplc, gradient, uniform_jplc;
-	//Allow two types of communicators to exist, first resulting from comm_split operation on MPI_COMM_WORLD
-	//and the other a Cartisian communicator arising from Cart_create operation
+
+	my_tree		my_domain;
+
+	//Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
+	//operation on MPI_COMM_WORLD and the other a Cartisian communicator arising from Cart_create operation
 	MPI_Comm universe,sub_universe,split_comm,cart_comm;
 			}grid_parms;
 
@@ -143,16 +158,6 @@ typedef struct {
 
 #endif
 
-typedef struct {
-	int key_val;		//am I a bifurcation or a straight segment?
-	int m,n;			//row and columns in my MPI_sub_world
-	double d,l;			//diameter and length scales
-}node;
-
-typedef struct {
-	node	internal_info;
-	node 	left_child,right_child,parent;
-}my_tree;
 
 
 void check_flag(int, FILE*, const char*);

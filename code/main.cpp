@@ -14,7 +14,7 @@ using namespace std;
     double		**sendbuf,**recvbuf;
     grid_parms		grid;
 
-    my_tree		my_domain;
+
 int 	CASE=1;
 ///***************************************************************************************/
 ///************ checked_malloc(size_t bytes, FILE* errfile, const char* errmsg)*************/
@@ -31,156 +31,203 @@ void* checked_malloc(size_t bytes, FILE* errfile, const char* errmsg){
 }
 
 int main(int argc, char* argv[]) {
+    ///Global declaration of request and status update place holders.
+    ///Request and Status handles for nonblocking Send and Receive operations, for communicating with each of the four neighbours.
+    MPI_Request reqs[8];
+    MPI_Status stats[8];
 
-/*//// These are input parameters for the simulation
-	int
-	m = 4,	///number of grid points in axial direction
-	n = 4,	///number of grid points in circumferential direction
-	e = 4,	///number of ECs per node
-	s = 4;	///number of SMCs per node
+    ///Initialize MPI
+    MPI_Init(&argc, &argv);
 
-	for (int i = 0; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			if ((argv[i][1] == 'm')) {
-				m = atoi(argv[i + 1]);
-			} else if ((argv[i][1] == 'n')) {
-				n = atoi(argv[i + 1]);
-			}
-		}
-	}*/
+    grid.universe = MPI_COMM_WORLD;
 
+    /*//// These are input parameters for the simulation
+     int
+     m = 4,	///number of grid points in axial direction
+     n = 4,	///number of grid points in circumferential direction
+     e = 4,	///number of ECs per node
+     s = 4;	///number of SMCs per node
+
+     for (int i = 0; i < argc; i++) {
+     if (argv[i][0] == '-') {
+     if ((argv[i][1] == 'm')) {
+     m = atoi(argv[i + 1]);
+     } else if ((argv[i][1] == 'n')) {
+     n = atoi(argv[i + 1]);
+     }
+     }
+     }*/
 
 //Reveal information of myself and size of MPI_COMM_WORLD
-	check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank), stdout,
-			"error Comm_rank");
-	check_flag(MPI_Comm_size(grid.universe, &grid.numtasks), stdout,
-			"error Comm_size");
+    check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank), stdout,
+	    "error Comm_rank");
+    check_flag(MPI_Comm_size(grid.universe, &grid.numtasks), stdout,
+	    "error Comm_size");
 
 ///Initialize checkpoint routine which opens files
-	checkpoint_handle *check = initialise_checkpoint(grid.universal_rank);
+    checkpoint_handle *check = initialise_checkpoint(grid.universal_rank);
 
 //Test case
 //config
-	int num_subdomains =3;
-	int **domains;
+    int num_subdomains = 4;
+    int **domains;
 
-	domains = (int**) checked_malloc(num_subdomains * sizeof(int*), stdout,
-			"Subdomain information allocation");
+    domains = (int**) checked_malloc(num_subdomains * sizeof(int*), stdout,
+	    "Subdomain information allocation");
 
-	/*second coordinate has following information:
-	 * Element 1: 	Key_val or serial number of the subdomain
-	 * Element 2:	Subdomain Type (4 possibilities and their values)
-	 * 				1. Straight Segment														(0)
-	 * 				2. Bifurcation															(1)
-	 * 				3. Straight Segment attached to left daughter branch of a bifucation 	(2)
-	 * 				4. Straight Segment attached to right daughter branch of a bifucation	(3)
-	 * Element 3:	Axial extent of processor of current key_val
-	 * Element 4: 	circumferential extent of processors of current key_val
-	 * Element 5:	Parent subdomain key_val of current Key_val.
-	 * Element 6: 	Left Child subdomain key_val of the current Key_val.
-	 * Element 7:   Right Child subdomain key_val of the current Key_val.
-	 *
-	 * In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left Child is positive or zero, and right Child is negative.
-	 * If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.
-	 */
-	for (int i = 0; i < num_subdomains; i++) {
-		domains[i] = (int*) checked_malloc(7 * sizeof(int), stdout,
-				"Subdomains array elements allocation");
+    /*second coordinate has following information:
+     * Element 1: 	Key_val or serial number of the subdomain
+     * Element 2:	Subdomain Type (4 possibilities and their values)
+     * 				1. Straight Segment														(0)
+     * 				2. Bifurcation															(1)
+     * 				3. Straight Segment attached to left daughter branch of a bifucation 	(2)
+     * 				4. Straight Segment attached to right daughter branch of a bifucation	(3)
+     * Element 3:	Axial extent of processor of current key_val
+     * Element 4: 	circumferential extent of processors of current key_val
+     * Element 5:	Parent subdomain key_val of current Key_val.
+     * Element 6: 	Left Child subdomain key_val of the current Key_val.
+     * Element 7:   Right Child subdomain key_val of the current Key_val.
+     *
+     * In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left Child is positive or zero, and right Child is negative.
+     * If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.
+     */
+    for (int i = 0; i < num_subdomains; i++)
+	{
+	domains[i] = (int*) checked_malloc(7 * sizeof(int), stdout,
+		"Subdomains array elements allocation");
 	}
 
+    domains[0][0] = 0;
+    domains[0][1] = 0;
+    domains[0][2] = 5;
+    domains[0][3] = 4;
+    domains[0][4] = -1;
+    domains[0][5] = 1;
+    domains[0][6] = -1;
 
-	domains[0][0] = 0;
-	domains[0][1] = 0;
-	domains[0][2] = 3;
-	domains[0][3] = 3;
-	domains[0][4] = -1;
-	domains[0][5] = 1;
-	domains[0][6] = -1;
+    domains[1][0] = 1;
+    domains[1][1] = 1;
+    domains[1][2] = 5;
+    domains[1][3] = 4;
+    domains[1][4] = 0;
+    domains[1][5] = 2;
+    domains[1][6] = 3;
 
-	domains[1][0] = 1;
-	domains[1][1] = 1;
-	domains[1][2] = 3;
-	domains[1][3] = 3;
-	domains[1][4] = 0;
-	domains[1][5] = 2;
-	domains[1][6] = 3;
+    domains[2][0] = 2;
+    domains[2][1] = 1;
+    domains[2][2] = 5;
+    domains[2][3] = 4;
+    domains[2][4] = 1;
+    domains[2][5] = -1;
+    domains[2][6] = -1;
 
-	domains[2][0] = 2;
-	domains[2][1] = 0;
-	domains[2][2] = 3;
-	domains[2][3] = 3;
-	domains[2][4] = 1;
-	domains[2][5] = -1;
-	domains[2][6] = -1;
+    domains[3][0] = 3;
+    domains[3][1] = 0;
+    domains[3][2] = 5;
+    domains[3][3] = 4;
+    domains[3][4] = 1;
+    domains[3][5] = -1;
+    domains[3][6] = -1;
 
-	/*domains[3][0] = 3;
-	domains[3][1] = 0;
-	domains[3][2] = 5;
-	domains[3][3] = 4;
-	domains[3][4] = 1;
-	domains[3][5] = -1;
-	domains[3][6] = -1;*/
-
-	int **subdomain_extents; //Element 1: offset , Element 2: Start universal_rank, Element 3: End universal_rank;
-			subdomain_extents = (int**) checked_malloc(num_subdomains * sizeof(int*), stdout,
-							"Subdomain information allocation");
-			for (int i = 0; i < num_subdomains; i++) {
-				subdomain_extents[i] = (int*) checked_malloc(3 * sizeof(int), stdout,
-								"Subdomains array elements allocation");
-					}
-	for (int i = 0; i < num_subdomains; i++) {
-		subdomain_extents[i][0] = 0;
-		subdomain_extents[i][1] = 0;
-		subdomain_extents[i][2] = 0;
+    int **subdomain_extents; //Element 1: offset , Element 2: Start universal_rank, Element 3: End universal_rank;
+    subdomain_extents = (int**) checked_malloc(num_subdomains * sizeof(int*),
+	    stdout, "Subdomain information allocation");
+    for (int i = 0; i < num_subdomains; i++)
+	{
+	subdomain_extents[i] = (int*) checked_malloc(3 * sizeof(int), stdout,
+		"Subdomains array elements allocation");
+	}
+    for (int i = 0; i < num_subdomains; i++)
+	{
+	subdomain_extents[i][0] = 0;
+	subdomain_extents[i][1] = 0;
+	subdomain_extents[i][2] = 0;
 	}
 
+    int a;
+    for (int i = 0; i < num_subdomains; i++)
+	{
+	if ((domains[i][1] == 0) || (domains[i][1] == 2)
+		|| (domains[i][3] == 3))
+	    {
+	    a = domains[i][2] * domains[i][3];
+	    }
+	else if (domains[i][1] == 1)
+	    {
+	    a = 3 * domains[i][2] * domains[i][3];
+	    }
+	//setting up the offset bit
+	if (i == 0)
+	    {
+	    subdomain_extents[i][0] = 0;
+	    }
+	else
+	    {
+	    if ((domains[i - 1][1] == 0) || (domains[i - 1][1] == 2)
+		    || (domains[i - 1][3] == 3))
+		{
+		subdomain_extents[i][0] = subdomain_extents[i - 1][0]
+			+ (domains[i - 1][2] * domains[i - 1][3]);
+		}
+	    else if (domains[i - 1][1] == 1)
+		{
+		subdomain_extents[i][0] = subdomain_extents[i - 1][0]
+			+ (3 * domains[i - 1][2] * domains[i - 1][3]);
+		}
+	    }
 
-	int a;
-	for (int i = 0; i < num_subdomains; i++) {
-		if ((domains[i][1] == 0) || (domains[i][1] == 2)
-				|| (domains[i][3] == 3)) {
-			a = domains[i][2] * domains[i][3];
-		} else if (domains[i][1] == 1) {
-			a = 3 * domains[i][2] * domains[i][3];
-		}
-		//setting up the offset bit
-		if (i == 0) {
-			subdomain_extents[i][0] = 0;
-		} else {
-			if ((domains[i-1][1] == 0) || (domains[i-1][1] == 2)
-					|| (domains[i-1][3] == 3)) {
-				subdomain_extents[i][0] = subdomain_extents[i - 1][0]
-						+ (domains[i - 1][2] * domains[i - 1][3]);
-			} else if (domains[i-1][1] == 1) {
-				subdomain_extents[i][0] = subdomain_extents[i - 1][0]
-						+ (3 * domains[i - 1][2] * domains[i - 1][3]);
-			}
-		}
-
-		subdomain_extents[i][1] = subdomain_extents[i][0];  		//start universal_rank in MPI_COMM_WORLD
-		subdomain_extents[i][2] = subdomain_extents[i][0] + a -1;	//end universal_rank in MPI_COMM_WORLD
-		}
-
-	/* Now all processors have the information where each domain starts and ends. Using this information, each processor can identify which domain
-	 * it belongs and can mark a color (0 to num_domains-1). This color can now be used to split the MPI_COMM_WORLD into sub_domains.
-	 * Identify the new reordered ranks in grid.sub_universe_ranks in these new communicators recorded in grid.sub_universe and update the size of this sub_domain in
-	 * grid.sub_universe_numtasks.
-	 * Since each processor has the information of its parent and child(ren) domains in domain[][] array, use this to update the my_tree structure.
-	 * Update remote nearest neighbour locations accordingly.
-	 */
-	int my_domain_color,my_domain_key;
-	for (int i=0; i<num_subdomains; i++){
-		if ( (grid.universal_rank>=subdomain_extents[i][1]) && (grid.universal_rank<=subdomain_extents[i][2]) ){
-			my_domain_color	=	i;
-			my_domain_key	=	0;
-		}
-	fprintf(check->logptr,"%d\t%d\t%d\n", subdomain_extents[i][0], subdomain_extents[i][1],
-					subdomain_extents[i][2]);
+	subdomain_extents[i][1] = subdomain_extents[i][0]; //start universal_rank in MPI_COMM_WORLD
+	subdomain_extents[i][2] = subdomain_extents[i][0] + a - 1;//end universal_rank in MPI_COMM_WORLD
 	}
 
-	fprintf(check->logptr,"my_color=%d\tmy_key=%d\n",my_domain_color,my_domain_key);
+    /* Now all processors have the information where each domain starts and ends. Using this information, each processor can identify which domain
+     * it belongs and can mark a color (0 to num_domains-1). This color can now be used to split the MPI_COMM_WORLD into sub_domains.
+     * Identify the new reordered ranks in grid.sub_universe_ranks in these new communicators recorded in grid.sub_universe and update the size of this sub_domain in
+     * grid.sub_universe_numtasks.
+     * Since each processor has the information of its parent and child(ren) domains in domain[][] array, use this to update the my_tree structure.
+     * Update remote nearest neighbour locations accordingly.
+     */
 
-/*********************************************/
+    for (int i = 0; i < num_subdomains; i++)
+	{
+	if ((grid.universal_rank >= subdomain_extents[i][1])
+		&& (grid.universal_rank <= subdomain_extents[i][2]))
+	    {
+	    grid.my_domain_color = i;
+	    grid.my_domain_key = 0;
+
+	    grid.m	=	domains[i][2];
+	    grid.n	=	domains[i][3];
+
+	    grid.my_domain.internal_info.domain_type	=	domains[i][1];
+	    grid.my_domain.internal_info.domain_start	=	subdomain_extents[i][1];
+	    grid.my_domain.internal_info.domain_end	=	subdomain_extents[i][2];
+	    }
+	fprintf(check->logptr, "%d\t%d\t%d\n", subdomain_extents[i][0],
+		    subdomain_extents[i][1], subdomain_extents[i][2]);}
+
+
+    check_flag(
+	    MPI_Comm_split(grid.universe, grid.my_domain_color,
+		    grid.my_domain_key, &grid.sub_universe), stdout,
+	    "Comm-split failed at subdomain level.");
+
+
+    fprintf(check->logptr, "my_color=%d\tmy_key=%d\n", grid.my_domain_color,
+    		grid.my_domain_key);
+
+    //Reveal information of myself and size of grid.sub_universe
+    check_flag(MPI_Comm_rank(grid.sub_universe, &grid.sub_universe_rank),
+	    stdout, "error retrieving Subdomain_rank");
+    check_flag(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks),
+	    stdout, "error retrieving Subdomain_size");
+
+    fprintf(check->logptr, "new rank= %d\tnew size=%d\ndomain type=%d\tdomain start=%d\tdomain_end=%d\n",
+	    grid.sub_universe_rank, grid.sub_universe_numtasks,
+	    grid.my_domain.internal_info.domain_type,grid.my_domain.internal_info.domain_start,grid.my_domain.internal_info.domain_end);
+
+
+    /*********************************************/
 /*	grid.m = m;
 	grid.n = n;
 ///Time variables
@@ -195,15 +242,8 @@ int main(int argc, char* argv[]) {
 ///Global variables that are to be read by each processor
 	int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
 
-///Global declaration of request and status update place holders.
-///Request and Status handles for nonblocking Send and Receive operations, for communicating with each of the four neighbours.
-	MPI_Request reqs[8];
-	MPI_Status stats[8];
 
-///Initialize MPI
-	MPI_Init(&argc, &argv);
 
-	grid.universe = MPI_COMM_WORLD;
 
 	for (int i=0; i<4; i++){
 		grid.nbrs[local][i]	= MPI_PROC_NULL;

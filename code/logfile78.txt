@@ -1,0 +1,7 @@
+0	0	19
+20	20	79
+80	80	139
+140	140	159
+my_color=1	my_key=0
+new rank= 58	new size=60
+domain type=1	domain start=20	domain_end=79
