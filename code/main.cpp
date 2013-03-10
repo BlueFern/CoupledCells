@@ -41,22 +41,14 @@ int main(int argc, char* argv[]) {
 
     grid.universe = MPI_COMM_WORLD;
 
-    /*//// These are input parameters for the simulation
+    //// These are input parameters for the simulation
      int
-     m = 4,	///number of grid points in axial direction
-     n = 4,	///number of grid points in circumferential direction
+     m = 2,
+     n = 2,
      e = 4,	///number of ECs per node
      s = 4;	///number of SMCs per node
 
-     for (int i = 0; i < argc; i++) {
-     if (argv[i][0] == '-') {
-     if ((argv[i][1] == 'm')) {
-     m = atoi(argv[i + 1]);
-     } else if ((argv[i][1] == 'n')) {
-     n = atoi(argv[i + 1]);
-     }
-     }
-     }*/
+
 
 //Reveal information of myself and size of MPI_COMM_WORLD
     check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank), stdout,
@@ -80,8 +72,6 @@ int main(int argc, char* argv[]) {
      * Element 2:	Subdomain Type (4 possibilities and their values)
      * 				1. Straight Segment														(0)
      * 				2. Bifurcation															(1)
-     * 				3. Straight Segment attached to left daughter branch of a bifucation 	(2)
-     * 				4. Straight Segment attached to right daughter branch of a bifucation	(3)
      * Element 3:	Axial extent of processor of current key_val
      * Element 4: 	circumferential extent of processors of current key_val
      * Element 5:	Parent subdomain key_val of current Key_val.
@@ -96,140 +86,40 @@ int main(int argc, char* argv[]) {
 	domains[i] = (int*) checked_malloc(7 * sizeof(int), stdout,
 		"Subdomains array elements allocation");
 	}
-
     domains[0][0] = 0;
     domains[0][1] = 0;
-    domains[0][2] = 5;
-    domains[0][3] = 4;
+    domains[0][2] = m;
+    domains[0][3] = n;
     domains[0][4] = -1;
     domains[0][5] = 1;
     domains[0][6] = -1;
 
     domains[1][0] = 1;
     domains[1][1] = 1;
-    domains[1][2] = 5;
-    domains[1][3] = 4;
+    domains[1][2] = m;
+    domains[1][3] = n;
     domains[1][4] = 0;
     domains[1][5] = 2;
     domains[1][6] = 3;
 
     domains[2][0] = 2;
     domains[2][1] = 1;
-    domains[2][2] = 5;
-    domains[2][3] = 4;
+    domains[2][2] = m;
+    domains[2][3] = n;
     domains[2][4] = 1;
     domains[2][5] = -1;
     domains[2][6] = -1;
 
     domains[3][0] = 3;
     domains[3][1] = 0;
-    domains[3][2] = 5;
-    domains[3][3] = 4;
+    domains[3][2] = m;
+    domains[3][3] = n;
     domains[3][4] = 1;
     domains[3][5] = -1;
     domains[3][6] = -1;
 
-    int **subdomain_extents; //Element 1: offset , Element 2: Start universal_rank, Element 3: End universal_rank;
-    subdomain_extents = (int**) checked_malloc(num_subdomains * sizeof(int*),
-	    stdout, "Subdomain information allocation");
-    for (int i = 0; i < num_subdomains; i++)
-	{
-	subdomain_extents[i] = (int*) checked_malloc(3 * sizeof(int), stdout,
-		"Subdomains array elements allocation");
-	}
-    for (int i = 0; i < num_subdomains; i++)
-	{
-	subdomain_extents[i][0] = 0;
-	subdomain_extents[i][1] = 0;
-	subdomain_extents[i][2] = 0;
-	}
+    grid =  make_subdomains(grid, num_subdomains, domains, check->logptr);
 
-    int a;
-    for (int i = 0; i < num_subdomains; i++)
-	{
-	if ((domains[i][1] == 0) || (domains[i][1] == 2)
-		|| (domains[i][3] == 3))
-	    {
-	    a = domains[i][2] * domains[i][3];
-	    }
-	else if (domains[i][1] == 1)
-	    {
-	    a = 3 * domains[i][2] * domains[i][3];
-	    }
-	//setting up the offset bit
-	if (i == 0)
-	    {
-	    subdomain_extents[i][0] = 0;
-	    }
-	else
-	    {
-	    if ((domains[i - 1][1] == 0) || (domains[i - 1][1] == 2)
-		    || (domains[i - 1][3] == 3))
-		{
-		subdomain_extents[i][0] = subdomain_extents[i - 1][0]
-			+ (domains[i - 1][2] * domains[i - 1][3]);
-		}
-	    else if (domains[i - 1][1] == 1)
-		{
-		subdomain_extents[i][0] = subdomain_extents[i - 1][0]
-			+ (3 * domains[i - 1][2] * domains[i - 1][3]);
-		}
-	    }
-
-	subdomain_extents[i][1] = subdomain_extents[i][0]; //start universal_rank in MPI_COMM_WORLD
-	subdomain_extents[i][2] = subdomain_extents[i][0] + a - 1;//end universal_rank in MPI_COMM_WORLD
-	}
-
-    /* Now all processors have the information where each domain starts and ends. Using this information, each processor can identify which domain
-     * it belongs and can mark a color (0 to num_domains-1). This color can now be used to split the MPI_COMM_WORLD into sub_domains.
-     * Identify the new reordered ranks in grid.sub_universe_ranks in these new communicators recorded in grid.sub_universe and update the size of this sub_domain in
-     * grid.sub_universe_numtasks.
-     * Since each processor has the information of its parent and child(ren) domains in domain[][] array, use this to update the my_tree structure.
-     * Update remote nearest neighbour locations accordingly.
-     */
-
-    for (int i = 0; i < num_subdomains; i++)
-	{
-	if ((grid.universal_rank >= subdomain_extents[i][1])
-		&& (grid.universal_rank <= subdomain_extents[i][2]))
-	    {
-	    grid.my_domain_color = i;
-	    grid.my_domain_key = 0;
-
-	    grid.m	=	domains[i][2];
-	    grid.n	=	domains[i][3];
-
-	    grid.my_domain.internal_info.domain_type	=	domains[i][1];
-	    grid.my_domain.internal_info.domain_start	=	subdomain_extents[i][1];
-	    grid.my_domain.internal_info.domain_end	=	subdomain_extents[i][2];
-	    }
-	fprintf(check->logptr, "%d\t%d\t%d\n", subdomain_extents[i][0],
-		    subdomain_extents[i][1], subdomain_extents[i][2]);}
-
-
-    check_flag(
-	    MPI_Comm_split(grid.universe, grid.my_domain_color,
-		    grid.my_domain_key, &grid.sub_universe), stdout,
-	    "Comm-split failed at subdomain level.");
-
-
-    fprintf(check->logptr, "my_color=%d\tmy_key=%d\n", grid.my_domain_color,
-    		grid.my_domain_key);
-
-    //Reveal information of myself and size of grid.sub_universe
-    check_flag(MPI_Comm_rank(grid.sub_universe, &grid.sub_universe_rank),
-	    stdout, "error retrieving Subdomain_rank");
-    check_flag(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks),
-	    stdout, "error retrieving Subdomain_size");
-
-    fprintf(check->logptr, "new rank= %d\tnew size=%d\ndomain type=%d\tdomain start=%d\tdomain_end=%d\n",
-	    grid.sub_universe_rank, grid.sub_universe_numtasks,
-	    grid.my_domain.internal_info.domain_type,grid.my_domain.internal_info.domain_start,grid.my_domain.internal_info.domain_end);
-
-
-    /*********************************************/
-/*	grid.m = m;
-	grid.n = n;
 ///Time variables
 	double tfinal = 100.00;
 	double interval = 1e-2;
@@ -239,209 +129,18 @@ int main(int argc, char* argv[]) {
 	grid.uniform_jplc = 0.1, grid.min_jplc = 0.35, grid.max_jplc = 1.195, grid.gradient =
 			2.5e-2;
 
-///Global variables that are to be read by each processor
-	int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
-
-
-
-
-	for (int i=0; i<4; i++){
-		grid.nbrs[local][i]	= MPI_PROC_NULL;
-		grid.nbrs[remote][i] = MPI_PROC_NULL;
-	}
 	int source, dest;
 	int tag_local = 1,///tag for messaging information to local nearset neighbour
 			tag_remote = 2;	///tag for messaging information to remote nearset neighbour
 
 
-
-
-//Since there are 3 branches, there needs to be three values of a variable color, to identify association of a rank to a particular sub-universe partitioned out of MPI_COMM_WORLD.
-
-	grid.color = int(grid.universal_rank / (grid.m * grid.n));
-	grid.key = grid.color * ((grid.m * grid.n) - 1);
-
-	check_flag(MPI_Comm_split(grid.universe, grid.color, grid.key, &grid.split_comm),
-			stdout, "Comm-split failed");
-
-//Reveal information of myself and size of My_Universe after split operation
-
-
-	ndims = 2;
-	dims[0] = grid.m;
-	dims[1] = grid.n;
-	periodic[0] = 0;
-	periodic[1] = 1;
-	reorder = 0;
-
-	check_flag(
-			MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder,
-					&grid.cart_comm), stdout, "failed at cart create");
-	check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), stdout,
-			"failed at comm rank");
-	check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords),
-			stdout, "failed at cart coords");
-
-	check_flag(
-			MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP],
-					&grid.nbrs[local][DOWN]), stdout,
-			"failed at cart shift up down");
-	check_flag(
-			MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
-					&grid.nbrs[local][RIGHT]), stdout,
-			"failed at cart left right");
-
-
-
-
-
-
-///Each tasks now calculates the number of ECs per node.
-//	if (grid.m != (grid.numtasks / grid.n))
-//		e = grid.m / grid.numtasks;
-
-///Each tasks now calculates the number of ECs per node.
-	///topological information of a functional block of coupled cells. This is the minimum required to simulate a relevant coupled topology.
-	grid.num_smc_fundblk_circumferentially = 1, grid.num_ec_fundblk_circumferentially =
-			5, grid.num_smc_fundblk_axially = 13, grid.num_ec_fundblk_axially =
-			1,
-
-	grid.num_ghost_cells = 2,
-
-	grid.num_fluxes_smc = 12;///number of SMC Ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
-	grid.num_fluxes_ec = 12;///number of EC Ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
-
-	grid.num_coupling_species_smc = 3;///number of SMC coupling species homogenic /heterogenic
-	grid.num_coupling_species_ec = 3;///number of SMC coupling species homogenic /heterogenic
-
-	grid.neq_smc = 5;			/// number of SMC ODEs for a single cell
-	grid.neq_ec = 4;			/// number of EC ODEs for a single cell
-
-	grid.num_ec_axially = e * 1;
-	grid.num_smc_axially = e * 13;
-	grid.num_ec_circumferentially = s * 5;
-	grid.num_smc_circumferentially = s * 1;
-
-	grid.neq_ec_axially = grid.num_ec_axially * grid.neq_ec;
-	grid.neq_smc_axially = grid.num_smc_axially * grid.neq_smc;
-
-	//Identifying remote neighbours
-
-	grid.offset_P = 0;
-	grid.offset_L = (grid.m * grid.n) + ((grid.m - 1) * grid.n);
-	grid.offset_R = 2 * (grid.m * grid.n) + ((grid.m - 1) * grid.n);
-
-	//check whether number of processors in circumferential direction are EVEN or ODD.
-	grid.scheme = grid.n % 2;
-	for(int i=0; i<4; i++){
-		grid.flip_array[i]	=	0;
-	}
-	grid.branch_tag		=	0;
-
-	//If number of processors in circumferentail dimension are EVEN
-	if (grid.scheme == 0) {
-		//For parent branch edge
-		if ((grid.universal_rank >= 0) && (grid.universal_rank < grid.n)) {
-			grid.branch_tag	=	P;
-			if ((grid.universal_rank - grid.offset_P) < (grid.n / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_L
-						+ (grid.universal_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_L
-						+ (grid.universal_rank - grid.offset_P);
-			} else if ((grid.universal_rank - grid.offset_P) >= (grid.n / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_R
-						+ (grid.universal_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_R
-						+ (grid.universal_rank - grid.offset_P);
-			}
-			//For Left daughter branch edge
-		} else if ((grid.universal_rank >= grid.offset_L)
-				&& (grid.universal_rank < (grid.offset_L + grid.n))) {
-			grid.branch_tag	=	L;
-			if ((grid.universal_rank - grid.offset_L) < (grid.n / 2)) {
-				grid.nbrs[remote][DOWN1] = grid.universal_rank - grid.offset_L;
-				grid.nbrs[remote][DOWN2] = grid.universal_rank - grid.offset_L;
-			} else if ((grid.universal_rank - grid.offset_L) >= (grid.n / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n - 1))
-						- (grid.universal_rank - grid.offset_L);
-				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1))
-						- (grid.universal_rank - grid.offset_L);
-				grid.flip_array[DOWN1]	=	1;
-				grid.flip_array[DOWN2]	=	1;
-			}
-		}
-		//For Right daughter branch edge
-		else if ((grid.universal_rank >= grid.offset_R)
-				&& (grid.universal_rank < (grid.offset_R + grid.n))) {
-			grid.branch_tag	=	R;
-			if ((grid.universal_rank - grid.offset_R) < (grid.n / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
-						- (grid.universal_rank - grid.offset_R);
-				grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n - 1))
-						- (grid.universal_rank - grid.offset_R);
-				grid.flip_array[DOWN1]	=	1;
-				grid.flip_array[DOWN2]	=	1;
-			} else if ((grid.universal_rank - grid.offset_R) >= (grid.n / 2)) {
-				grid.nbrs[remote][DOWN1] = grid.universal_rank - grid.offset_R;
-				grid.nbrs[remote][DOWN2] = grid.universal_rank - grid.offset_R;
-			}
-		}
+	if (grid.my_domain.internal_info.domain_type == 0) {
+		grid = make_straight_segment(grid, check->logptr);
+	} else if (grid.my_domain.internal_info.domain_type == 1) {
+		grid = make_bifucation(grid, check->logptr);
 	}
 
-    //In the case of n being ODD
-
-	if (grid.scheme != 0) {
-		//The parent artery edge
-		if ((grid.universal_rank >= 0) && (grid.universal_rank < grid.n)) {
-			grid.branch_tag	=	P;
-			if ((grid.universal_rank - grid.offset_P) < ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_L + (grid.universal_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_L + (grid.universal_rank - grid.offset_P);
-			} else if ((grid.universal_rank - grid.offset_P) > ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_R + (grid.universal_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_R + (grid.universal_rank - grid.offset_P);
-			} else if ((grid.universal_rank - grid.offset_P) == ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_L + (grid.universal_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_R + (grid.universal_rank - grid.offset_P);
-			}
-		}
-		//The left daughter artery edge
-		else if ((grid.universal_rank >= grid.offset_L) && (grid.universal_rank < grid.offset_L + grid.n)) {
-			grid.branch_tag	=	L;
-			if ((grid.universal_rank - grid.offset_L) < ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.universal_rank - grid.offset_L);
-				grid.nbrs[remote][DOWN2] = (grid.universal_rank - grid.offset_L);
-			} else if ((grid.universal_rank - grid.offset_L) > ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n-1)) - (grid.universal_rank - grid.offset_L);
-				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n-1)) - (grid.universal_rank - grid.offset_L);
-				grid.flip_array[DOWN1]	=	1;
-				grid.flip_array[DOWN2]	=	1;
-			} else if ((grid.universal_rank - grid.offset_L) == ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.universal_rank - grid.offset_L);
-				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n-1)) - (grid.universal_rank - grid.offset_L);
-				grid.flip_array[DOWN1]	=	0;
-				grid.flip_array[DOWN2]	=	1;
-			}
-		}
-		//The right daughter artery edge
-		else if ((grid.universal_rank >= grid.offset_R) && (grid.universal_rank < grid.offset_R + grid.n)) {
-			grid.branch_tag	=	R;
-			if ((grid.universal_rank - grid.offset_R) < ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n-1)) - (grid.universal_rank - grid.offset_R);
-				grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n-1)) - (grid.universal_rank - grid.offset_R);
-				grid.flip_array[DOWN1]	=	1;
-				grid.flip_array[DOWN2]	=	1;
-			} else if ((grid.universal_rank - grid.offset_R) > ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = grid.universal_rank - grid.offset_R;
-				grid.nbrs[remote][DOWN2] = grid.universal_rank - grid.offset_R;
-			} else if ((grid.universal_rank - grid.offset_R) == ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n-1)) - (grid.universal_rank - grid.offset_R);
-				grid.nbrs[remote][DOWN2] = grid.universal_rank - grid.offset_R;
-				grid.flip_array[DOWN1]	=	1;
-				grid.flip_array[DOWN2]	=	0;
-			}
-		}
-	}
+	grid = set_geometry_parameters(grid,check->logptr,e,s);
 ///Now allocate memory space for the structures represegird.nting the cells and the various members of those structures.
 
 //Each of the two cell grids have two additional rows and two additional columns as ghost cells.
@@ -750,6 +449,7 @@ int main(int argc, char* argv[]) {
 
 int state 	=  couplingParms(CASE,&cpl_cef);
 dump_rank_info(check,cpl_cef,grid);
+/*
 communication_async_send_recv(check->logptr,grid,sendbuf,recvbuf,smc,ec);
 print_domains(check->logptr,grid,smc,ec);
 double t1	=	MPI_Wtime();

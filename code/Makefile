@@ -2,7 +2,7 @@ CC=mpicxx
 DEBUG= -g
 CFLAGS=-c $(DEBUG)
 LDFLAGS=
-SOURCES=main.cpp compute.cpp checkpoint.cpp rksuite.cpp update.cpp solver_rk.cpp debug_file.cpp
+SOURCES=main.cpp compute.cpp checkpoint.cpp rksuite.cpp update.cpp solver_rk.cpp debug_file.cpp topology.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=test
 

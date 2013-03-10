@@ -46,7 +46,7 @@ struct conductance{
 	};
 struct node
     {
-    int domain_type;				//am I a bifurcation or a straight segment?
+    int domain_type,domain_index;				//am I a bifurcation or a straight segment?
     int domain_start, domain_end;	//These are universal ranks from MPI_COMM_WORLD
     int m, n;					//row and columns in my MPI_sub_world
     double d, l;				//diameter and length scales
@@ -208,8 +208,10 @@ void print_compare(FILE* logptr, double t, double y[],grid_parms grid, celltype1
 void communication_update_recvbuf_modified(FILE* logptr,grid_parms grid,double** recvbuf, celltype1** smc, celltype2** ec);
 
 
-
-
+grid_parms make_bifucation(grid_parms, FILE*);
+grid_parms make_straight_segment(grid_parms, FILE*);
+grid_parms set_geometry_parameters(grid_parms,FILE*,int,int);
+grid_parms make_subdomains(grid_parms, int, int**, FILE*);
 
 
 
