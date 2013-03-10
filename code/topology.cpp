@@ -156,14 +156,18 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains, F
 		}
 
 	    grid.my_domain.left_child.domain_index = domains[i][5];
+	    //In case I have a child domain
 	    if (grid.my_domain.left_child.domain_index >= 0)
 		{
 		grid.my_domain.left_child.domain_type =
 			domains[grid.my_domain.left_child.domain_index][1];
+		//Whether my child is a bifurcation or a straight segment, the last row of its mxn grid is of my interest
+
 		grid.my_domain.left_child.domain_start =
-			subdomain_extents[grid.my_domain.left_child.domain_index][1];
+			subdomain_extents[grid.my_domain.left_child.domain_index][1]
+				+ ((grid.m - 1) * grid.n);
 		grid.my_domain.left_child.domain_end =
-			subdomain_extents[grid.my_domain.left_child.domain_index][2];
+			grid.my_domain.left_child.domain_start + (grid.n - 1);
 		}
 	    else
 		{
@@ -177,10 +181,12 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains, F
 		{
 		grid.my_domain.right_child.domain_type =
 			domains[grid.my_domain.right_child.domain_index][1];
+		//Whether my child is a bifurcation or a straight segment, the last row of its mxn grid is of my interest
 		grid.my_domain.right_child.domain_start =
-			subdomain_extents[grid.my_domain.right_child.domain_index][1];
+			subdomain_extents[grid.my_domain.right_child.domain_index][1]
+				+ ((grid.m - 1) * grid.n);
 		grid.my_domain.right_child.domain_end =
-			subdomain_extents[grid.my_domain.right_child.domain_index][2];
+			grid.my_domain.right_child.domain_start + (grid.n - 1);
 		}
 	    else
 		{
