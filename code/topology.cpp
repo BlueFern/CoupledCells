@@ -161,8 +161,7 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains, F
 		{
 		grid.my_domain.left_child.domain_type =
 			domains[grid.my_domain.left_child.domain_index][1];
-		//Whether my child is a bifurcation or a straight segment, the last row of its mxn grid is of my interest
-
+		//Irrespective of the domain type, the last row of my child's m by n grid is of my interest
 		grid.my_domain.left_child.domain_start =
 			subdomain_extents[grid.my_domain.left_child.domain_index][1]
 				+ ((grid.m - 1) * grid.n);
@@ -181,7 +180,7 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains, F
 		{
 		grid.my_domain.right_child.domain_type =
 			domains[grid.my_domain.right_child.domain_index][1];
-		//Whether my child is a bifurcation or a straight segment, the last row of its mxn grid is of my interest
+		//Irrespective of the domain type, the last row of my child's m by n grid is of my interest
 		grid.my_domain.right_child.domain_start =
 			subdomain_extents[grid.my_domain.right_child.domain_index][1]
 				+ ((grid.m - 1) * grid.n);
@@ -283,179 +282,277 @@ grid_parms set_geometry_parameters(grid_parms grid,FILE* logptr, int e, int s){
 		return grid;
 }// end of set_geometry_parameters()
 
-grid_parms make_bifucation(grid_parms grid, FILE* logptr){
-	//Since there are 3 branches, there needs to be three values of a variable color, to identify association of a rank to a particular sub-universe partitioned out of MPI_COMM_WORLD.
+grid_parms make_bifucation(grid_parms grid, FILE* logptr)
+    {
+    //Since there are 3 branches, there needs to be three values of a variable color, to identify association of a rank to a particular sub-universe partitioned out of MPI_COMM_WORLD.
 
-		grid.color = int(grid.sub_universe_rank / (grid.m * grid.n));
-		grid.key = 0;//grid.color * ((grid.m * grid.n) - 1);
+    grid.color = int(grid.sub_universe_rank / (grid.m * grid.n));
+    grid.key = 0;			//grid.color * ((grid.m * grid.n) - 1);
 
-	    fprintf(logptr, "\n color=%d\tkey=%d\n", grid.color,
-	    		grid.key);
+    fprintf(logptr, "\n color=%d\tkey=%d\n", grid.color, grid.key);
 
-		check_flag(MPI_Comm_split(grid.sub_universe, grid.color, grid.key, &grid.split_comm),
-				logptr, "Comm-split failed");
+    check_flag(
+	    MPI_Comm_split(grid.sub_universe, grid.color, grid.key,
+		    &grid.split_comm), logptr, "Comm-split failed");
 
-	///Global variables that are to be read by each processor
-		int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
-		ndims = 2;
-		dims[0] = grid.m;
-		dims[1] = grid.n;
-		periodic[0] = 0;
-		periodic[1] = 1;
-		reorder = 0;
+    ///Global variables that are to be read by each processor
+    int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
+    ndims = 2;
+    dims[0] = grid.m;
+    dims[1] = grid.n;
+    periodic[0] = 0;
+    periodic[1] = 1;
+    reorder = 0;
 
-		check_flag(
-				MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder,
-						&grid.cart_comm), stdout, "failed at cart create");
-		check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), stdout,
-				"failed at comm rank");
-		check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords),
-				stdout, "failed at cart coords");
+    check_flag(
+	    MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder,
+		    &grid.cart_comm), stdout, "failed at cart create");
+    check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), stdout,
+	    "failed at comm rank");
+    check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords),
+	    stdout, "failed at cart coords");
 
-		check_flag(
-				MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP],
-						&grid.nbrs[local][DOWN]), stdout,
-				"failed at cart shift up down");
-		check_flag(
-				MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
-						&grid.nbrs[local][RIGHT]), stdout,
-				"failed at cart left right");
+    check_flag(
+	    MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP],
+		    &grid.nbrs[local][DOWN]), stdout,
+	    "failed at cart shift up down");
+    check_flag(
+	    MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
+		    &grid.nbrs[local][RIGHT]), stdout,
+	    "failed at cart left right");
 
-		//Identifying remote neighbours
+    //Identifying remote neighbours
 
-		grid.offset_P = 0;
-		grid.offset_L = (grid.m * grid.n) + ((grid.m - 1) * grid.n);
-		grid.offset_R = 2 * (grid.m * grid.n) + ((grid.m - 1) * grid.n);
+    grid.offset_P = 0;
+    grid.offset_L = (grid.m * grid.n) + ((grid.m - 1) * grid.n);
+    grid.offset_R = 2 * (grid.m * grid.n) + ((grid.m - 1) * grid.n);
 
-		//check whether number of processors in circumferential direction are EVEN or ODD.
-		grid.scheme = grid.n % 2;
-		grid.branch_tag		=	0;
+    //check whether number of processors in circumferential direction are EVEN or ODD.
+    grid.scheme = grid.n % 2;
+    grid.branch_tag = 0;
 
-		//If number of processors in circumferentail dimension are EVEN
-		if (grid.scheme == 0) {
-			//For parent branch edge
-			if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n)) {
-				grid.branch_tag	=	P;
-				if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2)) {
-					grid.nbrs[remote][UP1] = grid.offset_L
-							+ (grid.sub_universe_rank - grid.offset_P);
-					grid.nbrs[remote][UP2] = grid.offset_L
-							+ (grid.sub_universe_rank - grid.offset_P);
-				} else if ((grid.sub_universe_rank - grid.offset_P) >= (grid.n / 2)) {
-					grid.nbrs[remote][UP1] = grid.offset_R
-							+ (grid.sub_universe_rank - grid.offset_P);
-					grid.nbrs[remote][UP2] = grid.offset_R
-							+ (grid.sub_universe_rank - grid.offset_P);
-				}
-				//For Left daughter branch edge
-			} else if ((grid.sub_universe_rank >= grid.offset_L)
-					&& (grid.sub_universe_rank < (grid.offset_L + grid.n))) {
-				grid.branch_tag	=	L;
-				if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2)) {
-					grid.nbrs[remote][DOWN1] = grid.sub_universe_rank - grid.offset_L;
-					grid.nbrs[remote][DOWN2] = grid.sub_universe_rank - grid.offset_L;
-				} else if ((grid.sub_universe_rank - grid.offset_L) >= (grid.n / 2)) {
-					grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n - 1))
-							- (grid.sub_universe_rank - grid.offset_L);
-					grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1))
-							- (grid.sub_universe_rank - grid.offset_L);
-					grid.flip_array[DOWN1]	=	1;
-					grid.flip_array[DOWN2]	=	1;
-				}
-			}
-			//For Right daughter branch edge
-			else if ((grid.sub_universe_rank >= grid.offset_R)
-					&& (grid.sub_universe_rank < (grid.offset_R + grid.n))) {
-				grid.branch_tag	=	R;
-				if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2)) {
-					grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
-							- (grid.sub_universe_rank - grid.offset_R);
-					grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n - 1))
-							- (grid.sub_universe_rank - grid.offset_R);
-					grid.flip_array[DOWN1]	=	1;
-					grid.flip_array[DOWN2]	=	1;
-				} else if ((grid.sub_universe_rank - grid.offset_R) >= (grid.n / 2)) {
-					grid.nbrs[remote][DOWN1] = grid.sub_universe_rank - grid.offset_R;
-					grid.nbrs[remote][DOWN2] = grid.sub_universe_rank - grid.offset_R;
-				}
-			}
+    //If number of processors in circumferentail dimension are EVEN
+    if (grid.scheme == 0)
+	{
+	//For parent branch edge
+	if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
+	    {
+	    grid.branch_tag = P;
+	    if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2))
+		{
+		grid.nbrs[remote][UP1] = grid.offset_L
+			+ (grid.sub_universe_rank - grid.offset_P);
+		grid.nbrs[remote][UP2] = grid.offset_L
+			+ (grid.sub_universe_rank - grid.offset_P);
 		}
-
-	    //In the case of n being ODD
-
-		if (grid.scheme != 0) {
-			//The parent artery edge
-			if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n)) {
-				grid.branch_tag	=	P;
-				if ((grid.sub_universe_rank - grid.offset_P) < ((grid.n - 1) / 2)) {
-					grid.nbrs[remote][UP1] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
-					grid.nbrs[remote][UP2] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
-				} else if ((grid.sub_universe_rank - grid.offset_P) > ((grid.n - 1) / 2)) {
-					grid.nbrs[remote][UP1] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
-					grid.nbrs[remote][UP2] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
-				} else if ((grid.sub_universe_rank - grid.offset_P) == ((grid.n - 1) / 2)) {
-					grid.nbrs[remote][UP1] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
-					grid.nbrs[remote][UP2] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
-				}
-			}
-			//The left daughter artery edge
-			else if ((grid.sub_universe_rank >= grid.offset_L) && (grid.sub_universe_rank < grid.offset_L + grid.n)) {
-				grid.branch_tag	=	L;
-				if ((grid.sub_universe_rank - grid.offset_L) < ((grid.n - 1) / 2)) {
-					grid.nbrs[remote][DOWN1] = (grid.sub_universe_rank - grid.offset_L);
-					grid.nbrs[remote][DOWN2] = (grid.sub_universe_rank - grid.offset_L);
-				} else if ((grid.sub_universe_rank - grid.offset_L) > ((grid.n - 1) / 2)) {
-					grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n-1)) - (grid.sub_universe_rank - grid.offset_L);
-					grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n-1)) - (grid.sub_universe_rank - grid.offset_L);
-					grid.flip_array[DOWN1]	=	1;
-					grid.flip_array[DOWN2]	=	1;
-				} else if ((grid.sub_universe_rank - grid.offset_L) == ((grid.n - 1) / 2)) {
-					grid.nbrs[remote][DOWN1] = (grid.sub_universe_rank - grid.offset_L);
-					grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n-1)) - (grid.sub_universe_rank - grid.offset_L);
-					grid.flip_array[DOWN1]	=	0;
-					grid.flip_array[DOWN2]	=	1;
-				}
-			}
-			//The right daughter artery edge
-			else if ((grid.sub_universe_rank >= grid.offset_R) && (grid.sub_universe_rank < grid.offset_R + grid.n)) {
-				grid.branch_tag	=	R;
-				if ((grid.sub_universe_rank - grid.offset_R) < ((grid.n - 1) / 2)) {
-					grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n-1)) - (grid.sub_universe_rank - grid.offset_R);
-					grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n-1)) - (grid.sub_universe_rank - grid.offset_R);
-					grid.flip_array[DOWN1]	=	1;
-					grid.flip_array[DOWN2]	=	1;
-				} else if ((grid.sub_universe_rank - grid.offset_R) > ((grid.n - 1) / 2)) {
-					grid.nbrs[remote][DOWN1] = grid.sub_universe_rank - grid.offset_R;
-					grid.nbrs[remote][DOWN2] = grid.sub_universe_rank - grid.offset_R;
-				} else if ((grid.sub_universe_rank - grid.offset_R) == ((grid.n - 1) / 2)) {
-					grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n-1)) - (grid.sub_universe_rank - grid.offset_R);
-					grid.nbrs[remote][DOWN2] = grid.sub_universe_rank - grid.offset_R;
-					grid.flip_array[DOWN1]	=	1;
-					grid.flip_array[DOWN2]	=	0;
-				}
-			}
+	    else if ((grid.sub_universe_rank - grid.offset_P) >= (grid.n / 2))
+		{
+		grid.nbrs[remote][UP1] = grid.offset_R
+			+ (grid.sub_universe_rank - grid.offset_P);
+		grid.nbrs[remote][UP2] = grid.offset_R
+			+ (grid.sub_universe_rank - grid.offset_P);
 		}
+	    //For Left daughter branch edge
+	    }
+	else if ((grid.sub_universe_rank >= grid.offset_L)
+		&& (grid.sub_universe_rank < (grid.offset_L + grid.n)))
+	    {
+	    grid.branch_tag = L;
+	    if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2))
+		{
+		grid.nbrs[remote][DOWN1] = grid.sub_universe_rank
+			- grid.offset_L;
+		grid.nbrs[remote][DOWN2] = grid.sub_universe_rank
+			- grid.offset_L;
+		}
+	    else if ((grid.sub_universe_rank - grid.offset_L) >= (grid.n / 2))
+		{
+		grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_L);
+		grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_L);
+		grid.flip_array[DOWN1] = 1;
+		grid.flip_array[DOWN2] = 1;
+		}
+	    }
+	//For Right daughter branch edge
+	else if ((grid.sub_universe_rank >= grid.offset_R)
+		&& (grid.sub_universe_rank < (grid.offset_R + grid.n)))
+	    {
+	    grid.branch_tag = R;
+	    if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2))
+		{
+		grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_R);
+		grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_R);
+		grid.flip_array[DOWN1] = 1;
+		grid.flip_array[DOWN2] = 1;
+		}
+	    else if ((grid.sub_universe_rank - grid.offset_R) >= (grid.n / 2))
+		{
+		grid.nbrs[remote][DOWN1] = grid.sub_universe_rank
+			- grid.offset_R;
+		grid.nbrs[remote][DOWN2] = grid.sub_universe_rank
+			- grid.offset_R;
+		}
+	    }
+	}
 
-		//Set remote Parent and children processor IDs
-		/*if (grid.my_domain.parent.domain_index >= 0){			//i.e. if my Parent exists
-		    //if I am the Parent branch of the three branches of a bifurcation
-		    if (grid.branch_tag = P){
-			//if I am the bottom of the Parent branch
-			if ( (grid.rank >= ((grid.m * grid.n)-grid.n)) && (grid.rank <= ((grid.m * grid.n) - 1) ) ){
-			    //if my Parent is a straight segment
-			    if (grid.my_domain.parent.domain_type == STRSEG){
-				grid.nbrs[remote][DOWN1]	=
-			    }
-			}
-		    }
-		}*/
+    //In the case of n being ODD
 
+    if (grid.scheme != 0)
+	{
+	//The parent artery edge
+	if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
+	    {
+	    grid.branch_tag = P;
+	    if ((grid.sub_universe_rank - grid.offset_P) < ((grid.n - 1) / 2))
+		{
+		grid.nbrs[remote][UP1] = grid.offset_L
+			+ (grid.sub_universe_rank - grid.offset_P);
+		grid.nbrs[remote][UP2] = grid.offset_L
+			+ (grid.sub_universe_rank - grid.offset_P);
+		}
+	    else if ((grid.sub_universe_rank - grid.offset_P)
+		    > ((grid.n - 1) / 2))
+		{
+		grid.nbrs[remote][UP1] = grid.offset_R
+			+ (grid.sub_universe_rank - grid.offset_P);
+		grid.nbrs[remote][UP2] = grid.offset_R
+			+ (grid.sub_universe_rank - grid.offset_P);
+		}
+	    else if ((grid.sub_universe_rank - grid.offset_P)
+		    == ((grid.n - 1) / 2))
+		{
+		grid.nbrs[remote][UP1] = grid.offset_L
+			+ (grid.sub_universe_rank - grid.offset_P);
+		grid.nbrs[remote][UP2] = grid.offset_R
+			+ (grid.sub_universe_rank - grid.offset_P);
+		}
+	    }
+	//The left daughter artery edge
+	else if ((grid.sub_universe_rank >= grid.offset_L)
+		&& (grid.sub_universe_rank < grid.offset_L + grid.n))
+	    {
+	    grid.branch_tag = L;
+	    if ((grid.sub_universe_rank - grid.offset_L) < ((grid.n - 1) / 2))
+		{
+		grid.nbrs[remote][DOWN1] = (grid.sub_universe_rank
+			- grid.offset_L);
+		grid.nbrs[remote][DOWN2] = (grid.sub_universe_rank
+			- grid.offset_L);
+		}
+	    else if ((grid.sub_universe_rank - grid.offset_L)
+		    > ((grid.n - 1) / 2))
+		{
+		grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_L);
+		grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_L);
+		grid.flip_array[DOWN1] = 1;
+		grid.flip_array[DOWN2] = 1;
+		}
+	    else if ((grid.sub_universe_rank - grid.offset_L)
+		    == ((grid.n - 1) / 2))
+		{
+		grid.nbrs[remote][DOWN1] = (grid.sub_universe_rank
+			- grid.offset_L);
+		grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_L);
+		grid.flip_array[DOWN1] = 0;
+		grid.flip_array[DOWN2] = 1;
+		}
+	    }
+	//The right daughter artery edge
+	else if ((grid.sub_universe_rank >= grid.offset_R)
+		&& (grid.sub_universe_rank < grid.offset_R + grid.n))
+	    {
+	    grid.branch_tag = R;
+	    if ((grid.sub_universe_rank - grid.offset_R) < ((grid.n - 1) / 2))
+		{
+		grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_R);
+		grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_R);
+		grid.flip_array[DOWN1] = 1;
+		grid.flip_array[DOWN2] = 1;
+		}
+	    else if ((grid.sub_universe_rank - grid.offset_R)
+		    > ((grid.n - 1) / 2))
+		{
+		grid.nbrs[remote][DOWN1] = grid.sub_universe_rank
+			- grid.offset_R;
+		grid.nbrs[remote][DOWN2] = grid.sub_universe_rank
+			- grid.offset_R;
+		}
+	    else if ((grid.sub_universe_rank - grid.offset_R)
+		    == ((grid.n - 1) / 2))
+		{
+		grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
+			- (grid.sub_universe_rank - grid.offset_R);
+		grid.nbrs[remote][DOWN2] = grid.sub_universe_rank
+			- grid.offset_R;
+		grid.flip_array[DOWN1] = 1;
+		grid.flip_array[DOWN2] = 0;
+		}
+	    }
+	}
 
-
-
-		return grid;
-}// end of make_bifurcation
-
+    //If I am a parent branch in my domain
+    if (grid.branch_tag == P)
+	{
+	//if a parent domain exists for me
+	if (grid.my_domain.parent.domain_index >= 0)
+	    {
+	    //if I am a bottom row in my m x n cart grid
+	    if ((grid.rank >= ((grid.m - 1) * grid.n))
+		    && (grid.rank <= (grid.m * grid.n - 1)))
+		{
+		int stride = grid.rank - ((grid.m - 1) * grid.n);
+		grid.nbrs[remote][DOWN1] = grid.my_domain.parent.domain_start
+			+ stride;
+		grid.nbrs[remote][DOWN2] = grid.my_domain.parent.domain_start
+			+ stride;
+		}
+	    }
+	}
+    //If I am a left daughter branch in my domain
+    else if (grid.branch_tag == L)
+	{
+	//if a child exists from me
+	if (grid.my_domain.left_child.domain_index >= 0)
+	    {
+	    //if I am top row in my m x n cart grid
+	    if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
+		{
+		int stride = grid.rank;
+		grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start
+			+ stride;
+		grid.nbrs[remote][UP2] = grid.my_domain.left_child.domain_start
+			+ stride;
+		}
+	    }
+	}
+    //If I am a right daughter branch in my domain
+    else if (grid.branch_tag == R)
+	{
+	//if a child exists from me
+	if (grid.my_domain.right_child.domain_index >= 0)
+	    {
+	    //if I am top row in my m x n cart grid
+	    if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
+		{
+		int stride = grid.rank;
+		grid.nbrs[remote][UP1] = grid.my_domain.right_child.domain_start
+			+ stride;
+		grid.nbrs[remote][UP2] = grid.my_domain.right_child.domain_start
+			+ stride;
+		}
+	    }
+	}
+    return grid;
+    }			// end of make_bifurcation
 
 
 grid_parms make_straight_segment(grid_parms grid, FILE* logptr){
