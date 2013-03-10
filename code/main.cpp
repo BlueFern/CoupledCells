@@ -43,8 +43,8 @@ int main(int argc, char* argv[]) {
 
     //// These are input parameters for the simulation
      int
-     m = 2,
-     n = 2,
+     m = 5,
+     n = 4,
      e = 4,	///number of ECs per node
      s = 4;	///number of SMCs per node
 
@@ -133,6 +133,7 @@ int main(int argc, char* argv[]) {
 	int tag_local = 1,///tag for messaging information to local nearset neighbour
 			tag_remote = 2;	///tag for messaging information to remote nearset neighbour
 
+grid = set_geometry_parameters(grid,check->logptr,e,s);
 
 	if (grid.my_domain.internal_info.domain_type == 0) {
 		grid = make_straight_segment(grid, check->logptr);
@@ -140,7 +141,7 @@ int main(int argc, char* argv[]) {
 		grid = make_bifucation(grid, check->logptr);
 	}
 
-	grid = set_geometry_parameters(grid,check->logptr,e,s);
+
 ///Now allocate memory space for the structures represegird.nting the cells and the various members of those structures.
 
 //Each of the two cell grids have two additional rows and two additional columns as ghost cells.

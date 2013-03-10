@@ -157,7 +157,45 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains, F
 	    return grid;
 }//end of make_subdomains()
 
+grid_parms set_geometry_parameters(grid_parms grid,FILE* logptr, int e, int s){
+	///Each tasks now calculates the number of ECs per node.
+	//	if (grid.m != (grid.numtasks / grid.n))
+	//		e = grid.m / grid.numtasks;
 
+	///Each tasks now calculates the number of ECs per node.
+		///topological information of a functional block of coupled cells. This is the minimum required to simulate a relevant coupled topology.
+		grid.num_smc_fundblk_circumferentially = 1, grid.num_ec_fundblk_circumferentially =
+				5, grid.num_smc_fundblk_axially = 13, grid.num_ec_fundblk_axially =
+				1,
+
+		grid.num_ghost_cells = 2,
+
+		grid.num_fluxes_smc = 12;///number of SMC Ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
+		grid.num_fluxes_ec = 12;///number of EC Ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
+
+		grid.num_coupling_species_smc = 3;///number of SMC coupling species homogenic /heterogenic
+		grid.num_coupling_species_ec = 3;///number of SMC coupling species homogenic /heterogenic
+
+		grid.neq_smc = 5;			/// number of SMC ODEs for a single cell
+		grid.neq_ec = 4;			/// number of EC ODEs for a single cell
+
+		grid.num_ec_axially = e * 1;
+		grid.num_smc_axially = e * 13;
+		grid.num_ec_circumferentially = s * 5;
+		grid.num_smc_circumferentially = s * 1;
+
+		grid.neq_ec_axially = grid.num_ec_axially * grid.neq_ec;
+		grid.neq_smc_axially = grid.num_smc_axially * grid.neq_smc;
+
+		for (int i=0; i<4; i++){
+				grid.nbrs[local][i]	= MPI_PROC_NULL;
+				grid.nbrs[remote][i] = MPI_PROC_NULL;
+			}
+		for(int i=0; i<4; i++){
+				grid.flip_array[i]	=	0;
+			}
+		return grid;
+}// end of set_geometry_parameters()
 
 grid_parms make_bifucation(grid_parms grid, FILE* logptr){
 	//Since there are 3 branches, there needs to be three values of a variable color, to identify association of a rank to a particular sub-universe partitioned out of MPI_COMM_WORLD.
@@ -311,6 +349,9 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr){
 				}
 			}
 		}
+
+		//Set remote Parent and children processor IDs
+
 		return grid;
 }// end of make_bifurcation
 
@@ -358,44 +399,4 @@ grid_parms make_straight_segment(grid_parms grid, FILE* logptr){
 return grid;
 }//end of make_straight_segment()
 
-
-grid_parms set_geometry_parameters(grid_parms grid,FILE* logptr, int e, int s){
-	///Each tasks now calculates the number of ECs per node.
-	//	if (grid.m != (grid.numtasks / grid.n))
-	//		e = grid.m / grid.numtasks;
-
-	///Each tasks now calculates the number of ECs per node.
-		///topological information of a functional block of coupled cells. This is the minimum required to simulate a relevant coupled topology.
-		grid.num_smc_fundblk_circumferentially = 1, grid.num_ec_fundblk_circumferentially =
-				5, grid.num_smc_fundblk_axially = 13, grid.num_ec_fundblk_axially =
-				1,
-
-		grid.num_ghost_cells = 2,
-
-		grid.num_fluxes_smc = 12;///number of SMC Ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
-		grid.num_fluxes_ec = 12;///number of EC Ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
-
-		grid.num_coupling_species_smc = 3;///number of SMC coupling species homogenic /heterogenic
-		grid.num_coupling_species_ec = 3;///number of SMC coupling species homogenic /heterogenic
-
-		grid.neq_smc = 5;			/// number of SMC ODEs for a single cell
-		grid.neq_ec = 4;			/// number of EC ODEs for a single cell
-
-		grid.num_ec_axially = e * 1;
-		grid.num_smc_axially = e * 13;
-		grid.num_ec_circumferentially = s * 5;
-		grid.num_smc_circumferentially = s * 1;
-
-		grid.neq_ec_axially = grid.num_ec_axially * grid.neq_ec;
-		grid.neq_smc_axially = grid.num_smc_axially * grid.neq_smc;
-
-		for (int i=0; i<4; i++){
-				grid.nbrs[local][i]	= MPI_PROC_NULL;
-				grid.nbrs[remote][i] = MPI_PROC_NULL;
-			}
-		for(int i=0; i<4; i++){
-				grid.flip_array[i]	=	0;
-			}
-		return grid;
-}// end of set_geometry_parameters()
 
