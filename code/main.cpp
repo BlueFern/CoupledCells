@@ -43,8 +43,8 @@ int main(int argc, char* argv[]) {
 
     //// These are input parameters for the simulation
      int
-     m = 5,
-     n = 4,
+     m = 2,
+     n = 2,
      e = 4,	///number of ECs per node
      s = 4;	///number of SMCs per node
 
@@ -75,8 +75,9 @@ int main(int argc, char* argv[]) {
      * Element 3:	Axial extent of processor of current key_val
      * Element 4: 	circumferential extent of processors of current key_val
      * Element 5:	Parent subdomain key_val of current Key_val.
-     * Element 6: 	Left Child subdomain key_val of the current Key_val.
-     * Element 7:   Right Child subdomain key_val of the current Key_val.
+     * Element 6: 	In case if the Parent is a bifurcation, which branch owns the current domain as child (i.e. which branch is my parent)
+     * Element 7: 	Left Child subdomain key_val of the current Key_val.
+     * Element 8:   Right Child subdomain key_val of the current Key_val.
      *
      * In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left Child is positive or zero, and right Child is negative.
      * If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.

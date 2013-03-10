@@ -83,11 +83,24 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains, F
 				grid.my_domain.internal_info.domain_type = domains[i][1];
 				grid.my_domain.internal_info.domain_start = subdomain_extents[i][1];
 				grid.my_domain.internal_info.domain_end = subdomain_extents[i][2];
+				grid.my_domain.internal_info.parent_branch_case_bifurcation = -1;
 
 				grid.my_domain.parent.domain_index = domains[i][4];
 				if (grid.my_domain.parent.domain_index >= 0) {
 					grid.my_domain.parent.domain_type =
 							domains[grid.my_domain.parent.domain_index][1];
+					//Now decide which Branch in the parent domain do I belong to as a child
+					if (grid.my_domain.parent.domain_type == BIF){
+					    if (grid.my_domain.internal_info.domain_index == domains[grid.my_domain.parent.domain_index][5]){
+						grid.my_domain.internal_info.parent_branch_case_bifurcation = L;
+					    }
+					    else if (grid.my_domain.internal_info.domain_index == domains[grid.my_domain.parent.domain_index][6]){
+						grid.my_domain.internal_info.parent_branch_case_bifurcation = R;
+					    }
+					}
+					else if  (grid.my_domain.parent.domain_type == STRSEG){
+					    grid.my_domain.internal_info.parent_branch_case_bifurcation = -1;
+					}
 					grid.my_domain.parent.domain_start =
 							subdomain_extents[grid.my_domain.parent.domain_index][1];
 					grid.my_domain.parent.domain_end =
@@ -147,9 +160,9 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains, F
 	    check_flag(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks),
 		    stdout, "error retrieving Subdomain_size");
 
-	    fprintf(logptr, "new rank= %d\tnew size=%d\ndomain type=%d\tdomain start=%d\tdomain_end=%d\n",
+	    fprintf(logptr, "new rank= %d\tnew size=%d\ndomain type=%d\tdomain start=%d\tdomain_end=%d\tparent_branch_case_bifurcation =%d\n",
 		    grid.sub_universe_rank, grid.sub_universe_numtasks,
-		    grid.my_domain.internal_info.domain_type,grid.my_domain.internal_info.domain_start,grid.my_domain.internal_info.domain_end);
+		    grid.my_domain.internal_info.domain_type,grid.my_domain.internal_info.domain_start,grid.my_domain.internal_info.domain_end,grid.my_domain.internal_info.parent_branch_case_bifurcation);
 	    fprintf(logptr, "Parent \ndomain index=%d\tdomain type=%d\tdomain start=%d\tdomain_end=%d\n",grid.my_domain.parent.domain_index,grid.my_domain.parent.domain_type,grid.my_domain.parent.domain_start,grid.my_domain.parent.domain_end);
 	    fprintf(logptr, "Left_child \ndomain index=%d\tdomain type=%d\tdomain start=%d\tdomain_end=%d\n",grid.my_domain.left_child.domain_index,grid.my_domain.left_child.domain_type,grid.my_domain.left_child.domain_start,grid.my_domain.left_child.domain_end);
 	    fprintf(logptr, "Right_child \ndomain index=%d\tdomain type=%d\tdomain start=%d\tdomain_end=%d\n",grid.my_domain.right_child.domain_index,grid.my_domain.right_child.domain_type,grid.my_domain.right_child.domain_start,grid.my_domain.right_child.domain_end);
@@ -351,6 +364,21 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr){
 		}
 
 		//Set remote Parent and children processor IDs
+		/*if (grid.my_domain.parent.domain_index >= 0){			//i.e. if my Parent exists
+		    //if I am the Parent branch of the three branches of a bifurcation
+		    if (grid.branch_tag = P){
+			//if I am the bottom of the Parent branch
+			if ( (grid.rank >= ((grid.m * grid.n)-grid.n)) && (grid.rank <= ((grid.m * grid.n) - 1) ) ){
+			    //if my Parent is a straight segment
+			    if (grid.my_domain.parent.domain_type == STRSEG){
+				grid.nbrs[remote][DOWN1]	=
+			    }
+			}
+		    }
+		}*/
+
+
+
 
 		return grid;
 }// end of make_bifurcation

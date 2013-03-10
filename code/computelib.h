@@ -23,9 +23,14 @@ using namespace std;
 #define LEFT	2
 #define RIGHT	3
 
+#define STRSEG		0		//a straight segment
+#define BIF		1		//a bifurcation
+
+
 #define P 		1		//parent
 #define L 		2		//Left branch
 #define R		3		//Right brach
+
 // helper functions for exponentiation to integer powers
 #define P2(x) ((x)*(x))
 #define P4(x) ((x)*(x)*(x)*(x))
@@ -46,8 +51,9 @@ struct conductance{
 	};
 struct node
     {
-    int domain_type,domain_index;				//am I a bifurcation or a straight segment?
-    int domain_start, domain_end;	//These are universal ranks from MPI_COMM_WORLD
+    int domain_type,domain_index;		//am I a bifurcation or a straight segment?
+    int domain_start, domain_end;		//These are universal ranks from MPI_COMM_WORLD
+    int parent_branch_case_bifurcation;		//if my parent is a bifurcation which branch am I a child of
     int m, n;					//row and columns in my MPI_sub_world
     double d, l;				//diameter and length scales
     };
