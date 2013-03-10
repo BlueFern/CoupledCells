@@ -11,164 +11,231 @@
 #include "computelib.h"
 
 grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains, FILE* logptr){
-	   int **subdomain_extents; //Element 1: offset , Element 2: Start universal_rank, Element 3: End universal_rank;
-	    subdomain_extents = (int**) checked_malloc(num_subdomains * sizeof(int*),
-		    stdout, "Subdomain information allocation");
-	    for (int i = 0; i < num_subdomains; i++)
-		{
-		subdomain_extents[i] = (int*) checked_malloc(3 * sizeof(int), stdout,
-			"Subdomains array elements allocation");
-		}
-	    for (int i = 0; i < num_subdomains; i++)
-		{
-		subdomain_extents[i][0] = 0;
-		subdomain_extents[i][1] = 0;
-		subdomain_extents[i][2] = 0;
-		}
+    int **subdomain_extents; //Element 1: offset , Element 2: Start universal_rank, Element 3: End universal_rank;
+    subdomain_extents = (int**) checked_malloc(num_subdomains * sizeof(int*),
+	    stdout, "Subdomain information allocation");
+    for (int i = 0; i < num_subdomains; i++)
+	{
+	subdomain_extents[i] = (int*) checked_malloc(3 * sizeof(int), stdout,
+		"Subdomains array elements allocation");
+	}
+    for (int i = 0; i < num_subdomains; i++)
+	{
+	subdomain_extents[i][0] = 0;
+	subdomain_extents[i][1] = 0;
+	subdomain_extents[i][2] = 0;
+	}
 
-	    int a;
-	    for (int i = 0; i < num_subdomains; i++)
+    int a;
+    for (int i = 0; i < num_subdomains; i++)
+	{
+	if ((domains[i][1] == 0) || (domains[i][1] == 2)
+		|| (domains[i][3] == 3))
+	    {
+	    a = domains[i][2] * domains[i][3];
+	    }
+	else if (domains[i][1] == 1)
+	    {
+	    a = 3 * domains[i][2] * domains[i][3];
+	    }
+	//setting up the offset bit
+	if (i == 0)
+	    {
+	    subdomain_extents[i][0] = 0;
+	    }
+	else
+	    {
+	    if ((domains[i - 1][1] == 0) || (domains[i - 1][1] == 2)
+		    || (domains[i - 1][3] == 3))
 		{
-		if ((domains[i][1] == 0) || (domains[i][1] == 2)
-			|| (domains[i][3] == 3))
+		subdomain_extents[i][0] = subdomain_extents[i - 1][0]
+			+ (domains[i - 1][2] * domains[i - 1][3]);
+		}
+	    else if (domains[i - 1][1] == 1)
+		{
+		subdomain_extents[i][0] = subdomain_extents[i - 1][0]
+			+ (3 * domains[i - 1][2] * domains[i - 1][3]);
+		}
+	    }
+
+	subdomain_extents[i][1] = subdomain_extents[i][0]; //start universal_rank in MPI_COMM_WORLD
+	subdomain_extents[i][2] = subdomain_extents[i][0] + a - 1; //end universal_rank in MPI_COMM_WORLD
+	}
+
+    /* Now all processors have the information where each domain starts and ends. Using this information, each processor can identify which domain
+     * it belongs and can mark a color (0 to num_domains-1). This color can now be used to split the MPI_COMM_WORLD into sub_domains.
+     * Identify the new reordered ranks in grid.sub_universe_ranks in these new communicators recorded in grid.sub_universe and update the size of this sub_domain in
+     * grid.sub_universe_numtasks.
+     * Since each processor has the information of its parent and child(ren) domains in domain[][] array, use this to update the my_tree structure.
+     * Update remote nearest neighbour locations accordingly.
+     */
+
+    for (int i = 0; i < num_subdomains; i++)
+	{
+	if ((grid.universal_rank >= subdomain_extents[i][1])
+		&& (grid.universal_rank <= subdomain_extents[i][2]))
+	    {
+	    grid.my_domain_color = i;
+	    grid.my_domain_key = 0;
+
+	    grid.m = domains[i][2];
+	    grid.n = domains[i][3];
+
+	    grid.my_domain.internal_info.domain_index = domains[i][0];
+	    grid.my_domain.internal_info.domain_type = domains[i][1];
+	    grid.my_domain.internal_info.domain_start = subdomain_extents[i][1];
+	    grid.my_domain.internal_info.domain_end = subdomain_extents[i][2];
+	    grid.my_domain.internal_info.parent_branch_case_bifurcation = -1;
+
+	    grid.my_domain.parent.domain_index = domains[i][4];
+	    //If I have a parent domain
+	    if (grid.my_domain.parent.domain_index >= 0)
+		{
+		grid.my_domain.parent.domain_type =
+			domains[grid.my_domain.parent.domain_index][1];
+		//Now decide which Branch in the parent domain (in case of a bifurcation) do I belong to as a child
+		if (grid.my_domain.parent.domain_type == BIF)
 		    {
-		    a = domains[i][2] * domains[i][3];
-		    }
-		else if (domains[i][1] == 1)
-		    {
-		    a = 3 * domains[i][2] * domains[i][3];
-		    }
-		//setting up the offset bit
-		if (i == 0)
-		    {
-		    subdomain_extents[i][0] = 0;
-		    }
-		else
-		    {
-		    if ((domains[i - 1][1] == 0) || (domains[i - 1][1] == 2)
-			    || (domains[i - 1][3] == 3))
+		    if (grid.my_domain.internal_info.domain_index
+			    == domains[grid.my_domain.parent.domain_index][5])
 			{
-			subdomain_extents[i][0] = subdomain_extents[i - 1][0]
-				+ (domains[i - 1][2] * domains[i - 1][3]);
+			grid.my_domain.internal_info.parent_branch_case_bifurcation =
+				L;
 			}
-		    else if (domains[i - 1][1] == 1)
+		    else if (grid.my_domain.internal_info.domain_index
+			    == domains[grid.my_domain.parent.domain_index][6])
 			{
-			subdomain_extents[i][0] = subdomain_extents[i - 1][0]
-				+ (3 * domains[i - 1][2] * domains[i - 1][3]);
+			grid.my_domain.internal_info.parent_branch_case_bifurcation =
+				R;
 			}
 		    }
-
-		subdomain_extents[i][1] = subdomain_extents[i][0]; //start universal_rank in MPI_COMM_WORLD
-		subdomain_extents[i][2] = subdomain_extents[i][0] + a - 1;//end universal_rank in MPI_COMM_WORLD
-		}
-
-	    /* Now all processors have the information where each domain starts and ends. Using this information, each processor can identify which domain
-	     * it belongs and can mark a color (0 to num_domains-1). This color can now be used to split the MPI_COMM_WORLD into sub_domains.
-	     * Identify the new reordered ranks in grid.sub_universe_ranks in these new communicators recorded in grid.sub_universe and update the size of this sub_domain in
-	     * grid.sub_universe_numtasks.
-	     * Since each processor has the information of its parent and child(ren) domains in domain[][] array, use this to update the my_tree structure.
-	     * Update remote nearest neighbour locations accordingly.
-	     */
-
-		for (int i = 0; i < num_subdomains; i++) {
-			if ((grid.universal_rank >= subdomain_extents[i][1])
-					&& (grid.universal_rank <= subdomain_extents[i][2])) {
-				grid.my_domain_color = i;
-				grid.my_domain_key = 0;
-
-				grid.m = domains[i][2];
-				grid.n = domains[i][3];
-
-				grid.my_domain.internal_info.domain_index = domains[i][0];
-				grid.my_domain.internal_info.domain_type = domains[i][1];
-				grid.my_domain.internal_info.domain_start = subdomain_extents[i][1];
-				grid.my_domain.internal_info.domain_end = subdomain_extents[i][2];
-				grid.my_domain.internal_info.parent_branch_case_bifurcation = -1;
-
-				grid.my_domain.parent.domain_index = domains[i][4];
-				if (grid.my_domain.parent.domain_index >= 0) {
-					grid.my_domain.parent.domain_type =
-							domains[grid.my_domain.parent.domain_index][1];
-					//Now decide which Branch in the parent domain do I belong to as a child
-					if (grid.my_domain.parent.domain_type == BIF){
-					    if (grid.my_domain.internal_info.domain_index == domains[grid.my_domain.parent.domain_index][5]){
-						grid.my_domain.internal_info.parent_branch_case_bifurcation = L;
-					    }
-					    else if (grid.my_domain.internal_info.domain_index == domains[grid.my_domain.parent.domain_index][6]){
-						grid.my_domain.internal_info.parent_branch_case_bifurcation = R;
-					    }
-					}
-					else if  (grid.my_domain.parent.domain_type == STRSEG){
-					    grid.my_domain.internal_info.parent_branch_case_bifurcation = -1;
-					}
-					grid.my_domain.parent.domain_start =
-							subdomain_extents[grid.my_domain.parent.domain_index][1];
-					grid.my_domain.parent.domain_end =
-							subdomain_extents[grid.my_domain.parent.domain_index][2];
-				} else {
-					grid.my_domain.parent.domain_type = -1;
-					grid.my_domain.parent.domain_start = -1;
-					grid.my_domain.parent.domain_end = -1;
-				}
-
-				grid.my_domain.left_child.domain_index = domains[i][5];
-				if (grid.my_domain.left_child.domain_index >= 0) {
-					grid.my_domain.left_child.domain_type =
-							domains[grid.my_domain.left_child.domain_index][1];
-					grid.my_domain.left_child.domain_start =
-							subdomain_extents[grid.my_domain.left_child.domain_index][1];
-					grid.my_domain.left_child.domain_end =
-							subdomain_extents[grid.my_domain.left_child.domain_index][2];
-				} else {
-					grid.my_domain.left_child.domain_type = -1;
-					grid.my_domain.left_child.domain_start = -1;
-					grid.my_domain.left_child.domain_end = -1;
-				}
-
-				grid.my_domain.right_child.domain_index = domains[i][6];
-				if (grid.my_domain.right_child.domain_index >= 0) {
-					grid.my_domain.right_child.domain_type =
-							domains[grid.my_domain.right_child.domain_index][1];
-					grid.my_domain.right_child.domain_start =
-							subdomain_extents[grid.my_domain.right_child.domain_index][1];
-					grid.my_domain.right_child.domain_end =
-							subdomain_extents[grid.my_domain.right_child.domain_index][2];
-				} else {
-					grid.my_domain.right_child.domain_type = -1;
-					grid.my_domain.right_child.domain_start = -1;
-					grid.my_domain.right_child.domain_end = -1;
-				}
-
+		else if (grid.my_domain.parent.domain_type == STRSEG)
+		    {
+		    grid.my_domain.internal_info.parent_branch_case_bifurcation =
+			    -1;
+		    }
+		//If my parent is a bifurcation decide accordingly if I am a child from left branch or right. The ranks stored for the domains will be of MPI_COMM_WORLD
+		if (grid.my_domain.internal_info.parent_branch_case_bifurcation
+			>= 0)
+		    {
+		    if (grid.my_domain.internal_info.parent_branch_case_bifurcation
+			    == L)
+			{
+			grid.my_domain.parent.domain_start =
+				subdomain_extents[grid.my_domain.parent.domain_index][1]
+					+ (grid.m * grid.n);
+			grid.my_domain.parent.domain_end =
+				grid.my_domain.parent.domain_start
+					+ (grid.n - 1);
 			}
-			fprintf(logptr, "%d\t%d\t%d\n", subdomain_extents[i][0],
-					subdomain_extents[i][1], subdomain_extents[i][2]);
+		    else if (grid.my_domain.internal_info.parent_branch_case_bifurcation
+			    == R)
+			{
+			grid.my_domain.parent.domain_start =
+				subdomain_extents[grid.my_domain.parent.domain_index][1]
+					+ 2 * (grid.m * grid.n);
+			grid.my_domain.parent.domain_end =
+				grid.my_domain.parent.domain_start
+					+ (grid.n - 1);
+			}
+		    }
+		else if ((grid.my_domain.internal_info.parent_branch_case_bifurcation
+			== -1) && (grid.my_domain.parent.domain_type == STRSEG))
+		    {
+		    grid.my_domain.parent.domain_start =
+			    subdomain_extents[grid.my_domain.parent.domain_index][1];
+		    grid.my_domain.parent.domain_end =
+			    grid.my_domain.parent.domain_start + (grid.n - 1);
+		    }
+		}
+	    else
+		{
+		grid.my_domain.parent.domain_type = -1;
+		grid.my_domain.parent.domain_start = -1;
+		grid.my_domain.parent.domain_end = -1;
 		}
 
+	    grid.my_domain.left_child.domain_index = domains[i][5];
+	    if (grid.my_domain.left_child.domain_index >= 0)
+		{
+		grid.my_domain.left_child.domain_type =
+			domains[grid.my_domain.left_child.domain_index][1];
+		grid.my_domain.left_child.domain_start =
+			subdomain_extents[grid.my_domain.left_child.domain_index][1];
+		grid.my_domain.left_child.domain_end =
+			subdomain_extents[grid.my_domain.left_child.domain_index][2];
+		}
+	    else
+		{
+		grid.my_domain.left_child.domain_type = -1;
+		grid.my_domain.left_child.domain_start = -1;
+		grid.my_domain.left_child.domain_end = -1;
+		}
 
-	    check_flag(
-		    MPI_Comm_split(grid.universe, grid.my_domain_color,
-			    grid.my_domain_key, &grid.sub_universe), stdout,
-		    "Comm-split failed at subdomain level.");
+	    grid.my_domain.right_child.domain_index = domains[i][6];
+	    if (grid.my_domain.right_child.domain_index >= 0)
+		{
+		grid.my_domain.right_child.domain_type =
+			domains[grid.my_domain.right_child.domain_index][1];
+		grid.my_domain.right_child.domain_start =
+			subdomain_extents[grid.my_domain.right_child.domain_index][1];
+		grid.my_domain.right_child.domain_end =
+			subdomain_extents[grid.my_domain.right_child.domain_index][2];
+		}
+	    else
+		{
+		grid.my_domain.right_child.domain_type = -1;
+		grid.my_domain.right_child.domain_start = -1;
+		grid.my_domain.right_child.domain_end = -1;
+		}
 
+	    }
+	fprintf(logptr, "%d\t%d\t%d\n", subdomain_extents[i][0],
+		subdomain_extents[i][1], subdomain_extents[i][2]);
+	}
 
-	    fprintf(logptr, "my_color=%d\tmy_key=%d\n", grid.my_domain_color,
-	    		grid.my_domain_key);
+    check_flag(
+	    MPI_Comm_split(grid.universe, grid.my_domain_color,
+		    grid.my_domain_key, &grid.sub_universe), stdout,
+	    "Comm-split failed at subdomain level.");
 
-	    //Reveal information of myself and size of grid.sub_universe
-	    check_flag(MPI_Comm_rank(grid.sub_universe, &grid.sub_universe_rank),
-		    stdout, "error retrieving Subdomain_rank");
-	    check_flag(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks),
-		    stdout, "error retrieving Subdomain_size");
+    fprintf(logptr, "my_color=%d\tmy_key=%d\n", grid.my_domain_color,
+	    grid.my_domain_key);
 
-	    fprintf(logptr, "new rank= %d\tnew size=%d\ndomain type=%d\tdomain start=%d\tdomain_end=%d\tparent_branch_case_bifurcation =%d\n",
-		    grid.sub_universe_rank, grid.sub_universe_numtasks,
-		    grid.my_domain.internal_info.domain_type,grid.my_domain.internal_info.domain_start,grid.my_domain.internal_info.domain_end,grid.my_domain.internal_info.parent_branch_case_bifurcation);
-	    fprintf(logptr, "Parent \ndomain index=%d\tdomain type=%d\tdomain start=%d\tdomain_end=%d\n",grid.my_domain.parent.domain_index,grid.my_domain.parent.domain_type,grid.my_domain.parent.domain_start,grid.my_domain.parent.domain_end);
-	    fprintf(logptr, "Left_child \ndomain index=%d\tdomain type=%d\tdomain start=%d\tdomain_end=%d\n",grid.my_domain.left_child.domain_index,grid.my_domain.left_child.domain_type,grid.my_domain.left_child.domain_start,grid.my_domain.left_child.domain_end);
-	    fprintf(logptr, "Right_child \ndomain index=%d\tdomain type=%d\tdomain start=%d\tdomain_end=%d\n",grid.my_domain.right_child.domain_index,grid.my_domain.right_child.domain_type,grid.my_domain.right_child.domain_start,grid.my_domain.right_child.domain_end);
+    //Reveal information of myself and size of grid.sub_universe
+    check_flag(MPI_Comm_rank(grid.sub_universe, &grid.sub_universe_rank),
+	    stdout, "error retrieving Subdomain_rank");
+    check_flag(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks),
+	    stdout, "error retrieving Subdomain_size");
 
-	    return grid;
-}//end of make_subdomains()
+    fprintf(logptr,
+	    "new rank= %d\tnew size=%d\ndomain type=%d\tdomain start=%d\tdomain_end=%d\tparent_branch_case_bifurcation =%d\n",
+	    grid.sub_universe_rank, grid.sub_universe_numtasks,
+	    grid.my_domain.internal_info.domain_type,
+	    grid.my_domain.internal_info.domain_start,
+	    grid.my_domain.internal_info.domain_end,
+	    grid.my_domain.internal_info.parent_branch_case_bifurcation);
+    fprintf(logptr,
+	    "Parent \ndomain index=%d\tdomain type=%d\tdomain start=%d\tdomain_end=%d\n",
+	    grid.my_domain.parent.domain_index,
+	    grid.my_domain.parent.domain_type,
+	    grid.my_domain.parent.domain_start,
+	    grid.my_domain.parent.domain_end);
+    fprintf(logptr,
+	    "Left_child \ndomain index=%d\tdomain type=%d\tdomain start=%d\tdomain_end=%d\n",
+	    grid.my_domain.left_child.domain_index,
+	    grid.my_domain.left_child.domain_type,
+	    grid.my_domain.left_child.domain_start,
+	    grid.my_domain.left_child.domain_end);
+    fprintf(logptr,
+	    "Right_child \ndomain index=%d\tdomain type=%d\tdomain start=%d\tdomain_end=%d\n",
+	    grid.my_domain.right_child.domain_index,
+	    grid.my_domain.right_child.domain_type,
+	    grid.my_domain.right_child.domain_start,
+	    grid.my_domain.right_child.domain_end);
+
+    return grid;
+    } //end of make_subdomains()
 
 grid_parms set_geometry_parameters(grid_parms grid,FILE* logptr, int e, int s){
 	///Each tasks now calculates the number of ECs per node.
