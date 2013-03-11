@@ -615,11 +615,11 @@ grid_parms make_straight_segment(grid_parms grid, FILE* logptr)
 	//if a child exists from me
 	else if (grid.my_domain.left_child.domain_index >= 0)
 	    {
-
+	    fprintf(logptr,"stamp 2\n");
 	    //if I am top row in my m x n cart grid
 	    if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
 		{
-		fprintf(logptr,"stamp 2\n");
+		fprintf(logptr,"stamp 3\n");
 		int stride = grid.rank;
 		grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start
 			+ stride;
