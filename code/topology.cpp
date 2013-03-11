@@ -596,40 +596,31 @@ grid_parms make_straight_segment(grid_parms grid, FILE* logptr)
 	    MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
 		    &grid.nbrs[local][RIGHT]), stdout,
 	    "failed at cart left right");
-    //Find remote nearest neighbours on remote domains
-    fprintf(logptr,"********\nI have just finished making cart grid\n");
-    //if a parent domain exists for me
-    if (grid.my_domain.parent.domain_index >= 0)
-	{
-	//if I am a bottom row in my m x n cart grid
-	if ((grid.rank >= ((grid.m - 1) * grid.n))
-		&& (grid.rank <= (grid.m * grid.n - 1)))
-	    {
-	    fprintf(logptr,"stamp 1\n");
-	    int stride = grid.rank - ((grid.m - 1) * grid.n);
-	    grid.nbrs[remote][DOWN1] = grid.my_domain.parent.domain_start
-		    + stride;
-	    grid.nbrs[remote][DOWN2] = grid.my_domain.parent.domain_start
-		    + stride;
-	    }
-	//if a child exists from me
-	else if (grid.my_domain.left_child.domain_index >= 0)
-	    {
-	    fprintf(logptr,"stamp 2\n");
-	    //if I am top row in my m x n cart grid
-	    if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
-		{
-		fprintf(logptr,"stamp 3\n");
-		int stride = grid.rank;
-		grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start
-			+ stride;
-		grid.nbrs[remote][UP2] = grid.my_domain.left_child.domain_start
-			+ stride;
+	//Find remote nearest neighbours on remote domains
+	
+	//if a parent domain exists for me
+	if (grid.my_domain.parent.domain_index >= 0) {
+		//if I am a bottom row in my m x n cart grid
+		if ((grid.rank >= ((grid.m - 1) * grid.n))
+				&& (grid.rank <= (grid.m * grid.n - 1))) {
+			int stride = grid.rank - ((grid.m - 1) * grid.n);
+			grid.nbrs[remote][DOWN1] = grid.my_domain.parent.domain_start
+					+ stride;
+			grid.nbrs[remote][DOWN2] = grid.my_domain.parent.domain_start
+					+ stride;
 		}
-	    }
-
 	}
-
+	//if a child exists from me
+	else if (grid.my_domain.left_child.domain_index >= 0) {
+		//if I am top row in my m x n cart grid
+		if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
+			int stride = grid.rank;
+			grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start
+					+ stride;
+			grid.nbrs[remote][UP2] = grid.my_domain.left_child.domain_start
+					+ stride;
+		}
+	}
 
     return grid;
     }			//end of make_straight_segment()
