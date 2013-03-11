@@ -31,6 +31,8 @@ using namespace std;
 #define L 		2		//Left branch
 #define R		3		//Right brach
 
+#define top		0		//top edge of a subdomain
+#define	 bottom 1		//bottom edge of a subdomain
 // helper functions for exponentiation to integer powers
 #define P2(x) ((x)*(x))
 #define P4(x) ((x)*(x)*(x)*(x))
@@ -51,11 +53,13 @@ struct conductance{
 	};
 struct node
     {
-    int domain_type,domain_index;		//am I a bifurcation or a straight segment?
-    int domain_start, domain_end;		//These are universal ranks from MPI_COMM_WORLD
-    int parent_branch_case_bifurcation;		//if my parent is a bifurcation which branch am I a child of
-    int m, n;					//row and columns in my MPI_sub_world
+    int domain_type,domain_index,		//am I a bifurcation or a straight segment?
+    	domain_start, domain_end,		//These are universal ranks from MPI_COMM_WORLD
+    	parent_branch_case_bifurcation,	//if my parent is a bifurcation which branch am I a child of
+    	m, n,							//row and columns in my MPI_sub_world
+    	boundary_tag;					//an identifier showing whether I am a rank from top or bottom edge of a subdomain.
     double d, l;				//diameter and length scales
+    
     };
 
 struct my_tree
