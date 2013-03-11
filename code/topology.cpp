@@ -558,46 +558,77 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
     }			// end of make_bifurcation
 
 
-grid_parms make_straight_segment(grid_parms grid, FILE* logptr){
-	//Since there no branch, all processors have same color.
+grid_parms make_straight_segment(grid_parms grid, FILE* logptr)
+    {
+    //Since there no branch, all processors have same color.
 
-		grid.color= 0;
-		grid.key = 0;
+    grid.color = 0;
+    grid.key = 0;
 
-		check_flag(MPI_Comm_split(grid.sub_universe, grid.color, grid.key, &grid.split_comm),
-				logptr, "Comm-split failed");
+    check_flag(
+	    MPI_Comm_split(grid.sub_universe, grid.color, grid.key,
+		    &grid.split_comm), logptr, "Comm-split failed");
 
-		fprintf(logptr, "\n color=%d\tkey=%d\n", grid.color,
-			    		grid.key);
+    fprintf(logptr, "\n color=%d\tkey=%d\n", grid.color, grid.key);
+
+    ///Global variables that are to be read by each processor
+    int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
+    ndims = 2;
+    dims[0] = grid.m;
+    dims[1] = grid.n;
+    periodic[0] = 0;
+    periodic[1] = 1;
+    reorder = 0;
+
+    check_flag(
+	    MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder,
+		    &grid.cart_comm), stdout, "failed at cart create");
+    check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), stdout,
+	    "failed at comm rank");
+    check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords),
+	    stdout, "failed at cart coords");
+
+    check_flag(
+	    MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP],
+		    &grid.nbrs[local][DOWN]), stdout,
+	    "failed at cart shift up down");
+    check_flag(
+	    MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
+		    &grid.nbrs[local][RIGHT]), stdout,
+	    "failed at cart left right");
+    //Find remote nearest neighbours on remote domains
+
+    //if a parent domain exists for me
+    if (grid.my_domain.parent.domain_index >= 0)
+	{
+	//if I am a bottom row in my m x n cart grid
+	if ((grid.rank >= ((grid.m - 1) * grid.n))
+		&& (grid.rank <= (grid.m * grid.n - 1)))
+	    {
+	    int stride = grid.rank - ((grid.m - 1) * grid.n);
+	    grid.nbrs[remote][DOWN1] = grid.my_domain.parent.domain_start
+		    + stride;
+	    grid.nbrs[remote][DOWN2] = grid.my_domain.parent.domain_start
+		    + stride;
+	    }
+	//if a child exists from me
+	else if (grid.my_domain.left_child.domain_index >= 0)
+	    {
+	    //if I am top row in my m x n cart grid
+	    if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
+		{
+		int stride = grid.rank;
+		grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start
+			+ stride;
+		grid.nbrs[remote][UP2] = grid.my_domain.left_child.domain_start
+			+ stride;
+		}
+	    }
+
+	}
 
 
-	///Global variables that are to be read by each processor
-		int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
-		ndims = 2;
-		dims[0] = grid.m;
-		dims[1] = grid.n;
-		periodic[0] = 0;
-		periodic[1] = 1;
-		reorder = 0;
-
-		check_flag(
-				MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder,
-						&grid.cart_comm), stdout, "failed at cart create");
-		check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), stdout,
-				"failed at comm rank");
-		check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords),
-				stdout, "failed at cart coords");
-
-		check_flag(
-				MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP],
-						&grid.nbrs[local][DOWN]), stdout,
-				"failed at cart shift up down");
-		check_flag(
-				MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
-						&grid.nbrs[local][RIGHT]), stdout,
-				"failed at cart left right");
-
-return grid;
-}//end of make_straight_segment()
+    return grid;
+    }			//end of make_straight_segment()
 
 
