@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
 		"Subdomains array elements allocation");
 	}
     domains[0][0] = 0;
-    domains[0][1] = 0;
+    domains[0][1] = STRSEG;
     domains[0][2] = m;
     domains[0][3] = n;
     domains[0][4] = -1;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     domains[0][6] = -1;
 
     domains[1][0] = 1;
-    domains[1][1] = 1;
+    domains[1][1] = BIF;
     domains[1][2] = m;
     domains[1][3] = n;
     domains[1][4] = 0;
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     domains[1][6] = 3;
 
     domains[2][0] = 2;
-    domains[2][1] = 1;
+    domains[2][1] = BIF;
     domains[2][2] = m;
     domains[2][3] = n;
     domains[2][4] = 1;
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     domains[2][6] = -1;
 
     domains[3][0] = 3;
-    domains[3][1] = 0;
+    domains[3][1] = STRSEG;
     domains[3][2] = m;
     domains[3][3] = n;
     domains[3][4] = 1;
@@ -136,9 +136,9 @@ int main(int argc, char* argv[]) {
 
 grid = set_geometry_parameters(grid,check->logptr,e,s);
 
-	if (grid.my_domain.internal_info.domain_type == 0) {
+	if (grid.my_domain.internal_info.domain_type == STRSEG) {
 		grid = make_straight_segment(grid, check->logptr);
-	} else if (grid.my_domain.internal_info.domain_type == 1) {
+	} else if (grid.my_domain.internal_info.domain_type == BIF) {
 		grid = make_bifucation(grid, check->logptr);
 	}
 
