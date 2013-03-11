@@ -43,8 +43,8 @@ int main(int argc, char* argv[]) {
 
     //// These are input parameters for the simulation
      int
-     m = 2,
-     n = 2,
+     m = 5,
+     n = 4,
      e = 4,	///number of ECs per node
      s = 4;	///number of SMCs per node
 

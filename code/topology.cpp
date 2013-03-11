@@ -329,7 +329,16 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 
     //check whether number of processors in circumferential direction are EVEN or ODD.
     grid.scheme = grid.n % 2;
-    grid.branch_tag = 0;
+    if (grid.color == 0){
+	grid.branch_tag = P;
+    }
+    else if (grid.color == 1){
+	grid.branch_tag	= L;
+    }
+    else if (grid.color == 2){
+	grid.branch_tag = R;
+    }
+
 
     //If number of processors in circumferentail dimension are EVEN
     if (grid.scheme == 0)
@@ -337,7 +346,6 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	//For parent branch edge
 	if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
 	    {
-	    grid.branch_tag = P;
 	    if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2))
 		{
 		grid.nbrs[remote][UP1] = grid.offset_L
@@ -357,7 +365,6 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	else if ((grid.sub_universe_rank >= grid.offset_L)
 		&& (grid.sub_universe_rank < (grid.offset_L + grid.n)))
 	    {
-	    grid.branch_tag = L;
 	    if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2))
 		{
 		grid.nbrs[remote][DOWN1] = grid.sub_universe_rank
@@ -379,7 +386,6 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	else if ((grid.sub_universe_rank >= grid.offset_R)
 		&& (grid.sub_universe_rank < (grid.offset_R + grid.n)))
 	    {
-	    grid.branch_tag = R;
 	    if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2))
 		{
 		grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
@@ -406,7 +412,6 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	//The parent artery edge
 	if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
 	    {
-	    grid.branch_tag = P;
 	    if ((grid.sub_universe_rank - grid.offset_P) < ((grid.n - 1) / 2))
 		{
 		grid.nbrs[remote][UP1] = grid.offset_L
@@ -435,7 +440,6 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	else if ((grid.sub_universe_rank >= grid.offset_L)
 		&& (grid.sub_universe_rank < grid.offset_L + grid.n))
 	    {
-	    grid.branch_tag = L;
 	    if ((grid.sub_universe_rank - grid.offset_L) < ((grid.n - 1) / 2))
 		{
 		grid.nbrs[remote][DOWN1] = (grid.sub_universe_rank
@@ -468,7 +472,6 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	else if ((grid.sub_universe_rank >= grid.offset_R)
 		&& (grid.sub_universe_rank < grid.offset_R + grid.n))
 	    {
-	    grid.branch_tag = R;
 	    if ((grid.sub_universe_rank - grid.offset_R) < ((grid.n - 1) / 2))
 		{
 		grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
