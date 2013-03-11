@@ -597,7 +597,7 @@ grid_parms make_straight_segment(grid_parms grid, FILE* logptr)
 		    &grid.nbrs[local][RIGHT]), stdout,
 	    "failed at cart left right");
     //Find remote nearest neighbours on remote domains
-
+    fprintf(logptr,"********\nI have just finished making cart grid\n");
     //if a parent domain exists for me
     if (grid.my_domain.parent.domain_index >= 0)
 	{
@@ -605,6 +605,7 @@ grid_parms make_straight_segment(grid_parms grid, FILE* logptr)
 	if ((grid.rank >= ((grid.m - 1) * grid.n))
 		&& (grid.rank <= (grid.m * grid.n - 1)))
 	    {
+	    fprintf(logptr,"stamp 1\n");
 	    int stride = grid.rank - ((grid.m - 1) * grid.n);
 	    grid.nbrs[remote][DOWN1] = grid.my_domain.parent.domain_start
 		    + stride;
@@ -614,9 +615,11 @@ grid_parms make_straight_segment(grid_parms grid, FILE* logptr)
 	//if a child exists from me
 	else if (grid.my_domain.left_child.domain_index >= 0)
 	    {
+
 	    //if I am top row in my m x n cart grid
 	    if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
 		{
+		fprintf(logptr,"stamp 2\n");
 		int stride = grid.rank;
 		grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start
 			+ stride;
