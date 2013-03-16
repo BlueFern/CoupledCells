@@ -360,63 +360,56 @@ void final_checkpoint(checkpoint_handle *check, grid_parms, double t1, double t2
 
 }
 
-void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,grid_parms grid){
-
+void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,
+		grid_parms grid) {
 
 	fprintf(check->logptr,
 			"BRANCH_TAG	=	%d\n(Universal_Rank, Cart_Rank= (%d,%d) \tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d) \t remote: (up1,up2,down1,down2)=(%d %d %d %d)\n\n flip_array: (%d,%d,%d,%d)\n\n",
-			grid.branch_tag,grid.universal_rank,grid.rank, grid.coords[0], grid.coords[1], grid.nbrs[local][UP],
-			grid.nbrs[local][DOWN], grid.nbrs[local][LEFT],
-			grid.nbrs[local][RIGHT], grid.nbrs[remote][UP1],
-			grid.nbrs[remote][UP2], grid.nbrs[remote][DOWN1],
-			grid.nbrs[remote][DOWN2],
-			grid.flip_array[0],grid.flip_array[1],grid.flip_array[2],grid.flip_array[3]);
+			grid.branch_tag, grid.universal_rank, grid.rank, grid.coords[0],
+			grid.coords[1], grid.nbrs[local][UP], grid.nbrs[local][DOWN],
+			grid.nbrs[local][LEFT], grid.nbrs[local][RIGHT],
+			grid.nbrs[remote][UP1], grid.nbrs[remote][UP2],
+			grid.nbrs[remote][DOWN1], grid.nbrs[remote][DOWN2],
+			grid.flip_array[0], grid.flip_array[1], grid.flip_array[2],
+			grid.flip_array[3]);
+	fprintf(check->logptr, "Boundary_tag = %c\n(T = Top\t B= Bottom\t N=Interior of the subdomain)\n",grid.my_domain.internal_info.boundary_tag);
+	///Write my local information in my rank's logfile
+	fprintf(check->logptr,
+			"COUPLING COEFFICIENTS\nVm_hm_smc=%2.5lf\nVm_hm_ec=%2.5lf\nCa_hm_smc=%2.5lf\nCa_hm_ec=%2.5lf\nIP3_hm_smc=%2.5lf\nIP3_hm_ec=%2.5lf\nVm_ht_smc=%2.5lf\nVm_ht_ec=%2.5lf\nCa_ht_smc=%2.5lf\nCa_ht_ec=%2.5lf\nIP3_ht_smc=%2.5lf\nIP3_ht_ec=%2.5lf\n\n",
+			cpl_cef.Vm_hm_smc, cpl_cef.Vm_hm_ec, cpl_cef.Ca_hm_smc,
+			cpl_cef.Ca_hm_ec, cpl_cef.IP3_hm_smc, cpl_cef.IP3_hm_ec,
+			cpl_cef.Vm_ht_smc, cpl_cef.Vm_ht_ec, cpl_cef.Ca_ht_smc,
+			cpl_cef.Ca_ht_ec, cpl_cef.IP3_ht_smc, cpl_cef.IP3_ht_ec);
 
-					///Write my local information in my rank's logfile
-					fprintf(check->logptr,
-							"COUPLING COEFFICIENTS\nVm_hm_smc=%2.5lf\nVm_hm_ec=%2.5lf\nCa_hm_smc=%2.5lf\nCa_hm_ec=%2.5lf\nIP3_hm_smc=%2.5lf\nIP3_hm_ec=%2.5lf\nVm_ht_smc=%2.5lf\nVm_ht_ec=%2.5lf\nCa_ht_smc=%2.5lf\nCa_ht_ec=%2.5lf\nIP3_ht_smc=%2.5lf\nIP3_ht_ec=%2.5lf\n\n",
-							cpl_cef.Vm_hm_smc, cpl_cef.Vm_hm_ec,
-							cpl_cef.Ca_hm_smc, cpl_cef.Ca_hm_ec,
-							cpl_cef.IP3_hm_smc, cpl_cef.IP3_hm_ec,
-							cpl_cef.Vm_ht_smc, cpl_cef.Vm_ht_ec,
-							cpl_cef.Ca_ht_smc, cpl_cef.Ca_ht_ec,
-							cpl_cef.IP3_ht_smc, cpl_cef.IP3_ht_ec);
+	fprintf(check->logptr,
+			"Spatial Gradient info:\nUniform JPLC\t=%2.5lf\nMinimum JPLC\t=%2.5lf\nMaximum JPLC\t=%2.5lf\nGradient\t=%2.5lf\n",
+			grid.uniform_jplc, grid.min_jplc, grid.max_jplc, grid.gradient);
 
-					fprintf(check->logptr,
-							"Spatial Gradient info:\nUniform JPLC\t=%2.5lf\nMinimum JPLC\t=%2.5lf\nMaximum JPLC\t=%2.5lf\nGradient\t=%2.5lf\n",grid.uniform_jplc,
-							grid.min_jplc, grid.max_jplc, grid.gradient);
-
-					fprintf(check->logptr, "Total Tasks=%d\n", grid.numtasks);
-					fprintf(check->logptr,
-							"Number of grid points in axial direction =%d\n ",grid.m);
-					fprintf(check->logptr,
-							"Number of grid points in circumferential direction =%d\n ",grid.n);
-					fprintf(check->logptr,
-							"Number of ECs per node (axially) =%d\n ",
-							grid.num_ec_axially);
-					fprintf(check->logptr,
-							"Number of SMCs per node (circumferentially) =%d\n ",
-							grid.num_smc_circumferentially);
-					fprintf(check->logptr, "Total ECs on this node =%d\n ",
-							(grid.num_ec_axially * grid.num_ec_circumferentially));
-					fprintf(check->logptr, "Total SMCs on this node =%d\n ",
-							(grid.num_smc_axially
-									* grid.num_smc_circumferentially));
-					fprintf(check->logptr,
-							"Total number of cells on this node =%d\n",
-							(grid.num_ec_axially * grid.num_ec_circumferentially)
-									+ (grid.num_smc_axially
-											* grid.num_smc_circumferentially));
-					fprintf(check->logptr,
-							"Total number of cells in the full computational domain =%d\n ",
-							((grid.num_ec_axially
-									* grid.num_ec_circumferentially)
-									+ (grid.num_smc_axially
-											* grid.num_smc_circumferentially))
-									* grid.numtasks);
-					fprintf(check->logptr,
-							"Total number of equations in the full computational domain =%d\n ",
-							grid.NEQ * grid.numtasks);
+	fprintf(check->logptr, "Total Tasks=%d\n", grid.numtasks);
+	fprintf(check->logptr, "Number of grid points in axial direction =%d\n ",
+			grid.m);
+	fprintf(check->logptr,
+			"Number of grid points in circumferential direction =%d\n ",
+			grid.n);
+	fprintf(check->logptr, "Number of ECs per node (axially) =%d\n ",
+			grid.num_ec_axially);
+	fprintf(check->logptr, "Number of SMCs per node (circumferentially) =%d\n ",
+			grid.num_smc_circumferentially);
+	fprintf(check->logptr, "Total ECs on this node =%d\n ",
+			(grid.num_ec_axially * grid.num_ec_circumferentially));
+	fprintf(check->logptr, "Total SMCs on this node =%d\n ",
+			(grid.num_smc_axially * grid.num_smc_circumferentially));
+	fprintf(check->logptr, "Total number of cells on this node =%d\n",
+			(grid.num_ec_axially * grid.num_ec_circumferentially)
+					+ (grid.num_smc_axially * grid.num_smc_circumferentially));
+	fprintf(check->logptr,
+			"Total number of cells in the full computational domain =%d\n ",
+			((grid.num_ec_axially * grid.num_ec_circumferentially)
+					+ (grid.num_smc_axially * grid.num_smc_circumferentially))
+					* grid.numtasks);
+	fprintf(check->logptr,
+			"Total number of equations in the full computational domain =%d\n ",
+			grid.NEQ * grid.numtasks);
 }
 
 

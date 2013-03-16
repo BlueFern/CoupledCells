@@ -71,12 +71,12 @@ void computeDerivatives(double t, double y[], double f[]) {
 			else if (i == 1)
 			k = offset + 0;
 
-			if (t > 100.00) {
+			if (t > grid.stimulus_onset_time) {
 
 				ec[i][j].JPLC =grid.min_jplc+ (grid.max_jplc/
 						(1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
 
-			} else if (t <= 100.00)
+			} else if (t <= grid.stimulus_onset_time)
 			ec[i][j].JPLC = grid.uniform_jplc;
 
 			f[k + ((j - 1) * grid.neq_ec) +ec_Ca] = ec[i][j].A[J_IP3]
@@ -111,6 +111,8 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	int cflag = 0;
 	int itteration = 0;
 	int write_count=0;
+	int write_once=0;
+
 	tend= interval;
 	rksuite.setup(total, tnow, y, tend, TOL, thres, method, "CT", false,
 			0.0, false);
@@ -141,9 +143,10 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s\n");
 		}
 
-		if (itteration == 1e5) {
-			dump_JPLC(grid, ec, check, "Local agonist after t=100s\n");
-		}
+		if ((itteration == int(grid.stimulus_onset_time/interval)) && (write_once<=1)) {
+				write_once++;
+				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
+			}
 
 		if ((itteration % file_write_per_unit_time) == 0) {
 			checkpoint(check, grid, tnow, smc, ec,write_count);
@@ -154,7 +157,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	}			//end while()
 
 }
-/*
+
 void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, double* yp,
 		int total, double TOL, double* thres, int file_write_per_unit_time,
 		checkpoint_handle *check) {
@@ -166,11 +169,13 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 	int uflag = 0;
 	int itteration = 0;
 	double tend;
-
+	int write_count=0;
+	int write_once=0;
 	double* ymax = (double*) checked_malloc(grid.NEQ * sizeof(double), stdout,
 			"Solver array ymax for RKSUITE");
-	communication_async_send_recv(check->logptr);
-
+	
+	communication_async_send_recv(check->logptr,grid,sendbuf,recvbuf,smc,ec);
+	computeDerivatives(tnow, y, yp);
 	rksuite.setup(grid.NEQ, tnow, y, tfinal, TOL, thres, method, "UT", false,
 			0.00, false);
 
@@ -191,20 +196,22 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
 		itteration++;
 		/// Call for interprocessor communication
-		MPI_Barrier (MPI_COMM_WORLD);
-		communication_async_send_recv(check->logptr);
+		communication_async_send_recv(check->logptr,grid,sendbuf,recvbuf,smc,ec);
+			MPI_Barrier(MPI_COMM_WORLD);
 
 		if (itteration == 5) {
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s");
 		}
 
-		if (itteration == 1e5) {
+		if ((itteration == int(grid.stimulus_onset_time/interval)) && (write_once<=1)) {
+			write_once++;
 			dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 		}
 
 		if ((itteration % file_write_per_unit_time) == 0) {
-			checkpoint_with_ghost_cells(check, grid, tnow, smc, ec);
-		}		//end itteration
+					checkpoint(check, grid, tnow, smc, ec,write_count);
+				write_count++;
+				}		//end itteration
 	}		//end of for loop on TEND
 
-}*/
+}

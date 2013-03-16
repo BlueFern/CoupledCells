@@ -191,13 +191,64 @@ MPI_Request remote_req[8];
 MPI_Status remote_status[8];
 int tag_remote_1	=	3, tag_remote_2	=	4;
 
-if ((grid.branch_tag == P) || (grid.branch_tag == L)
-		|| (grid.branch_tag == R)) {
+
+if /*((grid.branch_tag == P) || (grid.branch_tag == L)
+		|| (grid.branch_tag == R) )*/(grid.my_domain.internal_info.boundary_tag == 'I') {
 	for (int i=0; i<4; i++) {
 		remote_source[i] = grid.nbrs[remote][i];
 		remote_dest[i] = grid.nbrs[remote][i];
 	}
+	
+	check_flag(
+			MPI_Irecv(recvbuf[UP1], grid.num_elements_recv_up,
+					MPI_DOUBLE, remote_source[UP1], tag_remote_1,
+					grid.sub_universe, &remote_req[4 + UP1]), logptr,
+			"Receive message operation for remote UP1");
+	check_flag(
+			MPI_Irecv(recvbuf[UP2], grid.num_elements_recv_up,
+					MPI_DOUBLE, remote_source[UP2], tag_remote_2,
+					grid.sub_universe, &remote_req[4 + UP2]), logptr,
+			"Receive message operation for remote UP2");
+	check_flag(
+			MPI_Irecv(recvbuf[DOWN1], grid.num_elements_recv_down,
+					MPI_DOUBLE, remote_source[DOWN1], tag_remote_1,
+					grid.sub_universe, &remote_req[4 + DOWN1]), logptr,
+			"Receive message operation for remote DOWN1");
+	check_flag(
+			MPI_Irecv(recvbuf[DOWN2], grid.num_elements_recv_down,
+					MPI_DOUBLE, remote_source[DOWN2], tag_remote_2,
+					grid.sub_universe, &remote_req[4 + DOWN2]), logptr,
+			"Receive message operation for remote DOWN2");
 
+	check_flag(
+			MPI_Isend(sendbuf[UP1], grid.num_elements_send_up,
+					MPI_DOUBLE, remote_dest[UP1], tag_remote_1, grid.sub_universe,
+					&remote_req[UP1]), logptr,
+			"Send message operation for remote UP1");
+	check_flag(
+			MPI_Isend(sendbuf[UP2], grid.num_elements_send_up,
+					MPI_DOUBLE, remote_dest[UP2], tag_remote_2, grid.sub_universe,
+					&remote_req[UP2]), logptr,
+			"Send message operation for remote UP2");
+	check_flag(
+			MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_down,
+					MPI_DOUBLE, remote_dest[DOWN1], tag_remote_1,
+					grid.sub_universe, &remote_req[DOWN1]), logptr,
+			"Send message operation for remote DOWN1");
+	check_flag(
+			MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_down,
+					MPI_DOUBLE, remote_dest[DOWN2], tag_remote_2,
+					grid.sub_universe, &remote_req[DOWN2]), logptr,
+			"Send message operation for remote DOWN2");
+	MPI_Waitall(8, remote_req, remote_status);
+
+}
+if ( (grid.my_domain.internal_info.boundary_tag == 'T') || (grid.my_domain.internal_info.boundary_tag == 'B') )  {
+	for (int i=0; i<4; i++) {
+		remote_source[i] = grid.nbrs[remote][i];
+		remote_dest[i] = grid.nbrs[remote][i];
+	}
+	
 	check_flag(
 			MPI_Irecv(recvbuf[UP1], grid.num_elements_recv_up,
 					MPI_DOUBLE, remote_source[UP1], tag_remote_1,
@@ -242,8 +293,6 @@ if ((grid.branch_tag == P) || (grid.branch_tag == L)
 	MPI_Waitall(8, remote_req, remote_status);
 
 }
-fprintf(logptr,"After: \n");
-//print_recv_buffer(logptr,grid,recvbuf);
 	communication_update_recvbuf_modified(logptr,grid,recvbuf,smc,ec);
 }//end of update_async()
 

@@ -326,6 +326,8 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
     grid.offset_P = 0;
     grid.offset_L = (grid.m * grid.n) + ((grid.m - 1) * grid.n);
     grid.offset_R = 2 * (grid.m * grid.n) + ((grid.m - 1) * grid.n);
+    
+  
 
     //check whether number of processors in circumferential direction are EVEN or ODD.
     grid.scheme = grid.n % 2;
@@ -338,7 +340,24 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
     else if (grid.color == 2){
 	grid.branch_tag = R;
     }
-
+  
+    //Label the ranks on the subdomain edges of at STRAIGHT SEGMENT as top or bottom boundary.
+	for (int i = 0; i < (3 * grid.m * grid.n); i++) {
+		if (grid.branch_tag == P) {
+			if ((grid.rank >= ((grid.m - 1) * grid.n))
+					&& (grid.rank <= (grid.m * grid.n - 1))) {
+				grid.my_domain.internal_info.boundary_tag = 'B';
+			} else {
+				grid.my_domain.internal_info.boundary_tag = 'N';
+			}
+		} else if ((grid.branch_tag == L) || (grid.branch_tag == R)) {
+			if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
+				grid.my_domain.internal_info.boundary_tag = 'T';
+			} else {
+				grid.my_domain.internal_info.boundary_tag = 'N';
+			}
+		}
+	}
 
     //If number of processors in circumferentail dimension are EVEN
     if (grid.scheme == 0)
@@ -346,6 +365,7 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	//For parent branch edge
 	if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
 	    {
+		grid.my_domain.internal_info.boundary_tag = 'I';
 	    if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2))
 		{
 		grid.nbrs[remote][UP1] = grid.offset_L
@@ -365,6 +385,7 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	else if ((grid.sub_universe_rank >= grid.offset_L)
 		&& (grid.sub_universe_rank < (grid.offset_L + grid.n)))
 	    {
+		grid.my_domain.internal_info.boundary_tag = 'I';
 	    if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2))
 		{
 		grid.nbrs[remote][DOWN1] = grid.sub_universe_rank
@@ -386,6 +407,7 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	else if ((grid.sub_universe_rank >= grid.offset_R)
 		&& (grid.sub_universe_rank < (grid.offset_R + grid.n)))
 	    {
+		grid.my_domain.internal_info.boundary_tag = 'I';
 	    if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2))
 		{
 		grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
@@ -412,6 +434,7 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	//The parent artery edge
 	if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
 	    {
+		grid.my_domain.internal_info.boundary_tag = 'I';
 	    if ((grid.sub_universe_rank - grid.offset_P) < ((grid.n - 1) / 2))
 		{
 		grid.nbrs[remote][UP1] = grid.offset_L
@@ -440,6 +463,7 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	else if ((grid.sub_universe_rank >= grid.offset_L)
 		&& (grid.sub_universe_rank < grid.offset_L + grid.n))
 	    {
+		grid.my_domain.internal_info.boundary_tag = 'I';
 	    if ((grid.sub_universe_rank - grid.offset_L) < ((grid.n - 1) / 2))
 		{
 		grid.nbrs[remote][DOWN1] = (grid.sub_universe_rank
@@ -472,6 +496,7 @@ grid_parms make_bifucation(grid_parms grid, FILE* logptr)
 	else if ((grid.sub_universe_rank >= grid.offset_R)
 		&& (grid.sub_universe_rank < grid.offset_R + grid.n))
 	    {
+		grid.my_domain.internal_info.boundary_tag = 'I';
 	    if ((grid.sub_universe_rank - grid.offset_R) < ((grid.n - 1) / 2))
 		{
 		grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
@@ -596,7 +621,21 @@ grid_parms make_straight_segment(grid_parms grid, FILE* logptr)
 	    MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
 		    &grid.nbrs[local][RIGHT]), stdout,
 	    "failed at cart left right");
-	//Find remote nearest neighbours on remote domains
+
+    //Label the ranks on the subdomain edges of at STRAIGHT SEGMENT as top or bottom boundary.
+	for (int i = 0; i < (grid.m * grid.n); i++) {
+		if ((grid.rank >= ((grid.m - 1) * grid.n))
+				&& (grid.rank <= (grid.m * grid.n - 1))) {
+			grid.my_domain.internal_info.boundary_tag = 'B';
+		} else if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
+			grid.my_domain.internal_info.boundary_tag = 'T';
+		} else {
+			grid.my_domain.internal_info.boundary_tag = 'N';
+		}
+	}
+    
+    
+    //Find remote nearest neighbours on remote domains
 	
 	//if a parent domain exists for me
 	if (grid.my_domain.parent.domain_index >= 0) {
@@ -621,7 +660,6 @@ grid_parms make_straight_segment(grid_parms grid, FILE* logptr)
 					+ stride;
 		}
 	}
-
     return grid;
     }			//end of make_straight_segment()
 

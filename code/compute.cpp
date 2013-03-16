@@ -178,13 +178,13 @@ void Initialize_koeingsberger_smc(grid_parms grid, double y[], celltype1** smc)
 				k = ((i - 1) * grid.neq_smc_axially);
 			else if (i == 1)
 				k = 0;
-		/*	y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.01;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.01;
 			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.01;
 			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.01;
 			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.01;
 			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.01;
-			if ((grid.branch_tag = P) || (grid.branch_tag = L)
-					|| (grid.branch_tag = R)) {*/
+			/*if ((grid.branch_tag = P) || (grid.branch_tag = L)
+					|| (grid.branch_tag = R)) {
 				y[k + ((j - 1) * grid.neq_smc) + smc_Ca] =
 						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000001;
 				y[k + ((j - 1) * grid.neq_smc) + smc_SR] =
@@ -195,7 +195,7 @@ void Initialize_koeingsberger_smc(grid_parms grid, double y[], celltype1** smc)
 						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000004;
 				y[k + ((j - 1) * grid.neq_smc) + smc_IP3] =
 						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000005;
-			//}
+			//}*/
 		}
 	}
 
@@ -232,12 +232,12 @@ int	k,offset = (grid.neq_smc * grid.num_smc_circumferentially
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
 				k = offset + 0;
-			/*y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.01;
 			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.01;
 			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.01;
 			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.01;
-			if ((grid.branch_tag = P) || (grid.branch_tag = L)
-					|| (grid.branch_tag = R)) {*/
+			/*if ((grid.branch_tag = P) || (grid.branch_tag = L)
+					|| (grid.branch_tag = R)) {
 				y[k + ((j - 1) * grid.neq_ec) + ec_Ca] =
 						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000006;
 				y[k + ((j - 1) * grid.neq_ec) + ec_SR] =
@@ -246,7 +246,7 @@ int	k,offset = (grid.neq_smc * grid.num_smc_circumferentially
 						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000008;
 				y[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
 						(double) (grid.universal_rank) + ((double)(i)*0.01) + ((double)(j)*0.0001) + 0.0000009;
-			//}
+			//}*/
 		}
 	}
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells);
@@ -781,3 +781,264 @@ void coupling(double t,double y[], grid_parms grid,celltype1** smc, celltype2** 
 
 }	//end of coupling()
 
+int allocate_memory(grid_parms grid, celltype1** smc, celltype2** ec, double** sendbuf,double** recvbuf, checkpoint_handle* check)
+{
+	smc 	= (celltype1**) checked_malloc((grid.num_smc_circumferentially+grid.num_ghost_cells)* sizeof(celltype1*), stdout, "smc");
+	for (int i=0; i<(grid.num_smc_circumferentially+grid.num_ghost_cells); i++){
+		smc[i]	= (celltype1*) checked_malloc((grid.num_smc_axially+grid.num_ghost_cells)* sizeof(celltype1), stdout, "smc column dimension");
+
+	}
+	ec 	= (celltype2**) checked_malloc((grid.num_ec_circumferentially+grid.num_ghost_cells)* sizeof(celltype2*), stdout, "ec");
+	for (int i=0; i<(grid.num_ec_circumferentially+grid.num_ghost_cells); i++){
+		ec[i]	= (celltype2*) checked_malloc((grid.num_ec_axially+grid.num_ghost_cells)* sizeof(celltype2), stdout, "ec column dimension");
+	}
+
+
+
+///Memory allocation for state vector, the single cell evaluation placeholders (The RHS of the ODEs for each cell) and coupling fluxes is implemented in this section.
+///In ghost cells, only the state vector array for each type of cells exists including all other cells.
+///The memory is allocated for all the cells except the ghost cells, hence the ranges 1 to grid.num_ec_circumferentially(inclusive).
+	///SMC domain
+	for (int i = 0; i < (grid.num_smc_circumferentially+grid.num_ghost_cells); i++) {
+		for (int j = 0; j < (grid.num_smc_axially+grid.num_ghost_cells); j++) {
+
+			smc[i][j].p	=	(double*)checked_malloc(grid.neq_smc*sizeof(double),stdout,"allocation of array for state variables failed");
+			smc[i][j].A = (double*) checked_malloc(
+					grid.num_fluxes_smc * sizeof(double), stdout,
+					"matrix A in smc");
+			smc[i][j].B = (double*) checked_malloc(
+					grid.num_coupling_species_smc * sizeof(double), stdout,
+					"matrix B in smc");
+			smc[i][j].C = (double*) checked_malloc(
+					grid.num_coupling_species_smc * sizeof(double), stdout,
+					"matrix C in smc");
+		}
+	}
+
+	///EC domain
+	for (int i = 0; i < (grid.num_ec_circumferentially+grid.num_ghost_cells); i++) {
+		for (int j = 0; j < (grid.num_ec_axially+grid.num_ghost_cells); j++) {
+			ec[i][j].q	=	(double*)checked_malloc(grid.neq_ec*sizeof(double),stdout,"allocation of array for state variables failed");
+
+			ec[i][j].A = (double*) checked_malloc(
+					grid.num_fluxes_ec * sizeof(double), stdout,
+					"matrix A in ec");
+			ec[i][j].B = (double*) checked_malloc(
+					grid.num_coupling_species_ec * sizeof(double), stdout,
+					"matrix B in ec");
+			ec[i][j].C = (double*) checked_malloc(
+					grid.num_coupling_species_ec * sizeof(double), stdout,
+					"matrix C in ec");
+		}
+	}
+
+
+
+
+	///Allocating memory space for coupling data to be sent and received by MPI communication routines.
+
+	///sendbuf and recvbuf are 2D arrays having up,down,left and right directions as their first dimension.
+	///Each dimension is broken down into two segments, e.g. up1,up2,down1 & down2,etc..
+	///The length of the second dimension is equal to half the number of cells for which the information is to be sent and received.
+	///Thus each communicating pair will exchange data twice to get the full lenght.
+
+	sendbuf = (double**) checked_malloc(8 * sizeof(double*), stdout,
+			"sendbuf dimension 1");
+	recvbuf = (double**) checked_malloc(8 * sizeof(double*), stdout,
+			"recvbuf dimension 1");
+
+	///Each processor now allocates the memory for send and recv buffers those will hold the coupling information.
+	///Since sendbuf must contain the information of number of SMCs and ECs being sent in the directions,
+	///the first two elements contain the total count of SMCs located on the rank in the relevant dimension (circumferential or axial) and the count of SMCs for which
+	///information is being sent, respectively.
+	///The next two elements contain the same information for ECs.
+
+	int extent_s, extent_e;	///Variables to calculate the length of the prospective buffer based on number of cell in either orientations (circumferential or axial).
+
+	grid.added_info_in_send_buf = 4;///Number of elements containing additional information at the beginning of the send buffer.
+	int seg_config_s, seg_config_e;	///Integers to decided whether the row or column being sent is overlapping or exactly divisible into two halfs.
+	/// data to send to the neighbour in UP1 direction
+	extent_s = (int) (ceil((double) (grid.num_smc_circumferentially) / 2));
+	extent_e = (int) (ceil((double) (grid.num_ec_circumferentially) / 2));
+
+	/// The seg_config variables are to recording the configuration of the split of the buffering in each direction.
+	/// If the total number of cell in on a face (UP, DOWN, LEFT or RIGHT) are EVEN (i.e. seg_congif=0), the split will be non-overlapping
+	/// (eg. if total SMCs are 26 in UP direction, UP1 buffer will send 13 and UP2 will send the other 13 to corresponding nbrs.
+	/// If the total number of cells is ODD (i.e. seg_congif=1), then the split will be over lapping.
+	/// (eg. if total SMCs are 13 (or any multiple of 13) UP1 will send elements from 0 - 6 and UP2 will send 6 - 12  to corresponding nbrs.
+	/// These variables are used in send and recv buffers update before and after the MPI-communication routine is called.
+	seg_config_s = grid.num_smc_circumferentially % 2;
+	seg_config_e = grid.num_ec_circumferentially % 2;
+
+	///Recording the number of elements in Send buffer in Up direction (UP1 or UP2) for use in update routine as count of elements.
+	grid.num_elements_send_up = grid.added_info_in_send_buf
+			+ (grid.num_coupling_species_smc * extent_s
+					+ grid.num_coupling_species_ec * extent_e);
+
+	sendbuf[UP1] = (double*) checked_malloc(
+			grid.num_elements_send_up * sizeof(double), stdout,
+			"sendbuf[UP1] dimension 2");
+
+	sendbuf[UP1][0] = (double) (1); //Start of the 1st segment of SMC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[UP1][1] = (double) (extent_s); //End of the 1st segment of SMC array in UP direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[UP1][2] = (double) (1); //Start of the 1st segment of EC array in UP direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[UP1][3] = (double) (extent_e); ///End of the 1st segment of EC array in UP direction (circumferential direction) to be sent to neighbouring processor
+
+	sendbuf[UP2] = (double*) checked_malloc(
+			grid.num_elements_send_up * sizeof(double), stdout,
+			"sendbuf[UP2] dimension 2");
+
+	if (seg_config_s != 0) {
+		sendbuf[UP2][0] = (double) (extent_s); //Start of the 2nd segment of SMC array in UP direction (circumferential direction) to be sent to neighbouring processor
+	} else if (seg_config_s == 0) {
+		sendbuf[UP2][0] = (double) (extent_s + 1); //Start of the 2nd segment of SMC array in UP direction (circumferential direction) to be sent to neighbouring processor
+	}
+	sendbuf[UP2][1] = (double) (grid.num_smc_circumferentially); //End of the 2nd segment of SMC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
+
+	if (seg_config_e != 0) {
+		sendbuf[UP2][2] = (double) (extent_e); //Start of the 2nd segment of EC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
+	} else if (seg_config_e == 0) {
+		sendbuf[UP2][2] = (double) (extent_e + 1); //Start of the 2nd segment of EC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
+	}
+	sendbuf[UP2][3] = (double) (grid.num_ec_circumferentially); //End of the 2nd segment of EC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
+
+
+	/// data to send to the neighbour in DOWN direction
+	///Recording the number of elements in Send buffer in DOWN direction (DOWN1 or DOWN2) for use in update routine as count of elements.
+	grid.num_elements_send_down = grid.added_info_in_send_buf
+			+ (grid.num_coupling_species_smc * extent_s
+					+ grid.num_coupling_species_ec * extent_e);
+
+	sendbuf[DOWN1] = (double*) checked_malloc(
+			grid.num_elements_send_down * sizeof(double), stdout,
+			"sendbuf[DOWN1] dimension 2");
+
+	sendbuf[DOWN1][0] = (double) (1); //Start of the 1st segment of SMC array in  in DOWN direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[DOWN1][1] = (double) (extent_s); //End of the 1st segment of SMC array in DOWN direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[DOWN1][2] = (double) (1); //Start of the 1st segment of EC array in DOWN direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[DOWN1][3] = (double) (extent_e); ///End of the 1st segment of EC array in DOWN direction (circumferential direction) to be sent to neighbouring processor
+
+	sendbuf[DOWN2] = (double*) checked_malloc(
+			grid.num_elements_send_down * sizeof(double), stdout,
+			"sendbuf[DOWN2] dimension 2");
+	if (seg_config_s != 0) {
+		sendbuf[DOWN2][0] = (double) (extent_s); //Start of the 2nd segment of SMC array in DOWN direction (circumferential direction) to be sent to neighbouring processor
+	} else if (seg_config_s == 0) {
+		sendbuf[DOWN2][0] = (double) (extent_s + 1); //Start of the 2nd segment of SMC array in DOWN direction (circumferential direction) to be sent to neighbouring processor
+	}
+
+	sendbuf[DOWN2][1] = (double) (grid.num_smc_circumferentially); //End of the 2nd segment of SMC array in  in DOWN direction (circumferential direction) to be sent to neighbouring processor
+	if (seg_config_e != 0) {
+		sendbuf[DOWN2][2] = (double) (extent_e); //Start of the 2nd segment of EC array in  in DOWN direction (circumferential direction) to be sent to neighbouring processor
+	} else if (seg_config_e == 0) {
+		sendbuf[DOWN2][2] = (double) (extent_e + 1); //Start of the 2nd segment of EC array in  in DOWN direction (circumferential direction) to be sent to neighbouring processor
+	}
+	sendbuf[DOWN2][3] = (double) (grid.num_ec_circumferentially); //End of the 2nd segment of EC array in  in DOWN direction (circumferential direction) to be sent to neighbouring processor
+
+	/// data to send to the neighbour in LEFT direction
+	extent_s = (int) (ceil((double) (grid.num_smc_axially) / 2));
+	extent_e = (int) (ceil((double) (grid.num_ec_axially) / 2));
+	seg_config_s = grid.num_smc_axially % 2;
+	seg_config_e = grid.num_ec_axially % 2;
+
+	///Recording the number of elements in Send buffer in Left direction (LEFT1 or LEFT2) for use in update routine as count of elements.
+	grid.num_elements_send_left = grid.added_info_in_send_buf
+			+ (grid.num_coupling_species_smc * extent_s
+					+ grid.num_coupling_species_ec * extent_e);
+	sendbuf[LEFT1] = (double*) checked_malloc(
+			grid.num_elements_send_left * sizeof(double), stdout,
+			"sendbuf[LEFT1] dimension 2");
+	sendbuf[LEFT1][0] = (double) (1); //Start of the 1st segment of SMC array in  in LEFT direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[LEFT1][1] = (double) (extent_s); //END of the 1st segment of SMC array in  in LEFT direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[LEFT1][2] = (double) (1); //Start of the 1st segment of EC array in  in LEFT direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[LEFT1][3] = (double) (extent_e); //END of the 1st segment of EC array in  in LEFT direction (circumferential direction) to be sent to neighbouring processor
+
+	sendbuf[LEFT2] = (double*) checked_malloc(
+			grid.num_elements_send_left * sizeof(double), stdout,
+			"sendbuf[LEFT2] dimension 2");
+	if (seg_config_s != 0) {
+		sendbuf[LEFT2][0] = (double) (extent_s); //Start of the 2nd segment of SMC array in LEFT direction (circumferential direction) to be sent to neighbouring processor
+	} else if (seg_config_s == 0) {
+		sendbuf[LEFT2][0] = (double) (extent_s + 1); //Start of the 2nd segment of SMC array in LEFT direction (circumferential direction) to be sent to neighbouring processor
+	}
+	sendbuf[LEFT2][1] = (double) (grid.num_smc_axially); //END of the 2nd segment of SMC array in LEFT direction (circumferential direction) to be sent to neighbouring processor
+	if (seg_config_e != 0) {
+		sendbuf[LEFT2][2] = (double) (extent_e); //Start of the 2nd segment of EC array in LEFT direction (circumferential direction) to be sent to neighbouring processor
+	} else if (seg_config_e == 0) {
+		sendbuf[LEFT2][2] = (double) (extent_e + 1); //Start of the 2nd segment of EC array in LEFT direction (circumferential direction) to be sent to neighbouring processor
+	}
+	sendbuf[LEFT2][3] = (double) (grid.num_ec_axially); //END of the 2nd segment of EC array in LEFT direction (circumferential direction) to be sent to neighbouring processor
+
+	/// data to send to the neighbour in RIGHT direction
+
+	///Recording the number of elements in Send buffer in RIGHT direction (RIGHT1 or RIGHT2) for use in update routine as count of elements.
+	grid.num_elements_send_right = grid.added_info_in_send_buf
+			+ (grid.num_coupling_species_smc * extent_s
+					+ grid.num_coupling_species_ec * extent_e);
+
+	sendbuf[RIGHT1] = (double*) checked_malloc(
+			grid.num_elements_send_right * sizeof(double), stdout,
+			"sendbuf[RIGHT1] dimension 2");
+	sendbuf[RIGHT1][0] = (double) (1); //Start of the 1st segment of SMC array in  in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[RIGHT1][1] = (double) (extent_s); //END of the 1st segment of SMC array in  in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[RIGHT1][2] = (double) (1); //Start of the 1st segment of EC array in  in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[RIGHT1][3] = (double) (extent_e); //END of the 1st segment of EC array in  in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+
+	sendbuf[RIGHT2] = (double*) checked_malloc(
+			grid.num_elements_send_right * sizeof(double), stdout,
+			"sendbuf[RIGHT2] dimension 2");
+	if (seg_config_s != 0) {
+		sendbuf[RIGHT2][0] = (double) (extent_s); //Start of the 2nd segment of SMC array in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+	} else if (seg_config_s == 0) {
+		sendbuf[RIGHT2][0] = (double) (extent_s + 1); //Start of the 2nd segment of SMC array in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+	}
+	sendbuf[RIGHT2][1] = (double) (grid.num_smc_axially); //END of the 2nd segment of SMC array in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+	if (seg_config_e != 0) {
+		sendbuf[RIGHT2][2] = (double) (extent_e); //Start of the 2nd segment of EC array in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+	} else if (seg_config_e == 0) {
+		sendbuf[RIGHT2][2] = (double) (extent_e + 1); //Start of the 2nd segment of EC array in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+	}
+	sendbuf[RIGHT2][3] = (double) (grid.num_ec_axially); //END of the 2nd segment of EC array in RIGHT direction (circumferential direction) to be sent to neighbouring processor
+
+
+	///Call communication to the number of elements to be recieved by neighbours and allocate memory of recvbuf for each direction accordingly.
+		grid = communicate_num_recv_elements_to_nbrs(check->logptr,grid);
+		///memory allocation
+
+		fprintf(check->logptr,"recvbuf (u,d,l,r): (%d,%d,%d,%d)\n",
+				grid.num_elements_recv_up,grid.num_elements_recv_down,grid.num_elements_recv_left,grid.num_elements_recv_right);
+
+
+	/// data to receive from the neighbour in UP direction
+	recvbuf[UP1] = (double*) checked_malloc(
+			grid.num_elements_recv_up * sizeof(double), stdout,
+			"recvbuf[UP1] dimension 2");
+	recvbuf[UP2] = (double*) checked_malloc(
+			grid.num_elements_recv_up * sizeof(double), stdout,
+			"recvbuf[UP2] dimension 2");
+
+	/// data to recv from the neighbour in DOWN direction
+	recvbuf[DOWN1] = (double*) checked_malloc(
+			grid.num_elements_recv_down * sizeof(double), stdout,
+			"recvbuf[DOWN1] dimension 2");
+	recvbuf[DOWN2] = (double*) checked_malloc(
+			grid.num_elements_recv_down * sizeof(double), stdout,
+			"recvbuf[DOWN2] dimension 2");
+
+	/// data to receive from the neighbour in LEFT direction
+	recvbuf[LEFT1] = (double*) checked_malloc(
+			grid.num_elements_recv_left * sizeof(double), stdout,
+			"recvbuf[LEFT1] dimension 2");
+	recvbuf[LEFT2] = (double*) checked_malloc(
+			grid.num_elements_recv_left * sizeof(double), stdout,
+			"recvbuf[LEFT2] dimension 2");
+
+	/// data to receive from the neighbour in RIGHT direction
+	recvbuf[RIGHT1] = (double*) checked_malloc(
+			grid.num_elements_recv_right * sizeof(double), stdout,
+			"recvbuf[RIGHT1] dimension 2");
+	recvbuf[RIGHT2] = (double*) checked_malloc(
+			grid.num_elements_recv_right * sizeof(double), stdout,
+			"recvbuf[RIGHT2] dimension 2");
+return (success);
+}

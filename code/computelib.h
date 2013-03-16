@@ -5,6 +5,7 @@
 #include "koenigsberger_macros.h"
 
 using namespace std;
+#define success		0
 
 #define local	0
 #define remote 1
@@ -31,8 +32,8 @@ using namespace std;
 #define L 		2		//Left branch
 #define R		3		//Right brach
 
-#define top		0		//top edge of a subdomain
-#define	 bottom 1		//bottom edge of a subdomain
+//#define top		0		//top edge of a subdomain
+//#define	 bottom 1		//bottom edge of a subdomain
 // helper functions for exponentiation to integer powers
 #define P2(x) ((x)*(x))
 #define P4(x) ((x)*(x)*(x)*(x))
@@ -56,8 +57,8 @@ struct node
     int domain_type,domain_index,		//am I a bifurcation or a straight segment?
     	domain_start, domain_end,		//These are universal ranks from MPI_COMM_WORLD
     	parent_branch_case_bifurcation,	//if my parent is a bifurcation which branch am I a child of
-    	m, n,							//row and columns in my MPI_sub_world
-    	boundary_tag;					//an identifier showing whether I am a rank from top or bottom edge of a subdomain.
+    	m, n;							//row and columns in my MPI_sub_world
+    char boundary_tag;					//an identifier showing whether I am a rank from top or bottom edge of a subdomain.
     double d, l;				//diameter and length scales
     
     };
@@ -115,7 +116,8 @@ typedef struct {
 			num_elements_recv_left, num_elements_recv_right;
 	///Information for spatial variation in agonist
 	double
-	min_jplc, max_jplc, gradient, uniform_jplc;
+	min_jplc, max_jplc, gradient, uniform_jplc,
+	stimulus_onset_time;				// the time when spatially varying agonist kicks in
 
 	my_tree		my_domain;
 
@@ -223,7 +225,7 @@ grid_parms make_straight_segment(grid_parms, FILE*);
 grid_parms set_geometry_parameters(grid_parms,FILE*,int,int);
 grid_parms make_subdomains(grid_parms, int, int**, FILE*);
 
-
+int allocate_memory(grid_parms , celltype1** , celltype2** , double** ,double**, checkpoint_handle*);
 
 
 
