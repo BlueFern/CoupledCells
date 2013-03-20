@@ -6,6 +6,7 @@
 
 using namespace std;
 #define success		0
+#define	 none		-1
 
 #define local	0
 #define remote 1
@@ -103,7 +104,7 @@ typedef struct {
 			///Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task
 			added_info_in_send_buf,
 			///this is global and local MPI information
-			numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank, rank, my_domain_color, my_domain_key, color,key,
+			numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank, rank,tasks, my_domain_color, my_domain_key, color,key,
 			//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
 			//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 			branch_tag,
@@ -196,7 +197,7 @@ void dump_smc(grid_parms, celltype1**, checkpoint_handle*, int);
 void dump_ec(grid_parms, celltype2**, checkpoint_handle*, int);
 void dump_JPLC(grid_parms, celltype2**, checkpoint_handle*, const char*);
 void checkpoint(checkpoint_handle*, grid_parms, double, celltype1**, celltype2**, int);
-void final_checkpoint(checkpoint_handle*, double, double);
+void final_checkpoint(grid_parms,checkpoint_handle*, double, double);
 void dump_rank_info(checkpoint_handle*, conductance,grid_parms);
 void dump_smc_with_ghost_cells(grid_parms, celltype1**, checkpoint_handle*, int);
 void dump_ec_with_ghost_cells(grid_parms, celltype2**, checkpoint_handle*, int);
@@ -221,17 +222,6 @@ grid_parms make_bifucation(grid_parms);
 grid_parms make_straight_segment(grid_parms);
 grid_parms set_geometry_parameters(grid_parms,int,int);
 grid_parms make_subdomains(grid_parms, int, int**);
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -31,6 +31,10 @@ void* checked_malloc(size_t bytes, const char* errmsg){
 }
 
 int main(int argc, char* argv[]) {
+
+
+
+
     ///Global declaration of request and status update place holders.
     ///Request and Status handles for nonblocking Send and Receive operations, for communicating with each of the four neighbours.
     MPI_Request reqs[8];
@@ -41,14 +45,6 @@ int main(int argc, char* argv[]) {
 
     grid.universe = MPI_COMM_WORLD;
 
-    //// These are input parameters for the simulation
-     int
-     m = 2,
-     n = 2,
-     e = 4,	///number of ECs per node
-     s = 4;	///number of SMCs per node
-
-
 
 //Reveal information of myself and size of MPI_COMM_WORLD
     check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank),
@@ -58,22 +54,40 @@ int main(int argc, char* argv[]) {
 
 //Test case
 //config
-    int num_subdomains = 4;
-    int **domains;
+    int num_subdomains	=	8;
+    int
+         m[num_subdomains],
+         n[num_subdomains],
+         e = 4,	//ECs per processor in axial direction
+         s = 4;	//SMCs per processor in circumferential direction
 
+         m[0]	=	4;
+         m[1]	=	8;
+         m[2]	=	4;
+         m[3]	=	20;
+         m[4]	=	20;
+         m[5]	=	4;
+         m[6]	=	20;
+         m[7]	=	20;
+
+
+    	for (int i = 0; i < num_subdomains; i++) {
+    		n[i] = 4;
+    	}
+
+   	int **domains;
     domains = (int**) checked_malloc(num_subdomains * sizeof(int*),"Subdomain information allocation");
 
     /*second coordinate has following information:
-     * Element 1: 	Key_val or serial number of the subdomain
-     * Element 2:	Subdomain Type (4 possibilities and their values)
-     * 				1. Straight Segment														(0)
-     * 				2. Bifurcation															(1)
-     * Element 3:	Axial extent of processor of current key_val
-     * Element 4: 	circumferential extent of processors of current key_val
-     * Element 5:	Parent subdomain key_val of current Key_val.
-     * Element 6: 	In case if the Parent is a bifurcation, which branch owns the current domain as child (i.e. which branch is my parent)
-     * Element 7: 	Left Child subdomain key_val of the current Key_val.
-     * Element 8:   Right Child subdomain key_val of the current Key_val.
+     * Element 0: 	Key_val or serial number of the subdomain
+     * Element 1:	Subdomain Type (2 possibilities and their values)
+     * 				1. Straight Segment (STRSEG)					(0)
+     * 				2. Bifurcation	(BIF)							(1)
+     * Element 2:	Axial extent of processor of current key_val
+     * Element 3: 	circumferential extent of processors of current key_val
+     * Element 4:	Parent subdomain key_val of current Key_val.
+     * Element 5: 	Left Child subdomain key_val of the current Key_val.
+     * Element 6:   Right Child subdomain key_val of the current Key_val.
      *
      * In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left Child is positive or zero, and right Child is negative.
      * If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.
@@ -83,45 +97,80 @@ int main(int argc, char* argv[]) {
 	domains[i] = (int*) checked_malloc(7 * sizeof(int),
 		"Subdomains array elements allocation");
 	}
-    domains[0][0] = 0;
-    domains[0][1] = STRSEG;
-    domains[0][2] = m;
-    domains[0][3] = n;
-    domains[0][4] = -1;
-    domains[0][5] = 1;
-    domains[0][6] = -1;
+    domains[0][0] 	= 	0;
+    domains[0][1] 	= 	BIF;
+    domains[0][2] 	= 	m[0];
+    domains[0][3] 	= 	n[0];
+    domains[0][4] 	= 	none;
+    domains[0][5] 	= 	2;
+    domains[0][6] 	= 	1;
+    
+    domains[1][0]	=	1;
+    domains[1][1]	=	STRSEG;
+    domains[1][2]	=	m[1];
+    domains[1][3]	=	n[1];
+    domains[1][4]	=	0;
+    domains[1][5]	=	5;
+    domains[1][6]	=	none;
+    
+    domains[2][0]	=	2;
+    domains[2][1]	=	BIF;
+    domains[2][2]	=	m[2];
+    domains[2][3]	=	n[2];
+    domains[2][4]	=	0;
+    domains[2][5]	=	4;
+    domains[2][6]	=	3;
+    
+    domains[3][0]	=	3;
+    domains[3][1]	=	STRSEG;
+    domains[3][2]	=	m[3];
+    domains[3][3]	=	n[3];
+    domains[3][4]	=	2;
+    domains[3][5]	=	none;
+    domains[3][6]	=	none;
+    
+    domains[4][0]	=	4;
+    domains[4][1]	=	STRSEG;
+    domains[4][2]	=	m[4];
+    domains[4][3]	=	n[4];
+    domains[4][4]	=	2;
+    domains[4][5]	=	none;
+    domains[4][6]	=	none;
+    
+    domains[5][0]	=	5;
+    domains[5][1]	=	BIF;
+    domains[5][2]	=	m[5];
+    domains[5][3]	=	n[5];
+    domains[5][4]	=	1;
+    domains[5][5]	=	7;
+    domains[5][6]	=	6;
+    
+    domains[6][0]	=	6;
+    domains[6][1]	=	STRSEG;
+    domains[6][2]	=	m[6];
+    domains[6][3]	=	n[6];
+    domains[6][4]	=	5;
+    domains[6][5]	=	none;
+    domains[6][6]	=	none;
+    
+    domains[7][0]	=	7;
+    domains[7][1]	=	STRSEG;
+    domains[7][2]	=	m[7];
+    domains[7][3]	=	n[7];
+    domains[7][4]	=	5;
+    domains[7][5]	=	none;
+    domains[7][6]	=	none;
+    
 
-    domains[1][0] = 1;
-    domains[1][1] = BIF;
-    domains[1][2] = m;
-    domains[1][3] = n;
-    domains[1][4] = 0;
-    domains[1][5] = 2;
-    domains[1][6] = 3;
-
-    domains[2][0] = 2;
-    domains[2][1] = BIF;
-    domains[2][2] = m;
-    domains[2][3] = n;
-    domains[2][4] = 1;
-    domains[2][5] = -1;
-    domains[2][6] = -1;
-
-    domains[3][0] = 3;
-    domains[3][1] = STRSEG;
-    domains[3][2] = m;
-    domains[3][3] = n;
-    domains[3][4] = 1;
-    domains[3][5] = -1;
-    domains[3][6] = -1;
+    
 
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal = 10.0;
+	double tfinal = 2.0;
 	double interval = 1e-2;
 //File written every 1 second
-	int file_write_per_unit_time = 1;//int(0.5/interval);
+	int file_write_per_unit_time = int(0.5/interval);
 
 	grid.uniform_jplc = 0.1, grid.min_jplc = 0.35, grid.max_jplc = 0.4, grid.gradient =
 			2.5e-2; grid.stimulus_onset_time	=100.00;
@@ -438,7 +487,7 @@ grid = set_geometry_parameters(grid,e,s);
 		map_solver_to_cells(grid,y,smc,ec);
 
 int state 	=  couplingParms(CASE,&cpl_cef);
-//dump_rank_info(check,cpl_cef,grid);
+dump_rank_info(check,cpl_cef,grid);
 
 double t1	=	MPI_Wtime();
 
@@ -447,7 +496,7 @@ double t1	=	MPI_Wtime();
 	//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
 
 double t2	=	MPI_Wtime();
-	final_checkpoint(check, t1, t2);
+	final_checkpoint(grid,check, t1, t2);
 	
 MPI_Finalize();
 }// end main()
