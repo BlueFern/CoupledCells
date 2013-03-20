@@ -58,8 +58,8 @@ int main(int argc, char* argv[]) {
     int
          m[num_subdomains],
          n[num_subdomains],
-         e = 4,	//ECs per processor in axial direction
-         s = 4;	//SMCs per processor in circumferential direction
+         e = 40,	//ECs per processor in axial direction
+         s = 80;	//SMCs per processor in circumferential direction
 
          m[0]	=	4;
          m[1]	=	8;
@@ -162,18 +162,16 @@ int main(int argc, char* argv[]) {
     domains[7][6]	=	none;
     
 
-    
-
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal = 2.0;
+	double tfinal = 100.0;
 	double interval = 1e-2;
 //File written every 1 second
-	int file_write_per_unit_time = int(0.5/interval);
+	int file_write_per_unit_time = int(1/interval);
 
 	grid.uniform_jplc = 0.1, grid.min_jplc = 0.35, grid.max_jplc = 0.4, grid.gradient =
-			2.5e-2; grid.stimulus_onset_time	=100.00;
+			2.5e-2; grid.stimulus_onset_time	=0.01;
 
 
 grid = set_geometry_parameters(grid,e,s);

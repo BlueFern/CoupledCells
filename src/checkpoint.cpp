@@ -220,6 +220,8 @@ void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,
 					"Total ECs on this node =%d\n"
 					"Total SMCs on this node =%d\n"
 					"Total number of cells on this node =%d\n"
+					"\nTotal ECs in the full computational domain =%d\n"
+					"Total SMCs in the full computational domain =%d\n"
 					"Total number of cells in the full computational domain =%d\n"
 					"Total number of equations in the full computational domain =%d\n ",
 
@@ -240,6 +242,9 @@ void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,
 			grid.num_smc_axially * grid.num_smc_circumferentially,
 			(grid.num_ec_axially * grid.num_ec_circumferentially)
 					+ (grid.num_smc_axially * grid.num_smc_circumferentially),
+			(grid.num_ec_circumferentially * grid.num_ec_axially * grid.numtasks),
+			(grid.num_smc_circumferentially * grid.num_smc_axially
+					* grid.numtasks),
 			((grid.num_ec_axially * grid.num_ec_circumferentially)
 					+ (grid.num_smc_axially * grid.num_smc_circumferentially))
 					* grid.numtasks, grid.NEQ * grid.numtasks);
