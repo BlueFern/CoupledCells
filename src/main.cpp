@@ -58,21 +58,21 @@ int main(int argc, char* argv[]) {
     int
          m[num_subdomains],
          n[num_subdomains],
-         e = 40,	//ECs per processor in axial direction
-         s = 80;	//SMCs per processor in circumferential direction
+         e = 4,	//ECs per processor in axial direction
+         s = 8;	//SMCs per processor in circumferential direction
 
-         m[0]	=	4;
-         m[1]	=	8;
-         m[2]	=	4;
-         m[3]	=	20;
-         m[4]	=	20;
-         m[5]	=	4;
-         m[6]	=	20;
-         m[7]	=	20;
+         m[0]	=	16;
+         m[1]	=	128;
+         m[2]	=	16;
+         m[3]	=	128;
+         m[4]	=	128;
+         m[5]	=	16;
+         m[6]	=	128;
+         m[7]	=	128;
 
 
     	for (int i = 0; i < num_subdomains; i++) {
-    		n[i] = 4;
+    		n[i] = 40;
     	}
 
    	int **domains;
@@ -187,6 +187,7 @@ grid = set_geometry_parameters(grid,e,s);
 
 
 ///Now allocate memory space for the structures represegird.nting the cells and the various members of those structures.
+
 
 //Each of the two cell grids have two additional rows and two additional columns as ghost cells.
 //Follwing is an example of a 5x7 grid with added ghost cells on all four sides. the 0s are the actual

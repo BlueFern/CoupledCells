@@ -107,9 +107,9 @@ void dump_smc(grid_parms grid, celltype1 **smc, checkpoint_handle *check,
 			b3[k] = smc[i][j].p[smc_Vm];
 			b4[k] = smc[i][j].p[smc_w];
 			b5[k] = smc[i][j].p[smc_IP3];
-			b6[k] = smc[i][j].p[cpl_Ca];
-			b7[k] = smc[i][j].p[cpl_Vm];
-			b8[k] = smc[i][j].p[cpl_IP3];
+			b6[k] = smc[i][j].B[cpl_Ca];
+			b7[k] = smc[i][j].B[cpl_Vm];
+			b8[k] = smc[i][j].B[cpl_IP3];
 			k++;
 		}
 	}
@@ -158,9 +158,9 @@ void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check, int writ
 			b2[k] = ec[i][j].q[ec_SR];
 			b3[k] = ec[i][j].q[ec_Vm];
 			b4[k] = ec[i][j].q[ec_IP3];
-			b5[k] = ec[i][j].q[cpl_Ca];
-			b6[k] = ec[i][j].q[cpl_Vm];
-			b7[k] = ec[i][j].q[cpl_IP3];
+			b5[k] = ec[i][j].B[cpl_Ca];
+			b6[k] = ec[i][j].B[cpl_Vm];
+			b7[k] = ec[i][j].B[cpl_IP3];
 			k++;
 		}
 	}
@@ -203,7 +203,7 @@ void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,
 	buffer = (char*) checked_malloc(bytes,
 			"allocation for logfile segment space\n");
 
-	sprintf(buffer,
+sprintf(buffer,
 			"BRANCH_TAG	=	%d\n(Universal_Rank, Cart_Rank= (%d,%d) \tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d) \t "
 					"remote: (up1,up2,down1,down2)=(%d %d %d %d)\n\n flip_array: (%d,%d,%d,%d)\n\n"
 					"Boundary_tag = %c\n(T = Top\t B= Bottom\t N=Interior of the subdomain)\n"
@@ -223,7 +223,8 @@ void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,
 					"\nTotal ECs in the full computational domain =%d\n"
 					"Total SMCs in the full computational domain =%d\n"
 					"Total number of cells in the full computational domain =%d\n"
-					"Total number of equations in the full computational domain =%d\n ",
+					"Total number of equations in the full computational domain =%d\n "
+					"------------------------------------------------------------------",
 
 			grid.branch_tag, grid.universal_rank, grid.rank, grid.coords[0],
 			grid.coords[1], grid.nbrs[local][UP], grid.nbrs[local][DOWN],
@@ -237,6 +238,7 @@ void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,
 			cpl_cef.Vm_ht_smc, cpl_cef.Vm_ht_ec, cpl_cef.Ca_ht_smc,
 			cpl_cef.Ca_ht_ec, cpl_cef.IP3_ht_smc, cpl_cef.IP3_ht_ec,
 			grid.uniform_jplc, grid.min_jplc, grid.max_jplc, grid.gradient,
+			grid.numtasks,grid.m,grid.n,
 			grid.num_ec_axially, grid.num_smc_circumferentially,
 			grid.num_ec_axially * grid.num_ec_circumferentially,
 			grid.num_smc_axially * grid.num_smc_circumferentially,
@@ -247,7 +249,12 @@ void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,
 					* grid.numtasks),
 			((grid.num_ec_axially * grid.num_ec_circumferentially)
 					+ (grid.num_smc_axially * grid.num_smc_circumferentially))
-					* grid.numtasks, grid.NEQ * grid.numtasks);
+					* grid.numtasks, grid.NEQ * grid.numtasks);        
+
+
+
+
+
 
 	disp	=	grid.rank * bytes;
 
