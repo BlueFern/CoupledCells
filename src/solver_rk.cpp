@@ -136,6 +136,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
 		itteration++;
 		/// Call for interprocessor communication
+		MPI_Barrier(MPI_COMM_WORLD);
 		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
 		MPI_Barrier(MPI_COMM_WORLD);
 
@@ -179,7 +180,7 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 	rksuite.setup(grid.NEQ, tnow, y, tfinal, TOL, thres, method, "UT", false,
 			0.00, false);
 
-	double t1 = MPI_Wtime();
+
 	///Iterative  calls to the solver start here.
 	for (tend = interval; tend < tfinal; tend += interval) {
 

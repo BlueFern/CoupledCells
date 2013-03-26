@@ -59,20 +59,20 @@ int main(int argc, char* argv[]) {
          m[num_subdomains],
          n[num_subdomains],
          e = 4,	//ECs per processor in axial direction
-         s = 8;	//SMCs per processor in circumferential direction
+         s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	16;
-         m[1]	=	128;
-         m[2]	=	16;
-         m[3]	=	128;
-         m[4]	=	128;
-         m[5]	=	16;
-         m[6]	=	128;
-         m[7]	=	128;
+         m[0]	=	4;
+         m[1]	=	32;
+         m[2]	=	4;
+         m[3]	=	32;
+         m[4]	=	32;
+         m[5]	=	4;
+         m[6]	=	32;
+         m[7]	=	32;
 
 
     	for (int i = 0; i < num_subdomains; i++) {
-    		n[i] = 40;
+    		n[i] = 20;
     	}
 
    	int **domains;
