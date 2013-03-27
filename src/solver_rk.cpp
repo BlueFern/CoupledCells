@@ -119,7 +119,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 	communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
 	computeDerivatives(tnow, y, yp);
-	MPI_Barrier (MPI_COMM_WORLD);
+	MPI_Barrier (grid.universe);
 	while (tnow <= tfinal) {
 		// the ct() function does not guarantee to advance all the
 		// way to the stop time.  Keep stepping until it does.
@@ -136,9 +136,9 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
 		itteration++;
 		/// Call for interprocessor communication
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(grid.universe);
 		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
-		MPI_Barrier(MPI_COMM_WORLD);
+
 
 		/*if (itteration == 5) {
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s\n");
@@ -153,6 +153,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			checkpoint(check, grid, tnow, smc, ec,write_count);
 		write_count++;
 		}		//end itteration
+		MPI_Barrier(grid.universe);
 		tend += interval;
 		rksuite.reset(tend);
 	}			//end while()
@@ -197,8 +198,9 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
 		itteration++;
 		/// Call for interprocessor communication
+		MPI_Barrier(grid.universe);
 		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
-			MPI_Barrier(MPI_COMM_WORLD);
+
 
 		/*if (itteration == 5) {
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s");
@@ -213,6 +215,7 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 					checkpoint(check, grid, tnow, smc, ec,write_count);
 				write_count++;
 				}		//end itteration
+		MPI_Barrier(grid.universe);
 	}		//end of for loop on TEND
 
 }

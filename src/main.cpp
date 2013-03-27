@@ -490,9 +490,9 @@ dump_rank_info(check,cpl_cef,grid);
 
 double t1	=	MPI_Wtime();
 
-	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
+	//rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
 
-	//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
+	rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
 
 double t2	=	MPI_Wtime();
 	final_checkpoint(grid,check, t1, t2);

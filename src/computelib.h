@@ -195,6 +195,8 @@ void communication_async_send_recv(grid_parms, double**, double**,celltype1**, c
 checkpoint_handle* initialise_checkpoint(grid_parms);
 void dump_smc(grid_parms, celltype1**, checkpoint_handle*, int);
 void dump_ec(grid_parms, celltype2**, checkpoint_handle*, int);
+void dump_smc_async(grid_parms, celltype1**, checkpoint_handle*, int);
+void dump_ec_async(grid_parms, celltype2**, checkpoint_handle*, int);
 void dump_JPLC(grid_parms, celltype2**, checkpoint_handle*, const char*);
 void checkpoint(checkpoint_handle*, grid_parms, double, celltype1**, celltype2**, int);
 void final_checkpoint(grid_parms,checkpoint_handle*, double, double);
