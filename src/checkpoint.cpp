@@ -75,7 +75,9 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid){
 
 	err=sprintf(filename,"ec_cpIP3%s",suffix);
 	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIj));
-
+	
+	err=sprintf(filename,"Elasped_time%s",suffix);
+        CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
 	return (check);
 }
 
@@ -300,7 +302,7 @@ void checkpoint(checkpoint_handle* check, grid_parms grid, double tnow, celltype
 	MPI_Status	status;
 	MPI_Offset	disp;
 	disp = (write_count*1*grid.numtasks*sizeof(double))+ (grid.rank*sizeof(double));
-	CHECK(MPI_File_write_at_all(check->Time, disp, &tnow, 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at(check->Time, disp, &tnow, 1, MPI_DOUBLE, &status));
 
 	dump_smc(grid, smc, check, write_count);
 	dump_ec(grid, ec, check, write_count);
@@ -381,7 +383,7 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 	double diff = t2-t1;
 
 	disp = grid.rank*sizeof(double);
-	CHECK(MPI_File_write_at_all(check->logptr, disp, &diff, 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->elapsed_time, disp, &diff, 1, MPI_DOUBLE, &status));
 
 	MPI_File_close(&check->Time);
 	MPI_File_close(&check->logptr);
@@ -401,6 +403,7 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 	MPI_File_close(&check->cpVj);
 	MPI_File_close(&check->cpIi);
 	MPI_File_close(&check->cpIj);
+	MPI_File_close(&check->elapsed_time);
 	
 }
 

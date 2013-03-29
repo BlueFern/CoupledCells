@@ -160,7 +160,8 @@ typedef struct{
 //#ifdef PARALLEL_IO
 typedef struct{
 MPI_File logptr, Time, ci, si, vi, wi, Ii, cpCi, cpVi, cpIi, cj,
-sj, vj, Ij, cpCj, cpVj, cpIj;
+sj, vj, Ij, cpCj, cpVj, cpIj,
+elapsed_time;
 }checkpoint_handle;
 /*
 #else
