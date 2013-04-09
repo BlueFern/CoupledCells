@@ -5,6 +5,9 @@
 #include <math.h>
 #include "computelib.h"
 
+#ifdef CVODE
+#include <nvector/nvector_serial.h>
+#endif
 
 using namespace std;
 
@@ -473,7 +476,14 @@ grid = set_geometry_parameters(grid,e,s);
 		thres[i]	=	1e-6;
 
 	//Variables holding new and old values
+	#ifdef CVODE
+	N_Vector ny;
+	ny = N_VNew_Serial(grid.NEQ);
+	double *y = NV_DATA_S(ny);
+	#else
 	double* y =  (double*)checked_malloc(grid.NEQ*sizeof(double),"Solver array y for RKSUITE");
+	#endif
+
 	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double),"Solver array yp for RKSUITE");
 
 

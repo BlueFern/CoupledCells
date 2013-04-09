@@ -4,6 +4,11 @@
 #include <cstdlib>
 #include "koenigsberger_macros.h"
 
+#ifdef CVODE
+#include <nvector/nvector_serial.h>
+#endif
+
+
 using namespace std;
 #define success		0
 #define	 none		-1
@@ -226,5 +231,8 @@ grid_parms make_straight_segment(grid_parms);
 grid_parms set_geometry_parameters(grid_parms,int,int);
 grid_parms make_subdomains(grid_parms, int, int**);
 
-
+#ifdef CVODE
+void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
+		int file_write_per_unit_time, checkpoint_handle *check);
+#endif /* CVODE */
 
