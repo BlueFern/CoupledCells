@@ -149,11 +149,11 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}*/
 
-		if ((itteration % file_write_per_unit_time) == 0) {
+		/*if ((itteration % file_write_per_unit_time) == 0) {
 			checkpoint(check, grid, tnow, smc, ec,write_count);
 		write_count++;
 		}		//end itteration
-		MPI_Barrier(grid.universe);
+		MPI_Barrier(grid.cart_comm);*/
 		tend += interval;
 		rksuite.reset(tend);
 	}			//end while()

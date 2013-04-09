@@ -301,7 +301,7 @@ void checkpoint(checkpoint_handle* check, grid_parms grid, double tnow, celltype
 {
 	MPI_Status	status;
 	MPI_Offset	disp;
-	disp = (write_count*1*grid.numtasks*sizeof(double))+ (grid.rank*sizeof(double));
+	disp = (write_count*1*grid.tasks*sizeof(double))+ (grid.rank*sizeof(double));
 	CHECK(MPI_File_write_at(check->Time, disp, &tnow, 1, MPI_DOUBLE, &status));
 
 	dump_smc(grid, smc, check, write_count);

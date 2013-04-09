@@ -58,18 +58,17 @@ int main(int argc, char* argv[]) {
     int
          m[num_subdomains],
          n[num_subdomains],
-         e = 8,	//ECs per processor in axial direction
-         s = 16;	//SMCs per processor in circumferential direction
+         e = 4,	//ECs per processor in axial direction
+         s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	8;
-         m[1]	=	64;
-         m[2]	=	8;
-         m[3]	=	64;
-         m[4]	=	64;
-         m[5]	=	8;
-         m[6]	=	64;
-         m[7]	=	64;
-
+         m[0]	=	4;
+         m[1]	=	32;
+         m[2]	=	4;
+         m[3]	=	32;
+         m[4]	=	32;
+         m[5]	=	4;
+         m[6]	=	32;
+         m[7]	=	32;
 
     	for (int i = 0; i < num_subdomains; i++) {
     		n[i] = 20;
@@ -165,7 +164,7 @@ int main(int argc, char* argv[]) {
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal = 10.0;
+	double tfinal = 100.0;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
