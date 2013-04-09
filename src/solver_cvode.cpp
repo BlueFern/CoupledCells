@@ -1,3 +1,5 @@
+#ifdef CVODE
+
 #include <mpi.h>
 #include <iostream>
 #include <fstream>
@@ -22,7 +24,7 @@ extern grid_parms grid;
 
 
 /********************************************************************************************/
-/**/        static int check_flag(void *flagvalue, char *funcname, int opt)               /**/
+/**/        static int check_cvode_flag(void *flagvalue, char *funcname, int opt)               /**/
 /********************************************************************************************/
 {
   int *errflag;
@@ -147,32 +149,32 @@ int flag;
 realtype t;
 int itteration=0;
 	cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
-	if (check_flag((void *) cvode_mem, "CVodeCreate", 0)) {
+	if (check_cvode_flag((void *) cvode_mem, "CVodeCreate", 0)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
 	}
 	flag = CVodeInit(cvode_mem, f, tnow, y);
-	if (check_flag(&flag, "CVodeInit", 1)) {
+	if (check_cvode_flag(&flag, "CVodeInit", 1)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
 	}
 
 	flag = CVodeSStolerances(cvode_mem, TOL, absTOL);
-	if (check_flag(&flag, "CVodeSStolerances", 1))
+	if (check_cvode_flag(&flag, "CVodeSStolerances", 1))
 		MPI_Abort(MPI_COMM_WORLD, 321);
 
 	flag = CVSpgmr(cvode_mem, PREC_NONE, 0);
-	if (check_flag(&flag, "CVSpgmr", 1)) {
+	if (check_cvode_flag(&flag, "CVSpgmr", 1)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
 	}
 
 	flag = CVodeSetInitStep(cvode_mem, interval / 2);
-	if (check_flag(&flag, "CVodeSetInitStep", 1)) {
+	if (check_cvode_flag(&flag, "CVodeSetInitStep", 1)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
 	}
 
 	///Iterative  calls to the solver start here.
 	for (double k = tnow; k < tfinal; k += interval) {
 			 flag = CVode(cvode_mem, k, y, &t, CV_NORMAL);
-			 if(check_flag(&flag, "CVode", 1)){
+			 if(check_cvode_flag(&flag, "CVode", 1)){
 			 	MPI_Abort(MPI_COMM_WORLD, 400);
 			 }
 		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
@@ -198,3 +200,4 @@ int itteration=0;
 		MPI_Barrier(grid.universe);
 	}		//end of for loop on TEND
 }
+#endif	/* CVODE */

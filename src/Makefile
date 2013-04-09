@@ -1,20 +1,30 @@
-CC=mpixlcxx_r
-DEBUG= -g
-CFLAGS=-c $(DEBUG)
-LDFLAGS=
-SOURCES=main.cpp compute.cpp checkpoint.cpp rksuite.cpp update.cpp solver_rk.cpp debug_file.cpp topology.cpp
-OBJECTS=$(SOURCES:.cpp=.o)
-EXECUTABLE=output/test
+CC=mpixlcxx
+CFLAGS=
+LIBS=-lmass
+INC = -I /bgp/local/pkg/sundials/2.5.0/lib/
+cppfiles = $(shell ls *.cpp)
+hfiles = $(shell ls *.h)
+ofiles = $(cppfiles:.cpp=.o)
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(ofiles)
+	$(CC) $(ofiles) $(LIBS) -o model
 
-$(EXECUTABLE): $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+cvode: CFLAGS=-DCVODE
+cvode: LIBS=-lmass -lsundials_cvode -lsundials_nvecserial
+cvode: all
 
-.cpp.o:
-	$(CC) $(CFLAGS) $< -o $@
-run: 	
-	mpirun -np 12 ./test
-clean: 
-		rm output/*.txt *.o $(EXECUTABLE) output/*.err output/*.out
+mac: CC=mpicxx
+mac: LIBS=
+mac: all
+
+cvmac: CC=mpicxx
+cvmac: CFLAGS=-DCVODE
+cvmac: LIBS=-lsundials_cvode -lsundials_nvecserial
+cvmac: all
+
+$(ofiles): %.o: %.cpp $(hfiles)
+	$(CC) -o $@ -c $<
+
+clean:
+	rm -f $(ofiles) model
 

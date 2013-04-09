@@ -468,12 +468,12 @@ grid = set_geometry_parameters(grid,e,s);
 	double 	tnow	= 0.0;
 
 	//Error control variables
-	double 	TOL	= 1e-6;
+	double 	TOL	= 1e-6, absTOL = 1e-7;
 
 	double * thres = (double*)checked_malloc(grid.NEQ*sizeof(double),"Threshod array for RKSUITE");
 
 	for (int i=0; i<grid.NEQ; i++)
-		thres[i]	=	1e-6;
+		thres[i]	=	absTOL;
 
 	//Variables holding new and old values
 	#ifdef CVODE
@@ -483,10 +483,6 @@ grid = set_geometry_parameters(grid,e,s);
 	#else
 	double* y =  (double*)checked_malloc(grid.NEQ*sizeof(double),"Solver array y for RKSUITE");
 	#endif
-
-	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double),"Solver array yp for RKSUITE");
-
-
 
 	///Initialize different state variables and coupling data values.
 		Initialize_koeingsberger_smc(grid,y,smc);
@@ -499,9 +495,13 @@ dump_rank_info(check,cpl_cef,grid);
 
 double t1	=	MPI_Wtime();
 
-	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
+//	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
 
 //	rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
+
+#ifdef CVODE
+cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check);
+#endif
 
 double t2	=	MPI_Wtime();
 	final_checkpoint(grid,check, t1, t2);

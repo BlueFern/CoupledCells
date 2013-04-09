@@ -232,6 +232,7 @@ grid_parms set_geometry_parameters(grid_parms,int,int);
 grid_parms make_subdomains(grid_parms, int, int**);
 
 #ifdef CVODE
+static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
 		int file_write_per_unit_time, checkpoint_handle *check);
 #endif /* CVODE */
