@@ -1,3 +1,4 @@
+#ifndef CVODE
 #include <mpi.h>
 #include <iostream>
 #include <fstream>
@@ -71,13 +72,7 @@ void computeDerivatives(double t, double y[], double f[]) {
 			else if (i == 1)
 			k = offset + 0;
 
-			if (t > grid.stimulus_onset_time) {
-
-				ec[i][j].JPLC =grid.min_jplc+ (grid.max_jplc/
-						(1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
-
-			} else if (t <= grid.stimulus_onset_time)
-			ec[i][j].JPLC = grid.uniform_jplc;
+			ec[i][j].JPLC = agonist_profile(t,grid,i,j);
 
 			f[k + ((j - 1) * grid.neq_ec) +ec_Ca] = ec[i][j].A[J_IP3]
 			- ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR]
@@ -149,11 +144,11 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}*/
 
-		/*if ((itteration % file_write_per_unit_time) == 0) {
+		if ((itteration % file_write_per_unit_time) == 0) {
 			checkpoint(check, grid, tnow, smc, ec,write_count);
 		write_count++;
 		}		//end itteration
-		MPI_Barrier(grid.cart_comm);*/
+		MPI_Barrier(grid.universe);
 		tend += interval;
 		rksuite.reset(tend);
 	}			//end while()
@@ -219,3 +214,4 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 	}		//end of for loop on TEND
 
 }
+#endif	/*RKSUITE*/

@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <math.h>
 #include "computelib.h"
-#include "rksuite.h"
 
 
 using namespace std;
@@ -623,3 +622,17 @@ void coupling(double t,double y[], grid_parms grid,celltype1** smc, celltype2** 
 
 }	//end of coupling()
 
+/*******************************************************************************************/
+double agonist_profile(double t, grid_parms grid, int i, int j){
+
+	double JPLC;
+	if (t > grid.stimulus_onset_time) {
+
+				JPLC =grid.min_jplc+ (grid.max_jplc/
+						(1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
+
+			} else if (t <= grid.stimulus_onset_time){
+				JPLC = grid.uniform_jplc;
+			}
+	return JPLC;
+}

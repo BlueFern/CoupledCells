@@ -57,24 +57,24 @@ int main(int argc, char* argv[]) {
 
 //Test case
 //config
-    int num_subdomains	=	8;
+    int num_subdomains	=	1;
     int
          m[num_subdomains],
          n[num_subdomains],
          e = 4,	//ECs per processor in axial direction
          s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	4;
-         m[1]	=	32;
+         m[0]	=	2;
+        /* m[1]	=	2;
          m[2]	=	4;
          m[3]	=	32;
          m[4]	=	32;
          m[5]	=	4;
          m[6]	=	32;
-         m[7]	=	32;
+         m[7]	=	32;*/
 
     	for (int i = 0; i < num_subdomains; i++) {
-    		n[i] = 20;
+    		n[i] = 2;
     	}
 
    	int **domains;
@@ -104,9 +104,9 @@ int main(int argc, char* argv[]) {
     domains[0][2] 	= 	m[0];
     domains[0][3] 	= 	n[0];
     domains[0][4] 	= 	none;
-    domains[0][5] 	= 	2;
-    domains[0][6] 	= 	1;
-    
+    domains[0][5] 	= 	none;
+    domains[0][6] 	= 	none;
+   /*
     domains[1][0]	=	1;
     domains[1][1]	=	STRSEG;
     domains[1][2]	=	m[1];
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
     domains[7][4]	=	5;
     domains[7][5]	=	none;
     domains[7][6]	=	none;
-    
+    */
 
     grid =  make_subdomains(grid, num_subdomains, domains);
 
@@ -172,8 +172,8 @@ int main(int argc, char* argv[]) {
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
 
-	grid.uniform_jplc = 0.1, grid.min_jplc = 0.35, grid.max_jplc = 0.4, grid.gradient =
-			2.5e-2; grid.stimulus_onset_time	=0.01;
+	grid.uniform_jplc = 0.4, grid.min_jplc = 0.35, grid.max_jplc = 0.4, grid.gradient =
+			2.5e-2; grid.stimulus_onset_time	=100;
 
 
 grid = set_geometry_parameters(grid,e,s);
@@ -484,6 +484,7 @@ grid = set_geometry_parameters(grid,e,s);
 	double* y =  (double*)checked_malloc(grid.NEQ*sizeof(double),"Solver array y for RKSUITE");
 	#endif
 
+	double* yp =  (double*)checked_malloc(grid.NEQ*sizeof(double),"Solver array y for RKSUITE");
 	///Initialize different state variables and coupling data values.
 		Initialize_koeingsberger_smc(grid,y,smc);
 		Initialize_koeingsberger_ec(grid,y,ec);
@@ -494,15 +495,12 @@ int state 	=  couplingParms(CASE,&cpl_cef);
 dump_rank_info(check,cpl_cef,grid);
 
 double t1	=	MPI_Wtime();
-
-//	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
-
-//	rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
-
 #ifdef CVODE
 cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check);
+#else
+rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
+//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
 #endif
-
 double t2	=	MPI_Wtime();
 	final_checkpoint(grid,check, t1, t2);
 	

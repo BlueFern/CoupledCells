@@ -107,13 +107,7 @@ void computeDerivatives(double t, double y[], double f[]) {
 			else if (i == 1)
 			k = offset + 0;
 
-			if (t > grid.stimulus_onset_time) {
-
-				ec[i][j].JPLC =grid.min_jplc+ (grid.max_jplc/
-						(1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
-
-			} else if (t <= grid.stimulus_onset_time)
-			ec[i][j].JPLC = grid.uniform_jplc;
+			ec[i][j].JPLC = agonist_profile(t,grid,i,j);
 
 			f[k + ((j - 1) * grid.neq_ec) +ec_Ca] = ec[i][j].A[J_IP3]
 			- ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR]
@@ -147,7 +141,7 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 void* cvode_mem;
 int flag;
 realtype t;
-int itteration=0;
+int itteration=0,  write_count=0;
 	cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
 	if (check_cvode_flag((void *) cvode_mem, "CVodeCreate", 0)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
@@ -192,7 +186,7 @@ int itteration=0;
 			write_once++;
 			dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 		}*/
-
+		tnow = t;
 		if ((itteration % file_write_per_unit_time) == 0) {
 					checkpoint(check, grid, tnow, smc, ec,write_count);
 				write_count++;

@@ -237,3 +237,4 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 		int file_write_per_unit_time, checkpoint_handle *check);
 #endif /* CVODE */
 
+double agonist_profile(double, grid_parms, int, int);
