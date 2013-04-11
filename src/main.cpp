@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal = 100.0;
+	double tfinal = 1.0;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
@@ -497,7 +497,8 @@ dump_rank_info(check,cpl_cef,grid);
 double t1	=	MPI_Wtime();
 #ifdef CVODE
 cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check);
-#else
+#endif
+#ifndef CVODE
 rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
 //rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
 #endif

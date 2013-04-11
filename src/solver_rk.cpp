@@ -158,6 +158,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, double* yp,
 		int total, double TOL, double* thres, int file_write_per_unit_time,
 		checkpoint_handle *check) {
+	printf("[%d]: I have called RKSUITE\n",grid.universal_rank);
 
 	RKSUITE rksuite;
 	//Solver method
@@ -214,4 +215,4 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 	}		//end of for loop on TEND
 
 }
-#endif	/*RKSUITE*/
+#endif

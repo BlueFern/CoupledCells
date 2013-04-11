@@ -137,7 +137,7 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
 		int file_write_per_unit_time, checkpoint_handle *check){
-
+printf("[%d]: I have called CVODE\n",grid.universal_rank);
 void* cvode_mem;
 int flag;
 realtype t;
