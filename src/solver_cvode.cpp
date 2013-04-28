@@ -131,17 +131,21 @@ void computeDerivatives(double t, double y[], double f[]) {
 }    //end of computeDerivatives()
 
 static int f(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
-	computeDerivatives(t, NV_DATA_S(y), NV_DATA_S(ydot));
+	double tnow = (double)(t);
+	computeDerivatives(tnow, NV_DATA_S(y), NV_DATA_S(ydot));
 	return 0;
 }
 
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
 		int file_write_per_unit_time, checkpoint_handle *check){
-printf("[%d]: I have called CVODE\n",grid.universal_rank);
+
 void* cvode_mem;
 int flag;
 realtype t;
-int itteration=0,  write_count=0;
+int itteration = 0;
+int write_count=0;
+int write_once=0;
+
 	cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
 	if (check_cvode_flag((void *) cvode_mem, "CVodeCreate", 0)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
@@ -177,21 +181,20 @@ int itteration=0,  write_count=0;
 		MPI_Barrier(grid.universe);
 		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
 
-
 		/*if (itteration == 5) {
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s");
-		}
-
-		if ((itteration == int(grid.stimulus_onset_time/interval)) && (write_once<=1)) {
+		}*/
+		tnow = (double) (t);
+		if (/*(itteration == int(grid.stimulus_onset_time/interval)) && */(write_once<=1) && (tnow>=grid.stimulus_onset_time)) {
 			write_once++;
 			dump_JPLC(grid, ec, check, "Local agonist after t=100s");
-		}*/
-		tnow = t;
+		}
+
 		if ((itteration % file_write_per_unit_time) == 0) {
 					checkpoint(check, grid, tnow, smc, ec,write_count);
 				write_count++;
 				}		//end itteration
-		MPI_Barrier(grid.universe);
+		//MPI_Barrier(grid.universe);
 	}		//end of for loop on TEND
 }
 #endif	/* CVODE */

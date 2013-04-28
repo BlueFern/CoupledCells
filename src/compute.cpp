@@ -1,3 +1,4 @@
+//#include <omp.h>
 #include <mpi.h>
 #include <iostream>
 #include <fstream>
@@ -397,7 +398,7 @@ void single_cell(double t, double y[], grid_parms grid,celltype1** smc, celltype
 	const double BT = 120.00;
 
 	int i, j, k;
-
+//#pragma omp for private(j)
 //EVALUATING SINGLE CELL FLUXES :::::::For SMC::::::::
 	for (i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (j = 1; j <= grid.num_smc_axially; j++) {
@@ -450,8 +451,8 @@ void single_cell(double t, double y[], grid_parms grid,celltype1** smc, celltype
 		} //end for j
 	} //end for i
 
-//EVALUATING SINGLE CELL FLUXES :::::::For EC::::::::
-
+//#pragma omp for private(j)
+//EVALUATING SINGLE CELL FLUXES For EC
 	for (i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (j = 1; j <= grid.num_ec_axially; j++) {
 			//JIP3

@@ -137,18 +137,18 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 		/*if (itteration == 5) {
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s\n");
-		}
+		}*/
 
-		if ((itteration == int(grid.stimulus_onset_time/interval)) && (write_once<=1)) {
-				write_once++;
-				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
-			}*/
+		if (/*(itteration == int(grid.stimulus_onset_time/interval)) && */(write_once<=1) && (tnow>=grid.stimulus_onset_time)) {
+			write_once++;
+			dump_JPLC(grid, ec, check, "Local agonist after t=100s");
+		}
 
 		if ((itteration % file_write_per_unit_time) == 0) {
 			checkpoint(check, grid, tnow, smc, ec,write_count);
 		write_count++;
 		}		//end itteration
-		MPI_Barrier(grid.universe);
+		//MPI_Barrier(grid.universe);
 		tend += interval;
 		rksuite.reset(tend);
 	}			//end while()
@@ -211,7 +211,7 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 					checkpoint(check, grid, tnow, smc, ec,write_count);
 				write_count++;
 				}		//end itteration
-		MPI_Barrier(grid.universe);
+		//MPI_Barrier(grid.universe);
 	}		//end of for loop on TEND
 
 }

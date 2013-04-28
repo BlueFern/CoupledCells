@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
          e = 4,	//ECs per processor in axial direction
          s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	2;
+         m[0]	=	1024;
         /* m[1]	=	2;
          m[2]	=	4;
          m[3]	=	32;
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
          m[7]	=	32;*/
 
     	for (int i = 0; i < num_subdomains; i++) {
-    		n[i] = 2;
+    		n[i] = 4;
     	}
 
    	int **domains;
@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
 		"Subdomains array elements allocation");
 	}
     domains[0][0] 	= 	0;
-    domains[0][1] 	= 	BIF;
+    domains[0][1] 	= 	STRSEG;
     domains[0][2] 	= 	m[0];
     domains[0][3] 	= 	n[0];
     domains[0][4] 	= 	none;
@@ -167,13 +167,13 @@ int main(int argc, char* argv[]) {
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal = 1.0;
+	double tfinal =300.00;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
 
-	grid.uniform_jplc = 0.4, grid.min_jplc = 0.35, grid.max_jplc = 0.4, grid.gradient =
-			2.5e-2; grid.stimulus_onset_time	=100;
+	grid.uniform_jplc = 0.1, grid.min_jplc = 0.35, grid.max_jplc = 1.195, grid.gradient =
+			2.5e-2; grid.stimulus_onset_time	=100.0;
 
 
 grid = set_geometry_parameters(grid,e,s);
@@ -504,7 +504,6 @@ rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_wri
 #endif
 double t2	=	MPI_Wtime();
 	final_checkpoint(grid,check, t1, t2);
-	
 MPI_Finalize();
 }// end main()
 

@@ -166,7 +166,7 @@ typedef struct{
 typedef struct{
 MPI_File logptr, Time, ci, si, vi, wi, Ii, cpCi, cpVi, cpIi, cj,
 sj, vj, Ij, cpCj, cpVj, cpIj,
-elapsed_time;
+elapsed_time,jplc;
 }checkpoint_handle;
 /*
 #else
