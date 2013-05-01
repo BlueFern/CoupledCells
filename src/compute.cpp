@@ -637,3 +637,23 @@ double agonist_profile(double t, grid_parms grid, int i, int j){
 			}
 	return JPLC;
 }
+
+
+/*******************************************************************************************/
+void initialize_t_stamp(time_stamps t_stamp){
+	int n= 2250000;
+			t_stamp.async_comm_calls_t1=;
+			t_stamp.async_comm_calls_t2=;
+			t_stamp.async_comm_calls_wait_t1=;
+			t_stamp.async_comm_calls_wait_t2=;
+			t_stamp.barrier_in_solver_before_comm_t1=;
+			t_stamp.barrier_in_solver_before_comm_t2=;
+			t_stamp.map_fuction_t1=0.0;
+			t_stamp.map_function_t2=0.0;
+			t_stamp.local_flux_t1=0.0;
+			t_stamp.local_flux_t2=0.0;
+			t_stamp.coupling_t1=0.0;
+			t_stamp.coupling_t2=0.0;
+			t_stamp.write_t1=0.0;
+			t_stamp.write_t2=0.0;
+}

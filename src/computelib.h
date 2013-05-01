@@ -168,14 +168,28 @@ MPI_File logptr, Time, ci, si, vi, wi, Ii, cpCi, cpVi, cpIi, cj,
 sj, vj, Ij, cpCj, cpVj, cpIj,
 elapsed_time,jplc;
 }checkpoint_handle;
-/*
-#else
+
+/*#else
 typedef struct {
 	FILE *logptr, *Time, *ci, *si, *vi, *wi, *Ii, *cpCi, *cpVi, *cpIi, *cj,
 	*sj, *vj, *Ij, *cpCj, *cpVj, *cpIj;
 }checkpoint_handle;
 
 #endif*/
+
+
+
+typedef struct{
+	double
+	*async_comm_calls_t1,*async_comm_calls_t2,
+	*async_comm_calls_wait_t1,*async_comm_calls_wait_t2,
+	*barrier_in_solver_before_comm_t1,*barrier_in_solver_before_comm_t2,
+	*map_fuction_t1,*map_function_t2,
+	*local_flux_t1,*local_flux_t2,
+	*coupling_t1,*coupling_t2,
+	*write_t1,*write_t2;
+	double diff;
+}time_stamps;
 
 
 
@@ -238,3 +252,4 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 #endif /* CVODE */
 
 double agonist_profile(double, grid_parms, int, int);
+void initialize_t_stamp(time_stamps);

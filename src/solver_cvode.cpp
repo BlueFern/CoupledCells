@@ -62,10 +62,12 @@ void computeDerivatives(double t, double y[], double f[]) {
 	const double lambda = 45.00;
 	const double Cmj = 25.8;
 	int k = 0, talk = 0;
-	map_solver_to_cells(grid,y,smc,ec);
 
-	single_cell( t, y,  grid, smc,  ec);
-	coupling(t,y, grid, smc, ec,cpl_cef);
+	map_solver_to_cells(grid,y,smc,ec);			/* time stamp this*/
+
+	single_cell( t, y,  grid, smc,  ec);		/* time stamp this*/
+
+	coupling(t,y, grid, smc, ec,cpl_cef);		/* time stamp this*/
 	///In previous version of code (agonist_variation_main.cpp) the indexing in this section was
 	///handelled differently but the end result is same.
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
@@ -170,6 +172,7 @@ int write_once=0;
 	}
 
 	///Iterative  calls to the solver start here.
+	/* time stamp this*/
 	for (double k = tnow; k < tfinal; k += interval) {
 			 flag = CVode(cvode_mem, k, y, &t, CV_NORMAL);
 			 if(check_cvode_flag(&flag, "CVode", 1)){
@@ -178,8 +181,12 @@ int write_once=0;
 		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
 		itteration++;
 		/// Call for interprocessor communication
-		MPI_Barrier(grid.universe);
-		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
+		t_stamp.barrier_in_solver_before_comm_t1	=	MPI_Wtime();
+		MPI_Barrier(grid.universe); 									/* time stamp this*/
+		t_stamp.barrier_in_solver_before_comm_t2	=	MPI_Wtime();
+
+
+		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);		/* time stamp this*/
 
 		/*if (itteration == 5) {
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s");
@@ -189,11 +196,14 @@ int write_once=0;
 			write_once++;
 			dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 		}
-
+		/* time stamp this*/
+		t_stamp.write_t1	=	MPI_Wtime();
 		if ((itteration % file_write_per_unit_time) == 0) {
 					checkpoint(check, grid, tnow, smc, ec,write_count);
 				write_count++;
 				}		//end itteration
+		t_stamp.write_t2	=	MPI_Wtime();
+
 		//MPI_Barrier(grid.universe);
 	}		//end of for loop on TEND
 }
