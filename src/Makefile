@@ -1,5 +1,5 @@
 CC=mpixlcxx
-CFLAGS= -pg 
+CFLAGS= 
 OMP= -openmp
 LIBS=
 cppfiles = $(shell ls *.cpp)
@@ -10,7 +10,7 @@ all: $(ofiles)
 	$(CC) $(CFLAGS) $(ofiles) $(LIBS) -o model
 
 cvode: CFLAGS=-pg -DCVODE
-cvode: LIBS= -I/bgp/local/pkg/sundials/2.5.0/include/ -L/bgp/local/pkg/sundials/2.5.0/lib -lsundials_cvode -lsundials_nvecserial
+cvode: LIBS= -I /intrepid-fs0/users/ccells/persistent/sundials/include -L /intrepid-fs0/users/ccells/persistent/sundials/lib -lsundials_cvode -lsundials_nvecserial
 cvode: all
 
 $(ofiles): %.o: %.cpp $(hfiles)
@@ -18,6 +18,3 @@ $(ofiles): %.o: %.cpp $(hfiles)
 
 clean:
 	rm -f $(ofiles) model *.txt gout.* analysis*.txt
-
-run:
-	mpirun -np 12 ./model

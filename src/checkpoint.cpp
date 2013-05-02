@@ -409,6 +409,10 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 	MPI_Offset 	disp;
 	int n = 11;
 	double buffer[n];
+	
+
+
+
 
 	buffer[0]	=	tnow;
 	buffer[1]	=	t_stamp.diff_async_comm_calls;
