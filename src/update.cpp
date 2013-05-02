@@ -12,6 +12,7 @@ extern 	   double       	**sendbuf,**recvbuf;
 extern	   grid_parms		grid;
 */
 using namespace std;
+extern time_stamps		t_stamp;
 
 ///************************************/
 ///************ check_flag*************/
@@ -111,6 +112,8 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 	determin_source_destination(grid,source,dest);
 
 communication_update_sendbuf(grid,sendbuf,smc,ec);
+
+t_stamp.async_comm_calls_t1		=	MPI_Wtime();
 	/// Communication block
 check_flag(
 		MPI_Irecv(&recvbuf[UP1][0], grid.num_elements_recv_up, MPI_DOUBLE,
@@ -181,8 +184,14 @@ check_flag(
 		MPI_Isend(sendbuf[RIGHT2], grid.num_elements_send_right, MPI_DOUBLE,
 				dest[RIGHT], tag_2, grid.cart_comm, &reqs[RIGHT2]),
 		"Send message operation for RIGHT2");
+t_stamp.async_comm_calls_t2		=	MPI_Wtime();
 
+t_stamp.async_comm_calls_wait_t1 = MPI_Wtime();
 	MPI_Waitall(16, reqs, stats);
+t_stamp.async_comm_calls_wait_t2= MPI_Wtime();
+
+t_stamp.diff_async_comm_calls = t_stamp.async_comm_calls_t2 - t_stamp.async_comm_calls_t1;
+t_stamp.diff_async_comm_calls_wait = t_stamp.async_comm_calls_wait_t2- t_stamp.async_comm_calls_wait_t1;
 
 int remote_source[4], remote_dest[4];
 MPI_Request remote_req[8];

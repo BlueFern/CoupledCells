@@ -166,7 +166,7 @@ typedef struct{
 typedef struct{
 MPI_File logptr, Time, ci, si, vi, wi, Ii, cpCi, cpVi, cpIi, cj,
 sj, vj, Ij, cpCj, cpVj, cpIj,
-elapsed_time,jplc;
+elapsed_time,jplc,time_profiling;
 }checkpoint_handle;
 
 /*#else
@@ -181,14 +181,17 @@ typedef struct {
 
 typedef struct{
 	double
-	*async_comm_calls_t1,*async_comm_calls_t2,
-	*async_comm_calls_wait_t1,*async_comm_calls_wait_t2,
-	*barrier_in_solver_before_comm_t1,*barrier_in_solver_before_comm_t2,
-	*map_fuction_t1,*map_function_t2,
-	*local_flux_t1,*local_flux_t2,
-	*coupling_t1,*coupling_t2,
-	*write_t1,*write_t2;
-	double diff;
+	async_comm_calls_t1,async_comm_calls_t2,diff_async_comm_calls,
+	async_comm_calls_wait_t1,async_comm_calls_wait_t2,diff_async_comm_calls_wait,
+	barrier_in_solver_before_comm_t1,barrier_in_solver_before_comm_t2,diff_barrier_in_solver_before_comm,
+	map_function_t1,map_function_t2,diff_map_function,
+	single_cell_fluxes_t1,single_cell_fluxes_t2,diff_single_cell_fluxes,
+	coupling_fluxes_t1,coupling_fluxes_t2,diff_coupling_fluxes,
+	solver_t1,solver_t2,diff_solver,
+	write_t1,write_t2,diff_write;
+int
+	computeDerivatives_call_counter;
+
 }time_stamps;
 
 
@@ -250,6 +253,7 @@ static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
 		int file_write_per_unit_time, checkpoint_handle *check);
 #endif /* CVODE */
-
+void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stamps);
 double agonist_profile(double, grid_parms, int, int);
 void initialize_t_stamp(time_stamps);
+

@@ -16,7 +16,6 @@ using namespace std;
     celltype2** 	ec;
     double		**sendbuf,**recvbuf;
     grid_parms		grid;
-    time_stamps		t_stamp;
 
 int 	CASE=1;
 ///***************************************************************************************/
@@ -494,7 +493,7 @@ grid = set_geometry_parameters(grid,e,s);
 int state 	=  couplingParms(CASE,&cpl_cef);
 dump_rank_info(check,cpl_cef,grid);
 
-initialize_t_stamp(t_stamp);
+
 
 double t1	=	MPI_Wtime();
 #ifdef CVODE

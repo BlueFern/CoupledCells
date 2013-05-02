@@ -81,6 +81,9 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid){
 
     err=sprintf(filename,"JPLC%s",suffix);
     	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->jplc));
+
+    err=sprintf(filename,"time_profile%s",suffix);
+    	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->time_profiling));
 	return (check);
 }
 
@@ -400,6 +403,30 @@ void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check, const 
 		CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
 }
 
+void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tnow, time_stamps t_stamp){
+
+	MPI_Status	status;
+	MPI_Offset 	disp;
+	int n = 9;
+	double buffer[n];
+
+	buffer[0]	=	t_stamp.diff_async_comm_calls;
+	buffer[1]	=	t_stamp.diff_async_comm_calls_wait;
+	buffer[2]	=	t_stamp.diff_barrier_in_solver_before_comm;
+	buffer[3]	=	t_stamp.diff_map_function;
+	buffer[4]	=	t_stamp.diff_single_cell_fluxes;
+	buffer[5]	=	t_stamp.diff_coupling_fluxes;
+	buffer[6]	=	t_stamp.diff_solver;
+	buffer[7]	= 	t_stamp.diff_write;
+	buffer[8]	=	(double) (t_stamp.computeDerivatives_call_counter);
+
+
+	disp = grid.rank*n*sizeof(double);
+	CHECK(MPI_File_write_at_all(check->time_profiling, disp, &buffer, n, MPI_DOUBLE, &status));
+
+}
+
+
 void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, double t2){
 	MPI_Status	status;
 	MPI_Offset	disp;
@@ -431,8 +458,10 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 
 	MPI_File_close(&check->elapsed_time);
 	MPI_File_close(&check->jplc);
+	MPI_File_close(&check->time_profiling);
 	
 }
+
 
 
 /*

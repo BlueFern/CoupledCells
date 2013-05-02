@@ -20,6 +20,7 @@ extern celltype1** smc;
 extern celltype2** ec;
 extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
+extern time_stamps		t_stamp;
 
 
 
@@ -63,11 +64,24 @@ void computeDerivatives(double t, double y[], double f[]) {
 	const double Cmj = 25.8;
 	int k = 0, talk = 0;
 
-	map_solver_to_cells(grid,y,smc,ec);			/* time stamp this*/
+	t_stamp.computeDerivatives_call_counter = t_stamp.computeDerivatives_call_counter +1;
 
-	single_cell( t, y,  grid, smc,  ec);		/* time stamp this*/
+	t_stamp.map_function_t1	=	MPI_Wtime();
+	map_solver_to_cells(grid,y,smc,ec);
+	t_stamp.map_function_t2	=	MPI_Wtime();
+	t_stamp.diff_map_function	=	t_stamp.diff_map_function + (t_stamp.map_function_t2 - t_stamp.map_function_t1);
 
-	coupling(t,y, grid, smc, ec,cpl_cef);		/* time stamp this*/
+
+	t_stamp.single_cell_fluxes_t1	=	MPI_Wtime();
+	single_cell( t, y,  grid, smc,  ec);
+	t_stamp.single_cell_fluxes_t2	=	MPI_Wtime();
+	t_stamp.diff_single_cell_fluxes = t_stamp.diff_single_cell_fluxes + (t_stamp.single_cell_fluxes_t2 - t_stamp.single_cell_fluxes_t1);
+
+	t_stamp.coupling_fluxes_t1	=	MPI_Wtime();
+	coupling(t,y, grid, smc, ec,cpl_cef);
+	t_stamp.coupling_fluxes_t2	=	MPI_Wtime();
+	t_stamp.diff_coupling_fluxes = t_stamp.diff_coupling_fluxes + (t_stamp.coupling_fluxes_t2 - t_stamp.coupling_fluxes_t1);
+
 	///In previous version of code (agonist_variation_main.cpp) the indexing in this section was
 	///handelled differently but the end result is same.
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
@@ -147,7 +161,7 @@ realtype t;
 int itteration = 0;
 int write_count=0;
 int write_once=0;
-
+initialize_t_stamp(t_stamp);
 	cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
 	if (check_cvode_flag((void *) cvode_mem, "CVodeCreate", 0)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
@@ -173,20 +187,25 @@ int write_once=0;
 
 	///Iterative  calls to the solver start here.
 	/* time stamp this*/
+	t_stamp.solver_t1 	=	MPI_Wtime();
 	for (double k = tnow; k < tfinal; k += interval) {
 			 flag = CVode(cvode_mem, k, y, &t, CV_NORMAL);
 			 if(check_cvode_flag(&flag, "CVode", 1)){
 			 	MPI_Abort(MPI_COMM_WORLD, 400);
 			 }
+	t_stamp.solver_t2 	=	MPI_Wtime();
+	t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
 		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
 		itteration++;
+
 		/// Call for interprocessor communication
 		t_stamp.barrier_in_solver_before_comm_t1	=	MPI_Wtime();
 		MPI_Barrier(grid.universe); 									/* time stamp this*/
 		t_stamp.barrier_in_solver_before_comm_t2	=	MPI_Wtime();
 
+		t_stamp.diff_barrier_in_solver_before_comm = t_stamp.barrier_in_solver_before_comm_t2 - t_stamp.barrier_in_solver_before_comm_t1;
 
-		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);		/* time stamp this*/
+		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
 
 		/*if (itteration == 5) {
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s");
@@ -196,6 +215,8 @@ int write_once=0;
 			write_once++;
 			dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 		}
+
+
 		/* time stamp this*/
 		t_stamp.write_t1	=	MPI_Wtime();
 		if ((itteration % file_write_per_unit_time) == 0) {
@@ -203,6 +224,10 @@ int write_once=0;
 				write_count++;
 				}		//end itteration
 		t_stamp.write_t2	=	MPI_Wtime();
+		t_stamp.diff_write  =   t_stamp.write_t2-t_stamp.write_t1;
+
+		checkpoint_timing_data(grid,check,tnow,t_stamp);
+		initialize_t_stamp(t_stamp);
 
 		//MPI_Barrier(grid.universe);
 	}		//end of for loop on TEND
