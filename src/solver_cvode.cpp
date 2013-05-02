@@ -161,6 +161,7 @@ realtype t;
 int itteration = 0;
 int write_count=0;
 int write_once=0;
+int count=0;
 initialize_t_stamp(t_stamp);
 	cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
 	if (check_cvode_flag((void *) cvode_mem, "CVodeCreate", 0)) {
@@ -226,9 +227,9 @@ initialize_t_stamp(t_stamp);
 		t_stamp.write_t2	=	MPI_Wtime();
 		t_stamp.diff_write  =   t_stamp.write_t2-t_stamp.write_t1;
 
-		checkpoint_timing_data(grid,check,tnow,t_stamp,itteration);
+		checkpoint_timing_data(grid,check,tnow,t_stamp,count);
 		initialize_t_stamp(t_stamp);
-
+		count++;
 		//MPI_Barrier(grid.universe);
 	}		//end of for loop on TEND
 }

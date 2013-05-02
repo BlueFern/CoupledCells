@@ -407,8 +407,9 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 
 	MPI_Status	status;
 	MPI_Offset 	disp;
-	int n = 10;
+	int n = 11;
 	double buffer[n];
+
 	buffer[0]	=	tnow;
 	buffer[1]	=	t_stamp.diff_async_comm_calls;
 	buffer[2]	=	t_stamp.diff_async_comm_calls_wait;
@@ -419,7 +420,7 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 	buffer[7]	=	t_stamp.diff_solver;
 	buffer[8]	= 	t_stamp.diff_write;
 	buffer[9]	=	(double) (t_stamp.computeDerivatives_call_counter);
-
+	buffer[10]	=	(double) (itteration);
 	int write_element_count, time_offset_in_file;
 
 		write_element_count = n;

@@ -166,13 +166,13 @@ int main(int argc, char* argv[]) {
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal =3000.00;
+	double tfinal =1e-2;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
 
 	grid.uniform_jplc = 0.1, grid.min_jplc = 0.3, grid.max_jplc = 1.195, grid.gradient =
-			0.5e-2; grid.stimulus_onset_time	=100.0;
+			0.5e-2; grid.stimulus_onset_time	=0.1;
 
 
 grid = set_geometry_parameters(grid,e,s);
