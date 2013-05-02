@@ -403,27 +403,27 @@ void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check, const 
 		CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
 }
 
-void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tnow, time_stamps t_stamp){
+void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tnow, time_stamps t_stamp,int itteration){
 
 	MPI_Status	status;
 	MPI_Offset 	disp;
-	int n = 9;
+	int n = 10;
 	double buffer[n];
-
-	buffer[0]	=	t_stamp.diff_async_comm_calls;
-	buffer[1]	=	t_stamp.diff_async_comm_calls_wait;
-	buffer[2]	=	t_stamp.diff_barrier_in_solver_before_comm;
-	buffer[3]	=	t_stamp.diff_map_function;
-	buffer[4]	=	t_stamp.diff_single_cell_fluxes;
-	buffer[5]	=	t_stamp.diff_coupling_fluxes;
-	buffer[6]	=	t_stamp.diff_solver;
-	buffer[7]	= 	t_stamp.diff_write;
-	buffer[8]	=	(double) (t_stamp.computeDerivatives_call_counter);
+	buffer[0]	=	tnow;
+	buffer[1]	=	t_stamp.diff_async_comm_calls;
+	buffer[2]	=	t_stamp.diff_async_comm_calls_wait;
+	buffer[3]	=	t_stamp.diff_barrier_in_solver_before_comm;
+	buffer[4]	=	t_stamp.diff_map_function;
+	buffer[5]	=	t_stamp.diff_single_cell_fluxes;
+	buffer[6]	=	t_stamp.diff_coupling_fluxes;
+	buffer[7]	=	t_stamp.diff_solver;
+	buffer[8]	= 	t_stamp.diff_write;
+	buffer[9]	=	(double) (t_stamp.computeDerivatives_call_counter);
 
 	int write_element_count, time_offset_in_file;
 
 		write_element_count = n;
-		time_offset_in_file = write_element_count * grid.tasks * sizeof(double);
+		time_offset_in_file = itteration*write_element_count * grid.tasks * sizeof(double);
 
 		disp = time_offset_in_file + (grid.rank * write_element_count * sizeof(double));
 

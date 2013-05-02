@@ -253,7 +253,7 @@ static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
 		int file_write_per_unit_time, checkpoint_handle *check);
 #endif /* CVODE */
-void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stamps);
+void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stamps,int);
 double agonist_profile(double, grid_parms, int, int);
 void initialize_t_stamp(time_stamps);
 

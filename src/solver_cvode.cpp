@@ -226,7 +226,7 @@ initialize_t_stamp(t_stamp);
 		t_stamp.write_t2	=	MPI_Wtime();
 		t_stamp.diff_write  =   t_stamp.write_t2-t_stamp.write_t1;
 
-		checkpoint_timing_data(grid,check,tnow,t_stamp);
+		checkpoint_timing_data(grid,check,tnow,t_stamp,itteration);
 		initialize_t_stamp(t_stamp);
 
 		//MPI_Barrier(grid.universe);
