@@ -643,6 +643,7 @@ double agonist_profile(double t, grid_parms grid, int i, int j){
 
 
 /*******************************************************************************************/
+/*******************************************************************************************/
 void initialize_t_stamp(time_stamps t_stamp){
 	t_stamp.diff_async_comm_calls	=	0.0;
 	t_stamp.diff_async_comm_calls_wait=	0.0;
