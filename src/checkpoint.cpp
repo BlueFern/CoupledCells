@@ -420,8 +420,13 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 	buffer[7]	= 	t_stamp.diff_write;
 	buffer[8]	=	(double) (t_stamp.computeDerivatives_call_counter);
 
+	int write_element_count, time_offset_in_file;
 
-	disp = grid.rank*n*sizeof(double);
+		write_element_count = n;
+		time_offset_in_file = write_element_count * grid.tasks * sizeof(double);
+
+		disp = time_offset_in_file + (grid.rank * write_element_count * sizeof(double));
+
 	CHECK(MPI_File_write_at_all(check->time_profiling, disp, &buffer, n, MPI_DOUBLE, &status));
 
 }
@@ -431,6 +436,7 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 	MPI_Status	status;
 	MPI_Offset	disp;
 	double diff = t2-t1;
+
 
 	disp = grid.rank*sizeof(double);
 	CHECK(MPI_File_write_at_all(check->elapsed_time, disp, &diff, 1, MPI_DOUBLE, &status));
