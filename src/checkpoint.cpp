@@ -25,97 +25,126 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid){
 		err=sprintf(suffix,"%d_%d.txt",subdomain,branch);
 	}
 
-	err=sprintf(filename,"time_%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Time));
+	err = sprintf(filename, "time_%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Time));
 
-	err=sprintf(filename,"Log_file%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->logptr));
+	err = sprintf(filename, "Log_file%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->logptr));
 
-	err=sprintf(filename,"smc_Ca%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->ci));
+	err = sprintf(filename, "smc_Ca%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->ci));
 
-	err=sprintf(filename,"ec_Ca%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cj));
+	err = sprintf(filename, "ec_Ca%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cj));
 
-	err=sprintf(filename,"smc_SERCA%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->si));
+	err = sprintf(filename, "smc_SERCA%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->si));
 
-	err=sprintf(filename,"ec_SERCA%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->sj));
+	err = sprintf(filename, "ec_SERCA%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->sj));
 
-	err=sprintf(filename,"smc_V%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->vi));
+	err = sprintf(filename, "smc_V%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->vi));
 
-	err=sprintf(filename,"ec_V%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->vj));
+	err = sprintf(filename, "ec_V%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->vj));
 
-	err=sprintf(filename,"smc_KCa%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->wi));
+	err = sprintf(filename, "smc_KCa%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->wi));
 
-	err=sprintf(filename,"smc_IP3%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ii));
+	err = sprintf(filename, "smc_IP3%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ii));
 
-	err=sprintf(filename,"ec_IP3%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ij));
+	err = sprintf(filename, "ec_IP3%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ij));
 
-	err=sprintf(filename,"smc_cpc%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpCi));
+	err = sprintf(filename, "smc_cpc%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpCi));
 
-	err=sprintf(filename,"ec_cpc%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpCj));
+	err = sprintf(filename, "ec_cpc%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpCj));
 
-	err=sprintf(filename,"smc_cpV%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpVi));
+	err = sprintf(filename, "smc_cpV%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpVi));
 
-	err=sprintf(filename,"ec_cpV%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpVj));
+	err = sprintf(filename, "ec_cpV%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpVj));
 
-	err=sprintf(filename,"smc_cpIP3%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIi));
+	err = sprintf(filename, "smc_cpIP3%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIi));
 
-	err=sprintf(filename,"ec_cpIP3%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIj));
-	
-	err=sprintf(filename,"Elasped_time%s",suffix);
-        CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
+	err = sprintf(filename, "ec_cpIP3%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIj));
 
-    err=sprintf(filename,"JPLC%s",suffix);
-    	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->jplc));
+	err = sprintf(filename, "Elasped_time%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
 
-    err=sprintf(filename,"time_profile%s",suffix);
-    	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->time_profiling));
+	err = sprintf(filename, "JPLC%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->jplc));
+
+	err = sprintf(filename, "time_profile%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->time_profiling));
 
 	err = sprintf(filename, "async_calls%s");
-		CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_calls));
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_calls));
 
-	err = sprintf(filename, "async_wait%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_wait));
+	/*err = sprintf(filename, "async_wait%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_wait));
 
-	err = sprintf(filename, "barrier_before_comm%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->barrier_before_comm));
+	err = sprintf(filename, "barrier_before_comm%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->barrier_before_comm));
 
-	err = sprintf(filename, "map_func%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->map_function));
+	err = sprintf(filename, "map_func%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->map_function));
 
-	err = sprintf(filename, "single_cell%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->single_cell_fluxes));
+	err = sprintf(filename, "single_cell%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->single_cell_fluxes));
 
-	err = sprintf(filename, "coupling%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->coupling_fluxes));
+	err = sprintf(filename, "coupling%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->coupling_fluxes));
 
-	err = sprintf(filename, "solver%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->solver));
+	err = sprintf(filename, "solver%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->solver));
 
-	err = sprintf(filename, "writer_func%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->writer_func));
+	err = sprintf(filename, "writer_func%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->writer_func));
 
-	err = sprintf(filename, "derivative_calls%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->derivative_calls));
+	err = sprintf(filename, "derivative_calls%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->derivative_calls));
 
-	err = sprintf(filename, "itter_count%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->itter_count));
-
-
+	err = sprintf(filename, "itter_count%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->itter_count));
+*/
 	return (check);
 }
 
@@ -459,7 +488,7 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 		time_offset_in_file = itteration* write_element_count * grid.tasks * sizeof(double);
 
 		disp_write = time_offset_in_file + (grid.rank * write_element_count * sizeof(double));
-
+/*
 		CHECK(MPI_File_write_at_all(check->time_profiling, disp_write, &buffer[0], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->async_calls, disp_write, &buffer[1], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->async_wait, disp_write, &buffer[2], 1, MPI_DOUBLE, &status));
@@ -470,7 +499,7 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 		CHECK(MPI_File_write_at_all(check->solver, disp_write, &buffer[7], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->writer_func, disp_write, &buffer[8], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->derivative_calls, disp_write, &buffer[9], 1, MPI_DOUBLE, &status));
-		CHECK(MPI_File_write_at_all(check->itter_count, disp_write, &buffer[10], 1, MPI_DOUBLE, &status));
+		CHECK(MPI_File_write_at_all(check->itter_count, disp_write, &buffer[10], 1, MPI_DOUBLE, &status));*/
 }
 
 
@@ -507,7 +536,7 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 	MPI_File_close(&check->elapsed_time);
 	MPI_File_close(&check->jplc);
 	MPI_File_close(&check->time_profiling);
-	MPI_File_close(&check->async_calls);
+	/*MPI_File_close(&check->async_calls);
 	MPI_File_close(&check->async_wait);
 	MPI_File_close(&check->barrier_before_comm);
 	MPI_File_close(&check->map_function);
@@ -516,7 +545,7 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 	MPI_File_close(&check->solver);
 	MPI_File_close(&check->writer_func);
 	MPI_File_close(&check->derivative_calls);
-	MPI_File_close(&check->itter_count);
+	MPI_File_close(&check->itter_count);*/
 }
 
 
