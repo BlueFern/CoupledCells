@@ -86,44 +86,34 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid){
     	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->time_profiling));
 
 	err = sprintf(filename, "async_calls%s");
-		CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &async_calls));
+		CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &async_calls));
 
 	err = sprintf(filename, "async_wait%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &async_wait));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_wait));
 
 	err = sprintf(filename, "barrier_before_comm%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &barrier_before_comm));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->barrier_before_comm));
 
 	err = sprintf(filename, "map_func%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &map_function));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->map_function));
 
 	err = sprintf(filename, "single_cell%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &single_cell_fluxes));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->single_cell_fluxes));
 
 	err = sprintf(filename, "coupling%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &coupling_fluxes));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->coupling_fluxes));
 
 	err = sprintf(filename, "solver%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &solver));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->solver));
 
 	err = sprintf(filename, "writer_func%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &checkpoint));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->writer_func));
 
 	err = sprintf(filename, "derivative_calls%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &derivative_calls));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->derivative_calls));
 
 	err = sprintf(filename, "itter_count%s",suffix);
-	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-			MPI_INFO_NULL, &itter_count));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->itter_count));
 
 
 	return (check);
@@ -478,7 +468,7 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 		CHECK(MPI_File_write_at_all(check->single_cell_fluxes, disp_write, &buffer[5], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->coupling_fluxes, disp_write, &buffer[6], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->solver, disp_write, &buffer[7], 1, MPI_DOUBLE, &status));
-		CHECK(MPI_File_write_at_all(check->checkpoint, disp_write, &buffer[8], 1, MPI_DOUBLE, &status));
+		CHECK(MPI_File_write_at_all(check->writer_func, disp_write, &buffer[8], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->derivative_calls, disp_write, &buffer[9], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->itter_count, disp_write, &buffer[10], 1, MPI_DOUBLE, &status));
 }
