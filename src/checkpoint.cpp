@@ -86,7 +86,7 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid){
     	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->time_profiling));
 
 	err = sprintf(filename, "async_calls%s");
-		CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &async_calls));
+		CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_calls));
 
 	err = sprintf(filename, "async_wait%s",suffix);
 	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_wait));
@@ -438,7 +438,7 @@ void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check, const 
 void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tnow, time_stamps t_stamp,int itteration){
 
 	MPI_Status	status;
-	MPI_Offset 	disp;
+	MPI_Offset 	disp,disp_write;
 	int n = 11;
 	double buffer[n];
 	
@@ -458,7 +458,7 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 		write_element_count = 1;
 		time_offset_in_file = itteration* write_element_count * grid.tasks * sizeof(double);
 
-		disp = time_offset_in_file + (grid.rank * write_element_count * sizeof(double));
+		disp_write = time_offset_in_file + (grid.rank * write_element_count * sizeof(double));
 
 		CHECK(MPI_File_write_at_all(check->time_profiling, disp_write, &buffer[0], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->async_calls, disp_write, &buffer[1], 1, MPI_DOUBLE, &status));

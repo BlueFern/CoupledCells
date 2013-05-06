@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal =1.00;
+	double tfinal =10.00;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
