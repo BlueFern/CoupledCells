@@ -105,11 +105,11 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid){
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->time_profiling));
 
-	err = sprintf(filename, "async_calls%s");
+	/*err = sprintf(filename, "async_calls%s");
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_calls));
 
-	/*err = sprintf(filename, "async_wait%s", suffix);
+	err = sprintf(filename, "async_wait%s", suffix);
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_wait));
 
