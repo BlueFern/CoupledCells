@@ -514,7 +514,7 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 	MPI_File_close(&check->single_cell_fluxes);
 	MPI_File_close(&check->coupling_fluxes);
 	MPI_File_close(&check->solver);
-	MPI_File_close(&check->checkpoint);
+	MPI_File_close(&check->writer_func);
 	MPI_File_close(&check->derivative_calls);
 	MPI_File_close(&check->itter_count);
 }
