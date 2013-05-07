@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
          e = 4,	//ECs per processor in axial direction
          s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	512;
+         m[0]	=	256;
         /* m[1]	=	2;
          m[2]	=	4;
          m[3]	=	32;
@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal =10.00;
+	double tfinal =1.00;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);

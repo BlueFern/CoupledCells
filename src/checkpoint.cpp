@@ -105,7 +105,7 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid){
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->time_profiling));
 
-	/*err = sprintf(filename, "async_calls%s");
+	err = sprintf(filename, "async_calls%s",suffix);
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->async_calls));
 
@@ -144,7 +144,7 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid){
 	err = sprintf(filename, "itter_count%s", suffix);
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->itter_count));
-*/
+
 	return (check);
 }
 
@@ -488,7 +488,7 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 		time_offset_in_file = itteration* write_element_count * grid.tasks * sizeof(double);
 
 		disp_write = time_offset_in_file + (grid.rank * write_element_count * sizeof(double));
-/*
+
 		CHECK(MPI_File_write_at_all(check->time_profiling, disp_write, &buffer[0], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->async_calls, disp_write, &buffer[1], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->async_wait, disp_write, &buffer[2], 1, MPI_DOUBLE, &status));
@@ -499,7 +499,7 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 		CHECK(MPI_File_write_at_all(check->solver, disp_write, &buffer[7], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->writer_func, disp_write, &buffer[8], 1, MPI_DOUBLE, &status));
 		CHECK(MPI_File_write_at_all(check->derivative_calls, disp_write, &buffer[9], 1, MPI_DOUBLE, &status));
-		CHECK(MPI_File_write_at_all(check->itter_count, disp_write, &buffer[10], 1, MPI_DOUBLE, &status));*/
+		CHECK(MPI_File_write_at_all(check->itter_count, disp_write, &buffer[10], 1, MPI_DOUBLE, &status));
 }
 
 
@@ -536,7 +536,7 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 	MPI_File_close(&check->elapsed_time);
 	MPI_File_close(&check->jplc);
 	MPI_File_close(&check->time_profiling);
-	/*MPI_File_close(&check->async_calls);
+	MPI_File_close(&check->async_calls);
 	MPI_File_close(&check->async_wait);
 	MPI_File_close(&check->barrier_before_comm);
 	MPI_File_close(&check->map_function);
@@ -545,7 +545,7 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 	MPI_File_close(&check->solver);
 	MPI_File_close(&check->writer_func);
 	MPI_File_close(&check->derivative_calls);
-	MPI_File_close(&check->itter_count);*/
+	MPI_File_close(&check->itter_count);
 }
 
 
