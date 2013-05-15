@@ -63,14 +63,14 @@ int main(int argc, char* argv[]) {
          e = 4,	//ECs per processor in axial direction
          s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	256;
-        /* m[1]	=	2;
+         m[0]	=	4;
+         m[1]	=	4;
          m[2]	=	4;
-         m[3]	=	32;
-         m[4]	=	32;
+         m[3]	=	4;
+         m[4]	=	4;
          m[5]	=	4;
-         m[6]	=	32;
-         m[7]	=	32;*/
+         m[6]	=	4;
+         m[7]	=	4;
 
     	for (int i = 0; i < num_subdomains; i++) {
     		n[i] = 4;
@@ -99,13 +99,13 @@ int main(int argc, char* argv[]) {
 		"Subdomains array elements allocation");
 	}
     domains[0][0] 	= 	0;
-    domains[0][1] 	= 	STRSEG;
+    domains[0][1] 	= 	BIF;
     domains[0][2] 	= 	m[0];
     domains[0][3] 	= 	n[0];
     domains[0][4] 	= 	none;
-    domains[0][5] 	= 	none;
-    domains[0][6] 	= 	none;
-   /*
+    domains[0][5] 	= 	2;
+    domains[0][6] 	= 	1;
+/*
     domains[1][0]	=	1;
     domains[1][1]	=	STRSEG;
     domains[1][2]	=	m[1];
@@ -161,12 +161,12 @@ int main(int argc, char* argv[]) {
     domains[7][4]	=	5;
     domains[7][5]	=	none;
     domains[7][6]	=	none;
-    */
+*/
 
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal =1.00;
+	double tfinal =1e-6;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
@@ -182,7 +182,7 @@ grid = set_geometry_parameters(grid,e,s);
 	} else if (grid.my_domain.internal_info.domain_type == BIF) {
 		grid = make_bifucation(grid);
 	}
-
+	 grid =  update_global_subdomain_information(grid, num_subdomains, domains);
 	///Initialize checkpoint routine which opens files
 	    checkpoint_handle *check = initialise_checkpoint(grid);
 

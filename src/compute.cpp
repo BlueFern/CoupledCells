@@ -643,6 +643,11 @@ double agonist_profile(double t, grid_parms grid, int i, int j){
 
 
 /*******************************************************************************************/
+//double z_coordinate(grid_parms gird, double domains[][], int num_subdomains, int i, int j)
+/*******************************************************************************************/
+
+
+
 /*******************************************************************************************/
 void initialize_t_stamp(time_stamps t_stamp){
 	t_stamp.diff_async_comm_calls	=	0.0;

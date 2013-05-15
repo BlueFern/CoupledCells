@@ -31,7 +31,7 @@ using namespace std;
 #define RIGHT	3
 
 #define STRSEG		0		//a straight segment
-#define BIF		1		//a bifurcation
+#define BIF			1		//a bifurcation
 
 
 #define P 		1		//parent
@@ -74,6 +74,18 @@ struct my_tree
     node internal_info;
     node left_child, right_child, parent;
     };
+struct glb_domn_inf{
+int
+num_subdomains,										///number of total subdomains
+*m,*n,												///number of grid points axially, number of grid points circumferentially
+*list_type_subdomains,								///list of types of subdomains, either STRSEG=0 or BIF=1
+*list_num_ec_axially_per_domain;					///list of number of ECs axially in each subdomain in sequence of increasing z_coordinate of distance.
+double
+**list_domain_z_coord_index;	   					///stores the start and end of each subdomain in axial direction. This will be used to estimate the agonist
+													///on that particular z coordinate. First two elements store the coords for any STRSEG or Left/Right child of
+													///bifurcation where as the last two elements store coords for the parent segment of a bifurcation, if the domain
+													///type is BIF
+};
 typedef struct {
 	///General infomation on cell geometry and the geometric primitive constructed.
 		double hx_smc, hx_ec,hy_smc, hy_ec,
@@ -126,6 +138,7 @@ typedef struct {
 	stimulus_onset_time;				// the time when spatially varying agonist kicks in
 
 	my_tree		my_domain;
+	glb_domn_inf global_domain_info;
 
 	//Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
 	//operation on MPI_COMM_WORLD and the other a Cartisian communicator arising from Cart_create operation
@@ -259,3 +272,5 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stam
 double agonist_profile(double, grid_parms, int, int);
 void initialize_t_stamp(time_stamps);
 
+
+grid_parms update_global_subdomain_information(grid_parms , int , int**);

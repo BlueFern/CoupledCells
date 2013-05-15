@@ -386,7 +386,7 @@ void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,
 			"allocation for logfile segment space\n");
 
 sprintf(buffer,
-			"BRANCH_TAG	=	%d\n(Universal_Rank, Cart_Rank= (%d,%d) \tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d) \t "
+			"BRANCH_TAG	=	%d\n[Universal_Rank, Cart_Rank= (%d,%d)] \tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d) \t "
 					"remote: (up1,up2,down1,down2)=(%d %d %d %d)\n\n flip_array: (%d,%d,%d,%d)\n\n"
 					"Boundary_tag = %c\n(T = Top\t B= Bottom\t N=Interior of the subdomain)\n"
 					"COUPLING COEFFICIENTS\n"

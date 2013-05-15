@@ -204,6 +204,7 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains){
 	    "error retrieving Subdomain_rank");
     check_flag(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks),
 	    "error retrieving Subdomain_size");
+
     return grid;
     } //end of make_subdomains()
 
@@ -619,4 +620,81 @@ grid_parms make_straight_segment(grid_parms grid)
     return grid;
     }			//end of make_straight_segment()
 
+/****** Update global subdomain information ******/
+grid_parms update_global_subdomain_information(grid_parms grid,
+		int num_subdomains, int** domains) {
+	grid.global_domain_info.num_subdomains = num_subdomains;
+
+	grid.global_domain_info.m = (int*) checked_malloc(
+			(grid.global_domain_info.num_subdomains * sizeof(int)), "aa");
+	grid.global_domain_info.n = (int*) checked_malloc(
+			(grid.global_domain_info.num_subdomains * sizeof(int)), "bb");
+
+	grid.global_domain_info.list_type_subdomains = (int*) checked_malloc(
+			(grid.global_domain_info.num_subdomains * sizeof(int)), "cc");
+	grid.global_domain_info.list_num_ec_axially_per_domain =
+			(int*) checked_malloc(
+					(grid.global_domain_info.num_subdomains * sizeof(int)),
+					"dd");
+	grid.global_domain_info.list_domain_z_coord_index = (double**) checked_malloc(
+			(grid.global_domain_info.num_subdomains * sizeof(double*)), "ee");
+	for (int i = 0; i < grid.global_domain_info.num_subdomains; i++) {
+		grid.global_domain_info.list_domain_z_coord_index[i] =
+				(double*) checked_malloc((4 * sizeof(double)), "ff");
+	}
+
+	double z_start = 0.0, z_end = 0.0, z_start_parent = 0.0, z_end_parent = 0.0;
+	for (int i = 0; i < grid.global_domain_info.num_subdomains; i++) {
+		grid.global_domain_info.m[i] = domains[i][2];
+		grid.global_domain_info.n[i] = domains[i][3];
+		grid.global_domain_info.list_type_subdomains[i] = domains[i][1];
+		if (grid.global_domain_info.list_type_subdomains[i] == STRSEG) {
+			grid.global_domain_info.list_num_ec_axially_per_domain[i] =
+					grid.global_domain_info.m[i] * grid.num_ec_axially;
+			///start and end of z coordinate in subdomains. This will be used in evaluation of agonist concentration on ECs with a particular z coordinate.
+			if(z_start)
+			z_start = z_end;
+			z_end = z_start
+					+ (double) (grid.global_domain_info.m[i]
+							* grid.num_ec_axially) * 65e-6;
+			grid.global_domain_info.list_domain_z_coord_index[i][0] = z_start;
+			grid.global_domain_info.list_domain_z_coord_index[i][0] = z_end;
+
+		} else if (grid.global_domain_info.list_type_subdomains[i] == BIF) {
+			///note: in axial direction in the case of a bifurcation, the number of ECs in axial direction is
+			///(num_EC in axial direction for Parent + num_EC in axial direction for Left child or Right child)
+			grid.global_domain_info.list_num_ec_axially_per_domain[i] = 2
+					* grid.global_domain_info.m[i] * grid.num_ec_axially;
+
+			///start and end of z coordinate in subdomains. This will be used in evaluation of agonist concentration on ECs with a particular z coordinate.
+			///z coordinate for parent segment of bifurcation
+			z_start_parent = z_end;
+			z_end_parent = z_start_parent
+					+ (double) (grid.global_domain_info.m[i]
+							* grid.num_ec_axially) * 65e-6;
+			///z coordinate for left/right child of bifurcation
+			z_start = z_end_parent;
+			z_end = z_start
+					+ (double) (grid.global_domain_info.m[i]
+							* grid.num_ec_axially) * 65e-6;
+		}
+		grid.global_domain_info.list_domain_z_coord_index[i][0] = z_start;
+		grid.global_domain_info.list_domain_z_coord_index[i][1] = z_end;
+		grid.global_domain_info.list_domain_z_coord_index[i][2] =
+				z_start_parent;
+		grid.global_domain_info.list_domain_z_coord_index[i][3] = z_end_parent;
+
+		if (grid.universal_rank == 0) {
+			printf("[%d]:  %d %d %d\n", i, grid.global_domain_info.m[i],
+					grid.global_domain_info.n[i],
+					grid.global_domain_info.list_type_subdomains[i]);
+			printf("[%d]:  %lf %lf %lf %lf \n %lf %lf %lf %lf\n\n", i, z_start,z_end, z_start_parent, z_end_parent,
+					grid.global_domain_info.list_domain_z_coord_index[i][0],
+					grid.global_domain_info.list_domain_z_coord_index[i][1],
+					grid.global_domain_info.list_domain_z_coord_index[i][2],
+					grid.global_domain_info.list_domain_z_coord_index[i][3]);
+		}
+	}
+	return (grid);
+}
 
