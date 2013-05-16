@@ -579,7 +579,7 @@ grid_parms make_straight_segment(grid_parms grid)
 	    MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
 		    &grid.nbrs[local][RIGHT]),"failed at cart left right");
 
-    //Label the ranks on the subdomain edges of at STRAIGHT SEGMENT as top or bottom boundary.
+    //Label the ranks on the subdomain edges of at STRAIGHT SEGMENT as top (T) or bottom boundary (B) or none (N).
 	for (int i = 0; i < (grid.m * grid.n); i++) {
 		if ((grid.rank >= ((grid.m - 1) * grid.n))
 				&& (grid.rank <= (grid.m * grid.n - 1))) {
@@ -644,7 +644,17 @@ grid_parms update_global_subdomain_information(grid_parms grid,
 	}
 
 	double z_start = 0.0, z_end = 0.0, z_start_parent = 0.0, z_end_parent = 0.0;
-	for (int i = 0; i < grid.global_domain_info.num_subdomains; i++) {
+
+	double my_offset=0.0,parent_offset=0.0, z_offset;
+	double recvbuf[grid.numtasks];
+
+	my_offset = (double) (grid.universal_rank * grid.m * grid.num_ec_axially) *65e-6;
+
+	z_coord_exchange(grid, my_offset, parent_offset,recvbuf);
+
+
+
+/*	for (int i = 0; i < grid.global_domain_info.num_subdomains; i++) {
 		grid.global_domain_info.m[i] = domains[i][2];
 		grid.global_domain_info.n[i] = domains[i][3];
 		grid.global_domain_info.list_type_subdomains[i] = domains[i][1];
@@ -694,7 +704,75 @@ grid_parms update_global_subdomain_information(grid_parms grid,
 					grid.global_domain_info.list_domain_z_coord_index[i][2],
 					grid.global_domain_info.list_domain_z_coord_index[i][3]);
 		}
-	}
+	}*/
 	return (grid);
 }
 
+void z_coord_exchange(grid_parms grid, double my_offset, double parent_offset, double *recvbuf) {
+	int tag = 101;
+	MPI_Status status;
+	/*if (grid.my_domain.parent.domain_index == none) {
+		if (grid.my_domain.internal_info.domain_type == STRSEG) {
+			check_flag(
+					(MPI_Send(&my_offset, 1, MPI_DOUBLE, grid.nbrs[remote][UP1],
+							tag, grid.universe)),
+					"z_info_no_parent_type_STRSEG");
+		} else if (grid.my_domain.internal_info.domain_type == BIF) {
+			if (grid.branch_tag == P) {
+				check_flag(
+						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
+								grid.nbrs[remote][UP1], tag, grid.sub_universe)),
+						"z_info_no_parent_type_BIF");
+			} else if ((grid.branch_tag == L) || (grid.branch_tag == R)) {
+				check_flag(
+						(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
+								grid.nbrs[remote][DOWN1], tag,
+								grid.sub_universe, &status)),
+						"z_info_no_parent_type_BIF");
+				check_flag(
+						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
+								grid.nbrs[remote][UP1], tag, grid.universe)),
+						"z_info_no_parent_type_BIF");
+			}
+		}
+	} else if (grid.my_domain.parent.domain_index > none) {
+		if (grid.my_domain.internal_info.domain_type == STRSEG) {
+			check_flag(
+					(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
+							grid.nbrs[remote][DOWN1], tag, grid.universe,
+							&status)), "z_info_parent_type_STRSEG");
+			check_flag(
+					(MPI_Send(&my_offset, 1, MPI_DOUBLE, grid.nbrs[remote][UP1],
+							tag, grid.universe)), "z_info_parent_type_STRSEG");
+		} else if (grid.my_domain.internal_info.domain_type == BIF) {
+			if (grid.branch_tag == P) {
+				check_flag(
+						(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
+								grid.nbrs[remote][DOWN1], tag, grid.universe,
+								&status)), "z_info_parent_type_BIF");
+				check_flag(
+						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
+								grid.nbrs[remote][UP1], tag, grid.sub_universe)),
+						"z_info_parent_type_BIF");
+			} else if ((grid.branch_tag == L) && (grid.branch_tag == R)) {
+				check_flag(
+						(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
+								grid.nbrs[remote][DOWN1], tag,
+								grid.sub_universe, &status)),
+						"z_info_parent_type_BIF");
+				check_flag(
+						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
+								grid.nbrs[remote][UP1], tag, grid.universe)),
+						"z_info_parent_type_BIF");
+			}
+		}
+	}*/
+
+	MPI_Allgather(&my_offset,1,MPI_DOUBLE,&recvbuf[0],1,MPI_DOUBLE,grid.universe);
+
+	printf("[%d] %lf, %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",grid.universal_rank,my_offset,
+				recvbuf[0],recvbuf[1],recvbuf[2],recvbuf[3],
+				recvbuf[4],recvbuf[5],recvbuf[6],recvbuf[7],
+				recvbuf[8],recvbuf[9],recvbuf[10],recvbuf[11]);
+
+}

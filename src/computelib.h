@@ -272,5 +272,5 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stam
 double agonist_profile(double, grid_parms, int, int);
 void initialize_t_stamp(time_stamps);
 
-
+void z_coord_exchange(grid_parms , double , double, double* );
 grid_parms update_global_subdomain_information(grid_parms , int , int**);

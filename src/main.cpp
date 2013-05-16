@@ -63,17 +63,17 @@ int main(int argc, char* argv[]) {
          e = 4,	//ECs per processor in axial direction
          s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	4;
-         m[1]	=	4;
-         m[2]	=	4;
+         m[0]	=	2;
+/*         m[1]	=	3;
+         m[2]	=	3;
          m[3]	=	4;
          m[4]	=	4;
          m[5]	=	4;
          m[6]	=	4;
          m[7]	=	4;
-
+*/
     	for (int i = 0; i < num_subdomains; i++) {
-    		n[i] = 4;
+    		n[i] = 2;
     	}
 
    	int **domains;
@@ -103,25 +103,25 @@ int main(int argc, char* argv[]) {
     domains[0][2] 	= 	m[0];
     domains[0][3] 	= 	n[0];
     domains[0][4] 	= 	none;
-    domains[0][5] 	= 	2;
-    domains[0][6] 	= 	1;
+    domains[0][5] 	= 	none;
+    domains[0][6] 	= 	none;
 /*
     domains[1][0]	=	1;
     domains[1][1]	=	STRSEG;
     domains[1][2]	=	m[1];
     domains[1][3]	=	n[1];
     domains[1][4]	=	0;
-    domains[1][5]	=	5;
+    domains[1][5]	=	none;
     domains[1][6]	=	none;
     
     domains[2][0]	=	2;
-    domains[2][1]	=	BIF;
+    domains[2][1]	=	STRSEG;
     domains[2][2]	=	m[2];
     domains[2][3]	=	n[2];
     domains[2][4]	=	0;
-    domains[2][5]	=	4;
-    domains[2][6]	=	3;
-    
+    domains[2][5]	=	none;
+    domains[2][6]	=	none;
+
     domains[3][0]	=	3;
     domains[3][1]	=	STRSEG;
     domains[3][2]	=	m[3];
