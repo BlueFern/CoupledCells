@@ -268,20 +268,22 @@ grid_parms make_bifucation(grid_parms grid)
     periodic[1] = 1;
     reorder = 0;
 
-    check_flag(
-	    MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder,
-		    &grid.cart_comm),"failed at cart create");
-    check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), "failed at cart comm rank");
-    check_flag(MPI_Comm_size(grid.cart_comm, &grid.tasks), "failed at cart comm tasks");
-    check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords),
-	     "failed at cart coords");
+	check_flag(
+			MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder,
+					&grid.cart_comm), "failed at cart create");
+	check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank),
+			"failed at cart comm rank");
+	check_flag(MPI_Comm_size(grid.cart_comm, &grid.tasks),
+			"failed at cart comm tasks");
+	check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords),
+			"failed at cart coords");
 
-    check_flag(
-	    MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP],
-		    &grid.nbrs[local][DOWN]), "failed at cart shift up down");
-    check_flag(
-	    MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
-		    &grid.nbrs[local][RIGHT]),"failed at cart left right");
+	check_flag(
+			MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP],
+					&grid.nbrs[local][DOWN]), "failed at cart shift up down");
+	check_flag(
+			MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT],
+					&grid.nbrs[local][RIGHT]), "failed at cart left right");
 
     //Identifying remote neighbours
 
@@ -292,18 +294,16 @@ grid_parms make_bifucation(grid_parms grid)
   
 
     //check whether number of processors in circumferential direction are EVEN or ODD.
-    grid.scheme = grid.n % 2;
-    if (grid.color == 0){
-	grid.branch_tag = P;
-    }
-    else if (grid.color == 1){
-	grid.branch_tag	= L;
-    }
-    else if (grid.color == 2){
-	grid.branch_tag = R;
-    }
-  
-    //Label the ranks on the subdomain edges of at STRAIGHT SEGMENT as top or bottom boundary.
+	grid.scheme = grid.n % 2;
+	if (grid.color == 0) {
+		grid.branch_tag = P;
+	} else if (grid.color == 1) {
+		grid.branch_tag = L;
+	} else if (grid.color == 2) {
+		grid.branch_tag = R;
+	}
+
+	//Label the ranks on the subdomain edges of at STRAIGHT SEGMENT as top or bottom boundary.
 	for (int i = 0; i < (3 * grid.m * grid.n); i++) {
 		if (grid.branch_tag == P) {
 			if ((grid.rank >= ((grid.m - 1) * grid.n))
@@ -321,72 +321,66 @@ grid_parms make_bifucation(grid_parms grid)
 		}
 	}
 
-    //If number of processors in circumferentail dimension are EVEN
-    if (grid.scheme == 0)
-	{
-	//For parent branch edge
-	if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
-	    {
-		grid.my_domain.internal_info.boundary_tag = 'I';
-	    if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2))
-		{
-		grid.nbrs[remote][UP1] = grid.offset_L
-			+ (grid.sub_universe_rank - grid.offset_P);
-		grid.nbrs[remote][UP2] = grid.offset_L
-			+ (grid.sub_universe_rank - grid.offset_P);
+	//If number of processors in circumferentail dimension are EVEN
+	if (grid.scheme == 0) {
+		//For parent branch edge
+		if ((grid.sub_universe_rank >= 0)
+				&& (grid.sub_universe_rank < grid.n)) {
+			grid.my_domain.internal_info.boundary_tag = 'I';//Top edge which couples to Left/Right child branch
+			if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2)) {
+				grid.nbrs[remote][UP1] = grid.offset_L
+						+ (grid.sub_universe_rank - grid.offset_P);
+				grid.nbrs[remote][UP2] = grid.offset_L
+						+ (grid.sub_universe_rank - grid.offset_P);
+			} else if ((grid.sub_universe_rank - grid.offset_P)
+					>= (grid.n / 2)) {
+				grid.nbrs[remote][UP1] = grid.offset_R
+						+ (grid.sub_universe_rank - grid.offset_P);
+				grid.nbrs[remote][UP2] = grid.offset_R
+						+ (grid.sub_universe_rank - grid.offset_P);
+			}
+			//For Left daughter branch edge
+		} else if ((grid.sub_universe_rank >= grid.offset_L)
+				&& (grid.sub_universe_rank < (grid.offset_L + grid.n))) {
+			grid.my_domain.internal_info.boundary_tag = 'I';
+			if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2)) {
+				grid.nbrs[remote][DOWN1] = grid.sub_universe_rank
+						- grid.offset_L;
+				grid.nbrs[remote][DOWN2] = grid.sub_universe_rank
+						- grid.offset_L;
+				grid.my_domain.internal_info.half_marker = 1;
+			} else if ((grid.sub_universe_rank - grid.offset_L)
+					>= (grid.n / 2)) {
+				grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n - 1))
+						- (grid.sub_universe_rank - grid.offset_L);
+				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1))
+						- (grid.sub_universe_rank - grid.offset_L);
+				grid.flip_array[DOWN1] = 1;
+				grid.flip_array[DOWN2] = 1;
+				grid.my_domain.internal_info.half_marker = 2;
+			}
 		}
-	    else if ((grid.sub_universe_rank - grid.offset_P) >= (grid.n / 2))
-		{
-		grid.nbrs[remote][UP1] = grid.offset_R
-			+ (grid.sub_universe_rank - grid.offset_P);
-		grid.nbrs[remote][UP2] = grid.offset_R
-			+ (grid.sub_universe_rank - grid.offset_P);
+		//For Right daughter branch edge
+		else if ((grid.sub_universe_rank >= grid.offset_R)
+				&& (grid.sub_universe_rank < (grid.offset_R + grid.n))) {
+			grid.my_domain.internal_info.boundary_tag = 'I';
+			if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2)) {
+				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
+						- (grid.sub_universe_rank - grid.offset_R);
+				grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n - 1))
+						- (grid.sub_universe_rank - grid.offset_R);
+				grid.flip_array[DOWN1] = 1;
+				grid.flip_array[DOWN2] = 1;
+				grid.my_domain.internal_info.half_marker = 2;
+			} else if ((grid.sub_universe_rank - grid.offset_R)
+					>= (grid.n / 2)) {
+				grid.nbrs[remote][DOWN1] = grid.sub_universe_rank
+						- grid.offset_R;
+				grid.nbrs[remote][DOWN2] = grid.sub_universe_rank
+						- grid.offset_R;
+				grid.my_domain.internal_info.half_marker = 1;
+			}
 		}
-	    //For Left daughter branch edge
-	    }
-	else if ((grid.sub_universe_rank >= grid.offset_L)
-		&& (grid.sub_universe_rank < (grid.offset_L + grid.n)))
-	    {
-		grid.my_domain.internal_info.boundary_tag = 'I';
-	    if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2))
-		{
-		grid.nbrs[remote][DOWN1] = grid.sub_universe_rank
-			- grid.offset_L;
-		grid.nbrs[remote][DOWN2] = grid.sub_universe_rank
-			- grid.offset_L;
-		}
-	    else if ((grid.sub_universe_rank - grid.offset_L) >= (grid.n / 2))
-		{
-		grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n - 1))
-			- (grid.sub_universe_rank - grid.offset_L);
-		grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1))
-			- (grid.sub_universe_rank - grid.offset_L);
-		grid.flip_array[DOWN1] = 1;
-		grid.flip_array[DOWN2] = 1;
-		}
-	    }
-	//For Right daughter branch edge
-	else if ((grid.sub_universe_rank >= grid.offset_R)
-		&& (grid.sub_universe_rank < (grid.offset_R + grid.n)))
-	    {
-		grid.my_domain.internal_info.boundary_tag = 'I';
-	    if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2))
-		{
-		grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1))
-			- (grid.sub_universe_rank - grid.offset_R);
-		grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n - 1))
-			- (grid.sub_universe_rank - grid.offset_R);
-		grid.flip_array[DOWN1] = 1;
-		grid.flip_array[DOWN2] = 1;
-		}
-	    else if ((grid.sub_universe_rank - grid.offset_R) >= (grid.n / 2))
-		{
-		grid.nbrs[remote][DOWN1] = grid.sub_universe_rank
-			- grid.offset_R;
-		grid.nbrs[remote][DOWN2] = grid.sub_universe_rank
-			- grid.offset_R;
-		}
-	    }
 	}
 
     //In the case of n being ODD
@@ -432,6 +426,7 @@ grid_parms make_bifucation(grid_parms grid)
 			- grid.offset_L);
 		grid.nbrs[remote][DOWN2] = (grid.sub_universe_rank
 			- grid.offset_L);
+		grid.my_domain.internal_info.half_marker	=	1;
 		}
 	    else if ((grid.sub_universe_rank - grid.offset_L)
 		    > ((grid.n - 1) / 2))
@@ -442,6 +437,7 @@ grid_parms make_bifucation(grid_parms grid)
 			- (grid.sub_universe_rank - grid.offset_L);
 		grid.flip_array[DOWN1] = 1;
 		grid.flip_array[DOWN2] = 1;
+		grid.my_domain.internal_info.half_marker	=	2;
 		}
 	    else if ((grid.sub_universe_rank - grid.offset_L)
 		    == ((grid.n - 1) / 2))
@@ -452,6 +448,7 @@ grid_parms make_bifucation(grid_parms grid)
 			- (grid.sub_universe_rank - grid.offset_L);
 		grid.flip_array[DOWN1] = 0;
 		grid.flip_array[DOWN2] = 1;
+		grid.my_domain.internal_info.half_marker	=	3;
 		}
 	    }
 	//The right daughter artery edge
@@ -467,6 +464,7 @@ grid_parms make_bifucation(grid_parms grid)
 			- (grid.sub_universe_rank - grid.offset_R);
 		grid.flip_array[DOWN1] = 1;
 		grid.flip_array[DOWN2] = 1;
+		grid.my_domain.internal_info.half_marker	=	2;
 		}
 	    else if ((grid.sub_universe_rank - grid.offset_R)
 		    > ((grid.n - 1) / 2))
@@ -475,6 +473,7 @@ grid_parms make_bifucation(grid_parms grid)
 			- grid.offset_R;
 		grid.nbrs[remote][DOWN2] = grid.sub_universe_rank
 			- grid.offset_R;
+		grid.my_domain.internal_info.half_marker	=	1;
 		}
 	    else if ((grid.sub_universe_rank - grid.offset_R)
 		    == ((grid.n - 1) / 2))
@@ -485,6 +484,7 @@ grid_parms make_bifucation(grid_parms grid)
 			- grid.offset_R;
 		grid.flip_array[DOWN1] = 1;
 		grid.flip_array[DOWN2] = 0;
+		grid.my_domain.internal_info.half_marker	=	3;
 		}
 	    }
 	}
@@ -646,12 +646,12 @@ grid_parms update_global_subdomain_information(grid_parms grid,
 	double z_start = 0.0, z_end = 0.0, z_start_parent = 0.0, z_end_parent = 0.0;
 
 	double my_offset=0.0,parent_offset=0.0, z_offset;
-	double recvbuf[grid.numtasks];
 
-	my_offset = (double) (grid.universal_rank * grid.m * grid.num_ec_axially) *65e-6;
 
-	z_coord_exchange(grid, my_offset, parent_offset,recvbuf);
+	my_offset = (double) (grid.m * grid.num_ec_axially) *65e-6;
 
+	z_coord_exchange(grid, my_offset, &parent_offset);
+	//printf("[%d] my_offset=%lf parent_offset=%lf\n",grid.universal_rank,my_offset,parent_offset);
 
 
 /*	for (int i = 0; i < grid.global_domain_info.num_subdomains; i++) {
@@ -708,10 +708,10 @@ grid_parms update_global_subdomain_information(grid_parms grid,
 	return (grid);
 }
 
-void z_coord_exchange(grid_parms grid, double my_offset, double parent_offset, double *recvbuf) {
+void z_coord_exchange(grid_parms grid, double my_offset, double* parent_offset) {
 	int tag = 101;
 	MPI_Status status;
-	/*if (grid.my_domain.parent.domain_index == none) {
+	if (grid.my_domain.parent.domain_index == none) {
 		if (grid.my_domain.internal_info.domain_type == STRSEG) {
 			check_flag(
 					(MPI_Send(&my_offset, 1, MPI_DOUBLE, grid.nbrs[remote][UP1],
@@ -719,20 +719,25 @@ void z_coord_exchange(grid_parms grid, double my_offset, double parent_offset, d
 					"z_info_no_parent_type_STRSEG");
 		} else if (grid.my_domain.internal_info.domain_type == BIF) {
 			if (grid.branch_tag == P) {
-				check_flag(
-						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
-								grid.nbrs[remote][UP1], tag, grid.sub_universe)),
-						"z_info_no_parent_type_BIF");
+					check_flag(
+							(MPI_Send(&my_offset, 1, MPI_DOUBLE,
+									grid.nbrs[remote][UP1], tag,
+									grid.sub_universe)),
+							"z_info_no_parent_type_BIF");
+
 			} else if ((grid.branch_tag == L) || (grid.branch_tag == R)) {
+				if (grid.my_domain.internal_info.half_marker == 1) {
+					check_flag(
+							(MPI_Recv(parent_offset, 1, MPI_DOUBLE,
+									grid.nbrs[remote][DOWN1], tag,
+									grid.sub_universe, &status)),
+							"z_info_no_parent_type_BIF");
+					printf("a: [%d] recved from [%d]: Parent_offset= %lf\n",grid.universal_rank,grid.nbrs[remote][DOWN1],parent_offset);
+				}
 				check_flag(
-						(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
-								grid.nbrs[remote][DOWN1], tag,
-								grid.sub_universe, &status)),
-						"z_info_no_parent_type_BIF");
-				check_flag(
-						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
-								grid.nbrs[remote][UP1], tag, grid.universe)),
-						"z_info_no_parent_type_BIF");
+							(MPI_Send(&my_offset, 1, MPI_DOUBLE,
+									grid.nbrs[remote][UP1], tag, grid.universe)),
+							"z_info_no_parent_type_BIF");
 			}
 		}
 	} else if (grid.my_domain.parent.domain_index > none) {
@@ -741,6 +746,8 @@ void z_coord_exchange(grid_parms grid, double my_offset, double parent_offset, d
 					(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
 							grid.nbrs[remote][DOWN1], tag, grid.universe,
 							&status)), "z_info_parent_type_STRSEG");
+			printf("b: [%d] recved from [%d]: Parent_offset= %lf\n",grid.universal_rank,grid.nbrs[remote][DOWN1],parent_offset);
+
 			check_flag(
 					(MPI_Send(&my_offset, 1, MPI_DOUBLE, grid.nbrs[remote][UP1],
 							tag, grid.universe)), "z_info_parent_type_STRSEG");
@@ -750,29 +757,26 @@ void z_coord_exchange(grid_parms grid, double my_offset, double parent_offset, d
 						(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
 								grid.nbrs[remote][DOWN1], tag, grid.universe,
 								&status)), "z_info_parent_type_BIF");
+				printf("c: [%d] recved from [%d]: Parent_offset= %lf\n",grid.universal_rank,grid.nbrs[remote][DOWN1],parent_offset);
 				check_flag(
 						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
 								grid.nbrs[remote][UP1], tag, grid.sub_universe)),
 						"z_info_parent_type_BIF");
 			} else if ((grid.branch_tag == L) && (grid.branch_tag == R)) {
+				if (grid.my_domain.internal_info.half_marker == 1) {
 				check_flag(
 						(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
 								grid.nbrs[remote][DOWN1], tag,
 								grid.sub_universe, &status)),
 						"z_info_parent_type_BIF");
+				printf("d: [%d] recved from [%d]: Parent_offset= %lf\n",grid.universal_rank,grid.nbrs[remote][DOWN1],parent_offset);
+				}
 				check_flag(
 						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
 								grid.nbrs[remote][UP1], tag, grid.universe)),
 						"z_info_parent_type_BIF");
 			}
 		}
-	}*/
-
-	MPI_Allgather(&my_offset,1,MPI_DOUBLE,&recvbuf[0],1,MPI_DOUBLE,grid.universe);
-
-	printf("[%d] %lf, %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",grid.universal_rank,my_offset,
-				recvbuf[0],recvbuf[1],recvbuf[2],recvbuf[3],
-				recvbuf[4],recvbuf[5],recvbuf[6],recvbuf[7],
-				recvbuf[8],recvbuf[9],recvbuf[10],recvbuf[11]);
+	}
 
 }

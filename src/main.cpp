@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
 //Test case
 //config
-    int num_subdomains	=	1;
+    int num_subdomains	=	2;
     int
          m[num_subdomains],
          n[num_subdomains],
@@ -64,8 +64,8 @@ int main(int argc, char* argv[]) {
          s = 4;	//SMCs per processor in circumferential direction
 
          m[0]	=	2;
-/*         m[1]	=	3;
-         m[2]	=	3;
+         m[1]	=	3;
+/*         m[2]	=	3;
          m[3]	=	4;
          m[4]	=	4;
          m[5]	=	4;
@@ -103,9 +103,9 @@ int main(int argc, char* argv[]) {
     domains[0][2] 	= 	m[0];
     domains[0][3] 	= 	n[0];
     domains[0][4] 	= 	none;
-    domains[0][5] 	= 	none;
+    domains[0][5] 	= 	1;
     domains[0][6] 	= 	none;
-/*
+
     domains[1][0]	=	1;
     domains[1][1]	=	STRSEG;
     domains[1][2]	=	m[1];
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
     domains[1][4]	=	0;
     domains[1][5]	=	none;
     domains[1][6]	=	none;
-    
+/*
     domains[2][0]	=	2;
     domains[2][1]	=	STRSEG;
     domains[2][2]	=	m[2];

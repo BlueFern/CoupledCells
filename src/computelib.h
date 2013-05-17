@@ -60,11 +60,21 @@ struct conductance{
 	};
 struct node
     {
-    int domain_type,domain_index,		//am I a bifurcation or a straight segment?
-    	domain_start, domain_end,		//These are universal ranks from MPI_COMM_WORLD
-    	parent_branch_case_bifurcation,	//if my parent is a bifurcation which branch am I a child of
-    	m, n;							//row and columns in my MPI_sub_world
-    char boundary_tag;					//an identifier showing whether I am a rank from top or bottom edge of a subdomain.
+    int domain_type,domain_index,		///am I a bifurcation or a straight segment?
+    	domain_start, domain_end,		///These are universal ranks from MPI_COMM_WORLD
+    	parent_branch_case_bifurcation,	///if my parent is a bifurcation which branch am I a child of
+    	m, n;							///row and columns in my MPI_sub_world
+    char boundary_tag;					///an identifier showing whether I am a rank from top or bottom edge of a subdomain.
+    int  half_marker;					///a marker for demarcating the bottom edge of the Left/Right daughter artery
+    									///exists which couples not to the parent artery but the other daughter segment. This can have following values:
+    									/// 1. half coupling to parent
+    									/// 2. half coupling to other daughter
+    									/// 3. half splitting in the middle with left portion coupling to parent, and right portion of data coupling
+    									///    to other daughter segment.
+
+
+
+
     double d, l;				//diameter and length scales
     
     };
@@ -82,10 +92,10 @@ num_subdomains,										///number of total subdomains
 *list_num_ec_axially_per_domain;					///list of number of ECs axially in each subdomain in sequence of increasing z_coordinate of distance.
 double
 **list_domain_z_coord_index;	   					///stores the start and end of each subdomain in axial direction. This will be used to estimate the agonist
-													///on that particular z coordinate. First two elements store the coords for any STRSEG or Left/Right child of
+};													///on that particular z coordinate. First two elements store the coords for any STRSEG or Left/Right child of
 													///bifurcation where as the last two elements store coords for the parent segment of a bifurcation, if the domain
 													///type is BIF
-};
+
 typedef struct {
 	///General infomation on cell geometry and the geometric primitive constructed.
 		double hx_smc, hx_ec,hy_smc, hy_ec,
@@ -272,5 +282,5 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stam
 double agonist_profile(double, grid_parms, int, int);
 void initialize_t_stamp(time_stamps);
 
-void z_coord_exchange(grid_parms , double , double, double* );
+void z_coord_exchange(grid_parms , double , double* );
 grid_parms update_global_subdomain_information(grid_parms , int , int**);
