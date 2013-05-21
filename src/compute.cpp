@@ -627,27 +627,42 @@ void coupling(double t,double y[], grid_parms grid,celltype1** smc, celltype2** 
 }	//end of coupling()
 
 /*******************************************************************************************/
-double agonist_profile(double t, grid_parms grid, int i, int j){
+double agonist_profile(double t, grid_parms grid, int i, int j, double z_coord){
 
 	double JPLC;
 	if (t > grid.stimulus_onset_time) {
 
-				JPLC =grid.min_jplc+ (grid.max_jplc/
+			/*	JPLC =grid.min_jplc+ (grid.max_jplc/
 						(1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
-
-			} else if (t <= grid.stimulus_onset_time){
-				JPLC = grid.uniform_jplc;
-			}
+*/
+	JPLC =0.27+ (1e-2/ (1e-2 + exp(-2.7e3 * z_coord)));
+	}else if (t <= grid.stimulus_onset_time){
+		JPLC = grid.uniform_jplc;
+	}
 	return JPLC;
 }
 
+/**********************************************************************/
+celltype2** ith_ec_z_coordinate(grid_parms grid, celltype2** ec)
+/**********************************************************************/
+{	double array[2*grid.num_ec_axially];
 
-/*******************************************************************************************/
-//double z_coordinate(grid_parms gird, double domains[][], int num_subdomains, int i, int j)
-/*******************************************************************************************/
+	for (int i=0; i<=2*grid.num_ec_axially; i++){
+			array[i] = grid.my_domain.local_z_end
+					+ (i) * ((grid.my_domain.local_z_start-grid.my_domain.local_z_end)/ (2 * grid.num_ec_axially));
+		}
 
+	for (int i=1; i<=grid.num_ec_circumferentially; i++){
+		int indx =2 * grid.num_ec_axially-1;
+		for (int j=1; j<=grid.num_ec_axially;j++){
+			ec[i][j].z_coord = array[indx];
+			indx-=2;
+		}
 
+	}
 
+	return (ec);
+}
 /*******************************************************************************************/
 void initialize_t_stamp(time_stamps t_stamp){
 	t_stamp.diff_async_comm_calls	=	0.0;

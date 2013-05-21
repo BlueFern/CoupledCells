@@ -72,7 +72,7 @@ void computeDerivatives(double t, double y[], double f[]) {
 			else if (i == 1)
 			k = offset + 0;
 
-			ec[i][j].JPLC = agonist_profile(t,grid,i,j);
+			ec[i][j].JPLC = agonist_profile(t,grid,i,j,ec[i][j].z_coord);
 
 			f[k + ((j - 1) * grid.neq_ec) +ec_Ca] = ec[i][j].A[J_IP3]
 			- ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR]

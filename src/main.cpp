@@ -56,24 +56,24 @@ int main(int argc, char* argv[]) {
 
 //Test case
 //config
-    int num_subdomains	=	2;
+    int num_subdomains	=	3;
     int
          m[num_subdomains],
          n[num_subdomains],
          e = 4,	//ECs per processor in axial direction
          s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	2;
-         m[1]	=	3;
-/*         m[2]	=	3;
-         m[3]	=	4;
+         m[0]	=	4;
+         m[1]	=	4;
+         m[2]	=	4;
+/*         m[3]	=	4;
          m[4]	=	4;
          m[5]	=	4;
          m[6]	=	4;
          m[7]	=	4;
 */
     	for (int i = 0; i < num_subdomains; i++) {
-    		n[i] = 2;
+    		n[i] = 4;
     	}
 
    	int **domains;
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     domains[0][3] 	= 	n[0];
     domains[0][4] 	= 	none;
     domains[0][5] 	= 	1;
-    domains[0][6] 	= 	none;
+    domains[0][6] 	= 	2;
 
     domains[1][0]	=	1;
     domains[1][1]	=	STRSEG;
@@ -113,15 +113,15 @@ int main(int argc, char* argv[]) {
     domains[1][4]	=	0;
     domains[1][5]	=	none;
     domains[1][6]	=	none;
-/*
+
     domains[2][0]	=	2;
-    domains[2][1]	=	STRSEG;
+    domains[2][1]	=	BIF;
     domains[2][2]	=	m[2];
     domains[2][3]	=	n[2];
     domains[2][4]	=	0;
     domains[2][5]	=	none;
     domains[2][6]	=	none;
-
+/*
     domains[3][0]	=	3;
     domains[3][1]	=	STRSEG;
     domains[3][2]	=	m[3];
@@ -191,7 +191,7 @@ grid = set_geometry_parameters(grid,e,s);
 
 
 //Each of the two cell grids have two additional rows and two additional columns as ghost cells.
-//Follwing is an example of a 5x7 grid with added ghost cells on all four sides. the 0s are the actual
+//Following is an example of a 5x7 grid with added ghost cells on all four sides. the 0s are the actual
 //members of the grid whereas the + are the ghost cells.
 
 // + + + + + + + + +
@@ -484,6 +484,32 @@ grid = set_geometry_parameters(grid,e,s);
 	#endif
 
 	double* yp =  (double*)checked_malloc(grid.NEQ*sizeof(double),"Solver array y for RKSUITE");
+
+		ec = ith_ec_z_coordinate(grid,ec);
+
+		tnow =0.11;
+		for (int i=1; i<=grid.num_ec_circumferentially; i++){
+			for (int j=1; j<=grid.num_ec_axially; j++){
+				ec[i][j].JPLC = agonist_profile(tnow,grid,i,j,ec[i][j].z_coord);
+			}
+		}
+
+		ofstream fs,fz;
+	if (grid.rank % grid.n == 0)  {
+
+				char FILENAME[25];
+		int error = sprintf(FILENAME, "outJPLC%d.txt", grid.universal_rank);
+		fs.open(FILENAME);
+		error = sprintf(FILENAME, "out_z%d.txt", grid.universal_rank);
+			fz.open(FILENAME);
+		int i = 1;
+		for (int j = 1; j <= grid.num_ec_axially; j++) {
+			fs<<ec[i][j].JPLC<<"\t";
+			fz<<ec[i][j].z_coord<<"\t";
+		}
+		fs.close();
+		fz.close();
+	}
 	///Initialize different state variables and coupling data values.
 		Initialize_koeingsberger_smc(grid,y,smc);
 		Initialize_koeingsberger_ec(grid,y,ec);
@@ -497,10 +523,10 @@ dump_rank_info(check,cpl_cef,grid);
 
 double t1	=	MPI_Wtime();
 #ifdef CVODE
-cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check);
+//cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check);
 #endif
 #ifndef CVODE
-rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
+//rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
 //rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
 #endif
 double t2	=	MPI_Wtime();

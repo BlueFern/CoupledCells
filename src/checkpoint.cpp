@@ -388,7 +388,7 @@ void dump_rank_info(checkpoint_handle *check, conductance cpl_cef,
 sprintf(buffer,
 			"BRANCH_TAG	=	%d\n[Universal_Rank, Cart_Rank= (%d,%d)] \tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d) \t "
 					"remote: (up1,up2,down1,down2)=(%d %d %d %d)\n\n flip_array: (%d,%d,%d,%d)\n\n"
-					"Boundary_tag = %c\n(T = Top\t B= Bottom\t N=Interior of the subdomain)\n"
+					"Boundary_tag = %c\n(T = Top\t B= Bottom\t I=Interior edges of the bifurcation segmensts, parent or children\t N=Interior of the subdomain)\n"
 					"COUPLING COEFFICIENTS\n"
 					"Vm_hm_smc=%2.5lf\nVm_hm_ec=%2.5lf\nCa_hm_smc=%2.5lf\nCa_hm_ec=%2.5lf\nIP3_hm_smc=%2.5lf\n"
 					"IP3_hm_ec=%2.5lf\nVm_ht_smc=%2.5lf\nVm_ht_ec=%2.5lf\nCa_ht_smc=%2.5lf\nCa_ht_ec=%2.5lf\n"
@@ -406,6 +406,8 @@ sprintf(buffer,
 					"Total SMCs in the full computational domain =%d\n"
 					"Total number of cells in the full computational domain =%d\n"
 					"Total number of equations in the full computational domain =%d\n "
+					"z_coordinates:       start = %lf     end = %lf\n local_z_start = %lf  local_z_end = %lf\n"
+
 					"------------------------------------------------------------------",
 
 			grid.branch_tag, grid.universal_rank, grid.rank, grid.coords[0],
@@ -431,11 +433,9 @@ sprintf(buffer,
 					* grid.numtasks),
 			((grid.num_ec_axially * grid.num_ec_circumferentially)
 					+ (grid.num_smc_axially * grid.num_smc_circumferentially))
-					* grid.numtasks, grid.NEQ * grid.numtasks);        
-
-
-
-
+					* grid.numtasks, grid.NEQ * grid.numtasks,
+					grid.my_domain.z_offset_start,grid.my_domain.z_offset_end,
+					grid.my_domain.local_z_start, grid.my_domain.local_z_end);
 
 
 	disp	=	grid.rank * bytes;
@@ -462,6 +462,10 @@ void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check, const 
 
 		disp = (grid.rank * write_element_count * sizeof(double));
 		CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
+
+	disp = (grid.rank * write_element_count * sizeof(double));
+	CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
+
 }
 
 void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tnow, time_stamps t_stamp,int itteration){

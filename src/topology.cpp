@@ -620,9 +620,11 @@ grid_parms make_straight_segment(grid_parms grid)
     return grid;
     }			//end of make_straight_segment()
 
-/****** Update global subdomain information ******/
+/**************** Update global subdomain information ***************/
 grid_parms update_global_subdomain_information(grid_parms grid,
-		int num_subdomains, int** domains) {
+		int num_subdomains, int** domains)
+/********************************************************************/
+{
 	grid.global_domain_info.num_subdomains = num_subdomains;
 
 	grid.global_domain_info.m = (int*) checked_malloc(
@@ -643,140 +645,180 @@ grid_parms update_global_subdomain_information(grid_parms grid,
 				(double*) checked_malloc((4 * sizeof(double)), "ff");
 	}
 
-	double z_start = 0.0, z_end = 0.0, z_start_parent = 0.0, z_end_parent = 0.0;
-
-	double my_offset=0.0,parent_offset=0.0, z_offset;
-
-
-	my_offset = (double) (grid.m * grid.num_ec_axially) *65e-6;
-
-	z_coord_exchange(grid, my_offset, &parent_offset);
-	//printf("[%d] my_offset=%lf parent_offset=%lf\n",grid.universal_rank,my_offset,parent_offset);
-
-
-/*	for (int i = 0; i < grid.global_domain_info.num_subdomains; i++) {
-		grid.global_domain_info.m[i] = domains[i][2];
-		grid.global_domain_info.n[i] = domains[i][3];
-		grid.global_domain_info.list_type_subdomains[i] = domains[i][1];
-		if (grid.global_domain_info.list_type_subdomains[i] == STRSEG) {
-			grid.global_domain_info.list_num_ec_axially_per_domain[i] =
-					grid.global_domain_info.m[i] * grid.num_ec_axially;
-			///start and end of z coordinate in subdomains. This will be used in evaluation of agonist concentration on ECs with a particular z coordinate.
-			if(z_start)
-			z_start = z_end;
-			z_end = z_start
-					+ (double) (grid.global_domain_info.m[i]
-							* grid.num_ec_axially) * 65e-6;
-			grid.global_domain_info.list_domain_z_coord_index[i][0] = z_start;
-			grid.global_domain_info.list_domain_z_coord_index[i][0] = z_end;
-
-		} else if (grid.global_domain_info.list_type_subdomains[i] == BIF) {
-			///note: in axial direction in the case of a bifurcation, the number of ECs in axial direction is
-			///(num_EC in axial direction for Parent + num_EC in axial direction for Left child or Right child)
-			grid.global_domain_info.list_num_ec_axially_per_domain[i] = 2
-					* grid.global_domain_info.m[i] * grid.num_ec_axially;
-
-			///start and end of z coordinate in subdomains. This will be used in evaluation of agonist concentration on ECs with a particular z coordinate.
-			///z coordinate for parent segment of bifurcation
-			z_start_parent = z_end;
-			z_end_parent = z_start_parent
-					+ (double) (grid.global_domain_info.m[i]
-							* grid.num_ec_axially) * 65e-6;
-			///z coordinate for left/right child of bifurcation
-			z_start = z_end_parent;
-			z_end = z_start
-					+ (double) (grid.global_domain_info.m[i]
-							* grid.num_ec_axially) * 65e-6;
-		}
-		grid.global_domain_info.list_domain_z_coord_index[i][0] = z_start;
-		grid.global_domain_info.list_domain_z_coord_index[i][1] = z_end;
-		grid.global_domain_info.list_domain_z_coord_index[i][2] =
-				z_start_parent;
-		grid.global_domain_info.list_domain_z_coord_index[i][3] = z_end_parent;
-
-		if (grid.universal_rank == 0) {
-			printf("[%d]:  %d %d %d\n", i, grid.global_domain_info.m[i],
-					grid.global_domain_info.n[i],
-					grid.global_domain_info.list_type_subdomains[i]);
-			printf("[%d]:  %lf %lf %lf %lf \n %lf %lf %lf %lf\n\n", i, z_start,z_end, z_start_parent, z_end_parent,
-					grid.global_domain_info.list_domain_z_coord_index[i][0],
-					grid.global_domain_info.list_domain_z_coord_index[i][1],
-					grid.global_domain_info.list_domain_z_coord_index[i][2],
-					grid.global_domain_info.list_domain_z_coord_index[i][3]);
-		}
-	}*/
+	grid.my_domain.z_offset_start = 0.0;
+	grid.my_domain.z_offset_end = 0.0 ;
+	double theta = 3.1415/4;
+	grid=z_coord_exchange(grid, theta);
 	return (grid);
 }
-
-void z_coord_exchange(grid_parms grid, double my_offset, double* parent_offset) {
+/********************************************************/
+grid_parms z_coord_exchange(grid_parms grid, double theta)
+/********************************************************/
+{
 	int tag = 101;
 	MPI_Status status;
+	int root;
+	///If  there is no parent to me
 	if (grid.my_domain.parent.domain_index == none) {
+		root = 0;
+		grid = my_z_offset(grid, theta);
+		check_flag(
+				(MPI_Bcast(&grid.my_domain.z_offset_end, 1, MPI_DOUBLE, root,
+						grid.cart_comm)), "broadcast Case no parent");
+
 		if (grid.my_domain.internal_info.domain_type == STRSEG) {
-			check_flag(
-					(MPI_Send(&my_offset, 1, MPI_DOUBLE, grid.nbrs[remote][UP1],
-							tag, grid.universe)),
-					"z_info_no_parent_type_STRSEG");
+			if (grid.my_domain.internal_info.boundary_tag == 'T') {
+				check_flag(
+						(MPI_Send(&grid.my_domain.z_offset_end, 1, MPI_DOUBLE,
+								grid.nbrs[remote][UP1], tag, grid.universe)),
+						"z_info_no_parent_type_STRSEG");
+			}
 		} else if (grid.my_domain.internal_info.domain_type == BIF) {
 			if (grid.branch_tag == P) {
+				if (grid.my_domain.internal_info.boundary_tag == 'I') {
 					check_flag(
-							(MPI_Send(&my_offset, 1, MPI_DOUBLE,
-									grid.nbrs[remote][UP1], tag,
+							(MPI_Send(&grid.my_domain.z_offset_end, 1,
+									MPI_DOUBLE, grid.nbrs[remote][UP1], tag,
 									grid.sub_universe)),
 							"z_info_no_parent_type_BIF");
-
-			} else if ((grid.branch_tag == L) || (grid.branch_tag == R)) {
-				if (grid.my_domain.internal_info.half_marker == 1) {
+				}
+			} else if (((grid.branch_tag == L) || (grid.branch_tag == R))) {
+				if ((grid.my_domain.internal_info.boundary_tag == 'I')
+						&& (grid.my_domain.internal_info.half_marker == 1)) {
 					check_flag(
-							(MPI_Recv(parent_offset, 1, MPI_DOUBLE,
-									grid.nbrs[remote][DOWN1], tag,
+							(MPI_Recv(&grid.my_domain.z_offset_start, 1,
+									MPI_DOUBLE, grid.nbrs[remote][DOWN1], tag,
 									grid.sub_universe, &status)),
-							"z_info_no_parent_type_BIF");
-					printf("a: [%d] recved from [%d]: Parent_offset= %lf\n",grid.universal_rank,grid.nbrs[remote][DOWN1],parent_offset);
+							"z_info_no_parent_type_BIF_daughter_branches");
+				}
+				if (grid.branch_tag == L) {
+					root = (grid.m - 1) * grid.n;
+				} else if (grid.branch_tag == R) {
+					root = (grid.m * grid.n) - 1;
 				}
 				check_flag(
-							(MPI_Send(&my_offset, 1, MPI_DOUBLE,
-									grid.nbrs[remote][UP1], tag, grid.universe)),
+						(MPI_Bcast(&grid.my_domain.z_offset_start, 1,
+								MPI_DOUBLE, root, grid.cart_comm)),
+						"broadcast Case no parent");
+				grid = my_z_offset(grid, theta);
+				if (grid.my_domain.internal_info.boundary_tag == 'T') {
+					check_flag(
+							(MPI_Send(&grid.my_domain.z_offset_end, 1,
+									MPI_DOUBLE, grid.nbrs[remote][UP1], tag,
+									grid.universe)),
 							"z_info_no_parent_type_BIF");
+				}
 			}
 		}
-	} else if (grid.my_domain.parent.domain_index > none) {
+	}			///If there is a parent domain do the following.
+	else if (grid.my_domain.parent.domain_index > none) {
+		///If my domain type is STRAIGHT SEGMENT do the following....
 		if (grid.my_domain.internal_info.domain_type == STRSEG) {
-			check_flag(
-					(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
-							grid.nbrs[remote][DOWN1], tag, grid.universe,
-							&status)), "z_info_parent_type_STRSEG");
-			printf("b: [%d] recved from [%d]: Parent_offset= %lf\n",grid.universal_rank,grid.nbrs[remote][DOWN1],parent_offset);
-
-			check_flag(
-					(MPI_Send(&my_offset, 1, MPI_DOUBLE, grid.nbrs[remote][UP1],
-							tag, grid.universe)), "z_info_parent_type_STRSEG");
-		} else if (grid.my_domain.internal_info.domain_type == BIF) {
-			if (grid.branch_tag == P) {
+			if (grid.my_domain.internal_info.boundary_tag == 'B') {
 				check_flag(
-						(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
+						(MPI_Recv(&grid.my_domain.z_offset_start, 1, MPI_DOUBLE,
 								grid.nbrs[remote][DOWN1], tag, grid.universe,
-								&status)), "z_info_parent_type_BIF");
-				printf("c: [%d] recved from [%d]: Parent_offset= %lf\n",grid.universal_rank,grid.nbrs[remote][DOWN1],parent_offset);
+								&status)), "z_info_parent_type_STRSEG");
+			}
+			root = (grid.m - 1) * grid.n;
+			check_flag(
+					(MPI_Bcast(&grid.my_domain.z_offset_start, 1, MPI_DOUBLE,
+							root, grid.cart_comm)),
+					"broadcast Case with parent in STRSEG");
+			grid = my_z_offset(grid, theta);
+			if (grid.my_domain.internal_info.boundary_tag == 'T') {
 				check_flag(
-						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
-								grid.nbrs[remote][UP1], tag, grid.sub_universe)),
-						"z_info_parent_type_BIF");
-			} else if ((grid.branch_tag == L) && (grid.branch_tag == R)) {
-				if (grid.my_domain.internal_info.half_marker == 1) {
+						(MPI_Send(&grid.my_domain.z_offset_end, 1, MPI_DOUBLE,
+								grid.nbrs[remote][UP1], tag, grid.universe)),
+						"z_info_no_parent_type_BIF");
+			}
+		}
+		/// Otherwise if my domain type is BIFURCATION do the following....
+		else if (grid.my_domain.internal_info.domain_type == BIF) {
+			if (grid.branch_tag == P) {
+				if (grid.my_domain.internal_info.boundary_tag == 'B') {
+					check_flag(
+							(MPI_Recv(&grid.my_domain.z_offset_start, 1,
+									MPI_DOUBLE, grid.nbrs[remote][DOWN1], tag,
+									grid.universe, &status)),
+							"z_info_parent_type_BIF");
+				}
+				root = (grid.m - 1) * grid.n;
+
 				check_flag(
-						(MPI_Recv(&parent_offset, 1, MPI_DOUBLE,
-								grid.nbrs[remote][DOWN1], tag,
-								grid.sub_universe, &status)),
-						"z_info_parent_type_BIF");
-				printf("d: [%d] recved from [%d]: Parent_offset= %lf\n",grid.universal_rank,grid.nbrs[remote][DOWN1],parent_offset);
+						(MPI_Bcast(&grid.my_domain.z_offset_start, 1,
+								MPI_DOUBLE, root, grid.cart_comm)),
+						"broadcast Case with parent in BIF");
+				grid = my_z_offset(grid, theta);
+				if (grid.my_domain.internal_info.boundary_tag == 'I') {
+					check_flag(
+							(MPI_Send(&grid.my_domain.z_offset_end, 1,
+									MPI_DOUBLE, grid.nbrs[remote][UP1], tag,
+									grid.sub_universe)),
+							"z_info_with_parent_type_BIF sending to daughter segments");
+				}
+			} else if ((grid.branch_tag == L) || (grid.branch_tag == R)) {
+				if ((grid.my_domain.internal_info.boundary_tag == 'I')
+						&& (grid.my_domain.internal_info.half_marker == 1)) {
+					check_flag(
+							(MPI_Recv(&grid.my_domain.z_offset_start, 1,
+									MPI_DOUBLE, grid.nbrs[remote][DOWN1], tag,
+									grid.sub_universe, &status)),
+							"in type_BIF, z_info_recv from parent segment with parent domain");
+				}
+				if (grid.branch_tag == L) {
+					root = (grid.m - 1) * grid.n;
+				} else if (grid.branch_tag == R) {
+					root = (grid.m * grid.n) - 1;
 				}
 				check_flag(
-						(MPI_Send(&my_offset, 1, MPI_DOUBLE,
-								grid.nbrs[remote][UP1], tag, grid.universe)),
-						"z_info_parent_type_BIF");
+						(MPI_Bcast(&grid.my_domain.z_offset_start, 1,
+								MPI_DOUBLE, root, grid.cart_comm)),
+						"broadcast Case with parent");
+				grid = my_z_offset(grid, theta);
+				if (grid.my_domain.internal_info.boundary_tag == 'T') {
+					check_flag(
+							(MPI_Send(&grid.my_domain.z_offset_end, 1,
+									MPI_DOUBLE, grid.nbrs[remote][UP1], tag,
+									grid.universe)),
+							"z_info_with_parent_type_BIF sending to daughter segments");
+				}
 			}
 		}
 	}
 
+	double local_z_start, local_z_end;
+	int rem1 = (grid.m - (int) (grid.rank / grid.n)) - 1, rem2 = grid.m
+			- (int) (grid.rank / grid.n);
+
+	grid.my_domain.local_z_end = grid.my_domain.z_offset_start
+			+ rem1
+					* (grid.my_domain.z_offset_end
+							- grid.my_domain.z_offset_start)
+					/ ((double) (grid.m));
+	grid.my_domain.local_z_start = grid.my_domain.z_offset_start
+			+ rem2
+					* (grid.my_domain.z_offset_end
+							- grid.my_domain.z_offset_start)
+					/ ((double) (grid.m));
+	return (grid);
+}
+
+/************************************************/
+grid_parms my_z_offset(grid_parms grid, double theta)
+/************************************************/
+{
+	if (grid.my_domain.internal_info.domain_type == STRSEG){
+		grid.my_domain.z_offset_end = grid.my_domain.z_offset_start
+				+ (double) (grid.m * grid.num_ec_axially) * 65e-6;
+	}else if (grid.my_domain.internal_info.domain_type == BIF){
+		if (grid.branch_tag == P){
+			grid.my_domain.z_offset_end = grid.my_domain.z_offset_start
+							+ (double) (grid.m * grid.num_ec_axially) * 65e-6;
+		}else if ((grid.branch_tag == L) || (grid.branch_tag == R)){
+			grid.my_domain.z_offset_end = grid.my_domain.z_offset_start
+							+ (double) (grid.m * grid.num_ec_axially) * 65e-6 * 0.707;
+		}
+	}
+	return (grid);
 }

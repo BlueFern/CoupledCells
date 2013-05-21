@@ -83,6 +83,10 @@ struct my_tree
     {
     node internal_info;
     node left_child, right_child, parent;
+    double z_offset_start,z_offset_end;	/// These are domain offsets start and end points to demacated distance in
+    										/// z direction spanned by a processor's own sub-domain that it belongs to.
+    double local_z_start,local_z_end;
+
     };
 struct glb_domn_inf{
 int
@@ -145,10 +149,11 @@ typedef struct {
 	///Information for spatial variation in agonist
 	double
 	min_jplc, max_jplc, gradient, uniform_jplc,
-	stimulus_onset_time;				// the time when spatially varying agonist kicks in
+	stimulus_onset_time;				/// the time when spatially varying agonist kicks in
 
 	my_tree		my_domain;
 	glb_domn_inf global_domain_info;
+
 
 	//Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
 	//operation on MPI_COMM_WORLD and the other a Cartisian communicator arising from Cart_create operation
@@ -181,7 +186,9 @@ typedef struct{
 	double*		 A;			    ///stores single cell fluxes
 	double*		 B;			    ///stores homogeneous coupling fluxes
 	double*		 C;			    ///stores heterogeneous coupling fluxes
-
+	double 		 x_coord,
+				 y_coord,
+				 z_coord;
 	double		 JPLC;			///local agonsit concentration  on my GPCR receptor (an ith EC)
 	conductance    cpl_cef;
 	}celltype2;
@@ -279,8 +286,10 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 		int file_write_per_unit_time, checkpoint_handle *check);
 #endif /* CVODE */
 void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stamps,int);
-double agonist_profile(double, grid_parms, int, int);
+double agonist_profile(double, grid_parms, int, int, double);
 void initialize_t_stamp(time_stamps);
 
-void z_coord_exchange(grid_parms , double , double* );
+grid_parms z_coord_exchange(grid_parms , double theta);
 grid_parms update_global_subdomain_information(grid_parms , int , int**);
+grid_parms my_z_offset(grid_parms grid,double theta);
+celltype2** ith_ec_z_coordinate(grid_parms, celltype2**);
