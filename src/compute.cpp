@@ -626,17 +626,19 @@ void coupling(double t,double y[], grid_parms grid,celltype1** smc, celltype2** 
 
 }	//end of coupling()
 
-/*******************************************************************************************/
-double agonist_profile(double t, grid_parms grid, int i, int j, double z_coord){
-
+/**************************************************************************************/
+double agonist_profile(double t, grid_parms grid, int i, int j, double z_coord)
+/**************************************************************************************/
+{
 	double JPLC;
 	if (t > grid.stimulus_onset_time) {
 
-			/*	JPLC =grid.min_jplc+ (grid.max_jplc/
-						(1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
-*/
-	JPLC =0.27+ (1e-2/ (1e-2 + exp(-2.7e3 * z_coord)));
-	}else if (t <= grid.stimulus_onset_time){
+		/*	JPLC =grid.min_jplc+ (grid.max_jplc/
+		 (1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
+		 */
+		JPLC = grid.min_jplc
+				+ (grid.max_jplc / (1e-3 + exp(-grid.gradient * z_coord)));
+	} else if (t <= grid.stimulus_onset_time) {
 		JPLC = grid.uniform_jplc;
 	}
 	return JPLC;

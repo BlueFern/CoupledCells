@@ -56,18 +56,18 @@ int main(int argc, char* argv[]) {
 
 //Test case
 //config
-    int num_subdomains	=	3;
+    int num_subdomains	=	4;
     int
          m[num_subdomains],
          n[num_subdomains],
          e = 4,	//ECs per processor in axial direction
          s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	4;
-         m[1]	=	4;
-         m[2]	=	4;
-/*         m[3]	=	4;
-         m[4]	=	4;
+         m[0]	=	256;
+         m[1]	=	84;
+         m[2]	=	256;
+         m[3]	=	256;
+/*         m[4]	=	4;
          m[5]	=	4;
          m[6]	=	4;
          m[7]	=	4;
@@ -99,37 +99,37 @@ int main(int argc, char* argv[]) {
 		"Subdomains array elements allocation");
 	}
     domains[0][0] 	= 	0;
-    domains[0][1] 	= 	BIF;
+    domains[0][1] 	= 	STRSEG;
     domains[0][2] 	= 	m[0];
     domains[0][3] 	= 	n[0];
     domains[0][4] 	= 	none;
     domains[0][5] 	= 	1;
-    domains[0][6] 	= 	2;
+    domains[0][6] 	= 	none;
 
     domains[1][0]	=	1;
-    domains[1][1]	=	STRSEG;
+    domains[1][1]	=	BIF;
     domains[1][2]	=	m[1];
     domains[1][3]	=	n[1];
     domains[1][4]	=	0;
-    domains[1][5]	=	none;
-    domains[1][6]	=	none;
+    domains[1][5]	=	2;
+    domains[1][6]	=	3;
 
     domains[2][0]	=	2;
-    domains[2][1]	=	BIF;
+    domains[2][1]	=	STRSEG;
     domains[2][2]	=	m[2];
     domains[2][3]	=	n[2];
-    domains[2][4]	=	0;
+    domains[2][4]	=	1;
     domains[2][5]	=	none;
     domains[2][6]	=	none;
-/*
+
     domains[3][0]	=	3;
     domains[3][1]	=	STRSEG;
     domains[3][2]	=	m[3];
     domains[3][3]	=	n[3];
-    domains[3][4]	=	2;
+    domains[3][4]	=	1;
     domains[3][5]	=	none;
     domains[3][6]	=	none;
-    
+/*
     domains[4][0]	=	4;
     domains[4][1]	=	STRSEG;
     domains[4][2]	=	m[4];
@@ -166,14 +166,16 @@ int main(int argc, char* argv[]) {
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal =1e-6;
+	double tfinal =200.00;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
 
-	grid.uniform_jplc = 0.1, grid.min_jplc = 0.3, grid.max_jplc = 1.195, grid.gradient =
-			0.5e-2; grid.stimulus_onset_time	=0.10;
-
+	grid.uniform_jplc = 0.1;
+	grid.min_jplc = 0.27;
+	grid.max_jplc = 1e-3;
+	grid.gradient =	0.325e3;
+	grid.stimulus_onset_time = 20.00;
 
 grid = set_geometry_parameters(grid,e,s);
 
@@ -487,20 +489,6 @@ grid = set_geometry_parameters(grid,e,s);
 
 		ec = ith_ec_z_coordinate(grid,ec);
 
-		tnow =0.11;
-		for (int i=1; i<=grid.num_ec_circumferentially; i++){
-			for (int j=1; j<=grid.num_ec_axially; j++){
-				ec[i][j].JPLC = agonist_profile(tnow,grid,i,j,ec[i][j].z_coord);
-			}
-		}
-
-		tnow =0.11;
-		if (grid.rank%grid.n==0){
-		dump_coords(grid,ec,check,"dump_coords_failed");
-		dump_JPLC(grid, ec, check, "dump JPLC failed");
-		}
-
-
 	///Initialize different state variables and coupling data values.
 		Initialize_koeingsberger_smc(grid,y,smc);
 		Initialize_koeingsberger_ec(grid,y,ec);
@@ -510,14 +498,13 @@ grid = set_geometry_parameters(grid,e,s);
 int state 	=  couplingParms(CASE,&cpl_cef);
 dump_rank_info(check,cpl_cef,grid);
 
-
-
-double t1	=	MPI_Wtime();
+	double t1 = MPI_Wtime();
 #ifdef CVODE
-//cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check);
+	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check);
 #endif
 #ifndef CVODE
-//rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ , TOL, thres, file_write_per_unit_time, check);
+	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres,
+			file_write_per_unit_time, check);
 //rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
 #endif
 double t2	=	MPI_Wtime();

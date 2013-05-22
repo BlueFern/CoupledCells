@@ -139,11 +139,12 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s\n");
 		}*/
 
-		if (/*(itteration == int(grid.stimulus_onset_time/interval)) && */(write_once<=1) && (tnow>=grid.stimulus_onset_time)) {
+		if ((write_once <= 1) && (tnow >= grid.stimulus_onset_time)) {
 			write_once++;
-			dump_JPLC(grid, ec, check, "Local agonist after t=100s");
+			if (grid.rank % grid.n == 0) {
+				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
+			}
 		}
-
 		if ((itteration % file_write_per_unit_time) == 0) {
 			checkpoint(check, grid, tnow, smc, ec,write_count);
 		write_count++;

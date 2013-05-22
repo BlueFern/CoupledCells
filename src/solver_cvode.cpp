@@ -212,10 +212,10 @@ initialize_t_stamp(t_stamp);
 			dump_JPLC(grid, ec, check, "Local agonist before t=100s");
 		}*/
 		tnow = (double) (t);
-		if (/*(itteration == int(grid.stimulus_onset_time/interval)) && */(write_once<=1) && (tnow>=grid.stimulus_onset_time)) {
+		if ((write_once<=1) && (tnow>=grid.stimulus_onset_time)) {
 			write_once++;
-			if (grid.rank%grid.n == 0){
-			dump_JPLC(grid, ec, check, "Local agonist after t=100s");
+			if (grid.rank%grid.n == 0) {
+				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}
 		}
 
