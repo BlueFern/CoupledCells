@@ -145,6 +145,9 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid){
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->itter_count));
 
+	err = sprintf(filename, "coords%s", suffix);
+		CHECK(
+				MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->coords));
 	return (check);
 }
 
@@ -452,21 +455,45 @@ void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check, const 
 	int write_element_count	=	grid.num_ec_circumferentially * grid.num_ec_axially;
 	double buffer[write_element_count];
 
-	int k = 0;
+	/*int k = 0;
 		for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 			for (int j = 1; j <= grid.num_ec_axially; j++) {
 				buffer[k]	=	ec[i][j].JPLC;
 				k++;
 			}
-		}
+		}*/
 
-		disp = (grid.rank * write_element_count * sizeof(double));
-		CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
-
-	disp = (grid.rank * write_element_count * sizeof(double));
+	int k = 0;
+			int i=1;
+				for (int j = 1; j <= grid.num_ec_axially; j++) {
+					buffer[k]	=	ec[i][j].JPLC;
+					k++;
+				}
+	int offset = grid.rank/grid.n;
+	//disp = (grid.rank * write_element_count * sizeof(double));
+	disp = (offset * write_element_count * sizeof(double));
 	CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
 
 }
+
+void dump_coords(grid_parms grid, celltype2** ec, checkpoint_handle* check, const char* message){
+
+	MPI_Status	status;
+	MPI_Offset	disp;
+	int write_element_count	=	grid.num_ec_axially;
+	double buffer[write_element_count];
+
+	int k = 0;
+		int i =1;
+		for (int j = 1; j <= grid.num_ec_axially; j++) {
+				buffer[k]	=	ec[i][j].z_coord;
+				k++;
+			}
+		int offset = grid.rank/grid.n;
+		disp = (offset * write_element_count * sizeof(double));
+		CHECK(MPI_File_write_at(check->coords, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
+}
+
 
 void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tnow, time_stamps t_stamp,int itteration){
 
@@ -550,6 +577,8 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check,double t1, doubl
 	MPI_File_close(&check->writer_func);
 	MPI_File_close(&check->derivative_calls);
 	MPI_File_close(&check->itter_count);
+	MPI_File_close(&check->coords);
+
 }
 
 

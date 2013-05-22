@@ -196,7 +196,7 @@ typedef struct{
 typedef struct{
 MPI_File logptr, Time, ci, si, vi, wi, Ii, cpCi, cpVi, cpIi, cj,
 sj, vj, Ij, cpCj, cpVj, cpIj,
-elapsed_time,jplc,
+elapsed_time,jplc,coords,
 ///time profiling file handles.
 time_profiling,async_calls,async_wait,barrier_before_comm,map_function,single_cell_fluxes,coupling_fluxes,solver,writer_func,derivative_calls,itter_count;
 }checkpoint_handle;
@@ -293,3 +293,4 @@ grid_parms z_coord_exchange(grid_parms , double theta);
 grid_parms update_global_subdomain_information(grid_parms , int , int**);
 grid_parms my_z_offset(grid_parms grid,double theta);
 celltype2** ith_ec_z_coordinate(grid_parms, celltype2**);
+void dump_coords(grid_parms, celltype2**, checkpoint_handle*, const char*);

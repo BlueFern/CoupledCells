@@ -494,22 +494,13 @@ grid = set_geometry_parameters(grid,e,s);
 			}
 		}
 
-		ofstream fs,fz;
-	if (grid.rank % grid.n == 0)  {
-
-				char FILENAME[25];
-		int error = sprintf(FILENAME, "outJPLC%d.txt", grid.universal_rank);
-		fs.open(FILENAME);
-		error = sprintf(FILENAME, "out_z%d.txt", grid.universal_rank);
-			fz.open(FILENAME);
-		int i = 1;
-		for (int j = 1; j <= grid.num_ec_axially; j++) {
-			fs<<ec[i][j].JPLC<<"\t";
-			fz<<ec[i][j].z_coord<<"\t";
+		tnow =0.11;
+		if (grid.rank%grid.n==0){
+		dump_coords(grid,ec,check,"dump_coords_failed");
+		dump_JPLC(grid, ec, check, "dump JPLC failed");
 		}
-		fs.close();
-		fz.close();
-	}
+
+
 	///Initialize different state variables and coupling data values.
 		Initialize_koeingsberger_smc(grid,y,smc);
 		Initialize_koeingsberger_ec(grid,y,ec);
