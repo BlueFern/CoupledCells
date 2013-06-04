@@ -488,7 +488,7 @@ grid = set_geometry_parameters(grid,e,s);
 	double* yp =  (double*)checked_malloc(grid.NEQ*sizeof(double),"Solver array y for RKSUITE");
 
 		ec = ith_ec_z_coordinate(grid,ec);
-
+		dump_coords(grid, ec, check,"recording z coordinate for all ECs in axial direction.\n")
 	///Initialize different state variables and coupling data values.
 		Initialize_koeingsberger_smc(grid,y,smc);
 		Initialize_koeingsberger_ec(grid,y,ec);
