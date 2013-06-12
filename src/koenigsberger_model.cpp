@@ -249,10 +249,11 @@ void koenigsberger_ec(grid_parms grid, celltype2** ec)
 }
 
 /***************************************************************************/
-void koenigsberger_ec_derivatives(int offset, double t, double* f,
+void koenigsberger_ec_derivatives(double t, double* f,
 grid_parms grid, celltype2** ec) {
 /***************************************************************************/
-	int k;
+	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially
+			* grid.num_smc_axially);
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
 			if (i > 1)

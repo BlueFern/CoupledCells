@@ -163,7 +163,7 @@ int couplingParms(int CASE,conductance* cpl_cef)
 }
 
 /*************************************************************************/
-int map_solver_to_cells(grid_parms grid, double* y, int smc_model
+int map_solver_to_cells(grid_parms grid, double* y, int smc_model,
 		celltype1** smc, int ec_model, celltype2** ec) {
 /*************************************************************************/
 	int err = 1;
@@ -439,11 +439,11 @@ double agonist_profile(double t, grid_parms grid, int i, int j){
 			} else if (t <= grid.stimulus_onset_time){
 				JPLC = grid.uniform_jplc;
 			}
-	return JPLC;
+	return (JPLC);
 }
 /*******************************************************************************************/
-/*******************************************************************************************/
 void initialize_t_stamp(time_stamps t_stamp){
+/*******************************************************************************************/
 	t_stamp.diff_async_comm_calls	=	0.0;
 	t_stamp.diff_async_comm_calls_wait=	0.0;
 	t_stamp.diff_barrier_in_solver_before_comm=0.0;
@@ -452,52 +452,63 @@ void initialize_t_stamp(time_stamps t_stamp){
 	t_stamp.diff_coupling_fluxes=0.0;
 }
 
+/*****************************************************************************/
+int compute(time_stamps t_stamp, grid_parms grid, int smc_model,
+		celltype1** smc, int ec_model, celltype2** ec, conductance cpl_cef, double t, double* y,
+		double* f, int NO_Path, int cGMP_Path) {
+/*****************************************************************************/
 
-void compute(time_stamps t_stamp, grid_parms grid, celltype1** smc,
-		celltype2** ec, double t, double* y, double* f, int NO_Path, int cGMP_Path) {
-
+	int err;
 	t_stamp.computeDerivatives_call_counter =
 			t_stamp.computeDerivatives_call_counter + 1;
 
 	t_stamp.map_function_t1 = MPI_Wtime();
-	map_solver_to_cells(grid, y, smc, ec);
+	map_solver_to_cells(grid, y, smc_model, smc, ec_model, ec);
 	t_stamp.map_function_t2 = MPI_Wtime();
 	t_stamp.diff_map_function = t_stamp.diff_map_function
 			+ (t_stamp.map_function_t2 - t_stamp.map_function_t1);
 
-#ifdef Tsoukias
 	t_stamp.single_cell_fluxes_t1 = MPI_Wtime();
-	tsoukias_smc(grid, smc, NO_Path, cGMP_Path);
-	koenigsberger_ec(grid, ec);
+	switch (smc_model) {
+	case (TSK): {
+		tsoukias_smc(grid, smc, NO_Path, cGMP_Path);
+		break;
+	}
+	case (KNBGR): {
+		koenigsberger_smc(grid, smc);
+		break;
+	}
+	default: {
+		err = 1;
+		break;
+	}
+	}
+	switch (ec_model) {
+	case (TSK): {
+		koenigsberger_ec(grid, ec);
+		break;
+	}
+	case (KNBGR): {
+		koenigsberger_ec(grid, ec);
+		break;
+	}
+	default: {
+		err = 1;
+		break;
+	}
+	}
 	t_stamp.single_cell_fluxes_t2 = MPI_Wtime();
-	t_stamp.diff_single_cell_fluxes = t_stamp.diff_single_cell_fluxes + (t_stamp.single_cell_fluxes_t2 - t_stamp.single_cell_fluxes_t1);
+	t_stamp.diff_single_cell_fluxes = t_stamp.diff_single_cell_fluxes
+			+ (t_stamp.single_cell_fluxes_t2 - t_stamp.single_cell_fluxes_t1);
 
 	t_stamp.coupling_fluxes_t1 = MPI_Wtime();
-	coupling(t,y, grid, smc, ec,cpl_cef);
+	coupling(t, y, grid, smc, ec, cpl_cef);
 	t_stamp.coupling_fluxes_t2 = MPI_Wtime();
-	t_stamp.diff_coupling_fluxes = t_stamp.diff_coupling_fluxes + (t_stamp.coupling_fluxes_t2 - t_stamp.coupling_fluxes_t1);
+	t_stamp.diff_coupling_fluxes = t_stamp.diff_coupling_fluxes
+			+ (t_stamp.coupling_fluxes_t2 - t_stamp.coupling_fluxes_t1);
 
-	tsoukias_smc_derivatives(f, gird,smc);
-	int offset = (grid.neq_smc * grid.num_smc_circumferentially
-			* grid.num_smc_axially);
-	koenigsberger_ec_derivatives(offset,t,f,gird,smc);
-#endif
+	tsoukias_smc_derivatives(f, grid, smc);
+	koenigsberger_ec_derivatives(t, f, grid, ec);
 
-#ifdef Koenigsberger
-	t_stamp.single_cell_fluxes_t1 = MPI_Wtime();
-	koenigsberger_smc(grid, smc);
-	koenigsberger_ec(grid, ec);
-	t_stamp.single_cell_fluxes_t2 = MPI_Wtime();
-	t_stamp.diff_single_cell_fluxes = t_stamp.diff_single_cell_fluxes + (t_stamp.single_cell_fluxes_t2 - t_stamp.single_cell_fluxes_t1);
-
-	t_stamp.coupling_fluxes_t1 = MPI_Wtime();
-	coupling(t,y, grid, smc, ec,cpl_cef);
-	t_stamp.coupling_fluxes_t2 = MPI_Wtime();
-	t_stamp.diff_coupling_fluxes = t_stamp.diff_coupling_fluxes + (t_stamp.coupling_fluxes_t2 - t_stamp.coupling_fluxes_t1);
-
-	koeingsberger_smc_derivatives(f, gird,smc);
-	int offset = (grid.neq_smc * grid.num_smc_circumferentially
-			* grid.num_smc_axially);
-	koenigsberger_ec_derivatives(offset, t, f, gird,smc);
-#endif
+	return (err);
 }

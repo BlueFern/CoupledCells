@@ -2,7 +2,9 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
-#include "koenigsberger_macros.h"
+#include <math.h>
+#include "macros.h"
+
 
 #ifdef CVODE
 #include <nvector/nvector_serial.h>
@@ -42,6 +44,7 @@ using namespace std;
 //#define	 bottom 1		//bottom edge of a subdomain
 // helper functions for exponentiation to integer powers
 #define P2(x) ((x)*(x))
+#define P3(x) ((x)*(x)*(x))
 #define P4(x) ((x)*(x)*(x)*(x))
 struct conductance{
 	double
@@ -158,6 +161,9 @@ typedef struct {
 	//Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
 	//operation on MPI_COMM_WORLD and the other a Cartisian communicator arising from Cart_create operation
 	MPI_Comm universe,sub_universe,split_comm,cart_comm;
+
+	int smc_model,ec_model;			// These are placeholders for the selection of model to be simulated in each cell.
+	int NO_path,cGMP_path;			// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
 			}grid_parms;
 
 ///Structure to store coupling data received from the neighbouring task.
@@ -237,16 +243,24 @@ int couplingParms(int CASE, conductance* cpl_cef);
 void Initialize_koeingsberger_smc(grid_parms,double*,celltype1**);
 void Initialize_koeingsberger_ec(grid_parms,double*,celltype2**);
 void map_GhostCells_to_cells(celltype1**, celltype2**, grid_parms);
-void map_solver_to_cells(grid_parms grid,double y[], celltype1** smc, celltype2** ec);
+int map_solver_to_cells(grid_parms, double* , int, celltype1**, int, celltype2**);
 
 grid_parms communicate_num_recv_elements_to_nbrs(grid_parms);
 void communication_update_sendbuf(grid_parms, double**, celltype1**, celltype2**);
 void communication_update_recvbuf(grid_parms, double**, celltype1**, celltype2**);
+void determin_source_destination(grid_parms , int*, int*);
+void communication_async_send_recv(grid_parms, double**, double**,celltype1**, celltype2**);
+void communication_update_recvbuf_modified(grid_parms ,double**, celltype1**, celltype2**);
+
+//Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
 void single_cell(double,double*, grid_parms, celltype1**, celltype2**);
 void coupling(double,double*, grid_parms , celltype1** , celltype2** ,conductance);
-void determin_source_destination(grid_parms , int*, int*);
-
-void communication_async_send_recv(grid_parms, double**, double**,celltype1**, celltype2**);
+void tsoukias_smc(grid_parms , celltype1** , int , int );
+void koenigsberger_smc(grid_parms ,celltype1** );
+void tsoukias_smc_derivatives(double*, grid_parms ,celltype1** );
+void koenigsberger_smc_derivatives(double*, grid_parms,celltype1**);
+void koenigsberger_ec(grid_parms, celltype2**);
+void koenigsberger_ec_derivatives(double, double*,grid_parms, celltype2**);
 
 ///Checkpoint functions.
 checkpoint_handle* initialise_checkpoint(grid_parms);
@@ -263,42 +277,6 @@ void dump_ec_with_ghost_cells(grid_parms, celltype2**, checkpoint_handle*, int);
 void checkpoint_with_ghost_cells(checkpoint_handle*, grid_parms, double, celltype1**, celltype2**, int);
 void update_line_number(checkpoint_handle*, grid_parms,int);
 
-
-void computeDerivatives(double, double*, double*);
-void rksuite_solver_CT(double, double, double, double*, double*, int, double,
-		double*, int,int, checkpoint_handle*);
-void rksuite_solver_UT(double, double, double, double *, double*, int, double,
-		double*, int,int, checkpoint_handle*);
-///These are debugging functions, not used in production runs.
-void print_domains(FILE*, grid_parms , celltype1** ,	celltype2** );
-void print_send_buffer(grid_parms , double** );
-void print_recv_buffer(grid_parms , double** );
-void print_compare(double, double*,grid_parms, celltype1**, celltype2**);
-
-
-void communication_update_recvbuf_modified(grid_parms ,double**, celltype1**, celltype2**);
-
-
-grid_parms make_bifucation(grid_parms);
-grid_parms make_straight_segment(grid_parms);
-grid_parms set_geometry_parameters(grid_parms,int,int);
-grid_parms make_subdomains(grid_parms, int, int**);
-
-#ifdef CVODE
-static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
-void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
-		int file_write_per_unit_time,int, checkpoint_handle *check);
-#endif /* CVODE */
-void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stamps,int);
-double agonist_profile(double, grid_parms, int, int, double);
-void initialize_t_stamp(time_stamps);
-
-grid_parms z_coord_exchange(grid_parms , double theta);
-grid_parms update_global_subdomain_information(grid_parms , int , int**);
-grid_parms my_z_offset(grid_parms grid,double theta);
-celltype2** ith_ec_z_coordinate(grid_parms, celltype2**);
-void dump_coords(grid_parms, celltype2**, checkpoint_handle*, const char*);
-
 int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid);
 double reinitialize_time(checkpoint_handle*, int, grid_parms);
 double* reinitialize_koenigsberger_smc(checkpoint_handle*, int, grid_parms,
@@ -306,3 +284,45 @@ double* reinitialize_koenigsberger_smc(checkpoint_handle*, int, grid_parms,
 double* reinitialize_koenigsberger_ec(checkpoint_handle*, int, grid_parms,
 		double*, celltype2**);
 int checkpoint(checkpoint_handle*, grid_parms, double*, double*, celltype1**, celltype2**);
+
+
+
+//Solver related funtions
+void computeDerivatives(double, double*, double*);
+void rksuite_solver_CT(double, double, double, double*, double*, int, double,
+		double*, int,int, checkpoint_handle*);
+void rksuite_solver_UT(double, double, double, double *, double*, int, double,
+		double*, int,int, checkpoint_handle*);
+#ifdef CVODE
+static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
+void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
+		int file_write_per_unit_time,int, checkpoint_handle *check);
+#endif /* CVODE */
+
+int compute(time_stamps, grid_parms, int, celltype1**, int, celltype2**,conductance cpl_cef,
+		double, double*, double*, int, int);
+
+///These are debugging functions, not used in production runs.
+void print_domains(FILE*, grid_parms , celltype1** ,	celltype2** );
+void print_send_buffer(grid_parms , double** );
+void print_recv_buffer(grid_parms , double** );
+void print_compare(double, double*,grid_parms, celltype1**, celltype2**);
+
+//Topology related functions
+grid_parms make_bifucation(grid_parms);
+grid_parms make_straight_segment(grid_parms);
+grid_parms set_geometry_parameters(grid_parms,int,int);
+grid_parms make_subdomains(grid_parms, int, int**);
+
+
+void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stamps,int);
+double agonist_profile(double, grid_parms, int, int, double);
+void initialize_t_stamp(time_stamps);
+
+
+grid_parms z_coord_exchange(grid_parms , double theta);
+grid_parms update_global_subdomain_information(grid_parms , int , int**);
+grid_parms my_z_offset(grid_parms grid,double theta);
+celltype2** ith_ec_z_coordinate(grid_parms, celltype2**);
+void dump_coords(grid_parms, celltype2**, checkpoint_handle*, const char*);
+
