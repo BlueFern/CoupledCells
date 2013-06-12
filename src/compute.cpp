@@ -1,12 +1,5 @@
 //#include <omp.h>
-#include <mpi.h>
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
-#include <math.h>
 #include "computelib.h"
-
-
 using namespace std;
 time_stamps		t_stamp;
 
@@ -169,119 +162,111 @@ int couplingParms(int CASE,conductance* cpl_cef)
 	return 0;
 }
 
-/*******************************************************************************************/
-void Initialize_koeingsberger_smc(grid_parms grid, double y[], celltype1** smc)
-/*******************************************************************************************/
-{
-	int k = 0, offset;
-
-	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_smc_axially; j++) {
-			if (i > 1)
-				k = ((i - 1) * grid.neq_smc_axially);
-			else if (i == 1)
-				k = 0;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.01;
-			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.01;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.01;
-			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.01;
-			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.01;
+/*************************************************************************/
+int map_solver_to_cells(grid_parms grid, double* y, int smc_model
+		celltype1** smc, int ec_model, celltype2** ec) {
+/*************************************************************************/
+	int err = 1;
+	switch (smc_model) {
+		case (TSK): {
+			int k = 0, offset;
+			for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+				for (int j = 1; j <= grid.num_smc_axially; j++) {
+					if (i > 1)
+					k = ((i - 1) * grid.neq_smc_axially);
+					else if (i == 1)
+					k = 0;
+					smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
+					smc[i][j].p[smc_d_L] = y[k + ((j - 1) * grid.neq_smc) + smc_d_L];
+					smc[i][j].p[smc_f_L] = y[k + ((j - 1) * grid.neq_smc) + smc_f_L];
+					smc[i][j].p[smc_p_f] = y[k + ((j - 1) * grid.neq_smc) + smc_p_f];
+					smc[i][j].p[smc_p_s] = y[k + ((j - 1) * grid.neq_smc) + smc_p_s];
+					smc[i][j].p[smc_q_1] = y[k + ((j - 1) * grid.neq_smc) + smc_q_1];
+					smc[i][j].p[smc_q_2] = y[k + ((j - 1) * grid.neq_smc) + smc_q_2];
+					smc[i][j].p[smc_p_K] = y[k + ((j - 1) * grid.neq_smc) + smc_p_K];
+					smc[i][j].p[smc_Ca_u] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca_u];
+					smc[i][j].p[smc_Ca_r] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca_r];
+					smc[i][j].p[smc_R_10] = y[k + ((j - 1) * grid.neq_smc) + smc_R_10];
+					smc[i][j].p[smc_R_11] = y[k + ((j - 1) * grid.neq_smc) + smc_R_11];
+					smc[i][j].p[smc_R_01] = y[k + ((j - 1) * grid.neq_smc) + smc_R_01];
+					smc[i][j].p[smc_h_IP3] = y[k + ((j - 1) * grid.neq_smc) + smc_h_IP3];
+					smc[i][j].p[smc_R_S_G] = y[k + ((j - 1) * grid.neq_smc) + smc_R_S_G];
+					smc[i][j].p[smc_R_S_P_G] = y[k + ((j - 1) * grid.neq_smc) + smc_R_S_P_G];
+					smc[i][j].p[smc_G] = y[k + ((j - 1) * grid.neq_smc) + smc_G];
+					smc[i][j].p[smc_IP3] = y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
+					smc[i][j].p[smc_PIP2] = y[k + ((j - 1) * grid.neq_smc) + smc_PIP2];
+					smc[i][j].p[smc_V_cGMP] = y[k + ((j - 1) * grid.neq_smc) + smc_V_cGMP];
+					smc[i][j].p[smc_cGMP_i] = y[k + ((j - 1) * grid.neq_smc) + smc_cGMP_i];
+					smc[i][j].p[smc_Ca] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca];
+					smc[i][j].p[smc_Na_i] = y[k + ((j - 1) * grid.neq_smc) + smc_Na_i];
+					smc[i][j].p[smc_K_i] = y[k + ((j - 1) * grid.neq_smc) + smc_K_i];
+					smc[i][j].p[smc_Cl_i] = y[k + ((j - 1) * grid.neq_smc) + smc_Cl_i];
+					smc[i][j].p[smc_DAG] = y[k + ((j - 1) * grid.neq_smc) + smc_DAG];
+				}
+			}
+			break;
+		}case (KNBGR): {
+			int k = 0, offset;
+			for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+				for (int j = 1; j <= grid.num_smc_axially; j++) {
+					if (i > 1)
+					k = ((i - 1) * grid.neq_smc_axially);
+					else if (i == 1)
+					k = 0;
+					smc[i][j].p[smc_Ca] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca];
+					smc[i][j].p[smc_SR] = y[k + ((j - 1) * grid.neq_smc) + smc_SR];
+					smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
+					smc[i][j].p[smc_w] = y[k + ((j - 1) * grid.neq_smc) + smc_w];
+					smc[i][j].p[smc_IP3] = y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
+				}
+			}
+			break;
+		}default: {
+			err =1;
+			break;
 		}
 	}
-
-	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells);
-			i++) {
-		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells);
-				j++) {
-			smc[i][j].p[smc_Ca] = 0.0;
-			smc[i][j].p[smc_SR] = 0.0;
-			smc[i][j].p[smc_Vm] = 0.0;
-			smc[i][j].p[smc_w] = 0.0;
-			smc[i][j].p[smc_IP3] = 0.0;
-
-			for (int k = 1; k <= grid.num_fluxes_smc; k++) {
-				smc[i][j].A[k - 1] = 0.0;
-			}
-			for (int k = 1; k <= grid.num_coupling_species_smc; k++) {
-				smc[i][j].B[k - 1] = 0.0;
-				smc[i][j].C[k - 1] = 0.0;
-			}
-		}
-	}
-}
-/*******************************************************************************************/
-void Initialize_koeingsberger_ec(grid_parms grid, double y[], celltype2** ec)
-/*******************************************************************************************/
-{
-int	k,offset = (grid.neq_smc * grid.num_smc_circumferentially
+	switch (ec_model) {
+		case (TSK): {
+			int k, offset = (grid.neq_smc * grid.num_smc_circumferentially
 					* grid.num_smc_axially);
 
-	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_ec_axially; j++) {
-			if (i > 1)
-				k = offset + ((i - 1) * grid.neq_ec_axially);
-			else if (i == 1)
-				k = offset + 0;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.01;
-		}
-	}
-	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells);
-			i++) {
-		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells);
-				j++) {
-			ec[i][j].q[ec_Ca] = 0.0;
-			ec[i][j].q[ec_SR] = 0.0;
-			ec[i][j].q[ec_Vm] = 0.0;
-			ec[i][j].q[ec_IP3] = 0.0;
-
-			for (int k = 1; k <= grid.num_fluxes_ec; k++) {
-				ec[i][j].A[k - 1] = 0.0;
+			for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+				for (int j = 1; j <= grid.num_ec_axially; j++) {
+					if (i > 1)
+					k = offset + ((i - 1) * grid.neq_ec_axially);
+					else if (i == 1)
+					k = offset + 0;
+					ec[i][j].q[ec_Ca] = y[k + ((j - 1) * grid.neq_ec) + ec_Ca];
+					ec[i][j].q[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
+					ec[i][j].q[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
+					ec[i][j].q[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
+				}
 			}
-			for (int k = 1; k <= grid.num_coupling_species_ec; k++) {
-				ec[i][j].B[k - 1] = 0.0;
-				ec[i][j].C[k - 1] = 0.0;
-			}
-		}
-	}
-}
-/*******************************************************************************************/
-void map_solver_to_cells(grid_parms grid,double y[], celltype1** smc, celltype2** ec)
-/*******************************************************************************************/
-{
-	///Mapping state vectors of each cell (all except the ghost cells) to the corresponding locations on the solver's solution array y[].
-	int k = 0, offset;
-	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_smc_axially; j++) {
-			if (i > 1)
-				k = ((i - 1) * grid.neq_smc_axially);
-			else if (i == 1)
-				k = 0;
-			smc[i][j].p[smc_Ca] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca];
-			smc[i][j].p[smc_SR] = y[k + ((j - 1) * grid.neq_smc) + smc_SR];
-			smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
-			smc[i][j].p[smc_w] = y[k + ((j - 1) * grid.neq_smc) + smc_w];
-			smc[i][j].p[smc_IP3] = y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
-		}
-	}
-	offset = (grid.neq_smc * grid.num_smc_circumferentially
-			* grid.num_smc_axially);
+		}case (KNBGR): {
+			int k, offset = (grid.neq_smc * grid.num_smc_circumferentially
+					* grid.num_smc_axially);
 
-	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_ec_axially; j++) {
-			if (i > 1)
-				k = offset + ((i - 1) * grid.neq_ec_axially);
-			else if (i == 1)
-				k = offset + 0;
-			ec[i][j].q[ec_Ca] = y[k + ((j - 1) * grid.neq_ec) + ec_Ca];
-			ec[i][j].q[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
-			ec[i][j].q[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
-			ec[i][j].q[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
+			for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+				for (int j = 1; j <= grid.num_ec_axially; j++) {
+					if (i > 1)
+					k = offset + ((i - 1) * grid.neq_ec_axially);
+					else if (i == 1)
+					k = offset + 0;
+					ec[i][j].q[ec_Ca] = y[k + ((j - 1) * grid.neq_ec) + ec_Ca];
+					ec[i][j].q[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
+					ec[i][j].q[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
+					ec[i][j].q[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
+				}
+			}
+		}default: {
+			err =1;
+			break;
 		}
 	}
+return (err);
 }
+
 /*******************************************************************************************/
 void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
 /*******************************************************************************************/
@@ -329,190 +314,6 @@ void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
 							"ghost cell in axial direction for smc");
 			}
 }
-
-/*******************************************************************************************/
-void single_cell(double t, double y[], grid_parms grid,celltype1** smc, celltype2** ec)
-/*******************************************************************************************/
-{
-	/* Constants for homogenically coupled SMCs*/
-	const double Fi = 0.23;
-	const double Kri = 1.00;
-	const double GCai = 0.00129;
-	const double vCa1 = 100.00;
-	const double vCa2 = -24.00;
-	const double RCai = 8.50;
-	const double GNaCai = 0.00316;
-	const double cNaCai = 0.5;
-	const double vNaCai = -30.00;
-	const double Bi = 2.025;
-	const double cbi = 1.0;
-	const double CICRi = 55.00;
-	const double sci = 2.0;
-	const double cci = 0.9;
-	const double Di = 0.24;
-	const double vdi = -100.00;
-	const double Rdi = 250.00;
-	const double Li = 0.025;
-	const double gama = 1970.00;
-	const double FNaK = 0.0432;
-	const double GCli = 0.00134;
-	const double vCl = -25.0;
-	const double GKi = 0.0046;
-	const double vKi = -94.00;
-	const double lambda = 45.00;
-	const double cwi = 0.0;
-	const double beta = 0.13;
-	const double vCa3 = -27.0;
-	const double RKi = 12.0;
-	const double ki = 0.1;
-	/* Constants for homogenically coupled ECs*/
-	const double Fj = 0.23;
-	const double Krj = 1.00;
-	const double Bj = 0.5;
-	const double cbj = 1.0;
-	const double CICRj = 5.0;
-	const double scj = 2.0;
-	const double ccj = 0.9;
-	const double Dj = 0.24;
-	const double Lj = 0.025;
-	const double kj = 0.1;
-	const double Gcatj = 0.66 * 1e-3;
-	const double ECa = 50.00;
-	const double m3cat = -0.18;			//-6.18;
-	const double m4cat = 0.37;
-	const double J0j = 0.029;
-	const double Cmj = 25.8;
-	const double Gtot = 6927;
-	const double vKj = -80.0;
-	const double a1j = 53.3;
-	const double a2j = 53.3;
-	const double bj = -80.8;
-	const double c1j = -0.4; //-6.4;
-	const double m3b = 1.32e-3;
-	const double m4b = 0.30;
-	const double m3s = -0.28;
-	const double m4s = 0.389;
-	const double GRj = 955;
-	const double vrestj = -31.10;
-
-	/*Intracellular calcium buffering*/
-	const double k6 = 100.00;
-	const double k7 = 300.00;
-	const double BT = 120.00;
-
-	int i, j, k;
-//#pragma omp for private(j)
-//EVALUATING SINGLE CELL FLUXES :::::::For SMC::::::::
-	for (i = 1; i <= grid.num_smc_circumferentially; i++) {
-		for (j = 1; j <= grid.num_smc_axially; j++) {
-
-			//JIP3
-			smc[i][j].A[J_IP3] = (Fi * P2(smc[i][j].p[smc_IP3]))
-					/ (P2(Kri) + P2(smc[i][j].p[smc_IP3]));
-			//JSRuptake
-			smc[i][j].A[J_SERCA] = (Bi * P2(smc[i][j].p[smc_Ca]))
-					/ (P2(smc[i][j].p[smc_Ca]) + P2(cbi));
-			//Jcicr
-			smc[i][j].A[J_CICR] =
-					(CICRi
-							* (P2(smc[i][j].p[smc_SR])
-									* P4(smc[i][j].p[smc_Ca])))
-							/ ((P2(sci) + P2(smc[i][j].p[smc_SR]))* ( P4(cci) + P4(smc[i][j].p[smc_Ca]) ) );
-			//Jextrusion
-			smc[i][j].A[J_Extrusion] = Di * smc[i][j].p[smc_Ca]
-					* (1 + ((smc[i][j].p[smc_Vm] - vdi) / Rdi));
-
-			//Jleak
-			smc[i][j].A[J_Leak] = Li * smc[i][j].p[smc_SR];
-			//Jvocc
-			smc[i][j].A[J_VOCC] = GCai * (smc[i][j].p[smc_Vm] - vCa1)
-					/ (1
-							+ ((double) (exp(
-									((-1) * (smc[i][j].p[smc_Vm] - vCa2))
-											/ RCai))));
-			//J Na/Ca
-			smc[i][j].A[J_Na_Ca] = GNaCai * smc[i][j].p[smc_Ca]
-					* (smc[i][j].p[smc_Vm] - vNaCai)
-					/ (smc[i][j].p[smc_Ca] + cNaCai);
-			//JNa/K
-			smc[i][j].A[J_Na_K] = FNaK;
-			//J Cl
-			smc[i][j].A[J_Cl] = GCli * (smc[i][j].p[smc_Vm] - vCl);
-			//JK
-			smc[i][j].A[J_K] = GKi * smc[i][j].p[smc_w]
-					* (smc[i][j].p[smc_Vm] - vKi);
-			//Kactivation
-			smc[i][j].A[K_activation] = P2(smc[i][j].p[smc_Ca] + cwi)
-					/ (P2(smc[i][j].p[smc_Ca] + cwi)
-							+ (beta
-									* ((double) exp(
-											(-1) * (smc[i][j].p[smc_Vm] - vCa3)
-													/ RKi))));
-			//Jdegradation
-			smc[i][j].A[J_IP3_deg] = ki * smc[i][j].p[smc_IP3];
-
-		} //end for j
-	} //end for i
-
-//#pragma omp for private(j)
-//EVALUATING SINGLE CELL FLUXES For EC
-	for (i = 1; i <= grid.num_ec_circumferentially; i++) {
-		for (j = 1; j <= grid.num_ec_axially; j++) {
-			//JIP3
-			ec[i][j].A[J_IP3] = (Fj * P2(ec[i][j].q[ec_IP3]))
-					/ (P2(Krj) + P2(ec[i][j].q[ec_IP3]));
-			//JSRuptake
-			ec[i][j].A[J_SERCA] = (Bj * P2(ec[i][j].q[ec_Ca]))
-					/ (P2(ec[i][j].q[ec_Ca]) + P2(cbj));
-			//Jcicr
-			ec[i][j].A[J_CICR] =
-					(CICRj * P2(ec[i][j].q[ec_SR]) * P4(ec[i][j].q[ec_Ca]))
-							/ ((P2(ec[i][j].q[ec_SR]) + P2(scj))*(P4(ec[i][j].q[ec_Ca])+P4(ccj)));
-			//Jextrusion
-			ec[i][j].A[J_Extrusion] = Dj * ec[i][j].q[ec_Ca];
-			//Jleak
-			ec[i][j].A[J_Leak] = Lj * ec[i][j].q[ec_SR];
-			//J_NonSelective Cation channels
-			ec[i][j].A[J_NSC] = (Gcatj * (ECa - ec[i][j].q[ec_Vm]) * 0.5)
-					* (1
-							+ ((double) (tanh(
-									(double) (((double) (log10(
-											(double) (ec[i][j].q[ec_Ca])))
-											- m3cat) / m4cat)))));
-			//BK_channels
-			ec[i][j].A[J_BK_Ca] =
-					(0.4 / 2)
-							* (1
-									+ (double) (tanh(
-											(double) ((((((double) (log10(
-													(double) (ec[i][j].q[ec_Ca])))
-													- c1j)
-													* (ec[i][j].q[ec_Vm] - bj))
-													- a1j)
-													/ ((m3b
-															* (P2(ec[i][j].q[ec_Vm]+(a2j*((double) (log10 ((double) (ec[i][j].q[ec_Ca])))-c1j))-bj)))+m4b))))));
-			//SK_channels
-			ec[i][j].A[J_SK_Ca] =
-					(0.6 / 2)
-							* (1
-									+ (double) (tanh(
-											(double) (((double) (log10(
-													(double) (ec[i][j].q[ec_Ca])))
-													- m3s) / m4s))));
-			//Total K flux
-			ec[i][j].A[J_Ktot] = Gtot * (ec[i][j].q[ec_Vm] - vKj)
-					* (ec[i][j].A[J_BK_Ca] + ec[i][j].A[J_SK_Ca]);
-			//Residual currents
-			ec[i][j].A[J_Residual] = GRj * (ec[i][j].q[ec_Vm] - vrestj);
-			//IP3 degradation
-			ec[i][j].A[J_IP3_deg] = kj * ec[i][j].q[ec_IP3];
-			//Grouping all other trivial Ca fluxes
-			ec[i][j].A[J_trivial_Ca] = J0j;
-
-		} //end for j
-	} //end for i
-
-}	//End of function single_cell
 
 /*******************************************************************************************/
 void coupling(double t,double y[], grid_parms grid,celltype1** smc, celltype2** ec,conductance cpl_cef)
@@ -626,46 +427,22 @@ void coupling(double t,double y[], grid_parms grid,celltype1** smc, celltype2** 
 
 }	//end of coupling()
 
-/**************************************************************************************/
-double agonist_profile(double t, grid_parms grid, int i, int j, double z_coord)
-/**************************************************************************************/
-{
+/*******************************************************************************************/
+double agonist_profile(double t, grid_parms grid, int i, int j){
+
 	double JPLC;
 	if (t > grid.stimulus_onset_time) {
 
-		/*	JPLC =grid.min_jplc+ (grid.max_jplc/
-		 (1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
-		 */
-		JPLC = grid.min_jplc
-				+ (grid.max_jplc / (1e-3 + exp(-grid.gradient * z_coord)));
-	} else if (t <= grid.stimulus_onset_time) {
-		JPLC = grid.uniform_jplc;
-	}
+				JPLC =grid.min_jplc+ (grid.max_jplc/
+						(1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
+
+			} else if (t <= grid.stimulus_onset_time){
+				JPLC = grid.uniform_jplc;
+			}
 	return JPLC;
 }
-
-/**********************************************************************/
-celltype2** ith_ec_z_coordinate(grid_parms grid, celltype2** ec)
-/**********************************************************************/
-{	double array[2*grid.num_ec_axially];
-
-	for (int i=0; i<=2*grid.num_ec_axially; i++){
-			array[i] = grid.my_domain.local_z_end
-					+ (i) * ((grid.my_domain.local_z_start-grid.my_domain.local_z_end)/ (2 * grid.num_ec_axially));
-		}
-
-	for (int i=1; i<=grid.num_ec_circumferentially; i++){
-		int indx =2 * grid.num_ec_axially-1;
-		for (int j=1; j<=grid.num_ec_axially;j++){
-			ec[i][j].z_coord = array[indx];
-			indx-=2;
-		}
-
-	}
-
-	return (ec);
-}
-/**********************************************************************/
+/*******************************************************************************************/
+/*******************************************************************************************/
 void initialize_t_stamp(time_stamps t_stamp){
 	t_stamp.diff_async_comm_calls	=	0.0;
 	t_stamp.diff_async_comm_calls_wait=	0.0;
@@ -674,145 +451,53 @@ void initialize_t_stamp(time_stamps t_stamp){
 	t_stamp.diff_single_cell_fluxes=0.0;
 	t_stamp.diff_coupling_fluxes=0.0;
 }
-/********************************************************************************/
-int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
-/*******************************************************************************/
-	MPI_Offset disp;
-	MPI_Status status;
-	int index;
 
-	disp = grid.universal_rank*sizeof(int);
-	check_flag(MPI_File_read_at(check->line_number, disp, &index, 1,MPI_INT, &status),
-			"error reading the line number in recognize_end_of_file_index.");
-	return (index);
-}
-/********************************************************************************/
-double reinitialize_time(checkpoint_handle* check, int line_index,
-		grid_parms grid) {
-/************************************************************************/
-	MPI_Offset disp;
-	MPI_Status status;
 
-	int elements = 1;
-	double time;
+void compute(time_stamps t_stamp, grid_parms grid, celltype1** smc,
+		celltype2** ec, double t, double* y, double* f, int NO_Path, int cGMP_Path) {
 
-	disp = ((line_index - 1) * grid.tasks * elements * sizeof(double)) + (grid.rank * elements * sizeof(double));
-	check_flag(
-			MPI_File_read_at(check->Time, disp, &time, elements, MPI_DOUBLE,
-					&status), "error read in the reinit data in reinit_smc.");
-	return(time);
-}
-/********************************************************************************/
-double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
-		grid_parms grid, double* y, celltype1** smc) {
-/***********************************************************************************/
-	MPI_Offset disp;
-	MPI_Status status;
+	t_stamp.computeDerivatives_call_counter =
+			t_stamp.computeDerivatives_call_counter + 1;
 
-	int elements = grid.num_smc_circumferentially * grid.num_smc_axially;
+	t_stamp.map_function_t1 = MPI_Wtime();
+	map_solver_to_cells(grid, y, smc, ec);
+	t_stamp.map_function_t2 = MPI_Wtime();
+	t_stamp.diff_map_function = t_stamp.diff_map_function
+			+ (t_stamp.map_function_t2 - t_stamp.map_function_t1);
 
-	double** buffer;
-	buffer = (double**) checked_malloc(grid.neq_smc * sizeof(double*),
-			"error allocating memory for read buffer in reinit_smc.");
-	for (int i = 0; i < grid.neq_smc; i++) {
-		buffer[i] = (double*) checked_malloc(elements * sizeof(double),
-				"error allocating memory for read buffer in reinit_smc.");
-	}
+#ifdef Tsoukias
+	t_stamp.single_cell_fluxes_t1 = MPI_Wtime();
+	tsoukias_smc(grid, smc, NO_Path, cGMP_Path);
+	koenigsberger_ec(grid, ec);
+	t_stamp.single_cell_fluxes_t2 = MPI_Wtime();
+	t_stamp.diff_single_cell_fluxes = t_stamp.diff_single_cell_fluxes + (t_stamp.single_cell_fluxes_t2 - t_stamp.single_cell_fluxes_t1);
 
-	disp = ((line_index - 1) * grid.tasks * elements * sizeof(double))
-			+ (grid.rank * elements * sizeof(double));
-	check_flag(
-			MPI_File_read_at(check->ci, disp, buffer[smc_Ca], elements, MPI_DOUBLE,
-					&status),
-			"error read in the reinit Ca data in reinit_smc.");
-	check_flag(
-				MPI_File_read_at(check->si, disp, buffer[smc_SR], elements, MPI_DOUBLE,
-						&status),
-				"error read in the reinit SR data in reinit_smc.");
-	check_flag(
-				MPI_File_read_at(check->vi, disp, buffer[smc_Vm], elements, MPI_DOUBLE,
-						&status),
-				"error read in the reinit Vm data in reinit_smc.");
-	check_flag(
-				MPI_File_read_at(check->wi, disp, buffer[smc_w], elements, MPI_DOUBLE,
-						&status),
-				"error read in the reinit K_Ca open channel probability data in reinit_smc.");
-	check_flag(
-				MPI_File_read_at(check->Ii, disp, buffer[smc_IP3], elements, MPI_DOUBLE,
-						&status),
-				"error read in the reinit IP3 data in reinit_smc.");
+	t_stamp.coupling_fluxes_t1 = MPI_Wtime();
+	coupling(t,y, grid, smc, ec,cpl_cef);
+	t_stamp.coupling_fluxes_t2 = MPI_Wtime();
+	t_stamp.diff_coupling_fluxes = t_stamp.diff_coupling_fluxes + (t_stamp.coupling_fluxes_t2 - t_stamp.coupling_fluxes_t1);
 
-	int k = 0, offset;
-		for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-			for (int j = 1; j <= grid.num_smc_axially; j++) {
-				if (i > 1)
-					k = ((i - 1) * grid.neq_smc_axially);
-				else if (i == 1)
-					k = 0;
-				y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = buffer[smc_Ca][(i-1)*grid.num_smc_axially + (j-1)];
-				y[k + ((j - 1) * grid.neq_smc) + smc_SR] = buffer[smc_SR][(i-1)*grid.num_smc_axially + (j-1)];
-				y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = buffer[smc_Vm][(i-1)*grid.num_smc_axially + (j-1)];
-				y[k + ((j - 1) * grid.neq_smc) + smc_w] = buffer[smc_w][(i-1)*grid.num_smc_axially + (j-1)];
-				y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = buffer[smc_IP3][(i-1)*grid.num_smc_axially + (j-1)];
-			}
-		}
-		return (y);
-}
-/************************************************************************************/
-double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
-		grid_parms grid, double* y, celltype2** ec) {
-/************************************************************************************/
-	MPI_Offset disp;
-	MPI_Status status;
-
-	int elements = grid.num_ec_circumferentially * grid.num_ec_axially;
-
-	double** buffer;
-	buffer = (double**) checked_malloc(grid.neq_ec * sizeof(double*),
-			"error allocating memory for read buffer in reinit_ec.");
-	for (int i = 0; i < grid.neq_ec; i++) {
-		buffer[i] = (double*) checked_malloc(elements * sizeof(double),
-				"error allocating memory for read buffer in reinit_ec.");
-	}
-
-	disp = ((line_index - 1) * grid.tasks * elements * sizeof(double))
-			+ (grid.rank * elements * sizeof(double));
-
-	check_flag(
-			MPI_File_read_at(check->cj, disp, buffer[ec_Ca], elements, MPI_DOUBLE,
-					&status),
-			"error read in the reinit Ca data in reinit_ec.");
-	check_flag(
-				MPI_File_read_at(check->sj, disp, buffer[ec_SR], elements, MPI_DOUBLE,
-						&status),
-				"error read in the reinit SR data in reinit_ec.");
-	check_flag(
-				MPI_File_read_at(check->vj, disp, buffer[ec_Vm], elements, MPI_DOUBLE,
-						&status),
-				"error read in the reinit Vm data in reinit_ec.");
-	check_flag(
-				MPI_File_read_at(check->Ij, disp, buffer[ec_IP3], elements, MPI_DOUBLE,
-						&status),
-				"error read in the reinit IP3 data in reinit_ec.");
-
-	int k = 0, offset = (grid.neq_smc * grid.num_smc_circumferentially
+	tsoukias_smc_derivatives(f, gird,smc);
+	int offset = (grid.neq_smc * grid.num_smc_circumferentially
 			* grid.num_smc_axially);
+	koenigsberger_ec_derivatives(offset,t,f,gird,smc);
+#endif
 
-	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-			for (int j = 1; j <= grid.num_ec_axially; j++) {
-				if (i > 1)
-					k = offset + ((i - 1) * grid.neq_ec_axially);
-				else if (i == 1)
-					k = offset + 0;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = buffer[ec_Ca][(i - 1)
-					* grid.num_ec_axially + (j - 1)];
-			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = buffer[ec_SR][(i - 1)
-					* grid.num_ec_axially + (j - 1)];
-			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = buffer[ec_Vm][(i - 1)
-					* grid.num_ec_axially + (j - 1)];
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = buffer[ec_IP3][(i - 1)
-					* grid.num_ec_axially + (j - 1)];
-			}
-		}
-	return (y);
+#ifdef Koenigsberger
+	t_stamp.single_cell_fluxes_t1 = MPI_Wtime();
+	koenigsberger_smc(grid, smc);
+	koenigsberger_ec(grid, ec);
+	t_stamp.single_cell_fluxes_t2 = MPI_Wtime();
+	t_stamp.diff_single_cell_fluxes = t_stamp.diff_single_cell_fluxes + (t_stamp.single_cell_fluxes_t2 - t_stamp.single_cell_fluxes_t1);
+
+	t_stamp.coupling_fluxes_t1 = MPI_Wtime();
+	coupling(t,y, grid, smc, ec,cpl_cef);
+	t_stamp.coupling_fluxes_t2 = MPI_Wtime();
+	t_stamp.diff_coupling_fluxes = t_stamp.diff_coupling_fluxes + (t_stamp.coupling_fluxes_t2 - t_stamp.coupling_fluxes_t1);
+
+	koeingsberger_smc_derivatives(f, gird,smc);
+	int offset = (grid.neq_smc * grid.num_smc_circumferentially
+			* grid.num_smc_axially);
+	koenigsberger_ec_derivatives(offset, t, f, gird,smc);
+#endif
 }
