@@ -665,7 +665,7 @@ celltype2** ith_ec_z_coordinate(grid_parms grid, celltype2** ec)
 
 	return (ec);
 }
-/*******************************************************************************************/
+/**********************************************************************/
 void initialize_t_stamp(time_stamps t_stamp){
 	t_stamp.diff_async_comm_calls	=	0.0;
 	t_stamp.diff_async_comm_calls_wait=	0.0;
@@ -673,4 +673,146 @@ void initialize_t_stamp(time_stamps t_stamp){
 	t_stamp.diff_map_function =0.0;
 	t_stamp.diff_single_cell_fluxes=0.0;
 	t_stamp.diff_coupling_fluxes=0.0;
+}
+/********************************************************************************/
+int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
+/*******************************************************************************/
+	MPI_Offset disp;
+	MPI_Status status;
+	int index;
+
+	disp = grid.universal_rank*sizeof(int);
+	check_flag(MPI_File_read_at(check->line_number, disp, &index, 1,MPI_INT, &status),
+			"error reading the line number in recognize_end_of_file_index.");
+	return (index);
+}
+/********************************************************************************/
+double reinitialize_time(checkpoint_handle* check, int line_index,
+		grid_parms grid) {
+/************************************************************************/
+	MPI_Offset disp;
+	MPI_Status status;
+
+	int elements = 1;
+	double time;
+
+	disp = ((line_index - 1) * grid.tasks * elements * sizeof(double)) + (grid.rank * elements * sizeof(double));
+	check_flag(
+			MPI_File_read_at(check->Time, disp, &time, elements, MPI_DOUBLE,
+					&status), "error read in the reinit data in reinit_smc.");
+	return(time);
+}
+/********************************************************************************/
+double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
+		grid_parms grid, double* y, celltype1** smc) {
+/***********************************************************************************/
+	MPI_Offset disp;
+	MPI_Status status;
+
+	int elements = grid.num_smc_circumferentially * grid.num_smc_axially;
+
+	double** buffer;
+	buffer = (double**) checked_malloc(grid.neq_smc * sizeof(double*),
+			"error allocating memory for read buffer in reinit_smc.");
+	for (int i = 0; i < grid.neq_smc; i++) {
+		buffer[i] = (double*) checked_malloc(elements * sizeof(double),
+				"error allocating memory for read buffer in reinit_smc.");
+	}
+
+	disp = ((line_index - 1) * grid.tasks * elements * sizeof(double))
+			+ (grid.rank * elements * sizeof(double));
+	check_flag(
+			MPI_File_read_at(check->ci, disp, buffer[smc_Ca], elements, MPI_DOUBLE,
+					&status),
+			"error read in the reinit Ca data in reinit_smc.");
+	check_flag(
+				MPI_File_read_at(check->si, disp, buffer[smc_SR], elements, MPI_DOUBLE,
+						&status),
+				"error read in the reinit SR data in reinit_smc.");
+	check_flag(
+				MPI_File_read_at(check->vi, disp, buffer[smc_Vm], elements, MPI_DOUBLE,
+						&status),
+				"error read in the reinit Vm data in reinit_smc.");
+	check_flag(
+				MPI_File_read_at(check->wi, disp, buffer[smc_w], elements, MPI_DOUBLE,
+						&status),
+				"error read in the reinit K_Ca open channel probability data in reinit_smc.");
+	check_flag(
+				MPI_File_read_at(check->Ii, disp, buffer[smc_IP3], elements, MPI_DOUBLE,
+						&status),
+				"error read in the reinit IP3 data in reinit_smc.");
+
+	int k = 0, offset;
+		for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+			for (int j = 1; j <= grid.num_smc_axially; j++) {
+				if (i > 1)
+					k = ((i - 1) * grid.neq_smc_axially);
+				else if (i == 1)
+					k = 0;
+				y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = buffer[smc_Ca][(i-1)*grid.num_smc_axially + (j-1)];
+				y[k + ((j - 1) * grid.neq_smc) + smc_SR] = buffer[smc_SR][(i-1)*grid.num_smc_axially + (j-1)];
+				y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = buffer[smc_Vm][(i-1)*grid.num_smc_axially + (j-1)];
+				y[k + ((j - 1) * grid.neq_smc) + smc_w] = buffer[smc_w][(i-1)*grid.num_smc_axially + (j-1)];
+				y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = buffer[smc_IP3][(i-1)*grid.num_smc_axially + (j-1)];
+			}
+		}
+		return (y);
+}
+/************************************************************************************/
+double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
+		grid_parms grid, double* y, celltype2** ec) {
+/************************************************************************************/
+	MPI_Offset disp;
+	MPI_Status status;
+
+	int elements = grid.num_ec_circumferentially * grid.num_ec_axially;
+
+	double** buffer;
+	buffer = (double**) checked_malloc(grid.neq_ec * sizeof(double*),
+			"error allocating memory for read buffer in reinit_ec.");
+	for (int i = 0; i < grid.neq_ec; i++) {
+		buffer[i] = (double*) checked_malloc(elements * sizeof(double),
+				"error allocating memory for read buffer in reinit_ec.");
+	}
+
+	disp = ((line_index - 1) * grid.tasks * elements * sizeof(double))
+			+ (grid.rank * elements * sizeof(double));
+
+	check_flag(
+			MPI_File_read_at(check->cj, disp, buffer[ec_Ca], elements, MPI_DOUBLE,
+					&status),
+			"error read in the reinit Ca data in reinit_ec.");
+	check_flag(
+				MPI_File_read_at(check->sj, disp, buffer[ec_SR], elements, MPI_DOUBLE,
+						&status),
+				"error read in the reinit SR data in reinit_ec.");
+	check_flag(
+				MPI_File_read_at(check->vj, disp, buffer[ec_Vm], elements, MPI_DOUBLE,
+						&status),
+				"error read in the reinit Vm data in reinit_ec.");
+	check_flag(
+				MPI_File_read_at(check->Ij, disp, buffer[ec_IP3], elements, MPI_DOUBLE,
+						&status),
+				"error read in the reinit IP3 data in reinit_ec.");
+
+	int k = 0, offset = (grid.neq_smc * grid.num_smc_circumferentially
+			* grid.num_smc_axially);
+
+	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+			for (int j = 1; j <= grid.num_ec_axially; j++) {
+				if (i > 1)
+					k = offset + ((i - 1) * grid.neq_ec_axially);
+				else if (i == 1)
+					k = offset + 0;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = buffer[ec_Ca][(i - 1)
+					* grid.num_ec_axially + (j - 1)];
+			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = buffer[ec_SR][(i - 1)
+					* grid.num_ec_axially + (j - 1)];
+			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = buffer[ec_Vm][(i - 1)
+					* grid.num_ec_axially + (j - 1)];
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = buffer[ec_IP3][(i - 1)
+					* grid.num_ec_axially + (j - 1)];
+			}
+		}
+	return (y);
 }

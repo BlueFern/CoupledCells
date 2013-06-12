@@ -15,7 +15,7 @@ extern celltype1** smc;
 extern celltype2** ec;
 extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
-
+extern time_stamps		t_stamp;
 
 ///***************************************************************************************/
 ///************ComputeDerivates(tnow, state_variables[], first_derivatives[])*************/
@@ -27,10 +27,24 @@ void computeDerivatives(double t, double y[], double f[]) {
 	const double lambda = 45.00;
 	const double Cmj = 25.8;
 	int k = 0, talk = 0;
-	map_solver_to_cells(grid,y,smc,ec);
+	t_stamp.computeDerivatives_call_counter = t_stamp.computeDerivatives_call_counter +1;
 
-	single_cell( t, y,  grid, smc,  ec);
-	coupling(t,y, grid, smc, ec,cpl_cef);
+		t_stamp.map_function_t1	=	MPI_Wtime();
+		map_solver_to_cells(grid,y,smc,ec);
+		t_stamp.map_function_t2	=	MPI_Wtime();
+		t_stamp.diff_map_function	=	t_stamp.diff_map_function + (t_stamp.map_function_t2 - t_stamp.map_function_t1);
+
+		t_stamp.single_cell_fluxes_t1 = MPI_Wtime();
+		single_cell(t, y, grid, smc, ec);
+		t_stamp.single_cell_fluxes_t2 = MPI_Wtime();
+		t_stamp.diff_single_cell_fluxes = t_stamp.diff_single_cell_fluxes
+			+ (t_stamp.single_cell_fluxes_t2 - t_stamp.single_cell_fluxes_t1);
+
+		t_stamp.coupling_fluxes_t1 = MPI_Wtime();
+		coupling(t, y, grid, smc, ec, cpl_cef);
+		t_stamp.coupling_fluxes_t2 = MPI_Wtime();
+		t_stamp.diff_coupling_fluxes = t_stamp.diff_coupling_fluxes
+			+ (t_stamp.coupling_fluxes_t2 - t_stamp.coupling_fluxes_t1);
 	///In previous version of code (agonist_variation_main.cpp) the indexing in this section was
 	///handelled differently but the end result is same.
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
@@ -96,7 +110,7 @@ void computeDerivatives(double t, double y[], double f[]) {
 
 }    //end of computeDerivatives()
 void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp,
-		int total, double TOL, double* thres, int file_write_per_unit_time,
+		int total, double TOL, double* thres, int file_write_per_unit_time,int line_number,
 		checkpoint_handle *check) {
 
 	RKSUITE rksuite;
@@ -107,7 +121,8 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	int itteration = 0;
 	int write_count=0;
 	int write_once=0;
-
+	int count=0;
+	initialize_t_stamp(t_stamp);
 	tend= interval;
 	rksuite.setup(total, tnow, y, tend, TOL, thres, method, "CT", false,
 			0.0, false);
@@ -145,11 +160,20 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}
 		}
+
+		t_stamp.write_t1	=	MPI_Wtime();
 		if ((itteration % file_write_per_unit_time) == 0) {
-			checkpoint(check, grid, tnow, smc, ec,write_count);
+			dump_data(check, grid, line_number,tnow, smc, ec,write_count);
+			update_line_number(check, grid,write_count);
 		write_count++;
 		}		//end itteration
-		//MPI_Barrier(grid.universe);
+		t_stamp.write_t2	=	MPI_Wtime();
+		t_stamp.diff_write  =   t_stamp.write_t2-t_stamp.write_t1;
+
+		checkpoint_timing_data(grid, check, tnow, t_stamp, count);
+		initialize_t_stamp(t_stamp);
+		count++;
+
 		tend += interval;
 		rksuite.reset(tend);
 	}			//end while()
@@ -157,7 +181,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 }
 
 void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, double* yp,
-		int total, double TOL, double* thres, int file_write_per_unit_time,
+		int total, double TOL, double* thres, int file_write_per_unit_time,int line_number,
 		checkpoint_handle *check) {
 	printf("[%d]: I have called RKSUITE\n",grid.universal_rank);
 
@@ -209,7 +233,7 @@ void rksuite_solver_UT(double tnow, double tfinal, double interval, double *y, d
 		}*/
 
 		if ((itteration % file_write_per_unit_time) == 0) {
-					checkpoint(check, grid, tnow, smc, ec,write_count);
+			dump_data(check, grid, line_number,tnow, smc, ec,write_count);
 				write_count++;
 				}		//end itteration
 		//MPI_Barrier(grid.universe);

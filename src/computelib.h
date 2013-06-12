@@ -198,7 +198,9 @@ MPI_File logptr, Time, ci, si, vi, wi, Ii, cpCi, cpVi, cpIi, cj,
 sj, vj, Ij, cpCj, cpVj, cpIj,
 elapsed_time,jplc,coords,
 ///time profiling file handles.
-time_profiling,async_calls,async_wait,barrier_before_comm,map_function,single_cell_fluxes,coupling_fluxes,solver,writer_func,derivative_calls,itter_count;
+time_profiling,async_calls,async_wait,barrier_before_comm,map_function,
+single_cell_fluxes,coupling_fluxes,solver,writer_func,derivative_calls,itter_count,
+line_number;
 }checkpoint_handle;
 
 /*#else
@@ -248,25 +250,27 @@ void communication_async_send_recv(grid_parms, double**, double**,celltype1**, c
 
 ///Checkpoint functions.
 checkpoint_handle* initialise_checkpoint(grid_parms);
-void dump_smc(grid_parms, celltype1**, checkpoint_handle*, int);
-void dump_ec(grid_parms, celltype2**, checkpoint_handle*, int);
+void dump_smc(grid_parms, celltype1**, checkpoint_handle*, int,int);
+void dump_ec(grid_parms, celltype2**, checkpoint_handle*, int,int);
 void dump_smc_async(grid_parms, celltype1**, checkpoint_handle*, int);
 void dump_ec_async(grid_parms, celltype2**, checkpoint_handle*, int);
 void dump_JPLC(grid_parms, celltype2**, checkpoint_handle*, const char*);
-void checkpoint(checkpoint_handle*, grid_parms, double, celltype1**, celltype2**, int);
-void final_checkpoint(grid_parms,checkpoint_handle*, double, double);
+void dump_data(checkpoint_handle*, grid_parms, int,double, celltype1**, celltype2**, int);
+void final_checkpoint(grid_parms,checkpoint_handle*, double, double,int);
 void dump_rank_info(checkpoint_handle*, conductance,grid_parms);
 void dump_smc_with_ghost_cells(grid_parms, celltype1**, checkpoint_handle*, int);
 void dump_ec_with_ghost_cells(grid_parms, celltype2**, checkpoint_handle*, int);
 void checkpoint_with_ghost_cells(checkpoint_handle*, grid_parms, double, celltype1**, celltype2**, int);
+void update_line_number(checkpoint_handle*, grid_parms,int);
+
 
 void computeDerivatives(double, double*, double*);
 void rksuite_solver_CT(double, double, double, double*, double*, int, double,
-		double*, int, checkpoint_handle*);
+		double*, int,int, checkpoint_handle*);
 void rksuite_solver_UT(double, double, double, double *, double*, int, double,
-		double*, int, checkpoint_handle*);
+		double*, int,int, checkpoint_handle*);
 ///These are debugging functions, not used in production runs.
-void print_domains(grid_parms ,celltype1** , celltype2** );
+void print_domains(FILE*, grid_parms , celltype1** ,	celltype2** );
 void print_send_buffer(grid_parms , double** );
 void print_recv_buffer(grid_parms , double** );
 void print_compare(double, double*,grid_parms, celltype1**, celltype2**);
@@ -283,7 +287,7 @@ grid_parms make_subdomains(grid_parms, int, int**);
 #ifdef CVODE
 static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
-		int file_write_per_unit_time, checkpoint_handle *check);
+		int file_write_per_unit_time,int, checkpoint_handle *check);
 #endif /* CVODE */
 void checkpoint_timing_data(grid_parms grid, checkpoint_handle*,double,time_stamps,int);
 double agonist_profile(double, grid_parms, int, int, double);
@@ -294,3 +298,11 @@ grid_parms update_global_subdomain_information(grid_parms , int , int**);
 grid_parms my_z_offset(grid_parms grid,double theta);
 celltype2** ith_ec_z_coordinate(grid_parms, celltype2**);
 void dump_coords(grid_parms, celltype2**, checkpoint_handle*, const char*);
+
+int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid);
+double reinitialize_time(checkpoint_handle*, int, grid_parms);
+double* reinitialize_koenigsberger_smc(checkpoint_handle*, int, grid_parms,
+		double*, celltype1**);
+double* reinitialize_koenigsberger_ec(checkpoint_handle*, int, grid_parms,
+		double*, celltype2**);
+int checkpoint(checkpoint_handle*, grid_parms, double*, double*, celltype1**, celltype2**);

@@ -153,16 +153,17 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 }
 
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
-		int file_write_per_unit_time, checkpoint_handle *check){
+		int file_write_per_unit_time,int line_number, checkpoint_handle *check){
 
-void* cvode_mem;
-int flag;
-realtype t;
-int itteration = 0;
-int write_count=0;
-int write_once=0;
-int count=0;
-initialize_t_stamp(t_stamp);
+	void* cvode_mem;
+	int flag;
+	realtype t;
+	int itteration = 0;
+	int write_count=0;
+	int write_once=0;
+	int count=0;
+	double hmin;
+	initialize_t_stamp(t_stamp);
 	cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
 	if (check_cvode_flag((void *) cvode_mem, "CVodeCreate", 0)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
@@ -174,14 +175,19 @@ initialize_t_stamp(t_stamp);
 
 	flag = CVodeSStolerances(cvode_mem, TOL, absTOL);
 	if (check_cvode_flag(&flag, "CVodeSStolerances", 1))
-		MPI_Abort(MPI_COMM_WORLD, 321);
+	MPI_Abort(MPI_COMM_WORLD, 321);
 
 	flag = CVSpgmr(cvode_mem, PREC_NONE, 0);
 	if (check_cvode_flag(&flag, "CVSpgmr", 1)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
 	}
+	if (line_number > 0) {
+		 hmin = interval/1e3;
 
-	flag = CVodeSetInitStep(cvode_mem, interval / 2);
+	} else if (line_number ==0) {
+		 hmin = interval/2;
+	}
+	flag = CVodeSetInitStep(cvode_mem, hmin);
 	if (check_cvode_flag(&flag, "CVodeSetInitStep", 1)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
 	}
@@ -223,7 +229,8 @@ initialize_t_stamp(t_stamp);
 		/* time stamp this*/
 		t_stamp.write_t1	=	MPI_Wtime();
 		if ((itteration % file_write_per_unit_time) == 0) {
-					checkpoint(check, grid, tnow, smc, ec,write_count);
+					dump_data(check, grid, line_number,tnow, smc, ec,write_count);
+					update_line_number(check, grid,write_count);
 				write_count++;
 				}		//end itteration
 		t_stamp.write_t2	=	MPI_Wtime();

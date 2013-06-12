@@ -41,7 +41,6 @@ int main(int argc, char* argv[]) {
     ///Request and Status handles for nonblocking Send and Receive operations, for communicating with each of the four neighbours.
     MPI_Request reqs[8];
     MPI_Status stats[8];
-
     ///Initialize MPI
     MPI_Init(&argc, &argv);
 
@@ -63,11 +62,11 @@ int main(int argc, char* argv[]) {
          e = 4,	//ECs per processor in axial direction
          s = 4;	//SMCs per processor in circumferential direction
 
-         m[0]	=	256;
-         m[1]	=	84;
-         m[2]	=	256;
-         m[3]	=	256;
-/*         m[4]	=	4;
+         m[0]	=	4;//256;
+         m[1]	=	4;//84;
+/*         m[2]	=	//256;
+         m[3]	=	//256;
+         m[4]	=	4;
          m[5]	=	4;
          m[6]	=	4;
          m[7]	=	4;
@@ -111,9 +110,9 @@ int main(int argc, char* argv[]) {
     domains[1][2]	=	m[1];
     domains[1][3]	=	n[1];
     domains[1][4]	=	0;
-    domains[1][5]	=	2;
-    domains[1][6]	=	3;
-
+    domains[1][5]	=	none;//2;
+    domains[1][6]	=	none;//3;
+/*
     domains[2][0]	=	2;
     domains[2][1]	=	STRSEG;
     domains[2][2]	=	m[2];
@@ -129,7 +128,7 @@ int main(int argc, char* argv[]) {
     domains[3][4]	=	1;
     domains[3][5]	=	none;
     domains[3][6]	=	none;
-/*
+
     domains[4][0]	=	4;
     domains[4][1]	=	STRSEG;
     domains[4][2]	=	m[4];
@@ -166,7 +165,7 @@ int main(int argc, char* argv[]) {
     grid =  make_subdomains(grid, num_subdomains, domains);
 
 ///Time variables
-	double tfinal =200.00;
+	double tfinal =5;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
@@ -187,7 +186,6 @@ grid = set_geometry_parameters(grid,e,s);
 	 grid =  update_global_subdomain_information(grid, num_subdomains, domains);
 	///Initialize checkpoint routine which opens files
 	    checkpoint_handle *check = initialise_checkpoint(grid);
-
 
 ///Now allocate memory space for the structures represegird.nting the cells and the various members of those structures.
 
@@ -467,12 +465,9 @@ grid = set_geometry_parameters(grid,e,s);
 	///Setting up the solver
 
 	double 	tnow	= 0.0;
-
 	//Error control variables
 	double 	TOL	= 1e-6, absTOL = 1e-7;
-
 	double * thres = (double*)checked_malloc(grid.NEQ*sizeof(double),"Threshod array for RKSUITE");
-
 	for (int i=0; i<grid.NEQ; i++)
 		thres[i]	=	absTOL;
 
@@ -484,31 +479,28 @@ grid = set_geometry_parameters(grid,e,s);
 	#else
 	double* y =  (double*)checked_malloc(grid.NEQ*sizeof(double),"Solver array y for RKSUITE");
 	#endif
-
 	double* yp =  (double*)checked_malloc(grid.NEQ*sizeof(double),"Solver array y for RKSUITE");
 
-		ec = ith_ec_z_coordinate(grid,ec);
-		dump_coords(grid, ec, check,"recording z coordinate for all ECs in axial direction.\n");
 	///Initialize different state variables and coupling data values.
-		Initialize_koeingsberger_smc(grid,y,smc);
-		Initialize_koeingsberger_ec(grid,y,ec);
-
-		map_solver_to_cells(grid,y,smc,ec);
+	int line_number = checkpoint(check, grid, &tnow, y, smc, ec);
+	map_solver_to_cells(grid, y, smc, ec);
+	communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
 
 int state 	=  couplingParms(CASE,&cpl_cef);
+ec = ith_ec_z_coordinate(grid,ec);
+dump_coords(grid, ec, check,"recording z coordinate for all ECs in axial direction.\n");
 dump_rank_info(check,cpl_cef,grid);
 
 	double t1 = MPI_Wtime();
 #ifdef CVODE
-	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check);
+	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check);
 #endif
 #ifndef CVODE
-	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres,
-			file_write_per_unit_time, check);
-//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,check);
+	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres,file_write_per_unit_time,line_number, check);
+//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
 #endif
 double t2	=	MPI_Wtime();
-	final_checkpoint(grid,check, t1, t2);
+	final_checkpoint(grid,check, t1, t2,line_number);
 MPI_Finalize();
 }// end main()
 
