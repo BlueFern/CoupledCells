@@ -300,6 +300,7 @@ if ( (grid.my_domain.internal_info.boundary_tag == 'T') || (grid.my_domain.inter
 
 }
 	communication_update_recvbuf_modified(grid,recvbuf,smc,ec);
+
 }//end of update_async()
 
 /*******************************************************************************************/

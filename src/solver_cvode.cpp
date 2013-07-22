@@ -58,7 +58,9 @@ extern time_stamps		t_stamp;
 ///***************************************************************************************/
 void computeDerivatives(double t, double y[], double f[]) {
 
-	compute(t_stamp, grid, grid.smc_model,smc, grid.ec_model, ec, cpl_cef, t, y,f, grid.NO_path, grid.cGMP_path);
+	compute(t_stamp, grid, smc, ec, cpl_cef, t, y,f);
+	t_stamp.computeDerivatives_call_counter =
+				t_stamp.computeDerivatives_call_counter + 1;
 
 }    //end of computeDerivatives()
 
@@ -109,10 +111,9 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 	}
 
 	///Iterative  calls to the solver start here.
-	/* time stamp this*/
-	t_stamp.solver_t1 	=	MPI_Wtime();
 	for (double k = tnow; k < tfinal; k += interval) {
-			 flag = CVode(cvode_mem, k, y, &t, CV_NORMAL);
+	t_stamp.solver_t1 	=	MPI_Wtime();
+			flag = CVode(cvode_mem, k, y, &t, CV_NORMAL);
 			 if(check_cvode_flag(&flag, "CVode", 1)){
 			 	MPI_Abort(MPI_COMM_WORLD, 400);
 			 }
@@ -140,8 +141,6 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}
 		}
-
-
 		/* time stamp this*/
 		t_stamp.write_t1	=	MPI_Wtime();
 		if ((itteration % file_write_per_unit_time) == 0) {

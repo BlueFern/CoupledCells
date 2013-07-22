@@ -7,7 +7,7 @@ hfiles = $(shell ls *.h)
 ofiles = $(cppfiles:.cpp=.o)
 
 all: $(ofiles)
-	$(CC) $(CFLAGS) $(ofiles) $(LIBS) -o model
+	$(CC) $(CFLAGS) $(ofiles) $(LIBS) -o output_CVODE/model
 
 cvode: CFLAGS= -DCVODE
 cvode: LIBS= -I/bgp/local/pkg/sundials/2.5.0/include/ -L/bgp/local/pkg/sundials/2.5.0/lib -lsundials_cvode -lsundials_nvecserial

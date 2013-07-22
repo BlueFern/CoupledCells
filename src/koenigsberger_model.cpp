@@ -8,7 +8,7 @@
 #include "koenigsberger_constants.h"
 
 /*******************************************************************************************/
-void Initialize_koeingsberger_smc(grid_parms grid, double y[], celltype1** smc)
+void Initialize_koeingsberger_smc(grid_parms grid, double* y, celltype1** smc)
 /*******************************************************************************************/
 {
 	int k = 0, offset;
@@ -50,7 +50,7 @@ void Initialize_koeingsberger_smc(grid_parms grid, double y[], celltype1** smc)
 
 
 /*******************************************************************************************/
-void Initialize_koeingsberger_ec(grid_parms grid, double y[], celltype2** ec)
+void Initialize_koeingsberger_ec(grid_parms grid, double* y, celltype2** ec)
 /*******************************************************************************************/
 {
 int	k,offset = (grid.neq_smc * grid.num_smc_circumferentially
@@ -261,7 +261,7 @@ grid_parms grid, celltype2** ec) {
 			else if (i == 1)
 				k = offset + 0;
 
-			ec[i][j].JPLC = agonist_profile(t, grid, i, j);
+			ec[i][j].JPLC = agonist_profile(t,grid,i,j,ec[i][j].z_coord);
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] = ec[i][j].A[J_IP3]
 					- ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR]

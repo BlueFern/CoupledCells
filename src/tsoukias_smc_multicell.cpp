@@ -104,7 +104,7 @@ void Initialize_tsoukias_smc(grid_parms grid, double y[], celltype1** smc)
 		}
 }
 /************************************************************************************************/
-void tsoukias_smc(grid_parms grid, celltype1** smc, int NO_Path, int cGMP_Path)
+void tsoukias_smc(grid_parms grid, celltype1** smc)
 /*																				   		      	*
  * This is the multicell version of the function tosukias_smc() used for single   		  	  	*
  * EC-SMC Unit simulation.														  		  		*
@@ -148,8 +148,8 @@ void tsoukias_smc(grid_parms grid, celltype1** smc, int NO_Path, int cGMP_Path)
 
 			//Large conductance Ca activated potassium channels
 
-			smc[i][j].A[R_NO] = NO_Path * smc[i][j].NO / (smc[i][j].NO + 200.00);
-			smc[i][j].A[R_cGMP] = cGMP_Path * P2(smc[i][j].p[smc_cGMP_i]) / (P2(smc[i][j].p[smc_cGMP_i]) + P2(1.5));
+			smc[i][j].A[R_NO] = grid.NO_path * smc[i][j].NO / (smc[i][j].NO + 200.00);
+			smc[i][j].A[R_cGMP] = grid.cGMP_path * P2(smc[i][j].p[smc_cGMP_i]) / (P2(smc[i][j].p[smc_cGMP_i]) + P2(1.5));
 			smc[i][j].A[V_half_KCa] = -41.7 * log10(smc[i][j].p[smc_Ca]) - 128.2;
 
 			smc[i][j].A[pbar_o] = 1 / (1 + exp(-(smc[i][j].p[smc_Vm] - smc[i][j].A[V_half_KCa]) / 18.25));

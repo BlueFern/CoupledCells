@@ -22,7 +22,7 @@ extern time_stamps		t_stamp;
 ///***************************************************************************************/
 void computeDerivatives(double t, double y[], double f[]) {
 
-	compute(t_stamp, grid, grid.smc_model,smc, grid.ec_model, ec, t, y,f, grid.NO_path, grid.cGMP_path);
+	compute(t_stamp, grid,smc, ec, cpl_cef, t, y,f);
 
 }    //end of computeDerivatives()
 void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp,
