@@ -451,32 +451,34 @@ double agonist_profile(double t, grid_parms grid, int i, int j, double z_coord)
 /**********************************************************************/
 celltype2** ith_ec_z_coordinate(grid_parms grid, celltype2** ec)
 /**********************************************************************/
-{	double array[2*grid.num_ec_axially];
+{
+	double array[2 * grid.num_ec_axially];
 
-	for (int i=0; i<=2*grid.num_ec_axially; i++){
-			array[i] = grid.my_domain.local_z_end
-					+ (i) * ((grid.my_domain.local_z_start-grid.my_domain.local_z_end)/ (2 * grid.num_ec_axially));
-		}
-
-	for (int i=1; i<=grid.num_ec_circumferentially; i++){
-		int indx =2 * grid.num_ec_axially-1;
-		for (int j=1; j<=grid.num_ec_axially;j++){
-			ec[i][j].z_coord = array[indx];
-			indx-=2;
-		}
-
+	for (int i = 0; i <= 2 * grid.num_ec_axially; i++) {
+		array[i] = grid.my_domain.local_z_end
+				+ (i)
+						* ((grid.my_domain.local_z_start
+								- grid.my_domain.local_z_end)
+								/ (2 * grid.num_ec_axially));
 	}
 
+	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+		int indx = 2 * grid.num_ec_axially - 1;
+		for (int j = 1; j <= grid.num_ec_axially; j++) {
+			ec[i][j].z_coord = array[indx];
+			indx -= 2;
+		}
+	}
 	return (ec);
 }
 /**********************************************************************/
-void initialize_t_stamp(time_stamps t_stamp){
-	t_stamp.diff_async_comm_calls	=	0.0;
-	t_stamp.diff_async_comm_calls_wait=	0.0;
-	t_stamp.diff_barrier_in_solver_before_comm=0.0;
-	t_stamp.diff_map_function =0.0;
-	t_stamp.diff_single_cell_fluxes=0.0;
-	t_stamp.diff_coupling_fluxes=0.0;
+void initialize_t_stamp(time_stamps* t_stamp){
+	t_stamp->diff_async_comm_calls	=	0.0;
+	t_stamp->diff_async_comm_calls_wait=	0.0;
+	t_stamp->diff_barrier_in_solver_before_comm=0.0;
+	t_stamp->diff_map_function =0.0;
+	t_stamp->diff_single_cell_fluxes=0.0;
+	t_stamp->diff_coupling_fluxes=0.0;
 }
 /********************************************************************************/
 int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
@@ -727,20 +729,20 @@ double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 }
 
 /*****************************************************************************/
-int compute(time_stamps t_stamp, grid_parms grid, celltype1** smc,
+int compute(time_stamps* t_stamp, grid_parms grid, celltype1** smc,
 		celltype2** ec, conductance cpl_cef, double t, double* y, double* f) {
 /*****************************************************************************/
 
 	int err;
 
 
-	t_stamp.map_function_t1 = MPI_Wtime();
+	t_stamp->map_function_t1 = MPI_Wtime();
 	map_solver_to_cells(grid, y, smc, ec);
-	t_stamp.map_function_t2 = MPI_Wtime();
-	t_stamp.diff_map_function = t_stamp.diff_map_function
-			+ (t_stamp.map_function_t2 - t_stamp.map_function_t1);
+	t_stamp->map_function_t2 = MPI_Wtime();
+	t_stamp->diff_map_function = t_stamp->diff_map_function
+			+ (t_stamp->map_function_t2 - t_stamp->map_function_t1);
 
-	t_stamp.single_cell_fluxes_t1 = MPI_Wtime();
+	t_stamp->single_cell_fluxes_t1 = MPI_Wtime();
 	switch (grid.smc_model) {
 	case (TSK): {
 		tsoukias_smc(grid, smc);
@@ -769,15 +771,15 @@ int compute(time_stamps t_stamp, grid_parms grid, celltype1** smc,
 		break;
 	}
 	}
-	t_stamp.single_cell_fluxes_t2 = MPI_Wtime();
-	t_stamp.diff_single_cell_fluxes = t_stamp.diff_single_cell_fluxes
-			+ (t_stamp.single_cell_fluxes_t2 - t_stamp.single_cell_fluxes_t1);
+	t_stamp->single_cell_fluxes_t2 = MPI_Wtime();
+	t_stamp->diff_single_cell_fluxes = t_stamp->diff_single_cell_fluxes
+			+ (t_stamp->single_cell_fluxes_t2 - t_stamp->single_cell_fluxes_t1);
 
-	t_stamp.coupling_fluxes_t1 = MPI_Wtime();
+	t_stamp->coupling_fluxes_t1 = MPI_Wtime();
 	coupling(t, y, grid, smc, ec, cpl_cef);
-	t_stamp.coupling_fluxes_t2 = MPI_Wtime();
-	t_stamp.diff_coupling_fluxes = t_stamp.diff_coupling_fluxes
-			+ (t_stamp.coupling_fluxes_t2 - t_stamp.coupling_fluxes_t1);
+	t_stamp->coupling_fluxes_t2 = MPI_Wtime();
+	t_stamp->diff_coupling_fluxes = t_stamp->diff_coupling_fluxes
+			+ (t_stamp->coupling_fluxes_t2 - t_stamp->coupling_fluxes_t1);
 
 	tsoukias_smc_derivatives(f, grid, smc);
 	koenigsberger_ec_derivatives(t, f, grid, ec);
@@ -811,3 +813,5 @@ int compute(time_stamps t_stamp, grid_parms grid, celltype1** smc,
 	}
 	return (err);
 }
+
+

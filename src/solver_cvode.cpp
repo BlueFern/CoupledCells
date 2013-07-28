@@ -58,7 +58,7 @@ extern time_stamps		t_stamp;
 ///***************************************************************************************/
 void computeDerivatives(double t, double y[], double f[]) {
 
-	compute(t_stamp, grid, smc, ec, cpl_cef, t, y,f);
+	compute(&t_stamp, grid, smc, ec, cpl_cef, t, y,f);
 	t_stamp.computeDerivatives_call_counter =
 				t_stamp.computeDerivatives_call_counter + 1;
 
@@ -71,7 +71,7 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 }
 
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
-		int file_write_per_unit_time,int line_number, checkpoint_handle *check){
+		int file_write_per_unit_time,int line_number, checkpoint_handle *check, time_keeper* elps_t){
 
 	void* cvode_mem;
 	int flag;
@@ -81,7 +81,7 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 	int write_once=0;
 	int count=0;
 	double hmin;
-	initialize_t_stamp(t_stamp);
+	initialize_t_stamp(&t_stamp);
 	cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
 	if (check_cvode_flag((void *) cvode_mem, "CVodeCreate", 0)) {
 		MPI_Abort(MPI_COMM_WORLD, 321);
@@ -110,6 +110,7 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 		MPI_Abort(MPI_COMM_WORLD, 321);
 	}
 
+	int file_offset_for_timing_data = determine_file_offset_for_timing_data(check,grid);
 	///Iterative  calls to the solver start here.
 	for (double k = tnow; k < tfinal; k += interval) {
 	t_stamp.solver_t1 	=	MPI_Wtime();
@@ -137,7 +138,7 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 		tnow = (double) (t);
 		if ((write_once<=1) && (tnow>=grid.stimulus_onset_time)) {
 			write_once++;
-			if (grid.rank%grid.n == 0) {
+			if(((grid.rank+1)%grid.n)==0) {
 				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}
 		}
@@ -150,10 +151,10 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 				}		//end itteration
 		t_stamp.write_t2	=	MPI_Wtime();
 		t_stamp.diff_write  =   t_stamp.write_t2-t_stamp.write_t1;
-
-		checkpoint_timing_data(grid,check,tnow,t_stamp,count);
-		initialize_t_stamp(t_stamp);
+		checkpoint_timing_data(grid,check,tnow,t_stamp,count,file_offset_for_timing_data);
+		initialize_t_stamp(&t_stamp);
 		count++;
+		update_elapsed_time(check,grid,elps_t);
 		//MPI_Barrier(grid.universe);
 	}		//end of for loop on TEND
 }

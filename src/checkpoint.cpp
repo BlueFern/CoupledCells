@@ -456,9 +456,9 @@ void dump_data(checkpoint_handle* check, grid_parms grid, int line_number,
 	MPI_Status status;
 	MPI_Offset disp;
 
-	int write_element_count = 1, time_offset_in_file = (write_count * 1
-			* grid.tasks * sizeof(double)), file_offset = (line_number
-			* grid.tasks * 1 * sizeof(double));
+	int write_element_count = 1,
+			time_offset_in_file = (write_count * 1* grid.tasks * sizeof(double)),
+			file_offset = (line_number * grid.tasks * 1 * sizeof(double));
 
 	disp = file_offset + time_offset_in_file + (grid.rank * sizeof(double));
 	CHECK(MPI_File_write_at(check->Time, disp, &tnow, 1, MPI_DOUBLE, &status));
@@ -580,12 +580,17 @@ void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check,
 
 	int k = 0;
 	int i = 1;
-	for (int j = 1; j <= grid.num_ec_axially; j++) {
+	/*for (int j = 1; j <= grid.num_ec_axially; j++) {
 		buffer[k] = ec[i][j].JPLC;
 		k++;
 	}
 	int offset = grid.rank / grid.n;
-	disp = (offset * write_element_count * sizeof(double));
+	disp = (offset * write_element_count * sizeof(double));*/
+	for (int j = grid.num_ec_axially; j >= 1; j--) {
+			buffer[k] = ec[i][j].JPLC;
+			k++;
+		}
+	disp = grid.num_ec_axially * (grid.m - ((grid.rank +1)/grid.n))*sizeof(double);
 	CHECK(
 			MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
 }
@@ -600,21 +605,26 @@ void dump_coords(grid_parms grid, celltype2** ec, checkpoint_handle* check,
 
 	int k = 0;
 	int i = 1;
-	for (int j = 1; j <= grid.num_ec_axially; j++) {
+	for (int j = grid.num_ec_axially; j >= 1; j--) {
 		buffer[k] = ec[i][j].z_coord;
 		k++;
 	}
-	int offset = grid.rank / grid.n;
-	disp = (offset * write_element_count * sizeof(double));
+
+	int offset;
+
+	//offset = grid.rank / grid.n;
+	//disp = (offset * write_element_count * sizeof(double));
+
+	disp = grid.num_ec_axially * (grid.m - ((grid.rank +1)/grid.n))*sizeof(double);
 	CHECK(
 			MPI_File_write_at(check->coords, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
-}
+	}
 
 void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check,
-		double tnow, time_stamps t_stamp, int itteration) {
+		double tnow, time_stamps t_stamp, int itteration, int append_point) {
 
 	MPI_Status status;
-	MPI_Offset disp, disp_write;
+	MPI_Offset disp_itteration, disp_write;
 	int n = 11;
 	double buffer[n];
 
@@ -629,14 +639,16 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check,
 	buffer[8] = t_stamp.diff_write;
 	buffer[9] = (double) (t_stamp.computeDerivatives_call_counter);
 	buffer[10] = (double) (itteration);
-	int write_element_count, time_offset_in_file;
+	int write_element_count, time_offset_in_file, file_offset;
+
+	file_offset = (append_point* grid.tasks * 1 * sizeof(double));
 
 	write_element_count = 1;
 	time_offset_in_file = itteration * write_element_count * grid.tasks
 			* sizeof(double);
 
-	disp_write = time_offset_in_file
-			+ (grid.rank * write_element_count * sizeof(double));
+	disp_write = time_offset_in_file+ file_offset+ (grid.rank * write_element_count * sizeof(double));
+	disp_itteration = (grid.rank * write_element_count * sizeof(int));
 
 	CHECK(
 			MPI_File_write_at_all(check->time_profiling, disp_write, &buffer[0], 1, MPI_DOUBLE, &status));
@@ -659,20 +671,10 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check,
 	CHECK(
 			MPI_File_write_at_all(check->derivative_calls, disp_write, &buffer[9], 1, MPI_DOUBLE, &status));
 	CHECK(
-			MPI_File_write_at_all(check->itter_count, disp_write, &buffer[10], 1, MPI_DOUBLE, &status));
+			MPI_File_write_at_all(check->itter_count, disp_write, &itteration, 1, MPI_INT, &status));
 }
 
-void final_checkpoint(grid_parms grid, checkpoint_handle *check, double t1,
-		double t2, int line_number) {
-	MPI_Status status;
-	MPI_Offset disp;
-	double diff = t2 - t1;
-
-	int file_offset = (line_number * grid.tasks * 1 * sizeof(double));
-	disp = file_offset + grid.rank * sizeof(double);
-
-	CHECK(
-			MPI_File_write_at_all(check->elapsed_time, disp, &diff, 1, MPI_DOUBLE, &status));
+void final_checkpoint(checkpoint_handle *check, grid_parms grid) {
 
 	MPI_Barrier(grid.universe);
 
@@ -710,15 +712,18 @@ void final_checkpoint(grid_parms grid, checkpoint_handle *check, double t1,
 	MPI_File_close(&check->itter_count);
 	MPI_File_close(&check->coords);
 	MPI_File_close(&check->line_number);
-
 }
 
 /******************************************************************************/
 int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow,
 		double* y, celltype1** smc, celltype2** ec) {
-	/******************************************************************************/
+/******************************************************************************/
 	/// After when the MPI_IO files have been opened, check whether their current instance is first or did they previously existed.
-	/// This is checked by retrieving the file size.
+	/// This is checked by retrieving the file size of the file recording line number of the the timefile.
+	/// If the file is empty, then it is assumed to be the first instance of simulation (starting from t=0)
+	/// otherwise the linenumber indicates where the last complete result was written in the file and is used as
+	/// an offset to read initial values for the following simulation as well as a displacement for writing/appending new
+	/// data into the file.
 	MPI_Offset line_number, file_offset;
 	int line_index, err;
 	check_flag(MPI_File_get_size(check->line_number, &line_number),
@@ -861,4 +866,100 @@ int read_domain_info(int rank, char* filename, grid_parms* grid) {
 	MPI_File_close(&data);
 
 	return (0);
+}
+
+
+void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper* elps_t) {
+
+	MPI_Offset disp;
+	MPI_Status status;
+	char filename[50];
+
+	disp = grid.rank * sizeof(double);
+
+
+	elps_t->t_new = MPI_Wtime();
+	elps_t->elapsed_time = elps_t->t_new - elps_t->t_old;
+
+	if (elps_t > 0) {
+		double time_from_file;
+		///if elapsed time is non-zero then open the elapsed time file and read the previously written data
+		///and updated it with new time; which is new elapsed time + previously written elapsed time.
+	/*	int err = sprintf(filename, "Elasped_time%s", grid.suffix);
+		CHECK(
+				MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
+				*/
+
+		check_flag(
+				MPI_File_read_at(check->elapsed_time, disp, &time_from_file, 1,
+						MPI_DOUBLE, &status),
+				"error read elapsed time from file.");
+
+		time_from_file = time_from_file + elps_t->elapsed_time;
+
+		check_flag(
+				MPI_File_write_at(check->elapsed_time, disp, &time_from_file, 1,MPI_DOUBLE,&status),
+				"error read elapsed time from file.");
+	}
+	elps_t->t_old = elps_t->t_new;
+}
+
+
+void naming_convention(grid_parms* grid){
+	//Prepare the suffix which indicates my subdomain information and if I am a bifurcation, then also tells about which branch do I belong to
+		int subdomain, branch,err;
+
+		if (grid->my_domain.internal_info.domain_type == STRSEG) {
+			subdomain = grid->my_domain.internal_info.domain_index;
+			err = sprintf(grid->suffix, "%d.txt", subdomain);
+		} else if (grid->my_domain.internal_info.domain_type == BIF) {
+			subdomain = grid->my_domain.internal_info.domain_index;
+			branch = grid->branch_tag;
+			err = sprintf(grid->suffix, "%d_%d.txt", subdomain, branch);
+		}
+}
+
+
+int determine_file_offset_for_timing_data(checkpoint_handle* check,
+		grid_parms grid) {
+
+	MPI_Offset disp;
+	MPI_Status status;
+	char filename[50];
+	//int err = sprintf(filename, "itter_count%s", grid.suffix);
+	int file_offset = 0;
+	disp = grid.rank * sizeof(int);
+	/*CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->itter_count));
+			*/
+	CHECK(
+			MPI_File_read_at(check->itter_count, disp, &file_offset, 1, MPI_INT, &status));
+
+	return (file_offset);
+
+}
+
+
+void jplc_plot_data(grid_parms grid, checkpoint_handle* check){
+
+	MPI_Offset disp;
+	MPI_Status status;
+	double z, jplc;
+	FILE *fh;
+	char filename[50];
+	int err = sprintf(filename,"agonist%s",grid.suffix);
+
+	fh = fopen(filename,"w+");
+	for(int i =0; i<(grid.m*grid.n); i++){
+	disp = i*sizeof(double);
+	int count = grid.num_ec_axially * grid.m;
+	CHECK(
+				MPI_File_read_at(check->coords, disp, &z, 1, MPI_DOUBLE, &status));
+	CHECK(
+				MPI_File_read_at(check->jplc, disp, &jplc, 1,MPI_DOUBLE, &status));
+	fprintf(fh,"%2.8lf\t%2.8lf\n",z,jplc);
+	}
+	fclose(fh);
+
+
 }

@@ -11,6 +11,7 @@ celltype1** smc;
 celltype2** ec;
 double **sendbuf, **recvbuf;
 grid_parms grid;
+time_keeper elps_t;
 
 int CASE = 1;
 ///***************************************************************************************/
@@ -35,6 +36,8 @@ int main(int argc, char* argv[]) {
 	MPI_Status stats[8];
 	///Initialize MPI
 	MPI_Init(&argc, &argv);
+	
+	elps_t.t_old = MPI_Wtime();
 
 	grid.universe = MPI_COMM_WORLD;
 
@@ -55,16 +58,16 @@ int main(int argc, char* argv[]) {
 	double tfinal = 1000.00;
 	double interval = 1e-2;
 //File written every 1 second
-	int file_write_per_unit_time = int(1 / interval);
+	int file_write_per_unit_time = int(1/interval);
 	grid.NO_path = 0;
 	grid.cGMP_path = 0;
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.1;
 	grid.min_jplc = 0.27;
-	grid.max_jplc = 1e-3;
-	grid.gradient = 0.325e3;
-	grid.stimulus_onset_time = 100.00;
+	grid.max_jplc = 1.35e-3;//1e-3;
+	grid.gradient = 0.1e3;//0.325e3;
+	grid.stimulus_onset_time = 99.00;
 
 	grid = set_geometry_parameters(grid);
 
@@ -75,6 +78,7 @@ int main(int argc, char* argv[]) {
 	}
 	grid = update_global_subdomain_information(grid, grid.num_domains,
 			grid.domains);
+	naming_convention(&grid);
 	///Initialize checkpoint routine which opens files
 	checkpoint_handle *check = initialise_checkpoint(grid);
 
@@ -394,22 +398,26 @@ int main(int argc, char* argv[]) {
 
 	int state = couplingParms(CASE, &cpl_cef);
 	ec = ith_ec_z_coordinate(grid, ec);
-	dump_coords(grid, ec, check,
-			"recording z coordinate for all ECs in axial direction.\n");
+
+	if (((grid.rank + 1) % grid.n) == 0) {
+		dump_coords(grid, ec, check,
+				"recording z coordinate for all ECs in axial direction.\n");
+	}
 	dump_rank_info(check, cpl_cef, grid);
 
-
-	double t1 = MPI_Wtime();
+    update_elapsed_time(check,grid,&elps_t);
 #ifdef CVODE
-	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check);
+	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
 #endif
 #ifndef CVODE
 	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres,
 			file_write_per_unit_time, line_number, check);
 //rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
 #endif
-	double t2 = MPI_Wtime();
-	final_checkpoint(grid, check, t1, t2, line_number);
+	if (grid.rank==0){
+		jplc_plot_data(grid, check);
+	}
+	final_checkpoint(check,grid);
 	MPI_Finalize();
 } // end main()
 

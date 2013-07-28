@@ -129,8 +129,12 @@ typedef struct {
 			///Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task
 			added_info_in_send_buf,
 			///this is global and local MPI information
-			numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank,
-			rank, tasks, my_domain_color, my_domain_key, color, key,
+			numtasks, universal_rank,
+			sub_universe_numtasks, sub_universe_rank,
+			rank, tasks, 				/// numtasks = total CPUs in MPI_COMM_WORLD,
+										/// tasks = total CPUs in my-subdomain's comm
+			my_domain_color, my_domain_key, color, key,
+
 			//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
 			//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 			branch_tag,
@@ -153,6 +157,9 @@ typedef struct {
 
 	int smc_model, ec_model;// These are placeholders for the selection of model to be simulated in each cell.
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
+
+	char suffix[10];		// this is for use in the naming convention of the IO files to recognize and record
+							// which files are associated with a given task/processor.
 } grid_parms;
 
 ///Structure to store coupling data received from the neighbouring task.
@@ -228,6 +235,10 @@ typedef struct {
 
 } time_stamps;
 
+typedef struct {
+	double t_new,t_old,
+			elapsed_time;
+} time_keeper;
 void check_flag(int, const char*);
 void* checked_malloc(size_t, const char*);
 
@@ -268,7 +279,7 @@ void dump_ec_async(grid_parms, celltype2**, checkpoint_handle*, int);
 void dump_JPLC(grid_parms, celltype2**, checkpoint_handle*, const char*);
 void dump_data(checkpoint_handle*, grid_parms, int, double, celltype1**,
 		celltype2**, int);
-void final_checkpoint(grid_parms, checkpoint_handle*, double, double, int);
+void final_checkpoint(checkpoint_handle*, grid_parms);
 void dump_rank_info(checkpoint_handle*, conductance, grid_parms);
 void dump_smc_with_ghost_cells(grid_parms, celltype1**, checkpoint_handle*,
 		int);
@@ -295,10 +306,10 @@ void rksuite_solver_UT(double, double, double, double *, double*, int, double,
 #ifdef CVODE
 static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
-		int file_write_per_unit_time,int, checkpoint_handle *check);
+		int file_write_per_unit_time,int, checkpoint_handle *check, time_keeper* elps_t);
 #endif /* CVODE */
 
-int compute(time_stamps, grid_parms, celltype1**, celltype2**,
+int compute(time_stamps*, grid_parms, celltype1**, celltype2**,
 		conductance cpl_cef, double, double*, double*);
 
 ///These are debugging functions, not used in production runs.
@@ -313,10 +324,9 @@ grid_parms make_straight_segment(grid_parms);
 grid_parms set_geometry_parameters(grid_parms);
 grid_parms make_subdomains(grid_parms, int, int**);
 
-void checkpoint_timing_data(grid_parms grid, checkpoint_handle*, double,
-		time_stamps, int);
+void checkpoint_timing_data(grid_parms, checkpoint_handle*,double, time_stamps, int, int );
 double agonist_profile(double, grid_parms, int, int, double);
-void initialize_t_stamp(time_stamps);
+void initialize_t_stamp(time_stamps*);
 
 grid_parms z_coord_exchange(grid_parms, double theta);
 grid_parms update_global_subdomain_information(grid_parms, int, int**);
@@ -341,3 +351,8 @@ double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, celltype1** smc);
 void Initialize_tsoukias_smc(grid_parms grid, double y[], celltype1** smc);
 int read_domain_info(int,char*, grid_parms*);
+void naming_convention(grid_parms* grid);
+void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper* elps_t);
+int determine_file_offset_for_timing_data(checkpoint_handle* check,grid_parms grid);
+
+void jplc_plot_data(grid_parms grid, checkpoint_handle* check);
