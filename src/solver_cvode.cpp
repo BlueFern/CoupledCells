@@ -14,43 +14,40 @@
 #include <sundials/sundials_dense.h>
 #include <sundials/sundials_types.h>
 
-
 extern conductance cpl_cef;
 extern celltype1** smc;
 extern celltype2** ec;
 extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
-extern time_stamps		t_stamp;
-
-
+extern time_stamps t_stamp;
 
 /********************************************************************************************/
-/**/        static int check_cvode_flag(void *flagvalue, char *funcname, int opt)               /**/
+/**/static int check_cvode_flag(void *flagvalue, char *funcname, int opt) /**/
 /********************************************************************************************/
 {
-  int *errflag;
+	int *errflag;
 
-  /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
-  if (opt == 0 && flagvalue == NULL) {
-    fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
-            funcname);
-    return(1); }
+	/* Check if SUNDIALS function returned NULL pointer - no memory allocated */
+	if (opt == 0 && flagvalue == NULL) {
+		fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
+				funcname);
+		return(1);}
 
-  /* Check if flag < 0 */
-  else if (opt == 1) {
-    errflag = (int *) flagvalue;
-    if (*errflag < 0) {
-      fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
-              funcname, *errflag);
-      return(1); }}
+	/* Check if flag < 0 */
+	else if (opt == 1) {
+		errflag = (int *) flagvalue;
+		if (*errflag < 0) {
+			fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
+					funcname, *errflag);
+			return(1);}}
 
-  /* Check if function returned NULL pointer - no memory allocated */
-  else if (opt == 2 && flagvalue == NULL) {
-    fprintf(stderr, "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
-            funcname);
-    return(1); }
+	/* Check if function returned NULL pointer - no memory allocated */
+	else if (opt == 2 && flagvalue == NULL) {
+		fprintf(stderr, "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
+				funcname);
+		return(1);}
 
-  return(0);
+	return(0);
 }
 
 ///***************************************************************************************/
@@ -58,9 +55,9 @@ extern time_stamps		t_stamp;
 ///***************************************************************************************/
 void computeDerivatives(double t, double y[], double f[]) {
 
-	compute(&t_stamp, grid, smc, ec, cpl_cef, t, y,f);
-	t_stamp.computeDerivatives_call_counter =
-				t_stamp.computeDerivatives_call_counter + 1;
+	//compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y,f);
+	compute(grid, smc, ec, cpl_cef, t, y,f);
+	t_stamp.computeDerivatives_call_counter += 1;
 
 }    //end of computeDerivatives()
 
@@ -71,7 +68,7 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 }
 
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
-		int file_write_per_unit_time,int line_number, checkpoint_handle *check, time_keeper* elps_t){
+		int file_write_per_unit_time,int line_number, checkpoint_handle *check, time_keeper* elps_t) {
 
 	void* cvode_mem;
 	int flag;
@@ -100,10 +97,10 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 		MPI_Abort(MPI_COMM_WORLD, 321);
 	}
 	if (line_number > 0) {
-		 hmin = interval/1e3;
+		hmin = interval/1e3;
 
 	} else if (line_number ==0) {
-		 hmin = interval/2;
+		hmin = interval/2;
 	}
 	flag = CVodeSetInitStep(cvode_mem, hmin);
 	if (check_cvode_flag(&flag, "CVodeSetInitStep", 1)) {
@@ -113,28 +110,28 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 	int file_offset_for_timing_data = determine_file_offset_for_timing_data(check,grid);
 	///Iterative  calls to the solver start here.
 	for (double k = tnow; k < tfinal; k += interval) {
-	t_stamp.solver_t1 	=	MPI_Wtime();
-			flag = CVode(cvode_mem, k, y, &t, CV_NORMAL);
-			 if(check_cvode_flag(&flag, "CVode", 1)){
-			 	MPI_Abort(MPI_COMM_WORLD, 400);
-			 }
-	t_stamp.solver_t2 	=	MPI_Wtime();
-	t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
+		t_stamp.solver_t1 = MPI_Wtime();
+		flag = CVode(cvode_mem, k, y, &t, CV_NORMAL);
+		if(check_cvode_flag(&flag, "CVode", 1)) {
+			MPI_Abort(MPI_COMM_WORLD, 400);
+		}
+		t_stamp.solver_t2 = MPI_Wtime();
+		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
 		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
 		itteration++;
 
 		/// Call for interprocessor communication
-		t_stamp.barrier_in_solver_before_comm_t1	=	MPI_Wtime();
-		MPI_Barrier(grid.universe); 									/* time stamp this*/
-		t_stamp.barrier_in_solver_before_comm_t2	=	MPI_Wtime();
+		t_stamp.barrier_in_solver_before_comm_t1 = MPI_Wtime();
+		MPI_Barrier(grid.universe); /* time stamp this*/
+		t_stamp.barrier_in_solver_before_comm_t2 = MPI_Wtime();
 
 		t_stamp.diff_barrier_in_solver_before_comm = t_stamp.barrier_in_solver_before_comm_t2 - t_stamp.barrier_in_solver_before_comm_t1;
 
 		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
 
 		/*if (itteration == 5) {
-			dump_JPLC(grid, ec, check, "Local agonist before t=100s");
-		}*/
+		 dump_JPLC(grid, ec, check, "Local agonist before t=100s");
+		 }*/
 		tnow = (double) (t);
 		if ((write_once<=1) && (tnow>=grid.stimulus_onset_time)) {
 			write_once++;
@@ -143,18 +140,18 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 			}
 		}
 		/* time stamp this*/
-		t_stamp.write_t1	=	MPI_Wtime();
+		t_stamp.write_t1 = MPI_Wtime();
 		if ((itteration % file_write_per_unit_time) == 0) {
-					dump_data(check, grid, line_number,tnow, smc, ec,write_count);
-					update_line_number(check, grid,write_count);
-				write_count++;
-				}		//end itteration
-		t_stamp.write_t2	=	MPI_Wtime();
-		t_stamp.diff_write  =   t_stamp.write_t2-t_stamp.write_t1;
-		checkpoint_timing_data(grid,check,tnow,t_stamp,count,file_offset_for_timing_data);
+			dump_data(check, grid, line_number,tnow, smc, ec,write_count);
+			update_line_number(check, grid,write_count);
+			write_count++;
+		}		//end itteration
+		t_stamp.write_t2 = MPI_Wtime();
+		t_stamp.diff_write = t_stamp.write_t2-t_stamp.write_t1;
+		//checkpoint_timing_data(grid,check,tnow,t_stamp,count,file_offset_for_timing_data);
 		initialize_t_stamp(&t_stamp);
 		count++;
-		update_elapsed_time(check,grid,elps_t);
+		//update_elapsed_time(check,grid,elps_t);
 		//MPI_Barrier(grid.universe);
 	}		//end of for loop on TEND
 }

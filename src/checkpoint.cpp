@@ -802,6 +802,12 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow,
 int read_domain_info(int rank, char* filename, grid_parms* grid) {
 	/*********************************************************************/
 	/// Read data from the domain_info.txt to retrieve  the information related to how the domain is set up.
+	/// All tasks open the same file to read.
+	/// Every task has the same displacement so each start to read data from the same position
+	/// Each task decide the read buffer size to be allocated by looking at the file size of the file opened
+	/// for read operation.
+	/// The data is read and sorted into delimiters and numbers and stored into corresponding place holder,
+	/// domains[][] in the structure grid_parms grid.
 	int err;
 	MPI_File data;
 	MPI_Offset file_size, disp;

@@ -1,6 +1,6 @@
 CC=mpixlcxx
-CFLAGS= -pg 
-OMP= -openmp
+CFLAGS=  
+OMP= 
 LIBS=
 cppfiles = $(shell ls *.cpp)
 hfiles = $(shell ls *.h)
@@ -9,7 +9,7 @@ ofiles = $(cppfiles:.cpp=.o)
 all: $(ofiles)
 	$(CC) $(CFLAGS) $(ofiles) $(LIBS) -o model
 
-cvode: CFLAGS=-pg -DCVODE
+cvode: CFLAGS= -DCVODE
 cvode: LIBS= -I/bgp/local/pkg/sundials/2.5.0/include/ -L/bgp/local/pkg/sundials/2.5.0/lib -lsundials_cvode -lsundials_nvecserial
 cvode: all
 

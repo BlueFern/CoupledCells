@@ -309,8 +309,11 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 		int file_write_per_unit_time,int, checkpoint_handle *check, time_keeper* elps_t);
 #endif /* CVODE */
 
-int compute(time_stamps*, grid_parms, celltype1**, celltype2**,
+int compute_with_time_profiling(time_stamps*, grid_parms, celltype1**, celltype2**,
 		conductance cpl_cef, double, double*, double*);
+int compute(grid_parms, celltype1**, celltype2**,
+		conductance cpl_cef, double, double*, double*);
+
 
 ///These are debugging functions, not used in production runs.
 void print_domains(FILE*, grid_parms, celltype1**, celltype2**);

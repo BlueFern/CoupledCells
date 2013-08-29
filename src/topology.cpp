@@ -324,7 +324,7 @@ grid_parms make_bifucation(grid_parms grid)
 		}
 	}
 
-	//If number of processors in circumferentail dimension are EVEN
+	//If number of processors in circumferential dimension are EVEN
 	if (grid.scheme == 0) {
 		//For parent branch edge
 		if ((grid.sub_universe_rank >= 0)
@@ -386,7 +386,7 @@ grid_parms make_bifucation(grid_parms grid)
 		}
 	}
 
-    //In the case of n being ODD
+	//If number of processors in circumferential dimension are ODD
 
     if (grid.scheme != 0)
 	{

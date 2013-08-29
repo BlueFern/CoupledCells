@@ -417,6 +417,7 @@ int main(int argc, char* argv[]) {
 	if (grid.rank==0){
 		jplc_plot_data(grid, check);
 	}
+	update_elapsed_time(check,grid,&elps_t);
 	final_checkpoint(check,grid);
 	MPI_Finalize();
 } // end main()
