@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
 	int extent_s, extent_e;	///Variables to calculate the length of the prospective buffer based on number of cell in either orientations (circumferential or axial).
 
 	grid.added_info_in_send_buf = 4;///Number of elements containing additional information at the beginning of the send buffer.
-	int seg_config_s, seg_config_e;	///Integers to decided whether the row or column being sent is overlapping or exactly divisible into two halfs.
+	int seg_config_s, seg_config_e;	///Integers to decided whether the row or column being sent is overlapping or exactly divisible into two halves.
 	/// data to send to the neighbour in UP1 direction
 	extent_s = (int) (ceil((double) (grid.num_smc_circumferentially) / 2));
 	extent_e = (int) (ceil((double) (grid.num_ec_circumferentially) / 2));

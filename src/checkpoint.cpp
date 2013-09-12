@@ -253,8 +253,9 @@ void dump_smc(grid_parms grid, celltype1 **smc, checkpoint_handle *check,
 	int k;
 
 	k = 0;
-	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_smc_axially; j++) {
+	// An amendment in the orientation of data written, so that it is aligned with the vtk geomerty
+	for (int j = 1; j <= grid.num_smc_axially; j++) {
+		for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 			b1[k] = smc[i][j].p[smc_Ca];
 			b2[k] = smc[i][j].p[smc_SR];
 			b3[k] = smc[i][j].p[smc_Vm];
@@ -309,8 +310,11 @@ void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check,
 	int k;
 
 	k = 0;
-	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_ec_axially; j++) {
+	// An amendment in the orientation of data written, so that it is aligned with the vtk geomerty
+	/*for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+		for (int j = 1; j <= grid.num_ec_axially; j++) {*/
+	for (int j = 1; j <= grid.num_ec_axially; j++) {
+		for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 			b1[k] = ec[i][j].q[ec_Ca];
 			b2[k] = ec[i][j].q[ec_SR];
 			b3[k] = ec[i][j].q[ec_Vm];
@@ -800,7 +804,7 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow,
 
 /*********************************************************************/
 int read_domain_info(int rank, char* filename, grid_parms* grid) {
-	/*********************************************************************/
+/*********************************************************************/
 	/// Read data from the domain_info.txt to retrieve  the information related to how the domain is set up.
 	/// All tasks open the same file to read.
 	/// Every task has the same displacement so each start to read data from the same position
@@ -863,14 +867,12 @@ int read_domain_info(int rank, char* filename, grid_parms* grid) {
 		 grid->domains[i] = (int*) checked_malloc(9 * sizeof(int),
 		 "Subdomains array elements allocation");
 		 }
-
 		 for (int i=0; i<grid->num_domains; i++){
 			 for (int j=0; j<9; j++){
 				 grid->domains[i][j]	=	p[1+(i*9)+j];
 			 }
 		 }
 	MPI_File_close(&data);
-
 	return (0);
 }
 
