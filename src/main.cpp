@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
 	grid = make_subdomains(grid, grid.num_domains, grid.domains);
 
 ///Time variables
-	double tfinal = 1000.00;
+	double tfinal = 1e-1;
 	double interval = 1e-2;
 //File written every 1 second
 	int file_write_per_unit_time = int(1/interval);
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
 	grid.min_jplc = 0.27;
 	grid.max_jplc = 1.35e-3;//1e-3;
 	grid.gradient = 0.1e3;//0.325e3;
-	grid.stimulus_onset_time = 99.00;
+	grid.stimulus_onset_time = 1e-2;//99.00;
 
 	grid = set_geometry_parameters(grid);
 
@@ -404,7 +404,7 @@ int main(int argc, char* argv[]) {
 				"recording z coordinate for all ECs in axial direction.\n");
 	}
 	dump_rank_info(check, cpl_cef, grid);
-
+	Total_cells_in_computational_domain(grid);
     update_elapsed_time(check,grid,&elps_t);
 #ifdef CVODE
 	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);

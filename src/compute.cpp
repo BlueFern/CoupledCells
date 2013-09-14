@@ -764,7 +764,7 @@ double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 		celltype1** smc, celltype2** ec, conductance cpl_cef, double t,
 		double* y, double* f) {
-/*****************************************************************************/
+	/*****************************************************************************/
 
 	int err;
 
@@ -918,3 +918,30 @@ int compute(grid_parms grid, celltype1** smc, celltype2** ec,
 	return (err);
 }
 
+/*****************************************************************************/
+void Total_cells_in_computational_domain(grid_parms grid) {
+/// Gathers local information on each CPU about the number of ECs and SMCs and sends to the Root
+/// which evaluates the total number of ECs and SMCs constituting the global computational domain.
+	/****************************************************************************/
+	int sendcount = 2, recvcount = 2;
+	int root = 0;
+	int sendarray[2], recvarray[sendcount * grid.numtasks];
+	int sumEC = 0, sumSMC = 0;
+	sendarray[0] = grid.num_ec_axially * grid.num_ec_circumferentially;
+	sendarray[1] = grid.num_smc_axially * grid.num_smc_circumferentially;
+
+	check_flag(
+			MPI_Gather(sendarray, sendcount, MPI_INT, recvarray, recvcount,
+					MPI_INT, root, grid.universe), "error MPI_Gather");
+	if (grid.universal_rank == 0) {
+		for (int i = 0; i < grid.numtasks * recvcount; i += 2) {
+			sumEC += recvarray[i];
+		}
+		for (int i = 1; i < grid.numtasks * recvcount; i += 2) {
+			sumSMC += recvarray[i];
+		}
+		printf("Total number of ECs = %d\n", sumEC);
+		printf("Total number of SMCs = %d\n", sumSMC);
+		printf("Total number of ECs+SMCs = %d\n", sumEC + sumSMC);
+	}
+}

@@ -34,11 +34,11 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid) {
 	}
 	switch (grid.ec_model) {
 	case (TSK): {
-		open_tsoukias_ec_checkpoint(check,grid,suffix);
+		open_tsoukias_ec_checkpoint(check, grid, suffix);
 		break;
 	}
 	case (KNBGR): {
-		open_koenigsberger_ec_checkpoint(check,grid,suffix);
+		open_koenigsberger_ec_checkpoint(check, grid, suffix);
 		break;
 	}
 	}
@@ -52,7 +52,8 @@ void open_common_checkpoint(checkpoint_handle* check, grid_parms grid,
 		char* suffix) {
 	/*********************************************************************/
 
-	int err; char  filename[50];
+	int err;
+	char filename[50];
 	err = sprintf(filename, "smc_Ca%s", suffix);
 	err = sprintf(filename, "time_%s", suffix);
 	CHECK(
@@ -135,10 +136,11 @@ void open_tsoukias_smc_checkpoint(checkpoint_handle* check, grid_parms grid,
 
 }
 /*********************************************************************/
-void open_koenigsberger_smc_checkpoint(checkpoint_handle* check, grid_parms grid,
-		char* suffix){
+void open_koenigsberger_smc_checkpoint(checkpoint_handle* check,
+		grid_parms grid, char* suffix) {
 	/*********************************************************************/
-	int err; char  filename[50];
+	int err;
+	char filename[50];
 	err = sprintf(filename, "smc_Ca%s", suffix);
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->ci));
@@ -162,7 +164,8 @@ void open_koenigsberger_smc_checkpoint(checkpoint_handle* check, grid_parms grid
 void open_tsoukias_ec_checkpoint(checkpoint_handle* check, grid_parms grid,
 		char* suffix) {
 	/*********************************************************************/
-	int err; char  filename[50];
+	int err;
+	char filename[50];
 	err = sprintf(filename, "ec_Ca%s", suffix);
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cj));
@@ -181,7 +184,8 @@ void open_tsoukias_ec_checkpoint(checkpoint_handle* check, grid_parms grid,
 void open_koenigsberger_ec_checkpoint(checkpoint_handle* check, grid_parms grid,
 		char* suffix) {
 	/*************************************************************************/
-	int err; char  filename[50];
+	int err;
+	char filename[50];
 	err = sprintf(filename, "ec_Ca%s", suffix);
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cj));
@@ -312,7 +316,7 @@ void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check,
 	k = 0;
 	// An amendment in the orientation of data written, so that it is aligned with the vtk geomerty
 	/*for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_ec_axially; j++) {*/
+	 for (int j = 1; j <= grid.num_ec_axially; j++) {*/
 	for (int j = 1; j <= grid.num_ec_axially; j++) {
 		for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 			b1[k] = ec[i][j].q[ec_Ca];
@@ -460,9 +464,9 @@ void dump_data(checkpoint_handle* check, grid_parms grid, int line_number,
 	MPI_Status status;
 	MPI_Offset disp;
 
-	int write_element_count = 1,
-			time_offset_in_file = (write_count * 1* grid.tasks * sizeof(double)),
-			file_offset = (line_number * grid.tasks * 1 * sizeof(double));
+	int write_element_count = 1, time_offset_in_file = (write_count * 1
+			* grid.tasks * sizeof(double)), file_offset = (line_number
+			* grid.tasks * 1 * sizeof(double));
 
 	disp = file_offset + time_offset_in_file + (grid.rank * sizeof(double));
 	CHECK(MPI_File_write_at(check->Time, disp, &tnow, 1, MPI_DOUBLE, &status));
@@ -585,16 +589,17 @@ void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check,
 	int k = 0;
 	int i = 1;
 	/*for (int j = 1; j <= grid.num_ec_axially; j++) {
+	 buffer[k] = ec[i][j].JPLC;
+	 k++;
+	 }
+	 int offset = grid.rank / grid.n;
+	 disp = (offset * write_element_count * sizeof(double));*/
+	for (int j = grid.num_ec_axially; j >= 1; j--) {
 		buffer[k] = ec[i][j].JPLC;
 		k++;
 	}
-	int offset = grid.rank / grid.n;
-	disp = (offset * write_element_count * sizeof(double));*/
-	for (int j = grid.num_ec_axially; j >= 1; j--) {
-			buffer[k] = ec[i][j].JPLC;
-			k++;
-		}
-	disp = grid.num_ec_axially * (grid.m - ((grid.rank +1)/grid.n))*sizeof(double);
+	disp = grid.num_ec_axially * (grid.m - ((grid.rank + 1) / grid.n))
+			* sizeof(double);
 	CHECK(
 			MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
 }
@@ -619,10 +624,11 @@ void dump_coords(grid_parms grid, celltype2** ec, checkpoint_handle* check,
 	//offset = grid.rank / grid.n;
 	//disp = (offset * write_element_count * sizeof(double));
 
-	disp = grid.num_ec_axially * (grid.m - ((grid.rank +1)/grid.n))*sizeof(double);
+	disp = grid.num_ec_axially * (grid.m - ((grid.rank + 1) / grid.n))
+			* sizeof(double);
 	CHECK(
 			MPI_File_write_at(check->coords, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
-	}
+}
 
 void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check,
 		double tnow, time_stamps t_stamp, int itteration, int append_point) {
@@ -645,13 +651,14 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check,
 	buffer[10] = (double) (itteration);
 	int write_element_count, time_offset_in_file, file_offset;
 
-	file_offset = (append_point* grid.tasks * 1 * sizeof(double));
+	file_offset = (append_point * grid.tasks * 1 * sizeof(double));
 
 	write_element_count = 1;
 	time_offset_in_file = itteration * write_element_count * grid.tasks
 			* sizeof(double);
 
-	disp_write = time_offset_in_file+ file_offset+ (grid.rank * write_element_count * sizeof(double));
+	disp_write = time_offset_in_file + file_offset
+			+ (grid.rank * write_element_count * sizeof(double));
 	disp_itteration = (grid.rank * write_element_count * sizeof(int));
 
 	CHECK(
@@ -721,7 +728,7 @@ void final_checkpoint(checkpoint_handle *check, grid_parms grid) {
 /******************************************************************************/
 int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow,
 		double* y, celltype1** smc, celltype2** ec) {
-/******************************************************************************/
+	/******************************************************************************/
 	/// After when the MPI_IO files have been opened, check whether their current instance is first or did they previously existed.
 	/// This is checked by retrieving the file size of the file recording line number of the the timefile.
 	/// If the file is empty, then it is assumed to be the first instance of simulation (starting from t=0)
@@ -751,11 +758,11 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow,
 		}
 		switch (grid.ec_model) {
 		case (TSK): {
-			reinitialize_koenigsberger_ec(check, line_index,grid, y, ec);
+			reinitialize_koenigsberger_ec(check, line_index, grid, y, ec);
 			break;
 		}
 		case (KNBGR): {
-			reinitialize_koenigsberger_ec(check, line_index,grid, y, ec);
+			reinitialize_koenigsberger_ec(check, line_index, grid, y, ec);
 			break;
 		}
 		default: {
@@ -765,7 +772,7 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow,
 		}
 
 		y = reinitialize_koenigsberger_ec(check, line_index, grid, y, ec);
-	} else if ( (line_number == 0)||(line_number ==NULL)) {
+	} else if ((line_number == 0) || (line_number == NULL)) {
 		switch (grid.smc_model) {
 		case (TSK): {
 			Initialize_tsoukias_smc(grid, y, smc);
@@ -804,7 +811,7 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow,
 
 /*********************************************************************/
 int read_domain_info(int rank, char* filename, grid_parms* grid) {
-/*********************************************************************/
+	/*********************************************************************/
 	/// Read data from the domain_info.txt to retrieve  the information related to how the domain is set up.
 	/// All tasks open the same file to read.
 	/// Every task has the same displacement so each start to read data from the same position
@@ -827,8 +834,8 @@ int read_domain_info(int rank, char* filename, grid_parms* grid) {
 	buffer = (char*) malloc(chunk * sizeof(char));
 	p = (int*) malloc(chunk * sizeof(int));
 	if (p == NULL) {
-		printf("[%d]: error allocating p\n",grid->universal_rank);
-		MPI_Abort(grid->universe,10001);
+		printf("[%d]: error allocating p\n", grid->universal_rank);
+		MPI_Abort(grid->universe, 10001);
 	}
 	disp = 0;
 	err = MPI_File_read_at(data, disp, buffer, chunk, MPI_CHAR, &status);
@@ -845,46 +852,45 @@ int read_domain_info(int rank, char* filename, grid_parms* grid) {
 	grid->num_domains = p[0];
 
 	grid->domains = (int**) checked_malloc(grid->num_domains * sizeof(int*),
-		 "Subdomain information allocation");
+			"Subdomain information allocation");
 
 	/// second coordinate has following information:
-		 /// Element 0: 	Key_val or serial number of the subdomain
-		 /// Element 1:	Subdomain Type (2 possibilities and their values)
-		 /// 				1. Straight Segment (STRSEG)					(0)
-		 /// 				2. Bifurcation	(BIF)							(1)
-		 /// Element 2:	Axial extent of processor of current key_val
-		 /// Element 3: 	circumferential extent of processors of current key_val
-		 /// Element 4:	Parent subdomain key_val of current Key_val.
-		 /// Element 5: 	Left Child subdomain key_val of the current Key_val.
-		 /// Element 6:   Right Child subdomain key_val of the current Key_val.
-		 /// Element 7:   Required number of Endothelial cells axially per node.
-		 /// Element 8:   Required number of Smooth muscle cells circumferentially per node.
-		 ///
-		 /// In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left Child is positive or zero, and right Child is negative.
-		 /// If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.
-		 ////
-		 for (int i = 0; i < grid->num_domains; i++) {
-		 grid->domains[i] = (int*) checked_malloc(9 * sizeof(int),
-		 "Subdomains array elements allocation");
-		 }
-		 for (int i=0; i<grid->num_domains; i++){
-			 for (int j=0; j<9; j++){
-				 grid->domains[i][j]	=	p[1+(i*9)+j];
-			 }
-		 }
+	/// Element 0: 	Key_val or serial number of the subdomain
+	/// Element 1:	Subdomain Type (2 possibilities and their values)
+	/// 				1. Straight Segment (STRSEG)					(0)
+	/// 				2. Bifurcation	(BIF)							(1)
+	/// Element 2:	Axial extent of processor of current key_val
+	/// Element 3: 	circumferential extent of processors of current key_val
+	/// Element 4:	Parent subdomain key_val of current Key_val.
+	/// Element 5: 	Left Child subdomain key_val of the current Key_val.
+	/// Element 6:   Right Child subdomain key_val of the current Key_val.
+	/// Element 7:   Required number of Endothelial cells axially per node.
+	/// Element 8:   Required number of Smooth muscle cells circumferentially per node.
+	///
+	/// In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left Child is positive or zero, and right Child is negative.
+	/// If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.
+	////
+	for (int i = 0; i < grid->num_domains; i++) {
+		grid->domains[i] = (int*) checked_malloc(9 * sizeof(int),
+				"Subdomains array elements allocation");
+	}
+	for (int i = 0; i < grid->num_domains; i++) {
+		for (int j = 0; j < 9; j++) {
+			grid->domains[i][j] = p[1 + (i * 9) + j];
+		}
+	}
 	MPI_File_close(&data);
 	return (0);
 }
 
-
-void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper* elps_t) {
+void update_elapsed_time(checkpoint_handle* check, grid_parms grid,
+		time_keeper* elps_t) {
 
 	MPI_Offset disp;
 	MPI_Status status;
 	char filename[50];
 
 	disp = grid.rank * sizeof(double);
-
 
 	elps_t->t_new = MPI_Wtime();
 	elps_t->elapsed_time = elps_t->t_new - elps_t->t_old;
@@ -893,10 +899,10 @@ void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper*
 		double time_from_file;
 		///if elapsed time is non-zero then open the elapsed time file and read the previously written data
 		///and updated it with new time; which is new elapsed time + previously written elapsed time.
-	/*	int err = sprintf(filename, "Elasped_time%s", grid.suffix);
-		CHECK(
-				MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
-				*/
+		/*	int err = sprintf(filename, "Elasped_time%s", grid.suffix);
+		 CHECK(
+		 MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
+		 */
 
 		check_flag(
 				MPI_File_read_at(check->elapsed_time, disp, &time_from_file, 1,
@@ -906,27 +912,26 @@ void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper*
 		time_from_file = time_from_file + elps_t->elapsed_time;
 
 		check_flag(
-				MPI_File_write_at(check->elapsed_time, disp, &time_from_file, 1,MPI_DOUBLE,&status),
+				MPI_File_write_at(check->elapsed_time, disp, &time_from_file, 1,
+						MPI_DOUBLE, &status),
 				"error read elapsed time from file.");
 	}
 	elps_t->t_old = elps_t->t_new;
 }
 
-
-void naming_convention(grid_parms* grid){
+void naming_convention(grid_parms* grid) {
 	//Prepare the suffix which indicates my subdomain information and if I am a bifurcation, then also tells about which branch do I belong to
-		int subdomain, branch,err;
+	int subdomain, branch, err;
 
-		if (grid->my_domain.internal_info.domain_type == STRSEG) {
-			subdomain = grid->my_domain.internal_info.domain_index;
-			err = sprintf(grid->suffix, "%d.txt", subdomain);
-		} else if (grid->my_domain.internal_info.domain_type == BIF) {
-			subdomain = grid->my_domain.internal_info.domain_index;
-			branch = grid->branch_tag;
-			err = sprintf(grid->suffix, "%d_%d.txt", subdomain, branch);
-		}
+	if (grid->my_domain.internal_info.domain_type == STRSEG) {
+		subdomain = grid->my_domain.internal_info.domain_index;
+		err = sprintf(grid->suffix, "%d.txt", subdomain);
+	} else if (grid->my_domain.internal_info.domain_type == BIF) {
+		subdomain = grid->my_domain.internal_info.domain_index;
+		branch = grid->branch_tag;
+		err = sprintf(grid->suffix, "%d_%d.txt", subdomain, branch);
+	}
 }
-
 
 int determine_file_offset_for_timing_data(checkpoint_handle* check,
 		grid_parms grid) {
@@ -938,8 +943,8 @@ int determine_file_offset_for_timing_data(checkpoint_handle* check,
 	int file_offset = 0;
 	disp = grid.rank * sizeof(int);
 	/*CHECK(
-			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->itter_count));
-			*/
+	 MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->itter_count));
+	 */
 	CHECK(
 			MPI_File_read_at(check->itter_count, disp, &file_offset, 1, MPI_INT, &status));
 
@@ -947,27 +952,26 @@ int determine_file_offset_for_timing_data(checkpoint_handle* check,
 
 }
 
-
-void jplc_plot_data(grid_parms grid, checkpoint_handle* check){
+void jplc_plot_data(grid_parms grid, checkpoint_handle* check) {
 
 	MPI_Offset disp;
 	MPI_Status status;
 	double z, jplc;
 	FILE *fh;
 	char filename[50];
-	int err = sprintf(filename,"agonist%s",grid.suffix);
+	int err = sprintf(filename, "agonist%s", grid.suffix);
 
-	fh = fopen(filename,"w+");
-	for(int i =0; i<(grid.m*grid.n); i++){
-	disp = i*sizeof(double);
-	int count = grid.num_ec_axially * grid.m;
-	CHECK(
+	fh = fopen(filename, "w+");
+	for (int i = 0; i < (grid.m * grid.num_ec_axially); i++) {
+		disp = i * sizeof(double);
+		int count = grid.num_ec_axially * grid.m;
+		CHECK(
 				MPI_File_read_at(check->coords, disp, &z, 1, MPI_DOUBLE, &status));
-	CHECK(
+		CHECK(
 				MPI_File_read_at(check->jplc, disp, &jplc, 1,MPI_DOUBLE, &status));
-	fprintf(fh,"%2.8lf\t%2.8lf\n",z,jplc);
+		fprintf(fh, "%2.8lf\t%2.8lf\n", z, jplc);
 	}
 	fclose(fh);
 
-
 }
+

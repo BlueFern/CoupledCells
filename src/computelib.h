@@ -359,3 +359,5 @@ void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper*
 int determine_file_offset_for_timing_data(checkpoint_handle* check,grid_parms grid);
 
 void jplc_plot_data(grid_parms grid, checkpoint_handle* check);
+void Total_cells_in_computational_domain(grid_parms gird);
+void Gather_ec_JPLC(grid_parms grid, celltype2* ec);
