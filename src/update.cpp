@@ -110,9 +110,10 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 	/// Message tag 1 and 2 representing segment 1 and 2 send or received by processor.
 	int tag_1=1,tag_2=2;
 	determin_source_destination(grid,source,dest);
-
+t_stamp.update_sendbuf_t1=MPI_Wtime();
 communication_update_sendbuf(grid,sendbuf,smc,ec);
-
+t_stamp.update_sendbuf_t2=MPI_Wtime();
+t_stamp.diff_update_sendbuf= t_stamp.update_sendbuf_t2-t_stamp.update_sendbuf_t1;
 t_stamp.async_comm_calls_t1		=	MPI_Wtime();
 	/// Communication block
 check_flag(
@@ -198,7 +199,7 @@ MPI_Request remote_req[8];
 MPI_Status remote_status[8];
 int tag_remote_1	=	3, tag_remote_2	=	4;
 
-
+t_stamp.remote_async_comm_calls_t1	=	MPI_Wtime();
 if (grid.my_domain.internal_info.boundary_tag == 'I') {
 	for (int i=0; i<4; i++) {
 		remote_source[i] = grid.nbrs[remote][i];
@@ -246,7 +247,10 @@ if (grid.my_domain.internal_info.boundary_tag == 'I') {
 					MPI_DOUBLE, remote_dest[DOWN2], tag_remote_2,
 					grid.sub_universe, &remote_req[DOWN2]),
 			"Send message operation for remote DOWN2");
+	t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
 	MPI_Waitall(8, remote_req, remote_status);
+	t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
+	t_stamp.diff_remote_async_comm_calls_wait = t_stamp.remote_async_comm_calls_wait_t2 -t_stamp.remote_async_comm_calls_wait_t1; 
 
 }
 if ( (grid.my_domain.internal_info.boundary_tag == 'T') || (grid.my_domain.internal_info.boundary_tag == 'B') )  {
@@ -296,10 +300,18 @@ if ( (grid.my_domain.internal_info.boundary_tag == 'T') || (grid.my_domain.inter
 					MPI_DOUBLE, remote_dest[DOWN2], tag_remote_2,
 					grid.universe, &remote_req[DOWN2]),
 			"Send message operation for remote DOWN2");
+	t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
 	MPI_Waitall(8, remote_req, remote_status);
-
+	t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
+	t_stamp.diff_remote_async_comm_calls_wait = t_stamp.remote_async_comm_calls_wait_t2 -t_stamp.remote_async_comm_calls_wait_t1; 	
 }
+	t_stamp.remote_async_comm_calls_t2	=	MPI_Wtime();
+	t_stamp.diff_remote_async_comm_calls  = t_stamp.remote_async_comm_calls_t2 - t_stamp.remote_async_comm_calls_t2;
+	
+	t_stamp.update_recvbuf_t1 =MPI_Wtime();
 	communication_update_recvbuf_modified(grid,recvbuf,smc,ec);
+	t_stamp.update_recvbuf_t2 =MPI_Wtime();
+	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2 - t_stamp.update_recvbuf_t1;
 
 }//end of update_async()
 

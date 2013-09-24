@@ -117,6 +117,23 @@ void open_common_checkpoint(checkpoint_handle* check, grid_parms grid,
 	err = sprintf(filename, "coords%s", suffix);
 	CHECK(
 			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->coords));
+	
+
+	err = sprintf(filename, "remote_async_calls%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->remote_async_calls));
+	err = sprintf(filename, "remote_async_wait%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->remote_async_wait));
+
+	err = sprintf(filename, "send_buffer_update%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->send_buf_update));
+
+	err = sprintf(filename, "recv_buffer_update%s", suffix);
+	CHECK(
+			MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->recv_buf_update));
+
 
 	///This file is written on by all the tasks in MPI_COMM_WORLD.
 	///Each task overwrites it current completed t^th number of time step in its place (calculated by disp).
@@ -635,7 +652,7 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check,
 
 	MPI_Status status;
 	MPI_Offset disp_itteration, disp_write;
-	int n = 11;
+	int n =11+4;
 	double buffer[n];
 
 	buffer[0] = tnow;
@@ -649,6 +666,11 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check,
 	buffer[8] = t_stamp.diff_write;
 	buffer[9] = (double) (t_stamp.computeDerivatives_call_counter);
 	buffer[10] = (double) (itteration);
+
+	buffer[11] = t_stamp.diff_remote_async_comm_calls;
+	buffer[12] = t_stamp.diff_remote_async_comm_calls_wait;
+	buffer[13] = t_stamp.diff_update_sendbuf;
+	buffer[14] = t_stamp.diff_update_recvbuf;
 	int write_element_count, time_offset_in_file, file_offset;
 
 	file_offset = (append_point * grid.tasks * 1 * sizeof(double));
@@ -681,8 +703,34 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check,
 			MPI_File_write_at_all(check->writer_func, disp_write, &buffer[8], 1, MPI_DOUBLE, &status));
 	CHECK(
 			MPI_File_write_at_all(check->derivative_calls, disp_write, &buffer[9], 1, MPI_DOUBLE, &status));
+
+	CHECK(
+			MPI_File_write_at_all(check->remote_async_calls, disp_write, &buffer[11], 1, MPI_DOUBLE, &status));
+	CHECK(
+			MPI_File_write_at_all(check->remote_async_wait, disp_write, &buffer[12], 1, MPI_DOUBLE, &status));
+	CHECK(
+			MPI_File_write_at_all(check->send_buf_update, disp_write, &buffer[13], 1, MPI_DOUBLE, &status));
+	CHECK(
+			MPI_File_write_at_all(check->recv_buf_update, disp_write, &buffer[14], 1, MPI_DOUBLE, &status));
+
 	CHECK(
 			MPI_File_write_at_all(check->itter_count, disp_write, &itteration, 1, MPI_INT, &status));
+}
+
+void Record_timing_data_in_arrays(grid_parms grid, double tnow,
+		time_stamps t_stamp, int itteration, double** time_profiler) {
+	time_profiler[0][itteration] = tnow;
+	time_profiler[1][itteration] = t_stamp.diff_async_comm_calls;
+	time_profiler[2][itteration] = t_stamp.diff_async_comm_calls_wait;
+	time_profiler[3][itteration] = t_stamp.diff_barrier_in_solver_before_comm;
+	time_profiler[4][itteration] = t_stamp.diff_map_function;
+	time_profiler[5][itteration] = t_stamp.diff_single_cell_fluxes;
+	time_profiler[6][itteration] = t_stamp.diff_coupling_fluxes;
+	time_profiler[7][itteration] = t_stamp.diff_solver;
+	time_profiler[8][itteration] = t_stamp.diff_write;
+	time_profiler[9][itteration] =
+			(double) (t_stamp.computeDerivatives_call_counter);
+	time_profiler[10][itteration] = (double) (itteration);
 }
 
 void final_checkpoint(checkpoint_handle *check, grid_parms grid) {
@@ -723,6 +771,12 @@ void final_checkpoint(checkpoint_handle *check, grid_parms grid) {
 	MPI_File_close(&check->itter_count);
 	MPI_File_close(&check->coords);
 	MPI_File_close(&check->line_number);
+
+
+	MPI_File_close(&check->remote_async_calls);
+	MPI_File_close(&check->remote_async_wait);
+	MPI_File_close(&check->send_buf_update);
+	MPI_File_close(&check->recv_buf_update);
 }
 
 /******************************************************************************/
@@ -935,6 +989,10 @@ void naming_convention(grid_parms* grid) {
 
 int determine_file_offset_for_timing_data(checkpoint_handle* check,
 		grid_parms grid) {
+///This function implements checkpointing for time profiling data.
+///If the simulation somehow crashes or gets discontinued, the file offset will be determined
+///by reading in the last iteration number written in the file.
+///This is to avoid overwriting on the pre-existing data and returned.
 
 	MPI_Offset disp;
 	MPI_Status status;

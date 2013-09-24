@@ -34,7 +34,6 @@ using namespace std;
 
 #define STRSEG		0		//a straight segment
 #define BIF			1		//a bifurcation
-
 #define P 		1		//parent
 #define L 		2		//Left branch
 #define R		3		//Right brach
@@ -129,10 +128,10 @@ typedef struct {
 			///Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task
 			added_info_in_send_buf,
 			///this is global and local MPI information
-			numtasks, universal_rank,
-			sub_universe_numtasks, sub_universe_rank,
-			rank, tasks, 				/// numtasks = total CPUs in MPI_COMM_WORLD,
-										/// tasks = total CPUs in my-subdomain's comm
+			numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank,
+			rank,
+			tasks, 				/// numtasks = total CPUs in MPI_COMM_WORLD,
+								/// tasks = total CPUs in my-subdomain's comm
 			my_domain_color, my_domain_key, color, key,
 
 			//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
@@ -158,8 +157,11 @@ typedef struct {
 	int smc_model, ec_model;// These are placeholders for the selection of model to be simulated in each cell.
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
 
-	char suffix[10];		// this is for use in the naming convention of the IO files to recognize and record
-							// which files are associated with a given task/processor.
+	char suffix[10];// this is for use in the naming convention of the IO files to recognize and record
+					// which files are associated with a given task/processor.
+
+					///Temporary array for use in time profiling checkpointing
+	double **time_profile;
 } grid_parms;
 
 ///Structure to store coupling data received from the neighbouring task.
@@ -189,17 +191,18 @@ typedef struct {
 	double x_coord, y_coord, z_coord;
 	double JPLC;///local agonsit concentration  on my GPCR receptor (an ith EC)
 	conductance cpl_cef;
-}celltype2;
+} celltype2;
 //#ifdef PARALLEL_IO
 typedef struct {
 	MPI_File
 	/* common handlers */
-		logptr, Time, elapsed_time, jplc, coords,
+	logptr, Time, elapsed_time, jplc, coords,
 
 ///time profiling file handles.
 			time_profiling, async_calls, async_wait, barrier_before_comm,
 			map_function, single_cell_fluxes, coupling_fluxes, solver,
 			writer_func, derivative_calls, itter_count, line_number,
+			remote_async_calls,remote_async_wait,send_buf_update,recv_buf_update,
 //handlers specific for Tsoukias-SMC model variables
 			tsk_Ca, tsk_V, tsk_IP3, tsk_q_1, tsk_q_2, tsk_d_L, tsk_f_L, tsk_p_f,
 			tsk_p_s, tsk_p_K, tsk_h_IP3, tsk_Ca_u, tsk_Ca_r, tsk_R_10, tsk_R_11,
@@ -222,22 +225,38 @@ typedef struct {
  #endif*/
 
 typedef struct {
-	double async_comm_calls_t1, async_comm_calls_t2, diff_async_comm_calls,
-			async_comm_calls_wait_t1, async_comm_calls_wait_t2,
-			diff_async_comm_calls_wait, barrier_in_solver_before_comm_t1,
-			barrier_in_solver_before_comm_t2,
-			diff_barrier_in_solver_before_comm, map_function_t1,
-			map_function_t2, diff_map_function, single_cell_fluxes_t1,
-			single_cell_fluxes_t2, diff_single_cell_fluxes, coupling_fluxes_t1,
-			coupling_fluxes_t2, diff_coupling_fluxes, solver_t1, solver_t2,
-			diff_solver, write_t1, write_t2, diff_write;
-	int computeDerivatives_call_counter;
+	double 
+		///Communication profilers
+		async_comm_calls_t1, async_comm_calls_t2, 
+		async_comm_calls_wait_t1, async_comm_calls_wait_t2,
+		remote_async_comm_calls_t1, remote_async_comm_calls_t2, 
+                remote_async_comm_calls_wait_t1, remote_async_comm_calls_wait_t2,
+		update_sendbuf_t1,update_sendbuf_t2,
+                update_recvbuf_t1,update_recvbuf_t2,
+                barrier_in_solver_before_comm_t1, 
+		barrier_in_solver_before_comm_t2,
+		diff_update_sendbuf,diff_update_recvbuf,                
+		diff_async_comm_calls,diff_async_comm_calls_wait,
+		diff_remote_async_comm_calls,diff_remote_async_comm_calls_wait,
+                diff_barrier_in_solver_before_comm, 
+		///Solver profilers                
+		map_function_t1,map_function_t2, 
+         	single_cell_fluxes_t1,
+		single_cell_fluxes_t2,  
+		coupling_fluxes_t1, coupling_fluxes_t2,  
+		solver_t1, solver_t2,
+	 	write_t1, write_t2, 
+		diff_map_function,
+		diff_single_cell_fluxes,
+		diff_coupling_fluxes,
+		diff_solver,diff_write;
+	int 
+		computeDerivatives_call_counter;
 
 } time_stamps;
 
 typedef struct {
-	double t_new,t_old,
-			elapsed_time;
+	double t_new, t_old, elapsed_time;
 } time_keeper;
 void check_flag(int, const char*);
 void* checked_malloc(size_t, const char*);
@@ -309,11 +328,10 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 		int file_write_per_unit_time,int, checkpoint_handle *check, time_keeper* elps_t);
 #endif /* CVODE */
 
-int compute_with_time_profiling(time_stamps*, grid_parms, celltype1**, celltype2**,
-		conductance cpl_cef, double, double*, double*);
-int compute(grid_parms, celltype1**, celltype2**,
-		conductance cpl_cef, double, double*, double*);
-
+int compute_with_time_profiling(time_stamps*, grid_parms, celltype1**,
+		celltype2**, conductance cpl_cef, double, double*, double*);
+int compute(grid_parms, celltype1**, celltype2**, conductance cpl_cef, double,
+		double*, double*);
 
 ///These are debugging functions, not used in production runs.
 void print_domains(FILE*, grid_parms, celltype1**, celltype2**);
@@ -327,7 +345,8 @@ grid_parms make_straight_segment(grid_parms);
 grid_parms set_geometry_parameters(grid_parms);
 grid_parms make_subdomains(grid_parms, int, int**);
 
-void checkpoint_timing_data(grid_parms, checkpoint_handle*,double, time_stamps, int, int );
+void checkpoint_timing_data(grid_parms, checkpoint_handle*, double, time_stamps,
+		int, int);
 double agonist_profile(double, grid_parms, int, int, double);
 void initialize_t_stamp(time_stamps*);
 
@@ -353,11 +372,19 @@ void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid,
 double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, celltype1** smc);
 void Initialize_tsoukias_smc(grid_parms grid, double y[], celltype1** smc);
-int read_domain_info(int,char*, grid_parms*);
+int read_domain_info(int, char*, grid_parms*);
 void naming_convention(grid_parms* grid);
-void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper* elps_t);
-int determine_file_offset_for_timing_data(checkpoint_handle* check,grid_parms grid);
+void update_elapsed_time(checkpoint_handle* check, grid_parms grid,
+		time_keeper* elps_t);
+int determine_file_offset_for_timing_data(checkpoint_handle* check,
+		grid_parms grid);
 
 void jplc_plot_data(grid_parms grid, checkpoint_handle* check);
 void Total_cells_in_computational_domain(grid_parms gird);
-void Gather_ec_JPLC(grid_parms grid, celltype2* ec);
+
+void Record_timing_data_in_arrays(grid_parms, double,
+		time_stamps, int, double**);
+void process_time_profiling_data(grid_parms, double**,	int);
+void min(double* table, int size, double *value, int *index);
+void max(double* table, int size, double *value, int *index);
+void average(double* table, int size, double *value);

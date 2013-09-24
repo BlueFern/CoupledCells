@@ -55,10 +55,10 @@ int main(int argc, char* argv[]) {
 	grid = make_subdomains(grid, grid.num_domains, grid.domains);
 
 ///Time variables
-	double tfinal = 1e-1;
+	double tfinal = 10.00;
 	double interval = 1e-2;
 //File written every 1 second
-	int file_write_per_unit_time = int(1/interval);
+	int file_write_per_unit_time = 1;//int(1/interval);
 	grid.NO_path = 0;
 	grid.cGMP_path = 0;
 	grid.smc_model = KNBGR;
@@ -66,8 +66,8 @@ int main(int argc, char* argv[]) {
 	grid.uniform_jplc = 0.1;
 	grid.min_jplc = 0.27;
 	grid.max_jplc = 1.35e-3;//1e-3;
-	grid.gradient = 0.1e3;//0.325e3;
-	grid.stimulus_onset_time = 1e-2;//99.00;
+	grid.gradient = 0.09e3;//0.325e3;
+	grid.stimulus_onset_time = 99.00;
 
 	grid = set_geometry_parameters(grid);
 
