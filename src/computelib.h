@@ -203,6 +203,7 @@ typedef struct {
 			map_function, single_cell_fluxes, coupling_fluxes, solver,
 			writer_func, derivative_calls, itter_count, line_number,
 			remote_async_calls,remote_async_wait,send_buf_update,recv_buf_update,
+			total_comms_cost,
 //handlers specific for Tsoukias-SMC model variables
 			tsk_Ca, tsk_V, tsk_IP3, tsk_q_1, tsk_q_2, tsk_d_L, tsk_f_L, tsk_p_f,
 			tsk_p_s, tsk_p_K, tsk_h_IP3, tsk_Ca_u, tsk_Ca_r, tsk_R_10, tsk_R_11,
@@ -235,10 +236,11 @@ typedef struct {
                 update_recvbuf_t1,update_recvbuf_t2,
                 barrier_in_solver_before_comm_t1, 
 		barrier_in_solver_before_comm_t2,
+		total_comms_cost_t1,total_comms_cost_t2,
 		diff_update_sendbuf,diff_update_recvbuf,                
 		diff_async_comm_calls,diff_async_comm_calls_wait,
 		diff_remote_async_comm_calls,diff_remote_async_comm_calls_wait,
-                diff_barrier_in_solver_before_comm, 
+                diff_barrier_in_solver_before_comm, diff_total_comms_cost,
 		///Solver profilers                
 		map_function_t1,map_function_t2, 
          	single_cell_fluxes_t1,

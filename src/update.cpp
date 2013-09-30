@@ -6,19 +6,19 @@
 #include "computelib.h"
 
 /*extern	   conductance		cpl_cef;
-extern	   celltype1** 		smc;
-extern	   celltype2** 		ec;
-extern 	   double       	**sendbuf,**recvbuf;
-extern	   grid_parms		grid;
-*/
+ extern	   celltype1** 		smc;
+ extern	   celltype2** 		ec;
+ extern 	   double       	**sendbuf,**recvbuf;
+ extern	   grid_parms		grid;
+ */
 using namespace std;
-extern time_stamps		t_stamp;
+extern time_stamps t_stamp;
 
 ///************************************/
 ///************ check_flag*************/
 ///************************************/
-void check_flag(int err, const char* errmsg){
-	if (err !=MPI_SUCCESS) {
+void check_flag(int err, const char* errmsg) {
+	if (err != MPI_SUCCESS) {
 		MPI_Abort(MPI_COMM_WORLD, 200);
 	}
 }
@@ -67,36 +67,45 @@ grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
 	int source[4], dest[4];
 	int tag;
 	int num[4];
-	determin_source_destination(grid,source,dest);
+	determin_source_destination(grid, source, dest);
 
 	tag = 0;
 	int tmp[4];
-	check_flag(MPI_Irecv(&grid.num_elements_recv_up, 1, MPI_INT, source[UP], tag,
-			grid.cart_comm, &reqs[4 + UP]),"Irecv" );
-	check_flag(MPI_Isend(&grid.num_elements_send_up, 1, MPI_INT, dest[UP], tag,
-			grid.cart_comm, &reqs[UP]),"Isend" );
-	check_flag(MPI_Irecv(&grid.num_elements_recv_down, 1, MPI_INT, source[DOWN], tag,
-			grid.cart_comm, &reqs[4 + DOWN]),"Irecv" );
-	check_flag(MPI_Isend(&grid.num_elements_send_down, 1, MPI_INT, dest[DOWN], tag,
-			grid.cart_comm, &reqs[DOWN]),"Isend" );
-	check_flag(MPI_Irecv(&grid.num_elements_recv_left, 1, MPI_INT, source[LEFT], tag,
-			grid.cart_comm, &reqs[4 + LEFT]),"Irecv" );
-	check_flag(MPI_Isend(&grid.num_elements_send_left, 1, MPI_INT, dest[LEFT], tag,
-			grid.cart_comm, &reqs[LEFT]),"Isend" );
-	check_flag(MPI_Irecv(&grid.num_elements_recv_right, 1, MPI_INT, source[RIGHT], tag,
-			grid.cart_comm, &reqs[4 + RIGHT]),"Irecv" );
-	check_flag(MPI_Isend(&grid.num_elements_send_right, 1, MPI_INT, dest[RIGHT], tag,
-			grid.cart_comm, &reqs[RIGHT]),"Isend" );
+	check_flag(
+			MPI_Irecv(&grid.num_elements_recv_up, 1, MPI_INT, source[UP], tag,
+					grid.cart_comm, &reqs[4 + UP]), "Irecv");
+	check_flag(
+			MPI_Isend(&grid.num_elements_send_up, 1, MPI_INT, dest[UP], tag,
+					grid.cart_comm, &reqs[UP]), "Isend");
+	check_flag(
+			MPI_Irecv(&grid.num_elements_recv_down, 1, MPI_INT, source[DOWN],
+					tag, grid.cart_comm, &reqs[4 + DOWN]), "Irecv");
+	check_flag(
+			MPI_Isend(&grid.num_elements_send_down, 1, MPI_INT, dest[DOWN], tag,
+					grid.cart_comm, &reqs[DOWN]), "Isend");
+	check_flag(
+			MPI_Irecv(&grid.num_elements_recv_left, 1, MPI_INT, source[LEFT],
+					tag, grid.cart_comm, &reqs[4 + LEFT]), "Irecv");
+	check_flag(
+			MPI_Isend(&grid.num_elements_send_left, 1, MPI_INT, dest[LEFT], tag,
+					grid.cart_comm, &reqs[LEFT]), "Isend");
+	check_flag(
+			MPI_Irecv(&grid.num_elements_recv_right, 1, MPI_INT, source[RIGHT],
+					tag, grid.cart_comm, &reqs[4 + RIGHT]), "Irecv");
+	check_flag(
+			MPI_Isend(&grid.num_elements_send_right, 1, MPI_INT, dest[RIGHT],
+					tag, grid.cart_comm, &reqs[RIGHT]), "Isend");
 
 	MPI_Waitall(8, reqs, stats);
 
-	return(grid);
+	return (grid);
 
 }
 /*******************************************************************************************/
-void communication_async_send_recv(grid_parms grid, double** sendbuf, double** recvbuf,celltype1** smc, celltype2** ec)
-/*******************************************************************************************/
-{
+void communication_async_send_recv(grid_parms grid, double** sendbuf,
+		double** recvbuf, celltype1** smc, celltype2** ec)
+		/*******************************************************************************************/
+		{
 	/// For recording an error in communication. err can either be MPI_SUCCESS or !MPI_SUCCESS
 	int err;
 	/// 8 MPI variables of types Request and Status are declared. 4 of each are for sending information to 4 neighbours and the other 4 are to retrive the receive operation status.
@@ -106,219 +115,236 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 	/// Two array, source and dest, hold the ranks for the communicating tasks.
 	/// dest has ranks to which my task will send a message to.
 	/// source contains tasks from which I expect a message.
-	int source[4],dest[4];
+	int source[4], dest[4];
 	/// Message tag 1 and 2 representing segment 1 and 2 send or received by processor.
-	int tag_1=1,tag_2=2;
-	determin_source_destination(grid,source,dest);
-t_stamp.update_sendbuf_t1=MPI_Wtime();
-communication_update_sendbuf(grid,sendbuf,smc,ec);
-t_stamp.update_sendbuf_t2=MPI_Wtime();
-t_stamp.diff_update_sendbuf= t_stamp.update_sendbuf_t2-t_stamp.update_sendbuf_t1;
-t_stamp.async_comm_calls_t1		=	MPI_Wtime();
+	int tag_1 = 1, tag_2 = 2;
+	determin_source_destination(grid, source, dest);
+	t_stamp.update_sendbuf_t1 = MPI_Wtime();
+	communication_update_sendbuf(grid, sendbuf, smc, ec);
+	t_stamp.update_sendbuf_t2 = MPI_Wtime();
+	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2
+			- t_stamp.update_sendbuf_t1;
+	t_stamp.async_comm_calls_t1 = MPI_Wtime();
 	/// Communication block
-check_flag(
-		MPI_Irecv(&recvbuf[UP1][0], grid.num_elements_recv_up, MPI_DOUBLE,
-				source[UP], tag_1, grid.cart_comm, &reqs[8 + UP1]),
-		"Receive message operation for UP1");
-check_flag(
-		MPI_Irecv(&recvbuf[UP2][0], grid.num_elements_recv_up, MPI_DOUBLE,
-				source[UP], tag_2, grid.cart_comm, &reqs[8 + UP2]),
-		"Receive message operation for UP2");
+	check_flag(
+			MPI_Irecv(&recvbuf[UP1][0], grid.num_elements_recv_up, MPI_DOUBLE,
+					source[UP], tag_1, grid.cart_comm, &reqs[8 + UP1]),
+			"Receive message operation for UP1");
+	check_flag(
+			MPI_Irecv(&recvbuf[UP2][0], grid.num_elements_recv_up, MPI_DOUBLE,
+					source[UP], tag_2, grid.cart_comm, &reqs[8 + UP2]),
+			"Receive message operation for UP2");
 
-check_flag(
-		MPI_Irecv(&recvbuf[DOWN1][0], grid.num_elements_recv_down, MPI_DOUBLE,
-				source[DOWN], tag_1, grid.cart_comm, &reqs[8 + DOWN1]),
-		"Receive message operation for DOWN1");
-check_flag(
-		MPI_Irecv(&recvbuf[DOWN2][0], grid.num_elements_recv_down, MPI_DOUBLE,
-				source[DOWN], tag_2, grid.cart_comm, &reqs[8 + DOWN2]),
-		"Receive message operation for DOWN2");
+	check_flag(
+			MPI_Irecv(&recvbuf[DOWN1][0], grid.num_elements_recv_down,
+					MPI_DOUBLE, source[DOWN], tag_1, grid.cart_comm,
+					&reqs[8 + DOWN1]), "Receive message operation for DOWN1");
+	check_flag(
+			MPI_Irecv(&recvbuf[DOWN2][0], grid.num_elements_recv_down,
+					MPI_DOUBLE, source[DOWN], tag_2, grid.cart_comm,
+					&reqs[8 + DOWN2]), "Receive message operation for DOWN2");
 
-check_flag(
-		MPI_Irecv(&recvbuf[LEFT1][0], grid.num_elements_recv_left, MPI_DOUBLE,
-				source[LEFT], tag_1, grid.cart_comm, &reqs[8 + LEFT1]),
-		"Receive message operation for LEFT1");
-check_flag(
-		MPI_Irecv(&recvbuf[LEFT2][0], grid.num_elements_recv_left, MPI_DOUBLE,
-				source[LEFT], tag_2, grid.cart_comm, &reqs[8 + LEFT2]),
-		"Receive message operation for LEFT2");
+	check_flag(
+			MPI_Irecv(&recvbuf[LEFT1][0], grid.num_elements_recv_left,
+					MPI_DOUBLE, source[LEFT], tag_1, grid.cart_comm,
+					&reqs[8 + LEFT1]), "Receive message operation for LEFT1");
+	check_flag(
+			MPI_Irecv(&recvbuf[LEFT2][0], grid.num_elements_recv_left,
+					MPI_DOUBLE, source[LEFT], tag_2, grid.cart_comm,
+					&reqs[8 + LEFT2]), "Receive message operation for LEFT2");
 
-check_flag(
-		MPI_Irecv(&recvbuf[RIGHT1][0], grid.num_elements_recv_right, MPI_DOUBLE,
-				source[RIGHT], tag_1, grid.cart_comm, &reqs[8 + RIGHT1]),
-		"Receive message operation for RIGHT1");
-check_flag(
-		MPI_Irecv(&recvbuf[RIGHT2][0], grid.num_elements_recv_right, MPI_DOUBLE,
-				source[RIGHT], tag_2, grid.cart_comm, &reqs[8 + RIGHT2]),
-		"Receive message operation for RIGHT2");
-check_flag(
-		MPI_Isend(sendbuf[UP1], grid.num_elements_send_up, MPI_DOUBLE,
-				dest[UP], tag_1, grid.cart_comm, &reqs[UP1]),
-		"Send message operation for UP1");
-check_flag(
-		MPI_Isend(sendbuf[UP2], grid.num_elements_send_up, MPI_DOUBLE,
-				dest[UP], tag_2, grid.cart_comm, &reqs[UP2]),
-		"Send message operation for UP2");
+	check_flag(
+			MPI_Irecv(&recvbuf[RIGHT1][0], grid.num_elements_recv_right,
+					MPI_DOUBLE, source[RIGHT], tag_1, grid.cart_comm,
+					&reqs[8 + RIGHT1]), "Receive message operation for RIGHT1");
+	check_flag(
+			MPI_Irecv(&recvbuf[RIGHT2][0], grid.num_elements_recv_right,
+					MPI_DOUBLE, source[RIGHT], tag_2, grid.cart_comm,
+					&reqs[8 + RIGHT2]), "Receive message operation for RIGHT2");
+	check_flag(
+			MPI_Isend(sendbuf[UP1], grid.num_elements_send_up, MPI_DOUBLE,
+					dest[UP], tag_1, grid.cart_comm, &reqs[UP1]),
+			"Send message operation for UP1");
+	check_flag(
+			MPI_Isend(sendbuf[UP2], grid.num_elements_send_up, MPI_DOUBLE,
+					dest[UP], tag_2, grid.cart_comm, &reqs[UP2]),
+			"Send message operation for UP2");
 
-check_flag(
-		MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_down, MPI_DOUBLE,
-				dest[DOWN], tag_1, grid.cart_comm, &reqs[DOWN1]),
-		"Send message operation for DOWN1");
-check_flag(
-		MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_down, MPI_DOUBLE,
-				dest[DOWN], tag_2, grid.cart_comm, &reqs[DOWN2]),
-		"Send message operation for DOWN2");
+	check_flag(
+			MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_down, MPI_DOUBLE,
+					dest[DOWN], tag_1, grid.cart_comm, &reqs[DOWN1]),
+			"Send message operation for DOWN1");
+	check_flag(
+			MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_down, MPI_DOUBLE,
+					dest[DOWN], tag_2, grid.cart_comm, &reqs[DOWN2]),
+			"Send message operation for DOWN2");
 
-check_flag(
-		MPI_Isend(sendbuf[LEFT1], grid.num_elements_send_left, MPI_DOUBLE,
-				dest[LEFT], tag_1, grid.cart_comm, &reqs[LEFT1]),
-		"Send message operation for LEFT1");
-check_flag(
-		MPI_Isend(sendbuf[LEFT2], grid.num_elements_send_left, MPI_DOUBLE,
-				dest[LEFT], tag_2, grid.cart_comm, &reqs[LEFT2]),
-		"Send message operation for LEFT2");
-check_flag(
-		MPI_Isend(sendbuf[RIGHT1], grid.num_elements_send_right, MPI_DOUBLE,
-				dest[RIGHT], tag_1, grid.cart_comm, &reqs[RIGHT1]),
-		"Send message operation for RIGHT1");
-check_flag(
-		MPI_Isend(sendbuf[RIGHT2], grid.num_elements_send_right, MPI_DOUBLE,
-				dest[RIGHT], tag_2, grid.cart_comm, &reqs[RIGHT2]),
-		"Send message operation for RIGHT2");
-t_stamp.async_comm_calls_t2		=	MPI_Wtime();
+	check_flag(
+			MPI_Isend(sendbuf[LEFT1], grid.num_elements_send_left, MPI_DOUBLE,
+					dest[LEFT], tag_1, grid.cart_comm, &reqs[LEFT1]),
+			"Send message operation for LEFT1");
+	check_flag(
+			MPI_Isend(sendbuf[LEFT2], grid.num_elements_send_left, MPI_DOUBLE,
+					dest[LEFT], tag_2, grid.cart_comm, &reqs[LEFT2]),
+			"Send message operation for LEFT2");
+	check_flag(
+			MPI_Isend(sendbuf[RIGHT1], grid.num_elements_send_right, MPI_DOUBLE,
+					dest[RIGHT], tag_1, grid.cart_comm, &reqs[RIGHT1]),
+			"Send message operation for RIGHT1");
+	check_flag(
+			MPI_Isend(sendbuf[RIGHT2], grid.num_elements_send_right, MPI_DOUBLE,
+					dest[RIGHT], tag_2, grid.cart_comm, &reqs[RIGHT2]),
+			"Send message operation for RIGHT2");
+	t_stamp.async_comm_calls_t2 = MPI_Wtime();
 
-t_stamp.async_comm_calls_wait_t1 = MPI_Wtime();
+	t_stamp.async_comm_calls_wait_t1 = MPI_Wtime();
 	MPI_Waitall(16, reqs, stats);
-t_stamp.async_comm_calls_wait_t2= MPI_Wtime();
+	t_stamp.async_comm_calls_wait_t2 = MPI_Wtime();
 
-t_stamp.diff_async_comm_calls = t_stamp.async_comm_calls_t2 - t_stamp.async_comm_calls_t1;
-t_stamp.diff_async_comm_calls_wait = t_stamp.async_comm_calls_wait_t2- t_stamp.async_comm_calls_wait_t1;
+	t_stamp.diff_async_comm_calls = t_stamp.async_comm_calls_t2
+			- t_stamp.async_comm_calls_t1;
+	t_stamp.diff_async_comm_calls_wait = t_stamp.async_comm_calls_wait_t2
+			- t_stamp.async_comm_calls_wait_t1;
 
-int remote_source[4], remote_dest[4];
-MPI_Request remote_req[8];
-MPI_Status remote_status[8];
-int tag_remote_1	=	3, tag_remote_2	=	4;
+	int remote_source[4], remote_dest[4];
+	MPI_Request remote_req[8];
+	MPI_Status remote_status[8];
+	int tag_remote_1 = 3, tag_remote_2 = 4;
 
-t_stamp.remote_async_comm_calls_t1	=	MPI_Wtime();
-if (grid.my_domain.internal_info.boundary_tag == 'I') {
-	for (int i=0; i<4; i++) {
-		remote_source[i] = grid.nbrs[remote][i];
-		remote_dest[i] = grid.nbrs[remote][i];
+	if (grid.my_domain.internal_info.boundary_tag == 'I') {
+		t_stamp.remote_async_comm_calls_t1 = MPI_Wtime();
+		for (int i = 0; i < 4; i++) {
+			remote_source[i] = grid.nbrs[remote][i];
+			remote_dest[i] = grid.nbrs[remote][i];
+		}
+
+		check_flag(
+				MPI_Irecv(recvbuf[UP1], grid.num_elements_recv_up, MPI_DOUBLE,
+						remote_source[UP1], tag_remote_1, grid.sub_universe,
+						&remote_req[4 + UP1]),
+				"Receive message operation for remote UP1");
+		check_flag(
+				MPI_Irecv(recvbuf[UP2], grid.num_elements_recv_up, MPI_DOUBLE,
+						remote_source[UP2], tag_remote_2, grid.sub_universe,
+						&remote_req[4 + UP2]),
+				"Receive message operation for remote UP2");
+		check_flag(
+				MPI_Irecv(recvbuf[DOWN1], grid.num_elements_recv_down,
+						MPI_DOUBLE, remote_source[DOWN1], tag_remote_1,
+						grid.sub_universe, &remote_req[4 + DOWN1]),
+				"Receive message operation for remote DOWN1");
+		check_flag(
+				MPI_Irecv(recvbuf[DOWN2], grid.num_elements_recv_down,
+						MPI_DOUBLE, remote_source[DOWN2], tag_remote_2,
+						grid.sub_universe, &remote_req[4 + DOWN2]),
+				"Receive message operation for remote DOWN2");
+
+		check_flag(
+				MPI_Isend(sendbuf[UP1], grid.num_elements_send_up, MPI_DOUBLE,
+						remote_dest[UP1], tag_remote_1, grid.sub_universe,
+						&remote_req[UP1]),
+				"Send message operation for remote UP1");
+		check_flag(
+				MPI_Isend(sendbuf[UP2], grid.num_elements_send_up, MPI_DOUBLE,
+						remote_dest[UP2], tag_remote_2, grid.sub_universe,
+						&remote_req[UP2]),
+				"Send message operation for remote UP2");
+		check_flag(
+				MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_down,
+						MPI_DOUBLE, remote_dest[DOWN1], tag_remote_1,
+						grid.sub_universe, &remote_req[DOWN1]),
+				"Send message operation for remote DOWN1");
+		check_flag(
+				MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_down,
+						MPI_DOUBLE, remote_dest[DOWN2], tag_remote_2,
+						grid.sub_universe, &remote_req[DOWN2]),
+				"Send message operation for remote DOWN2");
+		t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
+		MPI_Waitall(8, remote_req, remote_status);
+		t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
+		t_stamp.diff_remote_async_comm_calls_wait =
+				t_stamp.remote_async_comm_calls_wait_t2
+						- t_stamp.remote_async_comm_calls_wait_t1;
+
+		t_stamp.remote_async_comm_calls_t2 = MPI_Wtime();
+		t_stamp.diff_remote_async_comm_calls =
+				t_stamp.remote_async_comm_calls_t2
+						- t_stamp.remote_async_comm_calls_t1;
+
+	} else if ((grid.my_domain.internal_info.boundary_tag == 'T')
+			|| (grid.my_domain.internal_info.boundary_tag == 'B')) {
+		t_stamp.remote_async_comm_calls_t1 = MPI_Wtime();
+		for (int i = 0; i < 4; i++) {
+			remote_source[i] = grid.nbrs[remote][i];
+			remote_dest[i] = grid.nbrs[remote][i];
+		}
+
+		check_flag(
+				MPI_Irecv(recvbuf[UP1], grid.num_elements_recv_up, MPI_DOUBLE,
+						remote_source[UP1], tag_remote_1, grid.universe,
+						&remote_req[4 + UP1]),
+				"Receive message operation for remote UP1");
+		check_flag(
+				MPI_Irecv(recvbuf[UP2], grid.num_elements_recv_up, MPI_DOUBLE,
+						remote_source[UP2], tag_remote_2, grid.universe,
+						&remote_req[4 + UP2]),
+				"Receive message operation for remote UP2");
+		check_flag(
+				MPI_Irecv(recvbuf[DOWN1], grid.num_elements_recv_down,
+						MPI_DOUBLE, remote_source[DOWN1], tag_remote_1,
+						grid.universe, &remote_req[4 + DOWN1]),
+				"Receive message operation for remote DOWN1");
+		check_flag(
+				MPI_Irecv(recvbuf[DOWN2], grid.num_elements_recv_down,
+						MPI_DOUBLE, remote_source[DOWN2], tag_remote_2,
+						grid.universe, &remote_req[4 + DOWN2]),
+				"Receive message operation for remote DOWN2");
+
+		check_flag(
+				MPI_Isend(sendbuf[UP1], grid.num_elements_send_up, MPI_DOUBLE,
+						remote_dest[UP1], tag_remote_1, grid.universe,
+						&remote_req[UP1]),
+				"Send message operation for remote UP1");
+		check_flag(
+				MPI_Isend(sendbuf[UP2], grid.num_elements_send_up, MPI_DOUBLE,
+						remote_dest[UP2], tag_remote_2, grid.universe,
+						&remote_req[UP2]),
+				"Send message operation for remote UP2");
+		check_flag(
+				MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_down,
+						MPI_DOUBLE, remote_dest[DOWN1], tag_remote_1,
+						grid.universe, &remote_req[DOWN1]),
+				"Send message operation for remote DOWN1");
+		check_flag(
+				MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_down,
+						MPI_DOUBLE, remote_dest[DOWN2], tag_remote_2,
+						grid.universe, &remote_req[DOWN2]),
+				"Send message operation for remote DOWN2");
+		t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
+		MPI_Waitall(8, remote_req, remote_status);
+		t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
+		t_stamp.diff_remote_async_comm_calls_wait =
+				t_stamp.remote_async_comm_calls_wait_t2
+						- t_stamp.remote_async_comm_calls_wait_t1;
+
+		t_stamp.remote_async_comm_calls_t2 = MPI_Wtime();
+			t_stamp.diff_remote_async_comm_calls = t_stamp.remote_async_comm_calls_t2
+					- t_stamp.remote_async_comm_calls_t1;
 	}
-	
-	check_flag(
-			MPI_Irecv(recvbuf[UP1], grid.num_elements_recv_up,
-					MPI_DOUBLE, remote_source[UP1], tag_remote_1,
-					grid.sub_universe, &remote_req[4 + UP1]),
-			"Receive message operation for remote UP1");
-	check_flag(
-			MPI_Irecv(recvbuf[UP2], grid.num_elements_recv_up,
-					MPI_DOUBLE, remote_source[UP2], tag_remote_2,
-					grid.sub_universe, &remote_req[4 + UP2]),
-			"Receive message operation for remote UP2");
-	check_flag(
-			MPI_Irecv(recvbuf[DOWN1], grid.num_elements_recv_down,
-					MPI_DOUBLE, remote_source[DOWN1], tag_remote_1,
-					grid.sub_universe, &remote_req[4 + DOWN1]),
-			"Receive message operation for remote DOWN1");
-	check_flag(
-			MPI_Irecv(recvbuf[DOWN2], grid.num_elements_recv_down,
-					MPI_DOUBLE, remote_source[DOWN2], tag_remote_2,
-					grid.sub_universe, &remote_req[4 + DOWN2]),
-			"Receive message operation for remote DOWN2");
 
-	check_flag(
-			MPI_Isend(sendbuf[UP1], grid.num_elements_send_up,
-					MPI_DOUBLE, remote_dest[UP1], tag_remote_1, grid.sub_universe,
-					&remote_req[UP1]),
-			"Send message operation for remote UP1");
-	check_flag(
-			MPI_Isend(sendbuf[UP2], grid.num_elements_send_up,
-					MPI_DOUBLE, remote_dest[UP2], tag_remote_2, grid.sub_universe,
-					&remote_req[UP2]),
-			"Send message operation for remote UP2");
-	check_flag(
-			MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_down,
-					MPI_DOUBLE, remote_dest[DOWN1], tag_remote_1,
-					grid.sub_universe, &remote_req[DOWN1]),
-			"Send message operation for remote DOWN1");
-	check_flag(
-			MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_down,
-					MPI_DOUBLE, remote_dest[DOWN2], tag_remote_2,
-					grid.sub_universe, &remote_req[DOWN2]),
-			"Send message operation for remote DOWN2");
-	t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
-	MPI_Waitall(8, remote_req, remote_status);
-	t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
-	t_stamp.diff_remote_async_comm_calls_wait = t_stamp.remote_async_comm_calls_wait_t2 -t_stamp.remote_async_comm_calls_wait_t1; 
+	t_stamp.update_recvbuf_t1 = MPI_Wtime();
+	communication_update_recvbuf_modified(grid, recvbuf, smc, ec);
+	t_stamp.update_recvbuf_t2 = MPI_Wtime();
+	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2
+			- t_stamp.update_recvbuf_t1;
 
-}
-if ( (grid.my_domain.internal_info.boundary_tag == 'T') || (grid.my_domain.internal_info.boundary_tag == 'B') )  {
-	for (int i=0; i<4; i++) {
-		remote_source[i] = grid.nbrs[remote][i];
-		remote_dest[i] = grid.nbrs[remote][i];
-	}
-	
-	check_flag(
-			MPI_Irecv(recvbuf[UP1], grid.num_elements_recv_up,
-					MPI_DOUBLE, remote_source[UP1], tag_remote_1,
-					grid.universe, &remote_req[4 + UP1]),
-			"Receive message operation for remote UP1");
-	check_flag(
-			MPI_Irecv(recvbuf[UP2], grid.num_elements_recv_up,
-					MPI_DOUBLE, remote_source[UP2], tag_remote_2,
-					grid.universe, &remote_req[4 + UP2]),
-			"Receive message operation for remote UP2");
-	check_flag(
-			MPI_Irecv(recvbuf[DOWN1], grid.num_elements_recv_down,
-					MPI_DOUBLE, remote_source[DOWN1], tag_remote_1,
-					grid.universe, &remote_req[4 + DOWN1]),
-			"Receive message operation for remote DOWN1");
-	check_flag(
-			MPI_Irecv(recvbuf[DOWN2], grid.num_elements_recv_down,
-					MPI_DOUBLE, remote_source[DOWN2], tag_remote_2,
-					grid.universe, &remote_req[4 + DOWN2]),
-			"Receive message operation for remote DOWN2");
-
-	check_flag(
-			MPI_Isend(sendbuf[UP1], grid.num_elements_send_up,
-					MPI_DOUBLE, remote_dest[UP1], tag_remote_1, grid.universe,
-					&remote_req[UP1]),
-			"Send message operation for remote UP1");
-	check_flag(
-			MPI_Isend(sendbuf[UP2], grid.num_elements_send_up,
-					MPI_DOUBLE, remote_dest[UP2], tag_remote_2, grid.universe,
-					&remote_req[UP2]),
-			"Send message operation for remote UP2");
-	check_flag(
-			MPI_Isend(sendbuf[DOWN1], grid.num_elements_send_down,
-					MPI_DOUBLE, remote_dest[DOWN1], tag_remote_1,
-					grid.universe, &remote_req[DOWN1]),
-			"Send message operation for remote DOWN1");
-	check_flag(
-			MPI_Isend(sendbuf[DOWN2], grid.num_elements_send_down,
-					MPI_DOUBLE, remote_dest[DOWN2], tag_remote_2,
-					grid.universe, &remote_req[DOWN2]),
-			"Send message operation for remote DOWN2");
-	t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
-	MPI_Waitall(8, remote_req, remote_status);
-	t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
-	t_stamp.diff_remote_async_comm_calls_wait = t_stamp.remote_async_comm_calls_wait_t2 -t_stamp.remote_async_comm_calls_wait_t1; 	
-}
-	t_stamp.remote_async_comm_calls_t2	=	MPI_Wtime();
-	t_stamp.diff_remote_async_comm_calls  = t_stamp.remote_async_comm_calls_t2 - t_stamp.remote_async_comm_calls_t2;
-	
-	t_stamp.update_recvbuf_t1 =MPI_Wtime();
-	communication_update_recvbuf_modified(grid,recvbuf,smc,ec);
-	t_stamp.update_recvbuf_t2 =MPI_Wtime();
-	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2 - t_stamp.update_recvbuf_t1;
-
-}//end of update_async()
+}	//end of update_async()
 
 /*******************************************************************************************/
-void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** smc, celltype2** ec)
-/*******************************************************************************************/
-{
+void communication_update_sendbuf(grid_parms grid, double** sendbuf,
+		celltype1** smc, celltype2** ec)
+		/*******************************************************************************************/
+		{
 	int k, buf_offset;
 ///UP direction	///
 	///UP1
@@ -374,7 +400,6 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 		sendbuf[UP2][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
 		k += grid.num_coupling_species_ec;
 	}
-
 
 ///DOWN direction	///
 	///DOWN1
@@ -434,7 +459,7 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 	//Updating SEND BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[LEFT1][0]; j <= (int) sendbuf[LEFT1][1]; j++) {
-	int i = 1;
+		int i = 1;
 		sendbuf[LEFT1][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
 		sendbuf[LEFT1][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
 		sendbuf[LEFT1][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
@@ -447,7 +472,7 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 	//Updating SEND BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[LEFT1][2]; j <= (int) sendbuf[LEFT1][3]; j++) {
-	int i = 1;
+		int i = 1;
 		sendbuf[LEFT1][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
 		sendbuf[LEFT1][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
 		sendbuf[LEFT1][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
@@ -459,7 +484,7 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 	//Updating SEND BUFFER to be sent in LEFT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[LEFT2][0]; j <= (int) sendbuf[LEFT2][1]; j++) {
-	int i = 1;
+		int i = 1;
 		sendbuf[LEFT2][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
 		sendbuf[LEFT2][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
 		sendbuf[LEFT2][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
@@ -472,7 +497,7 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 	//Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[LEFT2][2]; j <= (int) sendbuf[LEFT2][3]; j++) {
-	int i = 1;
+		int i = 1;
 		sendbuf[LEFT2][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
 		sendbuf[LEFT2][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
 		sendbuf[LEFT2][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
@@ -485,7 +510,7 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 	//Updating SEND BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT1][0]; j <= (int) sendbuf[RIGHT1][1]; j++) {
-	int i = grid.num_smc_circumferentially;
+		int i = grid.num_smc_circumferentially;
 		sendbuf[RIGHT1][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
 		sendbuf[RIGHT1][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
 		sendbuf[RIGHT1][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
@@ -498,7 +523,7 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 	//Updating SEND BUFFER with EC information to be sent in RIGHT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT1][2]; j <= (int) sendbuf[RIGHT1][3]; j++) {
-	int i = grid.num_ec_circumferentially;
+		int i = grid.num_ec_circumferentially;
 		sendbuf[RIGHT1][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
 		sendbuf[RIGHT1][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
 		sendbuf[RIGHT1][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
@@ -510,7 +535,7 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 	//Updating SEND BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT2][0]; j <= (int) sendbuf[RIGHT2][1]; j++) {
-	int i = grid.num_smc_circumferentially;
+		int i = grid.num_smc_circumferentially;
 		sendbuf[RIGHT2][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
 		sendbuf[RIGHT2][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
 		sendbuf[RIGHT2][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
@@ -524,7 +549,7 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 	//Updating SEND BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT2][2]; j <= (int) sendbuf[RIGHT2][3]; j++) {
-	int i = grid.num_ec_circumferentially;
+		int i = grid.num_ec_circumferentially;
 
 		sendbuf[RIGHT2][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
 		sendbuf[RIGHT2][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
@@ -534,9 +559,10 @@ void communication_update_sendbuf(grid_parms grid,double** sendbuf, celltype1** 
 }	// end of communication_update_sendbuf()
 
 /*******************************************************************************************/
-void communication_update_recvbuf(grid_parms grid,double** recvbuf, celltype1** smc, celltype2** ec)
-/*******************************************************************************************/
-{
+void communication_update_recvbuf(grid_parms grid, double** recvbuf,
+		celltype1** smc, celltype2** ec)
+		/*******************************************************************************************/
+		{
 	int k, buf_offset;
 ///UP direction	///
 ///UP1
@@ -709,7 +735,7 @@ void communication_update_recvbuf(grid_parms grid,double** recvbuf, celltype1** 
 //Updating RECEIVE BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT1][0]; j <= (int) recvbuf[RIGHT1][1]; j++) {
-		int 	i = grid.num_smc_circumferentially + 1;
+		int i = grid.num_smc_circumferentially + 1;
 		smc[i][j].p[smc_Ca] = recvbuf[RIGHT1][buf_offset + k + 0];
 		smc[i][j].p[smc_Vm] = recvbuf[RIGHT1][buf_offset + k + 1];
 		smc[i][j].p[smc_IP3] = recvbuf[RIGHT1][buf_offset + k + 2];
@@ -722,7 +748,7 @@ void communication_update_recvbuf(grid_parms grid,double** recvbuf, celltype1** 
 //Updating RECEIVE BUFFER with EC information to be sent in RIGHT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT1][2]; j <= (int) recvbuf[RIGHT1][3]; j++) {
-		int 	i = grid.num_ec_circumferentially + 1;
+		int i = grid.num_ec_circumferentially + 1;
 		ec[i][j].q[ec_Ca] = recvbuf[RIGHT1][buf_offset + k + 0];
 		ec[i][j].q[ec_Vm] = recvbuf[RIGHT1][buf_offset + k + 1];
 		ec[i][j].q[ec_IP3] = recvbuf[RIGHT1][buf_offset + k + 2];
@@ -734,7 +760,7 @@ void communication_update_recvbuf(grid_parms grid,double** recvbuf, celltype1** 
 //Updating RECEIVE BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT2][0]; j <= (int) recvbuf[RIGHT2][1]; j++) {
-		int 	i = grid.num_smc_circumferentially + 1;
+		int i = grid.num_smc_circumferentially + 1;
 		smc[i][j].p[smc_Ca] = recvbuf[RIGHT2][buf_offset + k + 0];
 		smc[i][j].p[smc_Vm] = recvbuf[RIGHT2][buf_offset + k + 1];
 		smc[i][j].p[smc_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
@@ -748,7 +774,7 @@ void communication_update_recvbuf(grid_parms grid,double** recvbuf, celltype1** 
 //Updating RECEIVE BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT2][2]; j <= (int) recvbuf[RIGHT2][3]; j++) {
-		int 	i = grid.num_ec_circumferentially + 1;
+		int i = grid.num_ec_circumferentially + 1;
 		ec[i][j].q[ec_Ca] = recvbuf[RIGHT2][buf_offset + k + 0];
 		ec[i][j].q[ec_Vm] = recvbuf[RIGHT2][buf_offset + k + 1];
 		ec[i][j].q[ec_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
@@ -757,14 +783,15 @@ void communication_update_recvbuf(grid_parms grid,double** recvbuf, celltype1** 
 }	// end of communication_update_recvbuf()
 
 /*******************************************************************************************/
-void communication_update_recvbuf_modified(grid_parms grid,double** recvbuf, celltype1** smc, celltype2** ec)
-/*******************************************************************************************/
-{
+void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
+		celltype1** smc, celltype2** ec)
+		/*******************************************************************************************/
+		{
 	int k, buf_offset;
 ///UP direction	///
 ///UP1
 	buf_offset = grid.added_info_in_send_buf;
-//Updating RECEIVE BUFFERwith SMC information  to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
+//Updating RECEIVE BUFFER with SMC information  to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int i = (int) recvbuf[UP1][0]; i <= (int) recvbuf[UP1][1]; i++) {
 		int j = 0;
@@ -857,7 +884,7 @@ void communication_update_recvbuf_modified(grid_parms grid,double** recvbuf, cel
 		}
 	} else if (grid.flip_array[DOWN1] == 1) {
 		int start = (int) recvbuf[DOWN2][2], end = (int) recvbuf[DOWN2][3];
-		for (int i = end ; i >= start;	i--) {
+		for (int i = end; i >= start; i--) {
 			int j = grid.num_ec_axially + 1;
 			ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
 			ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
@@ -977,7 +1004,7 @@ void communication_update_recvbuf_modified(grid_parms grid,double** recvbuf, cel
 //Updating RECEIVE BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT1][0]; j <= (int) recvbuf[RIGHT1][1]; j++) {
-		int 	i = grid.num_smc_circumferentially + 1;
+		int i = grid.num_smc_circumferentially + 1;
 		smc[i][j].p[smc_Ca] = recvbuf[RIGHT1][buf_offset + k + 0];
 		smc[i][j].p[smc_Vm] = recvbuf[RIGHT1][buf_offset + k + 1];
 		smc[i][j].p[smc_IP3] = recvbuf[RIGHT1][buf_offset + k + 2];
@@ -990,7 +1017,7 @@ void communication_update_recvbuf_modified(grid_parms grid,double** recvbuf, cel
 //Updating RECEIVE BUFFER with EC information to be sent in RIGHT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT1][2]; j <= (int) recvbuf[RIGHT1][3]; j++) {
-		int 	i = grid.num_ec_circumferentially + 1;
+		int i = grid.num_ec_circumferentially + 1;
 		ec[i][j].q[ec_Ca] = recvbuf[RIGHT1][buf_offset + k + 0];
 		ec[i][j].q[ec_Vm] = recvbuf[RIGHT1][buf_offset + k + 1];
 		ec[i][j].q[ec_IP3] = recvbuf[RIGHT1][buf_offset + k + 2];
@@ -1002,7 +1029,7 @@ void communication_update_recvbuf_modified(grid_parms grid,double** recvbuf, cel
 //Updating RECEIVE BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT2][0]; j <= (int) recvbuf[RIGHT2][1]; j++) {
-		int 	i = grid.num_smc_circumferentially + 1;
+		int i = grid.num_smc_circumferentially + 1;
 		smc[i][j].p[smc_Ca] = recvbuf[RIGHT2][buf_offset + k + 0];
 		smc[i][j].p[smc_Vm] = recvbuf[RIGHT2][buf_offset + k + 1];
 		smc[i][j].p[smc_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
@@ -1016,7 +1043,7 @@ void communication_update_recvbuf_modified(grid_parms grid,double** recvbuf, cel
 //Updating RECEIVE BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT2][2]; j <= (int) recvbuf[RIGHT2][3]; j++) {
-		int 	i = grid.num_ec_circumferentially + 1;
+		int i = grid.num_ec_circumferentially + 1;
 		ec[i][j].q[ec_Ca] = recvbuf[RIGHT2][buf_offset + k + 0];
 		ec[i][j].q[ec_Vm] = recvbuf[RIGHT2][buf_offset + k + 1];
 		ec[i][j].q[ec_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
