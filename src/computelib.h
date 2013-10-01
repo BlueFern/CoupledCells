@@ -277,7 +277,11 @@ void communication_update_recvbuf(grid_parms, double**, celltype1**,
 void determin_source_destination(grid_parms, int*, int*);
 void communication_async_send_recv(grid_parms, double**, double**, celltype1**,
 		celltype2**);
+void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
+		celltype1** smc, celltype2** ec);
 void communication_update_recvbuf_modified(grid_parms, double**, celltype1**,
+		celltype2**);
+void communication_update_recvbuf_modified2(grid_parms, double**, celltype1**,
 		celltype2**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
@@ -337,8 +341,8 @@ int compute(grid_parms, celltype1**, celltype2**, conductance cpl_cef, double,
 
 ///These are debugging functions, not used in production runs.
 void print_domains(FILE*, grid_parms, celltype1**, celltype2**);
-void print_send_buffer(grid_parms, double**);
-void print_recv_buffer(grid_parms, double**);
+void print_send_buffer(FILE*,grid_parms, double**);
+void print_recv_buffer(FILE*,grid_parms, double**);
 void print_compare(double, double*, grid_parms, celltype1**, celltype2**);
 
 //Topology related functions

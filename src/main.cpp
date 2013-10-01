@@ -175,7 +175,8 @@ int main(int argc, char* argv[]) {
 	///information is being sent, respectively.
 	///The next two elements contain the same information for ECs.
 
-	int extent_s, extent_e;	///Variables to calculate the length of the prospective buffer based on number of cell in either orientations (circumferential or axial).
+	int extent_s, extent_e;	///Variables to calculate the length of the prospective buffer based on number of cell in either orientations
+							///(circumferential or axial).
 
 	grid.added_info_in_send_buf = 4;///Number of elements containing additional information at the beginning of the send buffer.
 	int seg_config_s, seg_config_e;	///Integers to decided whether the row or column being sent is overlapping or exactly divisible into two halves.
@@ -184,7 +185,7 @@ int main(int argc, char* argv[]) {
 	extent_e = (int) (ceil((double) (grid.num_ec_circumferentially) / 2));
 
 	/// The seg_config variables are to recording the configuration of the split of the buffering in each direction.
-	/// If the total number of cell in on a face (UP, DOWN, LEFT or RIGHT) are EVEN (i.e. seg_congif=0), the split will be non-overlapping
+	/// If the total number of cells on a face (UP, DOWN, LEFT or RIGHT) are EVEN (i.e. seg_congif=0), the split will be non-overlapping
 	/// (eg. if total SMCs are 26 in UP direction, UP1 buffer will send 13 and UP2 will send the other 13 to corresponding nbrs.
 	/// If the total number of cells is ODD (i.e. seg_congif=1), then the split will be over lapping.
 	/// (eg. if total SMCs are 13 (or any multiple of 13) UP1 will send elements from 0 - 6 and UP2 will send 6 - 12  to corresponding nbrs.
@@ -406,6 +407,15 @@ int main(int argc, char* argv[]) {
 	dump_rank_info(check, cpl_cef, grid);
 	Total_cells_in_computational_domain(grid);
     update_elapsed_time(check,grid,&elps_t);
+    FILE* logptr;char name[50];
+    sprintf(name,"logptr_%d",grid.universal_rank);
+    logptr=fopen(name,"w+");
+    print_recv_buffer(logptr,grid,recvbuf);
+    fprintf(logptr,"_________________________________\n");
+	communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
+    print_recv_buffer(logptr,grid,recvbuf);
+    fclose(logptr);
+/*
 #ifdef CVODE
 	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
 #endif
@@ -414,6 +424,7 @@ int main(int argc, char* argv[]) {
 			file_write_per_unit_time, line_number, check);
 //rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
 #endif
+*/
 	if (grid.rank==0){
 		jplc_plot_data(grid, check);
 	}

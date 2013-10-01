@@ -120,7 +120,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	int tag_1 = 1, tag_2 = 2;
 	determin_source_destination(grid, source, dest);
 	t_stamp.update_sendbuf_t1 = MPI_Wtime();
-	communication_update_sendbuf(grid, sendbuf, smc, ec);
+	communication_update_sendbuf_modified(grid, sendbuf, smc, ec);
 	t_stamp.update_sendbuf_t2 = MPI_Wtime();
 	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2
 			- t_stamp.update_sendbuf_t1;
@@ -333,7 +333,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	}
 
 	t_stamp.update_recvbuf_t1 = MPI_Wtime();
-	communication_update_recvbuf_modified(grid, recvbuf, smc, ec);
+	communication_update_recvbuf_modified2(grid, recvbuf, smc, ec);
 	t_stamp.update_recvbuf_t2 = MPI_Wtime();
 	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2
 			- t_stamp.update_recvbuf_t1;
@@ -343,7 +343,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 /*******************************************************************************************/
 void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		celltype1** smc, celltype2** ec)
-		/*******************************************************************************************/
+/*******************************************************************************************/
 		{
 	int k, buf_offset;
 ///UP direction	///
@@ -783,6 +783,224 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 }	// end of communication_update_recvbuf()
 
 /*******************************************************************************************/
+void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
+		celltype1** smc, celltype2** ec)
+/*******************************************************************************************/
+		{
+	int k, buf_offset;
+///UP direction	///
+	///UP1
+	buf_offset = grid.added_info_in_send_buf;
+	//Updating SEND BUFFERwith SMC information  to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) sendbuf[UP1][0]; j <= (int) sendbuf[UP1][1]; j++) {
+		int i = 1;
+		sendbuf[UP1][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
+		sendbuf[UP1][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
+		sendbuf[UP1][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
+		k += grid.num_coupling_species_smc;
+	}
+
+	//Setting up the offset to transfer the EC info into SEND BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (sendbuf[UP1][1] - sendbuf[UP1][0] + 1);
+	//Updating SEND BUFFER with EC information to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+
+	for (int j = (int) sendbuf[UP1][2]; j <= (int) sendbuf[UP1][3]; j++) {
+		int i = 1;
+		sendbuf[UP1][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
+		sendbuf[UP1][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
+		sendbuf[UP1][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
+		k += grid.num_coupling_species_ec;
+
+	}
+
+	///UP2
+	buf_offset = grid.added_info_in_send_buf;
+	//Updating SEND BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) sendbuf[UP2][0]; j <= (int) sendbuf[UP2][1]; j++) {
+		int i = 1;
+		sendbuf[UP2][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
+		sendbuf[UP2][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
+		sendbuf[UP2][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
+		k += grid.num_coupling_species_smc;
+	}
+
+	//Setting up the offset to transfer the EC info into SEND BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (sendbuf[UP2][1] - sendbuf[UP2][0] + 1);
+	//Updating SEND BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) sendbuf[UP2][2]; j <= (int) sendbuf[UP2][3]; j++) {
+		int i = 1;
+		sendbuf[UP2][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
+		sendbuf[UP2][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
+		sendbuf[UP2][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
+		k += grid.num_coupling_species_ec;
+	}
+
+///DOWN direction	///
+	///DOWN1
+	buf_offset = grid.added_info_in_send_buf;
+	//Updating SEND BUFFERwith SMC information  to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) sendbuf[DOWN1][0]; j <= (int) sendbuf[DOWN1][1]; j++) {
+		int i = grid.num_smc_axially;
+		sendbuf[DOWN1][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
+		sendbuf[DOWN1][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
+		sendbuf[DOWN1][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
+		k += grid.num_coupling_species_smc;
+	}
+	//Setting up the offset to transfer the EC info into SEND BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (sendbuf[DOWN1][1] - sendbuf[DOWN1][0] + 1);
+	//Updating SEND BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) sendbuf[DOWN1][2]; j <= (int) sendbuf[DOWN1][3]; j++) {
+		int i = grid.num_ec_axially;
+		sendbuf[DOWN1][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
+		sendbuf[DOWN1][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
+		sendbuf[DOWN1][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
+		k += grid.num_coupling_species_ec;
+	}
+
+	///DOWN2
+	buf_offset = grid.added_info_in_send_buf;
+	//Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) sendbuf[DOWN2][0]; j <= (int) sendbuf[DOWN2][1]; j++) {
+		int i = grid.num_smc_axially;
+		sendbuf[DOWN2][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
+		sendbuf[DOWN2][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
+		sendbuf[DOWN2][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
+		k += grid.num_coupling_species_smc;
+	}
+
+	//Setting up the offset to transfer the EC info into SEND BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (sendbuf[DOWN2][1] - sendbuf[DOWN2][0] + 1);
+	//Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) sendbuf[DOWN2][2]; j <= (int) sendbuf[DOWN2][3]; j++) {
+		int i = grid.num_ec_axially;
+		sendbuf[DOWN2][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
+		sendbuf[DOWN2][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
+		sendbuf[DOWN2][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
+		k += grid.num_coupling_species_ec;
+	}
+
+///LEFT direction	///
+	///LEFT1
+	buf_offset = grid.added_info_in_send_buf;
+	//Updating SEND BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) sendbuf[LEFT1][0]; i <= (int) sendbuf[LEFT1][1]; i++) {
+		int j = 1;
+		sendbuf[LEFT1][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
+		sendbuf[LEFT1][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
+		sendbuf[LEFT1][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
+		k += grid.num_coupling_species_smc;
+	}
+	//Setting up the offset to transfer the EC info into SEND BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (sendbuf[LEFT1][1] - sendbuf[LEFT1][0] + 1);
+	//Updating SEND BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) sendbuf[LEFT1][2]; i <= (int) sendbuf[LEFT1][3]; i++) {
+		int j = 1;
+		sendbuf[LEFT1][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
+		sendbuf[LEFT1][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
+		sendbuf[LEFT1][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
+		k += grid.num_coupling_species_ec;
+	}
+
+	///LEFT2
+	buf_offset = grid.added_info_in_send_buf;
+	//Updating SEND BUFFER to be sent in LEFT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) sendbuf[LEFT2][0]; i <= (int) sendbuf[LEFT2][1]; i++) {
+		int j = 1;
+		sendbuf[LEFT2][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
+		sendbuf[LEFT2][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
+		sendbuf[LEFT2][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
+		k += grid.num_coupling_species_smc;
+	}
+	//Setting up the offset to transfer the EC info into SEND BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (sendbuf[LEFT2][1] - sendbuf[LEFT2][0] + 1);
+	//Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) sendbuf[LEFT2][2]; i <= (int) sendbuf[LEFT2][3]; i++) {
+		int j = 1;
+		sendbuf[LEFT2][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
+		sendbuf[LEFT2][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
+		sendbuf[LEFT2][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
+		k += grid.num_coupling_species_ec;
+	}
+
+///RIGHT direction	///
+	///RIGHT1
+	buf_offset = grid.added_info_in_send_buf;
+	//Updating SEND BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) sendbuf[RIGHT1][0]; i <= (int) sendbuf[RIGHT1][1]; i++) {
+		int j = grid.num_smc_circumferentially;
+		sendbuf[RIGHT1][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
+		sendbuf[RIGHT1][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
+		sendbuf[RIGHT1][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
+		k += grid.num_coupling_species_smc;
+	}
+	//Setting up the offset to transfer the EC info into SEND BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (sendbuf[RIGHT1][1] - sendbuf[RIGHT1][0] + 1);
+	//Updating SEND BUFFER with EC information to be sent in RIGHT1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) sendbuf[RIGHT1][2]; i <= (int) sendbuf[RIGHT1][3]; i++) {
+		int j = grid.num_ec_circumferentially;
+		sendbuf[RIGHT1][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
+		sendbuf[RIGHT1][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
+		sendbuf[RIGHT1][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
+		k += grid.num_coupling_species_ec;
+	}
+
+	///RIGHT2
+	buf_offset = grid.added_info_in_send_buf;
+	//Updating SEND BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) sendbuf[RIGHT2][0]; i <= (int) sendbuf[RIGHT2][1]; i++) {
+		int j = grid.num_smc_circumferentially;
+		sendbuf[RIGHT2][buf_offset + k + 0] = smc[i][j].p[smc_Ca];
+		sendbuf[RIGHT2][buf_offset + k + 1] = smc[i][j].p[smc_Vm];
+		sendbuf[RIGHT2][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
+		k += grid.num_coupling_species_smc;
+	}
+
+	//Setting up the offset to transfer the EC info into SEND BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (sendbuf[RIGHT2][1] - sendbuf[RIGHT2][0] + 1);
+	//Updating SEND BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) sendbuf[RIGHT2][2]; i <= (int) sendbuf[RIGHT2][3]; i++) {
+		int j = grid.num_ec_circumferentially;
+
+		sendbuf[RIGHT2][buf_offset + k + 0] = ec[i][j].q[ec_Ca];
+		sendbuf[RIGHT2][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
+		sendbuf[RIGHT2][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
+		k += grid.num_coupling_species_ec;
+	}
+}	// end of communication_update_sendbuf()
+
+/*******************************************************************************************/
 void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
 		celltype1** smc, celltype2** ec)
 		/*******************************************************************************************/
@@ -1051,3 +1269,272 @@ void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
 	}
 }	// end of communication_update_recvbuf()
 
+
+/*******************************************************************************************/
+void communication_update_recvbuf_modified2(grid_parms grid, double** recvbuf,
+		celltype1** smc, celltype2** ec)
+		/*******************************************************************************************/
+		{
+	int k, buf_offset;
+///UP direction	///
+///UP1
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER with SMC information  to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) recvbuf[UP1][0]; j <= (int) recvbuf[UP1][1]; j++) {
+		int i = 0;
+		smc[i][j].p[smc_Ca] = recvbuf[UP1][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[UP1][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[UP1][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
+	}
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[UP1][1] - recvbuf[UP1][0] + 1);
+//Updating RECEIVE BUFFER with EC information to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+
+	for (int j = (int) recvbuf[UP1][2]; j <= (int) recvbuf[UP1][3]; j++) {
+		int i = 0;
+		ec[i][j].q[ec_Ca] = recvbuf[UP1][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[UP1][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[UP1][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
+	}
+
+///UP2
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int j = (int) recvbuf[UP2][0]; j <= (int) recvbuf[UP2][1]; j++) {
+		int i = 0;
+		smc[i][j].p[smc_Ca] = recvbuf[UP2][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[UP2][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[UP2][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
+	}
+
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[UP2][1] - recvbuf[UP2][0] + 1);
+//Updating RECEIVE BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+
+	for (int j = (int) recvbuf[UP2][2]; j <= (int) recvbuf[UP2][3]; j++) {
+		int i = 0;
+		ec[i][j].q[ec_Ca] = recvbuf[UP2][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[UP2][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[UP2][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
+	}
+
+///DOWN direction	///
+///DOWN1
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFERwith SMC information  to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	if (grid.flip_array[DOWN1] == 0) {
+		for (int j = (int) recvbuf[DOWN1][0]; j <= (int) recvbuf[DOWN1][1];
+				j++) {
+			int i = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
+	} else if (grid.flip_array[DOWN1] == 1) {
+		int start = (int) recvbuf[DOWN2][0], end = (int) recvbuf[DOWN2][1];
+		for (int j = end; j >= start; j--) {
+			int i = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
+	}
+
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[DOWN1][1] - recvbuf[DOWN1][0] + 1);
+//Updating RECEIVE BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	if (grid.flip_array[DOWN1] == 0) {
+		for (int j = (int) recvbuf[DOWN1][2]; j <= (int) recvbuf[DOWN1][3];
+				j++) {
+			int i = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
+	} else if (grid.flip_array[DOWN1] == 1) {
+		int start = (int) recvbuf[DOWN2][2], end = (int) recvbuf[DOWN2][3];
+		for (int j = end; j >= start; j--) {
+			int i = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN1][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN1][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN1][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
+	}
+
+///DOWN2
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	if (grid.flip_array[DOWN2] == 0) {
+		for (int i = (int) recvbuf[DOWN2][0]; i <= (int) recvbuf[DOWN2][1];
+				i++) {
+			int j = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
+	} else if (grid.flip_array[DOWN2] == 1) {
+		int start = (int) recvbuf[DOWN1][0], end = (int) recvbuf[DOWN1][1];
+		for (int i = end; i >= start; i--) {
+			int j = grid.num_smc_axially + 1;
+			smc[i][j].p[smc_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			smc[i][j].p[smc_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			smc[i][j].p[smc_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_smc;
+		}
+	}
+
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[DOWN2][1] - recvbuf[DOWN2][0] + 1);
+//Updating RECEIVE BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	if (grid.flip_array[DOWN2] == 0) {
+		for (int j = (int) recvbuf[DOWN2][2]; j <= (int) recvbuf[DOWN2][3];
+				j++) {
+			int i = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
+	} else if (grid.flip_array[DOWN2] == 1) {
+		int start = (int) recvbuf[DOWN1][2], end = (int) recvbuf[DOWN1][3];
+		for (int j = end; j >= start; j--) {
+			int i = grid.num_ec_axially + 1;
+			ec[i][j].q[ec_Ca] = recvbuf[DOWN2][buf_offset + k + 0];
+			ec[i][j].q[ec_Vm] = recvbuf[DOWN2][buf_offset + k + 1];
+			ec[i][j].q[ec_IP3] = recvbuf[DOWN2][buf_offset + k + 2];
+			k += grid.num_coupling_species_ec;
+		}
+	}
+
+///LEFT direction	///
+///LEFT1
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+
+	for (int i = (int) recvbuf[LEFT1][0]; i <= (int) recvbuf[LEFT1][1]; i++) {
+		int j = 0;
+		smc[i][j].p[smc_Ca] = recvbuf[LEFT1][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[LEFT1][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[LEFT1][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
+	}
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[LEFT1][1] - recvbuf[LEFT1][0] + 1);
+//Updating RECEIVE BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+
+	for (int i = (int) recvbuf[LEFT1][2]; i <= (int) recvbuf[LEFT1][3]; i++) {
+		int j = 0;
+		ec[i][j].q[ec_Ca] = recvbuf[LEFT1][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[LEFT1][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[LEFT1][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
+	}
+
+///LEFT2
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER to be sent in LEFT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+
+	for (int i = (int) recvbuf[LEFT2][0]; i <= (int) recvbuf[LEFT2][1]; i++) {
+		int j = 0;
+		smc[i][j].p[smc_Ca] = recvbuf[LEFT2][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[LEFT2][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[LEFT2][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
+	}
+
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[LEFT2][1] - recvbuf[LEFT2][0] + 1);
+//Updating RECEIVE BUFFER to be sent in LEFT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) recvbuf[LEFT2][2]; i <= (int) recvbuf[LEFT2][3]; i++) {
+		int j = 0;
+		ec[i][j].q[ec_Ca] = recvbuf[LEFT2][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[LEFT2][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[LEFT2][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
+	}
+
+///RIGHT direction	///
+///RIGHT1
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) recvbuf[RIGHT1][0]; i <= (int) recvbuf[RIGHT1][1]; i++) {
+		int j = grid.num_smc_circumferentially + 1;
+		smc[i][j].p[smc_Ca] = recvbuf[RIGHT1][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[RIGHT1][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[RIGHT1][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
+	}
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[RIGHT1][1] - recvbuf[RIGHT1][0] + 1);
+//Updating RECEIVE BUFFER with EC information to be sent in RIGHT1 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) recvbuf[RIGHT1][2]; i <= (int) recvbuf[RIGHT1][3]; i++) {
+		int j = grid.num_ec_circumferentially + 1;
+		ec[i][j].q[ec_Ca] = recvbuf[RIGHT1][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[RIGHT1][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[RIGHT1][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
+	}
+
+///RIGHT2
+	buf_offset = grid.added_info_in_send_buf;
+//Updating RECEIVE BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) recvbuf[RIGHT2][0]; i <= (int) recvbuf[RIGHT2][1]; i++) {
+		int j = grid.num_smc_circumferentially + 1;
+		smc[i][j].p[smc_Ca] = recvbuf[RIGHT2][buf_offset + k + 0];
+		smc[i][j].p[smc_Vm] = recvbuf[RIGHT2][buf_offset + k + 1];
+		smc[i][j].p[smc_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
+		k += grid.num_coupling_species_smc;
+	}
+
+//Setting up the offset to transfer the EC info into RECEIVE BUFFER
+	buf_offset = grid.added_info_in_send_buf
+			+ grid.num_coupling_species_smc
+					* (recvbuf[RIGHT2][1] - recvbuf[RIGHT2][0] + 1);
+//Updating RECEIVE BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
+	k = 0;
+	for (int i = (int) recvbuf[RIGHT2][2]; i <= (int) recvbuf[RIGHT2][3]; i++) {
+		int j = grid.num_ec_circumferentially + 1;
+		ec[i][j].q[ec_Ca] = recvbuf[RIGHT2][buf_offset + k + 0];
+		ec[i][j].q[ec_Vm] = recvbuf[RIGHT2][buf_offset + k + 1];
+		ec[i][j].q[ec_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
+		k += grid.num_coupling_species_ec;
+	}
+}	// end of communication_update_recvbuf()

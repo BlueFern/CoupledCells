@@ -297,7 +297,7 @@ int map_solver_to_cells(grid_parms grid, double* y, celltype1** smc,
 }
 
 /*******************************************************************************************/
-void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
+ void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
 /*******************************************************************************************/
 {
 	///Allocating arrays of appropriate lengths for holding values of ghost cell variable to which the relevant smc[i][j] and ec[i][j] members will point to.

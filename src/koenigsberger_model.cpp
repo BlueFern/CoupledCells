@@ -19,11 +19,23 @@ void Initialize_koeingsberger_smc(grid_parms grid, double* y, celltype1** smc)
 				k = ((i - 1) * grid.neq_smc_axially);
 			else if (i == 1)
 				k = 0;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.01;
-			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.01;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.01;
-			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.01;
-			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.01;
+			/*y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.01;
+			 y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.01;
+			 y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.01;
+			 y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.01;
+			 y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.01;*/
+
+			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = (double)(grid.universal_rank)+(double) (i) * 1e-1
+					+ (double) (j) * 1e-4 + (smc_Ca+1) * 1e-7;
+			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = (double)(grid.universal_rank)+(double) (i) * 1e-1
+					+ (double) (j) * 1e-4 + (smc_SR+1) * 1e-7;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = (double)(grid.universal_rank)+(double) (i) * 1e-1
+					+ (double) (j) * 1e-4 + (smc_Vm+1) * 1e-7;
+			y[k + ((j - 1) * grid.neq_smc) + smc_w] = (double)(grid.universal_rank)+(double) (i) * 1e-1
+					+ (double) (j) * 1e-4 + (smc_w+1) * 1e-7;
+			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = (double)(grid.universal_rank)+(double) (i) * 1e-1
+					+ (double) (j) * 1e-4 + (smc_IP3+1) * 1e-7;
+
 		}
 	}
 
@@ -48,13 +60,12 @@ void Initialize_koeingsberger_smc(grid_parms grid, double* y, celltype1** smc)
 	}
 }
 
-
 /*******************************************************************************************/
 void Initialize_koeingsberger_ec(grid_parms grid, double* y, celltype2** ec)
 /*******************************************************************************************/
 {
-int	k,offset = (grid.neq_smc * grid.num_smc_circumferentially
-					* grid.num_smc_axially);
+	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially
+			* grid.num_smc_axially);
 
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
@@ -62,16 +73,20 @@ int	k,offset = (grid.neq_smc * grid.num_smc_circumferentially
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
 				k = offset + 0;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.01;
+			/*y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.01;
 			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.01;
 			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.01;*/
+
+			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = -0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = -0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = -0.01;
 		}
 	}
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells);
 			i++) {
-		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells);
-				j++) {
+		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++) {
 			ec[i][j].q[ec_Ca] = 0.0;
 			ec[i][j].q[ec_SR] = 0.0;
 			ec[i][j].q[ec_Vm] = 0.0;
@@ -88,7 +103,7 @@ int	k,offset = (grid.neq_smc * grid.num_smc_circumferentially
 	}
 }
 /*******************************************************************************************/
-void koenigsberger_smc(grid_parms grid,celltype1** smc)
+void koenigsberger_smc(grid_parms grid, celltype1** smc)
 /*******************************************************************************************/
 {
 
@@ -150,7 +165,7 @@ void koenigsberger_smc(grid_parms grid,celltype1** smc)
 /***************************************************************************/
 void koenigsberger_smc_derivatives(double* f, grid_parms grid,
 		celltype1** smc) {
-/***************************************************************************/
+	/***************************************************************************/
 
 	int k;
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
@@ -190,7 +205,7 @@ void koenigsberger_ec(grid_parms grid, celltype2** ec)
  * currents in an EC
  *************************************************************/
 {
- //EVALUATING SINGLE CELL FLUXES For EC
+	//EVALUATING SINGLE CELL FLUXES For EC
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
 //JIP3
@@ -249,9 +264,9 @@ void koenigsberger_ec(grid_parms grid, celltype2** ec)
 }
 
 /***************************************************************************/
-void koenigsberger_ec_derivatives(double t, double* f,
-grid_parms grid, celltype2** ec) {
-/***************************************************************************/
+void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid,
+		celltype2** ec) {
+	/***************************************************************************/
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially
 			* grid.num_smc_axially);
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
@@ -261,7 +276,7 @@ grid_parms grid, celltype2** ec) {
 			else if (i == 1)
 				k = offset + 0;
 
-			ec[i][j].JPLC = agonist_profile(t,grid,i,j,ec[i][j].z_coord);
+			ec[i][j].JPLC = agonist_profile(t, grid, i, j, ec[i][j].z_coord);
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] = ec[i][j].A[J_IP3]
 					- ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR]
