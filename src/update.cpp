@@ -120,11 +120,13 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	int tag_1 = 1, tag_2 = 2;
 	determin_source_destination(grid, source, dest);
 	t_stamp.update_sendbuf_t1 = MPI_Wtime();
-	communication_update_sendbuf_modified(grid, sendbuf, smc, ec);
+	communication_update_sendbuf(grid, sendbuf, smc, ec);
 	t_stamp.update_sendbuf_t2 = MPI_Wtime();
 	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2
 			- t_stamp.update_sendbuf_t1;
 	t_stamp.async_comm_calls_t1 = MPI_Wtime();
+
+
 	/// Communication block
 	check_flag(
 			MPI_Irecv(&recvbuf[UP1][0], grid.num_elements_recv_up, MPI_DOUBLE,
@@ -333,7 +335,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	}
 
 	t_stamp.update_recvbuf_t1 = MPI_Wtime();
-	communication_update_recvbuf_modified2(grid, recvbuf, smc, ec);
+	communication_update_recvbuf_modified(grid, recvbuf, smc, ec);
 	t_stamp.update_recvbuf_t2 = MPI_Wtime();
 	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2
 			- t_stamp.update_recvbuf_t1;
@@ -346,6 +348,7 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 /*******************************************************************************************/
 		{
 	int k, buf_offset;
+
 ///UP direction	///
 	///UP1
 	buf_offset = grid.added_info_in_send_buf;
@@ -556,6 +559,7 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		sendbuf[RIGHT2][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
 		k += grid.num_coupling_species_ec;
 	}
+
 }	// end of communication_update_sendbuf()
 
 /*******************************************************************************************/

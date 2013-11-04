@@ -16,7 +16,7 @@ void print_domains(FILE* logptr, grid_parms grid, celltype1** smc,
 		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells);
 				j++) {
 			fprintf(logptr,
-					"[%d,%d]\t %2.5lf\t%2.5lf\t%2.5lf\t%2.5lf\t%2.5lf\n", i, j,
+					"[%d,%d]\t%2.5lf\t%2.5lf\t%2.5lf\t%2.5lf\t%2.5lf\n", i, j,
 					smc[i][j].p[smc_Ca], smc[i][j].p[smc_SR],
 					smc[i][j].p[smc_Vm], smc[i][j].p[smc_w],
 					smc[i][j].p[smc_IP3]);
@@ -27,7 +27,7 @@ void print_domains(FILE* logptr, grid_parms grid, celltype1** smc,
 			i++) {
 		fprintf(logptr, " ------ i = %d -------------\n", i);
 		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++) {
-			fprintf(logptr, "[%d,%d]\t %2.5lf\t%2.5lf\t%2.5lf\t%2.5lf\n", i, j,
+			fprintf(logptr, "[%d,%d]\t%2.5lf\t%2.5lf\t%2.5lf\t%2.5lf\n", i, j,
 					ec[i][j].q[ec_Ca], ec[i][j].q[ec_SR], ec[i][j].q[ec_Vm],
 					ec[i][j].q[ec_IP3]);
 		}
@@ -65,22 +65,22 @@ void print_send_buffer(FILE* logptr,grid_parms grid, double** sendbuf){
 
 	fprintf(logptr, "***Up direction***\n");
 	for (int i = 0; i < grid.num_elements_send_up; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, sendbuf[UP1][i],
+		fprintf(logptr, "[%d]\t %lf \t %lf\n", i, sendbuf[UP1][i],
 				sendbuf[UP2][i]);
 	}
 	fprintf(logptr, "***Down direction***\n");
 	for (int i = 0; i < grid.num_elements_send_down; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, sendbuf[DOWN1][i],
+		fprintf(logptr, "[%d]\t %lf \t %lf\n", i, sendbuf[DOWN1][i],
 				sendbuf[DOWN2][i]);
 	}
 	fprintf(logptr, "***Left direction***\n");
 	for (int i = 0; i < grid.num_elements_send_left; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, sendbuf[LEFT1][i],
+		fprintf(logptr, "[%d]\t %lf \t %lf\n", i, sendbuf[LEFT1][i],
 				sendbuf[LEFT2][i]);
 	}
 	fprintf(logptr, "***Right direction***\n");
 	for (int i = 0; i < grid.num_elements_send_right; i++) {
-		fprintf(logptr, "[%d]\t %2.3lf \t %2.3lf\n", i, sendbuf[RIGHT1][i],
+		fprintf(logptr, "[%d]\t %lf \t %lf\n", i, sendbuf[RIGHT1][i],
 				sendbuf[RIGHT2][i]);
 	}
 }

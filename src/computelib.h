@@ -162,6 +162,7 @@ typedef struct {
 
 					///Temporary array for use in time profiling checkpointing
 	double **time_profile;
+	FILE* logptr;
 } grid_parms;
 
 ///Structure to store coupling data received from the neighbouring task.
@@ -328,6 +329,7 @@ void rksuite_solver_CT(double, double, double, double*, double*, int, double,
 		double*, int, int, checkpoint_handle*);
 void rksuite_solver_UT(double, double, double, double *, double*, int, double,
 		double*, int, int, checkpoint_handle*);
+
 #ifdef CVODE
 static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
@@ -394,3 +396,10 @@ void process_time_profiling_data(grid_parms, double**,	int);
 void min(double* table, int size, double *value, int *index);
 void max(double* table, int size, double *value, int *index);
 void average(double* table, int size, double *value);
+
+
+
+void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double *y,
+		double* yp, int total, double TOL, double* thres,
+		int file_write_per_unit_time, int line_number,
+		checkpoint_handle *check);

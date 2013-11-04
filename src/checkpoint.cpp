@@ -20,7 +20,7 @@ checkpoint_handle* initialise_checkpoint(grid_parms grid) {
 		err = sprintf(suffix, "%d_%d.txt", subdomain, branch);
 	}
 
-	open_common_checkpoint(check, grid, suffix);
+	open_common_checkpoint(check, grid, grid.suffix);
 
 	switch (grid.smc_model) {
 	case (TSK): {
@@ -256,6 +256,11 @@ void dump_smc(grid_parms grid, celltype1 **smc, checkpoint_handle *check,
 		int line_number, int write_count) {
 	/***************************************************************************/
 	MPI_Status status[8];
+	MPI_Request req[8];
+
+	MPI_Status status_tmp[3];
+	MPI_Request req_tmp[3];
+
 	MPI_Offset disp;
 	int write_element_count, time_offset_in_file, file_offset;
 
@@ -293,27 +298,49 @@ void dump_smc(grid_parms grid, celltype1 **smc, checkpoint_handle *check,
 	disp = file_offset + time_offset_in_file
 			+ (grid.rank * write_element_count * sizeof(double));
 	CHECK(
-			MPI_File_write_at(check->ci, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
+	 MPI_File_write_at(check->ci, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
+	 CHECK(
+	 MPI_File_write_at(check->vi, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
+	 CHECK(
+	 MPI_File_write_at(check->Ii, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
+	 CHECK(
+	 MPI_File_write_at(check->si, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
+
+	 CHECK(
+	 MPI_File_write_at(check->wi, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
+
+	 CHECK(
+	 MPI_File_write_at(check->cpCi, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
+	 CHECK(
+	 MPI_File_write_at(check->cpVi, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
+	 CHECK(
+	 MPI_File_write_at(check->cpIi, disp, &b8, write_element_count, MPI_DOUBLE, &status[7]));
+
+	/*MPI_File_set_view(check->ci, disp, MPI_DOUBLE, MPI_DOUBLE, "native",
+			MPI_INFO_NULL);
+	MPI_File_set_view(check->vi, disp, MPI_DOUBLE, MPI_DOUBLE, "native",
+			MPI_INFO_NULL);
+	MPI_File_set_view(check->Ii, disp, MPI_DOUBLE, MPI_DOUBLE, "native",
+			MPI_INFO_NULL);
+
 	CHECK(
-			MPI_File_write_at(check->si, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
+			MPI_File_iwrite(check->ci,&b1,write_element_count,MPI_DOUBLE, &req_tmp[0]));
 	CHECK(
-			MPI_File_write_at(check->vi, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
+			MPI_File_iwrite(check->vi,&b3,write_element_count,MPI_DOUBLE, &req_tmp[1]));
 	CHECK(
-			MPI_File_write_at(check->wi, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
-	CHECK(
-			MPI_File_write_at(check->Ii, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
-	CHECK(
-			MPI_File_write_at(check->cpCi, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
-	CHECK(
-			MPI_File_write_at(check->cpVi, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
-	CHECK(
-			MPI_File_write_at(check->cpIi, disp, &b8, write_element_count, MPI_DOUBLE, &status[7]));
+			MPI_File_iwrite(check->Ii,&b5,write_element_count,MPI_DOUBLE, &req_tmp[2]));
+	MPI_Waitall(3, req_tmp, status_tmp);*/
+
 }
 /***********************************************************************/
 void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check,
 		int line_number, int write_count) {
 	/***********************************************************************/
 	MPI_Status status[8];
+
+	MPI_Status status_tmp[3];
+	MPI_Request req_tmp[3];
+
 	MPI_Offset disp;
 	int write_element_count, time_offset_in_file, file_offset;
 
@@ -333,7 +360,7 @@ void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check,
 	int k;
 
 	k = 0;
-	// An amendment in the orientation of data written, so that it is aligned with the vtk geomerty
+// An amendment in the orientation of data written, so that it is aligned with the vtk geomerty
 	/*for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 	 for (int j = 1; j <= grid.num_ec_axially; j++) {*/
 	for (int j = 1; j <= grid.num_ec_axially; j++) {
@@ -351,19 +378,35 @@ void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check,
 	disp = file_offset + time_offset_in_file
 			+ (grid.rank * write_element_count * sizeof(double));
 	CHECK(
-			MPI_File_write_at(check->cj, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
+	 MPI_File_write_at(check->cj, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
+
+	 CHECK(
+	 MPI_File_write_at(check->vj, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
+	 CHECK(
+	 MPI_File_write_at(check->Ij, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
+	 CHECK(
+	 MPI_File_write_at(check->sj, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
+	 CHECK(
+	 MPI_File_write_at(check->cpCj, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
+	 CHECK(
+	 MPI_File_write_at(check->cpVj, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
+	 CHECK(
+	 MPI_File_write_at(check->cpIj, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
+	/*
+	MPI_File_set_view(check->cj, disp, MPI_DOUBLE, MPI_DOUBLE, "native",
+			MPI_INFO_NULL);
+	MPI_File_set_view(check->vj, disp, MPI_DOUBLE, MPI_DOUBLE, "native",
+			MPI_INFO_NULL);
+	MPI_File_set_view(check->Ij, disp, MPI_DOUBLE, MPI_DOUBLE, "native",
+			MPI_INFO_NULL);
+
 	CHECK(
-			MPI_File_write_at(check->sj, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
+			MPI_File_iwrite(check->cj,&b1,write_element_count,MPI_DOUBLE, &req_tmp[0]));
 	CHECK(
-			MPI_File_write_at(check->vj, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
+			MPI_File_iwrite(check->vj,&b3,write_element_count,MPI_DOUBLE, &req_tmp[1]));
 	CHECK(
-			MPI_File_write_at(check->Ij, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
-	CHECK(
-			MPI_File_write_at(check->cpCj, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
-	CHECK(
-			MPI_File_write_at(check->cpVj, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
-	CHECK(
-			MPI_File_write_at(check->cpIj, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
+			MPI_File_iwrite(check->Ij,&b4,write_element_count,MPI_DOUBLE, &req_tmp[2]));
+	MPI_Waitall(3, req_tmp, status_tmp);*/
 }
 
 /*******************/
@@ -640,8 +683,8 @@ void dump_coords(grid_parms grid, celltype2** ec, checkpoint_handle* check,
 
 	int offset;
 
-	//offset = grid.rank / grid.n;
-	//disp = (offset * write_element_count * sizeof(double));
+//offset = grid.rank / grid.n;
+//disp = (offset * write_element_count * sizeof(double));
 
 	disp = grid.num_ec_axially * (grid.m - ((grid.rank + 1) / grid.n))
 			* sizeof(double);
@@ -788,12 +831,12 @@ void final_checkpoint(checkpoint_handle *check, grid_parms grid) {
 int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow,
 		double* y, celltype1** smc, celltype2** ec) {
 	/******************************************************************************/
-	/// After when the MPI_IO files have been opened, check whether their current instance is first or did they previously existed.
-	/// This is checked by retrieving the file size of the file recording line number of the the timefile.
-	/// If the file is empty, then it is assumed to be the first instance of simulation (starting from t=0)
-	/// otherwise the linenumber indicates where the last complete result was written in the file and is used as
-	/// an offset to read initial values for the following simulation as well as a displacement for writing/appending new
-	/// data into the file.
+/// After when the MPI_IO files have been opened, check whether their current instance is first or did they previously existed.
+/// This is checked by retrieving the file size of the file recording line number of the the timefile.
+/// If the file is empty, then it is assumed to be the first instance of simulation (starting from t=0)
+/// otherwise the linenumber indicates where the last complete result was written in the file and is used as
+/// an offset to read initial values for the following simulation as well as a displacement for writing/appending new
+/// data into the file.
 	MPI_Offset line_number, file_offset;
 	int line_index, err;
 	check_flag(MPI_File_get_size(check->line_number, &line_number),
@@ -871,13 +914,13 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow,
 /*********************************************************************/
 int read_domain_info(int rank, char* filename, grid_parms* grid) {
 	/*********************************************************************/
-	/// Read data from the domain_info.txt to retrieve  the information related to how the domain is set up.
-	/// All tasks open the same file to read.
-	/// Every task has the same displacement so each start to read data from the same position
-	/// Each task decide the read buffer size to be allocated by looking at the file size of the file opened
-	/// for read operation.
-	/// The data is read and sorted into delimiters and numbers and stored into corresponding place holder,
-	/// domains[][] in the structure grid_parms grid.
+/// Read data from the domain_info.txt to retrieve  the information related to how the domain is set up.
+/// All tasks open the same file to read.
+/// Every task has the same displacement so each start to read data from the same position
+/// Each task decide the read buffer size to be allocated by looking at the file size of the file opened
+/// for read operation.
+/// The data is read and sorted into delimiters and numbers and stored into corresponding place holder,
+/// domains[][] in the structure grid_parms grid.
 	int err;
 	MPI_File data;
 	MPI_Offset file_size, disp;
@@ -913,22 +956,22 @@ int read_domain_info(int rank, char* filename, grid_parms* grid) {
 	grid->domains = (int**) checked_malloc(grid->num_domains * sizeof(int*),
 			"Subdomain information allocation");
 
-	/// second coordinate has following information:
-	/// Element 0: 	Key_val or serial number of the subdomain
-	/// Element 1:	Subdomain Type (2 possibilities and their values)
-	/// 				1. Straight Segment (STRSEG)					(0)
-	/// 				2. Bifurcation	(BIF)							(1)
-	/// Element 2:	Axial extent of processor of current key_val
-	/// Element 3: 	circumferential extent of processors of current key_val
-	/// Element 4:	Parent subdomain key_val of current Key_val.
-	/// Element 5: 	Left Child subdomain key_val of the current Key_val.
-	/// Element 6:   Right Child subdomain key_val of the current Key_val.
-	/// Element 7:   Required number of Endothelial cells axially per node.
-	/// Element 8:   Required number of Smooth muscle cells circumferentially per node.
-	///
-	/// In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left Child is positive or zero, and right Child is negative.
-	/// If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.
-	////
+/// second coordinate has following information:
+/// Element 0: 	Key_val or serial number of the subdomain
+/// Element 1:	Subdomain Type (2 possibilities and their values)
+/// 				1. Straight Segment (STRSEG)					(0)
+/// 				2. Bifurcation	(BIF)							(1)
+/// Element 2:	Axial extent of processor of current key_val
+/// Element 3: 	circumferential extent of processors of current key_val
+/// Element 4:	Parent subdomain key_val of current Key_val.
+/// Element 5: 	Left Child subdomain key_val of the current Key_val.
+/// Element 6:   Right Child subdomain key_val of the current Key_val.
+/// Element 7:   Required number of Endothelial cells axially per node.
+/// Element 8:   Required number of Smooth muscle cells circumferentially per node.
+///
+/// In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left Child is positive or zero, and right Child is negative.
+/// If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.
+////
 	for (int i = 0; i < grid->num_domains; i++) {
 		grid->domains[i] = (int*) checked_malloc(9 * sizeof(int),
 				"Subdomains array elements allocation");
@@ -979,7 +1022,7 @@ void update_elapsed_time(checkpoint_handle* check, grid_parms grid,
 }
 
 void naming_convention(grid_parms* grid) {
-	//Prepare the suffix which indicates my subdomain information and if I am a bifurcation, then also tells about which branch do I belong to
+//Prepare the suffix which indicates my subdomain information and if I am a bifurcation, then also tells about which branch do I belong to
 	int subdomain, branch, err;
 
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -1002,7 +1045,7 @@ int determine_file_offset_for_timing_data(checkpoint_handle* check,
 	MPI_Offset disp;
 	MPI_Status status;
 	char filename[50];
-	//int err = sprintf(filename, "itter_count%s", grid.suffix);
+//int err = sprintf(filename, "itter_count%s", grid.suffix);
 	int file_offset = 0;
 	disp = grid.rank * sizeof(int);
 	/*CHECK(

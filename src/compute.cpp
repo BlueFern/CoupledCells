@@ -240,8 +240,8 @@ int map_solver_to_cells(grid_parms grid, double* y, celltype1** smc,
 				smc[i][j].p[smc_SR] = y[k + ((j - 1) * grid.neq_smc) + smc_SR];
 				smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
 				smc[i][j].p[smc_w] = y[k + ((j - 1) * grid.neq_smc) + smc_w];
-				smc[i][j].p[smc_IP3] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
+				smc[i][j].p[smc_IP3] =y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
+
 			}
 		}
 		break;
@@ -293,11 +293,12 @@ int map_solver_to_cells(grid_parms grid, double* y, celltype1** smc,
 		break;
 	}
 	}
+
 	return (err);
 }
 
 /*******************************************************************************************/
- void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
+void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
 /*******************************************************************************************/
 {
 	///Allocating arrays of appropriate lengths for holding values of ghost cell variable to which the relevant smc[i][j] and ec[i][j] members will point to.
@@ -476,23 +477,37 @@ double agonist_profile(double t, grid_parms grid, int i, int j, double z_coord)
 celltype2** ith_ec_z_coordinate(grid_parms grid, celltype2** ec)
 /**********************************************************************/
 {
-	double array[2 * grid.num_ec_axially];
+	/*	double array[2 * grid.num_ec_axially];
 
-	for (int i = 0; i <= 2 * grid.num_ec_axially; i++) {
+	 for (int i = 0; i <= 2 * grid.num_ec_axially; i++) {
+	 array[i] = grid.my_domain.local_z_end
+	 + (i)
+	 * ((grid.my_domain.local_z_start
+	 - grid.my_domain.local_z_end)
+	 / (2 * grid.num_ec_axially));
+	 }
+
+	 for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+	 int indx = 2 * grid.num_ec_axially - 1;
+	 for (int j = 1; j <= grid.num_ec_axially; j++) {
+	 ec[i][j].z_coord = array[indx];
+	 indx -= 2;
+	 }
+	 }
+	 return (ec);*/
+	double adapted_ec_length = grid.hx_ec;//-(grid.my_domain.local_z_end	- grid.my_domain.local_z_start) / grid.num_ec_axially;
+	double array[grid.num_ec_axially];
+	for (int i = 0; i < grid.num_ec_axially; i++) {
 		array[i] = grid.my_domain.local_z_end
-				+ (i)
-						* ((grid.my_domain.local_z_start
-								- grid.my_domain.local_z_end)
-								/ (2 * grid.num_ec_axially));
+				+ ((double) (i) * adapted_ec_length) + (adapted_ec_length / 2);
 	}
 
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-		int indx = 2 * grid.num_ec_axially - 1;
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
-			ec[i][j].z_coord = array[indx];
-			indx -= 2;
+			ec[i][j].z_coord = array[grid.num_ec_axially - i];
 		}
 	}
+
 	return (ec);
 }
 /**********************************************************************/
@@ -885,8 +900,6 @@ int compute(grid_parms grid, celltype1** smc, celltype2** ec,
 	}
 	coupling(t, y, grid, smc, ec, cpl_cef);
 
-	tsoukias_smc_derivatives(f, grid, smc);
-	koenigsberger_ec_derivatives(t, f, grid, ec);
 	switch (grid.smc_model) {
 	case (TSK): {
 		tsoukias_smc_derivatives(f, grid, smc);
@@ -960,15 +973,13 @@ void process_time_profiling_data(grid_parms grid, double** time_profiler,
 	}
 	if (grid.universal_rank = 1000) {
 		for (int i = 0; i < count; i++) {
-			printf("[%d] %lf\n",i,time_profiler[1][i]);
+			printf("[%d] %lf\n", i, time_profiler[1][i]);
 		}
 	}
 
-
-
-		/*printf("[%d] %2.15lf\t%2.15lf\t%2.15lf\n", grid.universal_rank,
-				processed_data[3][0], processed_data[3][1],
-				processed_data[3][2]);*/
+	/*printf("[%d] %2.15lf\t%2.15lf\t%2.15lf\n", grid.universal_rank,
+	 processed_data[3][0], processed_data[3][1],
+	 processed_data[3][2]);*/
 
 	double *sendarray = (double*) malloc(sendcount * sizeof(double));
 	double *recvarray = (double*) malloc(recvcount * sizeof(double));
@@ -984,7 +995,7 @@ void process_time_profiling_data(grid_parms grid, double** time_profiler,
 		fw = fopen("time_profile_data.txt", "w+");
 		for (int i = 0; i < grid.numtasks; i++) {
 			fprintf(fw, "%d %lf %lf %lf\n", i, recvarray[i * sendcount],
-					recvarray[i * sendcount + 1], recvarray[i * sendcount+ 2]);
+					recvarray[i * sendcount + 1], recvarray[i * sendcount + 2]);
 		}
 		fclose(fw);
 	}

@@ -1,5 +1,5 @@
 CC=mpixlcxx
-CFLAGS=  
+CFLAGS= -g
 OMP= 
 LIBS=
 cppfiles = $(shell ls *.cpp)

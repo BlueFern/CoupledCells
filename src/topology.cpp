@@ -27,16 +27,16 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains){
 	}
 
     int a;
-    for (int i = 0; i < num_subdomains; i++)
+    for (int i = 0; i < num_subdomains; i++)	/// if the subdomain type is Straight segment
 	{
 	if ((domains[i][1] == 0) || (domains[i][1] == 2)
 		|| (domains[i][3] == 3))
 	    {
-	    a = domains[i][2] * domains[i][3];
+	    a = domains[i][2] * domains[i][3];		///total number of tasks mapping to the straight segment are m x n
 	    }
 	else if (domains[i][1] == 1)
 	    {
-	    a = 3 * domains[i][2] * domains[i][3];
+	    a = 3 * domains[i][2] * domains[i][3]; ///total number of tasks mapping to the bifurcation are 3 x m x n
 	    }
 	//setting up the offset bit
 	if (i == 0)
@@ -230,10 +230,10 @@ grid_parms set_geometry_parameters(grid_parms grid){
 
 		for (int i = 0; i < grid.num_domains; i++) {
 		for (int j = 0; j < 9; j++) {
-			grid.num_ec_axially = grid.domains[i][8] * 1;
-			grid.num_smc_axially = grid.domains[i][8] * 13;
-			grid.num_ec_circumferentially = grid.domains[i][7] * 5;
-			grid.num_smc_circumferentially = grid.domains[i][7] * 1;
+			grid.num_ec_axially = grid.domains[i][7] * 1;
+			grid.num_smc_axially = grid.num_ec_axially * 13;
+			grid.num_smc_circumferentially = grid.domains[i][8] * 1;
+			grid.num_ec_circumferentially = grid.num_smc_circumferentially * 5;
 		}
 	}
 

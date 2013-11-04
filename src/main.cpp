@@ -36,10 +36,14 @@ int main(int argc, char* argv[]) {
 	MPI_Status stats[8];
 	///Initialize MPI
 	MPI_Init(&argc, &argv);
-	
+
 	elps_t.t_old = MPI_Wtime();
 
 	grid.universe = MPI_COMM_WORLD;
+
+
+//Read command line input
+
 
 //Reveal information of myself and size of MPI_COMM_WORLD
 	check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank),
@@ -55,18 +59,18 @@ int main(int argc, char* argv[]) {
 	grid = make_subdomains(grid, grid.num_domains, grid.domains);
 
 ///Time variables
-	double tfinal = 10.00;
+	double tfinal = 50.00;
 	double interval = 1e-2;
 //File written every 1 second
-	int file_write_per_unit_time = 1;//int(1/interval);
+	int file_write_per_unit_time = 10*int(1/interval);
 	grid.NO_path = 0;
 	grid.cGMP_path = 0;
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.1;
 	grid.min_jplc = 0.27;
-	grid.max_jplc = 1.35e-3;//1e-3;
-	grid.gradient = 0.09e3;//0.325e3;
+	grid.max_jplc = 1.35e-3;	//1e-3;
+	grid.gradient = 0.09e3;	//0.325e3;
 	grid.stimulus_onset_time = 99.00;
 
 	grid = set_geometry_parameters(grid);
@@ -201,7 +205,8 @@ int main(int argc, char* argv[]) {
 	sendbuf[UP1] = (double*) checked_malloc(
 			grid.num_elements_send_up * sizeof(double),
 			"sendbuf[UP1] dimension 2");
-
+	if(grid.universal_rank ==10)
+		printf("grid.num_elements_send_up = %d\nextent_s = %d, extent_e = %d",grid.num_elements_send_up,extent_s,extent_e);
 	sendbuf[UP1][0] = (double) (1); //Start of the 1st segment of SMC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[UP1][1] = (double) (extent_s); //End of the 1st segment of SMC array in UP direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[UP1][2] = (double) (1); //Start of the 1st segment of EC array in UP direction (circumferential direction) to be sent to neighbouring processor
@@ -406,30 +411,25 @@ int main(int argc, char* argv[]) {
 	}
 	dump_rank_info(check, cpl_cef, grid);
 	Total_cells_in_computational_domain(grid);
-    update_elapsed_time(check,grid,&elps_t);
-    FILE* logptr;char name[50];
-    sprintf(name,"logptr_%d",grid.universal_rank);
-    logptr=fopen(name,"w+");
-    print_recv_buffer(logptr,grid,recvbuf);
-    fprintf(logptr,"_________________________________\n");
-	communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
-    print_recv_buffer(logptr,grid,recvbuf);
-    fclose(logptr);
-/*
-#ifdef CVODE
-	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
-#endif
-#ifndef CVODE
-	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres,
-			file_write_per_unit_time, line_number, check);
-//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
-#endif
-*/
-	if (grid.rank==0){
+	update_elapsed_time(check, grid, &elps_t);
+
+
+	 #ifdef CVODE
+	 cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
+	 #endif
+	 #ifndef CVODE
+	 rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres,
+	 file_write_per_unit_time, line_number, check);
+	 //rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
+	 #endif
+
+	if (grid.rank == 0) {
 		jplc_plot_data(grid, check);
 	}
-	update_elapsed_time(check,grid,&elps_t);
-	final_checkpoint(check,grid);
+	update_elapsed_time(check, grid, &elps_t);
+	final_checkpoint(check, grid);
+
+//	fclose(grid.logptr);
 	MPI_Finalize();
 } // end main()
 

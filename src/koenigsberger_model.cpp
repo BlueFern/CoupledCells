@@ -19,22 +19,11 @@ void Initialize_koeingsberger_smc(grid_parms grid, double* y, celltype1** smc)
 				k = ((i - 1) * grid.neq_smc_axially);
 			else if (i == 1)
 				k = 0;
-			/*y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.01;
-			 y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.01;
-			 y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.01;
-			 y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.01;
-			 y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.01;*/
-
-			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = (double)(grid.universal_rank)+(double) (i) * 1e-1
-					+ (double) (j) * 1e-4 + (smc_Ca+1) * 1e-7;
-			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = (double)(grid.universal_rank)+(double) (i) * 1e-1
-					+ (double) (j) * 1e-4 + (smc_SR+1) * 1e-7;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = (double)(grid.universal_rank)+(double) (i) * 1e-1
-					+ (double) (j) * 1e-4 + (smc_Vm+1) * 1e-7;
-			y[k + ((j - 1) * grid.neq_smc) + smc_w] = (double)(grid.universal_rank)+(double) (i) * 1e-1
-					+ (double) (j) * 1e-4 + (smc_w+1) * 1e-7;
-			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = (double)(grid.universal_rank)+(double) (i) * 1e-1
-					+ (double) (j) * 1e-4 + (smc_IP3+1) * 1e-7;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 1e-2;
+			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 1e-2;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 1e-2;
+			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 1e-3;
+			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.00;
 
 		}
 	}
@@ -73,15 +62,10 @@ void Initialize_koeingsberger_ec(grid_parms grid, double* y, celltype2** ec)
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
 				k = offset + 0;
-			/*y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.01;*/
-
-			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = -0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = -0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -0.01;
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = -0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 1e-2;
+			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 1e-2;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 1e-2;
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.0;
 		}
 	}
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells);
@@ -178,7 +162,7 @@ void koenigsberger_smc_derivatives(double* f, grid_parms grid,
 					- smc[i][j].A[J_SERCA] + smc[i][j].A[J_CICR]
 					- smc[i][j].A[J_Extrusion] + smc[i][j].A[J_Leak]
 					- smc[i][j].A[J_VOCC] + smc[i][j].A[J_Na_Ca]
-					+ smc[i][j].B[cpl_Ca] + smc[i][j].C[cpl_Ca];
+			/*+ smc[i][j].B[cpl_Ca] + smc[i][j].C[cpl_Ca]*/;
 
 			f[k + ((j - 1) * grid.neq_smc) + smc_SR] = smc[i][j].A[J_SERCA]
 					- smc[i][j].A[J_CICR] - smc[i][j].A[J_Leak];
@@ -186,14 +170,15 @@ void koenigsberger_smc_derivatives(double* f, grid_parms grid,
 			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = gama
 					* (-smc[i][j].A[J_Na_K] - smc[i][j].A[J_Cl]
 							- (2 * smc[i][j].A[J_VOCC]) - smc[i][j].A[J_Na_Ca]
-							- smc[i][j].A[J_K]) + smc[i][j].B[cpl_Vm]
-					+ smc[i][j].C[cpl_Vm];
+							- smc[i][j].A[J_K]) /*+ smc[i][j].B[cpl_Vm]
+					 + smc[i][j].C[cpl_Vm]*/;
 
 			f[k + ((j - 1) * grid.neq_smc) + smc_w] = lambda
 					* (smc[i][j].A[K_activation] - smc[i][j].p[smc_w]);
 
-			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = -smc[i][j].A[J_IP3_deg]
-					+ smc[i][j].B[cpl_IP3] + smc[i][j].C[cpl_IP3];
+			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = grid.uniform_jplc
+					- smc[i][j].A[J_IP3_deg]
+					/*+ smc[i][j].B[cpl_IP3] + smc[i][j].C[cpl_IP3]*/;
 		}
 	}
 }
@@ -282,19 +267,18 @@ void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid,
 					- ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR]
 					- ec[i][j].A[J_Extrusion] + ec[i][j].A[J_Leak]
 					+ ec[i][j].A[J_NSC] + ec[i][j].A[J_trivial_Ca]
-					+ ec[i][j].B[cpl_Ca] + ec[i][j].C[cpl_Ca];
+					/*+ ec[i][j].B[cpl_Ca] + ec[i][j].C[cpl_Ca]*/;
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_SR] = ec[i][j].A[J_SERCA]
 					- ec[i][j].A[J_CICR] - ec[i][j].A[J_Leak];
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] = ((-1 / Cmj)
 					* (ec[i][j].A[J_Ktot] + ec[i][j].A[J_Residual]))
-					+ ec[i][j].B[cpl_Vm] + ec[i][j].C[cpl_Vm];
+			/*+ ec[i][j].B[cpl_Vm] + ec[i][j].C[cpl_Vm]*/;
 
-			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] = ec[i][j].JPLC
-					- ec[i][j].A[J_IP3_deg] + ec[i][j].B[cpl_IP3]
-					+ ec[i][j].C[cpl_IP3];
-
+			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] = /*ec[i][j].JPLC*/0.1
+					- ec[i][j].A[J_IP3_deg] /*+ ec[i][j].B[cpl_IP3]
+					 + ec[i][j].C[cpl_IP3]*/;
 		}
 	}
 }
