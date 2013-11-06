@@ -94,6 +94,7 @@ struct glb_domn_inf {
 ///type is BIF
 
 typedef struct {
+	double tfinal;
 	///General infomation on cell geometry and the geometric primitive constructed.
 	double hx_smc, hx_ec, hy_smc, hy_ec, requested_length, requested_diameter,
 			corrected_length, corrected_diameter, new_circ;

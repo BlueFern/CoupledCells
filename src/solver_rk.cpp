@@ -22,8 +22,8 @@ extern time_stamps t_stamp;
 ///***************************************************************************************/
 void computeDerivatives(double t, double y[], double f[]) {
 
-	//compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
-	compute(grid, smc, ec, cpl_cef, t, y, f);
+	compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
+	//compute(grid, smc, ec, cpl_cef, t, y, f);
 	t_stamp.computeDerivatives_call_counter += 1;
 
 }    //end of computeDerivatives()
@@ -46,11 +46,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y,
 	rksuite.setup(total, tnow, y, tend, TOL, thres, method, "CT", false, 0.0,
 			false);
 	communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
-	if (grid.universal_rank==0){
-		grid.logptr = fopen("logfile.txt","w+");
-		print_domains(grid.logptr, grid, smc,ec);
-		fclose(grid.logptr);
-	}
+
 	//computeDerivatives(tnow, y, yp);
 	MPI_Barrier(grid.universe);
 	int file_offset_for_timing_data = determine_file_offset_for_timing_data(
@@ -111,7 +107,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y,
 		t_stamp.write_t2 = MPI_Wtime();
 		t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;
 
-		//checkpoint_timing_data(grid, check, tnow, t_stamp, count,	file_offset_for_timing_data);
+		checkpoint_timing_data(grid, check, tnow, t_stamp, count, file_offset_for_timing_data);
 		initialize_t_stamp(&t_stamp);
 		count++;
 		tend += interval;

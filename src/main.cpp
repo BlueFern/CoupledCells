@@ -41,28 +41,45 @@ int main(int argc, char* argv[]) {
 
 	grid.universe = MPI_COMM_WORLD;
 
-
-//Read command line input
-
-
 //Reveal information of myself and size of MPI_COMM_WORLD
 	check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank),
 			"error Comm_rank");
 	check_flag(MPI_Comm_size(grid.universe, &grid.numtasks), "error Comm_size");
 
 	char filename[50];
-	int error = sprintf(filename, "domain_info");
+	int error;
 
-//Read domain configuration from input file domain_info.txt
+	///Time variables
+	double tfinal = 1e-2;
+	double interval = 1e-2;
+	double data_writing_frequency = 10.00;
+	//Read command line input
+	// t - T_END for the simulation
+	// w - A number deciding how frequent the data should be recorded, default is every 10 seconds
+	// i - Time interval between two steps. Default is 1e-2
+	if (argc > 1) {
+		for (int i = 0; i < argc; i++) {
+			if (argv[i][0] == '-') {
+				if (argv[i][1] == 'f') {
+					sprintf(filename, "%s", argv[i + 1]);
+				} else if (argv[i][1] == 't') {
+					tfinal = atof(argv[i + 1]);
+				} else if (argv[i][1] == 'w') {
+					data_writing_frequency = atof(argv[i + 1]);
+				} else if (argv[i][1] == 'i') {
+					interval = atof(argv[i + 1]);
+				}
+			}
+		}
+	}
+	//Read domain configuration from input file domain_info.txt
 	error = read_domain_info(grid.universal_rank, filename, &grid);
-//make subdomains according to the information read from domain_info.txt
+	//make subdomains according to the information read from domain_info.txt
 	grid = make_subdomains(grid, grid.num_domains, grid.domains);
 
-///Time variables
-	double tfinal = 50.00;
-	double interval = 1e-2;
 //File written every 1 second
-	int file_write_per_unit_time = 10*int(1/interval);
+	int file_write_per_unit_time = (int) (data_writing_frequency
+			* int(1 / interval));
 	grid.NO_path = 0;
 	grid.cGMP_path = 0;
 	grid.smc_model = KNBGR;
@@ -83,7 +100,7 @@ int main(int argc, char* argv[]) {
 	grid = update_global_subdomain_information(grid, grid.num_domains,
 			grid.domains);
 	naming_convention(&grid);
-	///Initialize checkpoint routine which opens files
+///Initialize checkpoint routine which opens files
 	checkpoint_handle *check = initialise_checkpoint(grid);
 
 ///Now allocate memory space for the structures represegird.nting the cells and the various members of those structures.
@@ -120,10 +137,10 @@ int main(int argc, char* argv[]) {
 						* sizeof(celltype2), "ec column dimension");
 	}
 
-	///Memory allocation for state vector, the single cell evaluation placeholders (The RHS of the ODEs for each cell) and coupling fluxes is implemented in this section.
-	///In ghost cells, only the state vector array for each type of cells exists including all other cells.
-	///The memory is allocated for all the cells except the ghost cells, hence the ranges 1 to grid.num_ec_circumferentially(inclusive).
-	///SMC domain
+///Memory allocation for state vector, the single cell evaluation placeholders (The RHS of the ODEs for each cell) and coupling fluxes is implemented in this section.
+///In ghost cells, only the state vector array for each type of cells exists including all other cells.
+///The memory is allocated for all the cells except the ghost cells, hence the ranges 1 to grid.num_ec_circumferentially(inclusive).
+///SMC domain
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells);
 			i++) {
 		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells);
@@ -143,7 +160,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	///EC domain
+///EC domain
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells);
 			i++) {
 		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++) {
@@ -161,43 +178,43 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	///Allocating memory space for coupling data to be sent and received by MPI communication routines.
+///Allocating memory space for coupling data to be sent and received by MPI communication routines.
 
-	///sendbuf and recvbuf are 2D arrays having up,down,left and right directions as their first dimension.
-	///Each dimension is broken down into two segments, e.g. up1,up2,down1 & down2,etc..
-	///The length of the second dimension is equal to half the number of cells for which the information is to be sent and received.
-	///Thus each communicating pair will exchange data twice to get the full lenght.
+///sendbuf and recvbuf are 2D arrays having up,down,left and right directions as their first dimension.
+///Each dimension is broken down into two segments, e.g. up1,up2,down1 & down2,etc..
+///The length of the second dimension is equal to half the number of cells for which the information is to be sent and received.
+///Thus each communicating pair will exchange data twice to get the full lenght.
 
 	sendbuf = (double**) checked_malloc(8 * sizeof(double*),
 			"sendbuf dimension 1");
 	recvbuf = (double**) checked_malloc(8 * sizeof(double*),
 			"recvbuf dimension 1");
 
-	///Each processor now allocates the memory for send and recv buffers those will hold the coupling information.
-	///Since sendbuf must contain the information of number of SMCs and ECs being sent in the directions,
-	///the first two elements contain the total count of SMCs located on the rank in the relevant dimension (circumferential or axial) and the count of SMCs for which
-	///information is being sent, respectively.
-	///The next two elements contain the same information for ECs.
+///Each processor now allocates the memory for send and recv buffers those will hold the coupling information.
+///Since sendbuf must contain the information of number of SMCs and ECs being sent in the directions,
+///the first two elements contain the total count of SMCs located on the rank in the relevant dimension (circumferential or axial) and the count of SMCs for which
+///information is being sent, respectively.
+///The next two elements contain the same information for ECs.
 
 	int extent_s, extent_e;	///Variables to calculate the length of the prospective buffer based on number of cell in either orientations
 							///(circumferential or axial).
 
 	grid.added_info_in_send_buf = 4;///Number of elements containing additional information at the beginning of the send buffer.
 	int seg_config_s, seg_config_e;	///Integers to decided whether the row or column being sent is overlapping or exactly divisible into two halves.
-	/// data to send to the neighbour in UP1 direction
+/// data to send to the neighbour in UP1 direction
 	extent_s = (int) (ceil((double) (grid.num_smc_circumferentially) / 2));
 	extent_e = (int) (ceil((double) (grid.num_ec_circumferentially) / 2));
 
-	/// The seg_config variables are to recording the configuration of the split of the buffering in each direction.
-	/// If the total number of cells on a face (UP, DOWN, LEFT or RIGHT) are EVEN (i.e. seg_congif=0), the split will be non-overlapping
-	/// (eg. if total SMCs are 26 in UP direction, UP1 buffer will send 13 and UP2 will send the other 13 to corresponding nbrs.
-	/// If the total number of cells is ODD (i.e. seg_congif=1), then the split will be over lapping.
-	/// (eg. if total SMCs are 13 (or any multiple of 13) UP1 will send elements from 0 - 6 and UP2 will send 6 - 12  to corresponding nbrs.
-	/// These variables are used in send and recv buffers update before and after the MPI-communication routine is called.
+/// The seg_config variables are to recording the configuration of the split of the buffering in each direction.
+/// If the total number of cells on a face (UP, DOWN, LEFT or RIGHT) are EVEN (i.e. seg_congif=0), the split will be non-overlapping
+/// (eg. if total SMCs are 26 in UP direction, UP1 buffer will send 13 and UP2 will send the other 13 to corresponding nbrs.
+/// If the total number of cells is ODD (i.e. seg_congif=1), then the split will be over lapping.
+/// (eg. if total SMCs are 13 (or any multiple of 13) UP1 will send elements from 0 - 6 and UP2 will send 6 - 12  to corresponding nbrs.
+/// These variables are used in send and recv buffers update before and after the MPI-communication routine is called.
 	seg_config_s = grid.num_smc_circumferentially % 2;
 	seg_config_e = grid.num_ec_circumferentially % 2;
 
-	///Recording the number of elements in Send buffer in Up direction (UP1 or UP2) for use in update routine as count of elements.
+///Recording the number of elements in Send buffer in Up direction (UP1 or UP2) for use in update routine as count of elements.
 	grid.num_elements_send_up = grid.added_info_in_send_buf
 			+ (grid.num_coupling_species_smc * extent_s
 					+ grid.num_coupling_species_ec * extent_e);
@@ -205,8 +222,9 @@ int main(int argc, char* argv[]) {
 	sendbuf[UP1] = (double*) checked_malloc(
 			grid.num_elements_send_up * sizeof(double),
 			"sendbuf[UP1] dimension 2");
-	if(grid.universal_rank ==10)
-		printf("grid.num_elements_send_up = %d\nextent_s = %d, extent_e = %d",grid.num_elements_send_up,extent_s,extent_e);
+	if (grid.universal_rank == 10)
+		printf("grid.num_elements_send_up = %d\nextent_s = %d, extent_e = %d",
+				grid.num_elements_send_up, extent_s, extent_e);
 	sendbuf[UP1][0] = (double) (1); //Start of the 1st segment of SMC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[UP1][1] = (double) (extent_s); //End of the 1st segment of SMC array in UP direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[UP1][2] = (double) (1); //Start of the 1st segment of EC array in UP direction (circumferential direction) to be sent to neighbouring processor
@@ -230,8 +248,8 @@ int main(int argc, char* argv[]) {
 	}
 	sendbuf[UP2][3] = (double) (grid.num_ec_circumferentially); //End of the 2nd segment of EC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
 
-	/// data to send to the neighbour in DOWN direction
-	///Recording the number of elements in Send buffer in DOWN direction (DOWN1 or DOWN2) for use in update routine as count of elements.
+/// data to send to the neighbour in DOWN direction
+///Recording the number of elements in Send buffer in DOWN direction (DOWN1 or DOWN2) for use in update routine as count of elements.
 	grid.num_elements_send_down = grid.added_info_in_send_buf
 			+ (grid.num_coupling_species_smc * extent_s
 					+ grid.num_coupling_species_ec * extent_e);
@@ -262,13 +280,13 @@ int main(int argc, char* argv[]) {
 	}
 	sendbuf[DOWN2][3] = (double) (grid.num_ec_circumferentially); //End of the 2nd segment of EC array in  in DOWN direction (circumferential direction) to be sent to neighbouring processor
 
-	/// data to send to the neighbour in LEFT direction
+/// data to send to the neighbour in LEFT direction
 	extent_s = (int) (ceil((double) (grid.num_smc_axially) / 2));
 	extent_e = (int) (ceil((double) (grid.num_ec_axially) / 2));
 	seg_config_s = grid.num_smc_axially % 2;
 	seg_config_e = grid.num_ec_axially % 2;
 
-	///Recording the number of elements in Send buffer in Left direction (LEFT1 or LEFT2) for use in update routine as count of elements.
+///Recording the number of elements in Send buffer in Left direction (LEFT1 or LEFT2) for use in update routine as count of elements.
 	grid.num_elements_send_left = grid.added_info_in_send_buf
 			+ (grid.num_coupling_species_smc * extent_s
 					+ grid.num_coupling_species_ec * extent_e);
@@ -296,9 +314,9 @@ int main(int argc, char* argv[]) {
 	}
 	sendbuf[LEFT2][3] = (double) (grid.num_ec_axially); //END of the 2nd segment of EC array in LEFT direction (circumferential direction) to be sent to neighbouring processor
 
-	/// data to send to the neighbour in RIGHT direction
+/// data to send to the neighbour in RIGHT direction
 
-	///Recording the number of elements in Send buffer in RIGHT direction (RIGHT1 or RIGHT2) for use in update routine as count of elements.
+///Recording the number of elements in Send buffer in RIGHT direction (RIGHT1 or RIGHT2) for use in update routine as count of elements.
 	grid.num_elements_send_right = grid.added_info_in_send_buf
 			+ (grid.num_coupling_species_smc * extent_s
 					+ grid.num_coupling_species_ec * extent_e);
@@ -327,11 +345,11 @@ int main(int argc, char* argv[]) {
 	}
 	sendbuf[RIGHT2][3] = (double) (grid.num_ec_axially); //END of the 2nd segment of EC array in RIGHT direction (circumferential direction) to be sent to neighbouring processor
 
-	///Call communication to the number of elements to be recieved by neighbours and allocate memory of recvbuf for each direction accordingly.
+///Call communication to the number of elements to be recieved by neighbours and allocate memory of recvbuf for each direction accordingly.
 	grid = communicate_num_recv_elements_to_nbrs(grid);
-	///memory allocation
+///memory allocation
 
-	/// data to receive from the neighbour in UP direction
+/// data to receive from the neighbour in UP direction
 	recvbuf[UP1] = (double*) checked_malloc(
 			grid.num_elements_recv_up * sizeof(double),
 			"recvbuf[UP1] dimension 2");
@@ -339,7 +357,7 @@ int main(int argc, char* argv[]) {
 			grid.num_elements_recv_up * sizeof(double),
 			"recvbuf[UP2] dimension 2");
 
-	/// data to recv from the neighbour in DOWN direction
+/// data to recv from the neighbour in DOWN direction
 	recvbuf[DOWN1] = (double*) checked_malloc(
 			grid.num_elements_recv_down * sizeof(double),
 			"recvbuf[DOWN1] dimension 2");
@@ -347,7 +365,7 @@ int main(int argc, char* argv[]) {
 			grid.num_elements_recv_down * sizeof(double),
 			"recvbuf[DOWN2] dimension 2");
 
-	/// data to receive from the neighbour in LEFT direction
+/// data to receive from the neighbour in LEFT direction
 	recvbuf[LEFT1] = (double*) checked_malloc(
 			grid.num_elements_recv_left * sizeof(double),
 			"recvbuf[LEFT1] dimension 2");
@@ -355,7 +373,7 @@ int main(int argc, char* argv[]) {
 			grid.num_elements_recv_left * sizeof(double),
 			"recvbuf[LEFT2] dimension 2");
 
-	/// data to receive from the neighbour in RIGHT direction
+/// data to receive from the neighbour in RIGHT direction
 	recvbuf[RIGHT1] = (double*) checked_malloc(
 			grid.num_elements_recv_right * sizeof(double),
 			"recvbuf[RIGHT1] dimension 2");
@@ -368,20 +386,20 @@ int main(int argc, char* argv[]) {
 			+ grid.neq_ec
 					* (grid.num_ec_axially * grid.num_ec_circumferentially);
 
-	///Setup output streams to write data in files. Each node opens an independent set of files and write various state variables into it.
+///Setup output streams to write data in files. Each node opens an independent set of files and write various state variables into it.
 //	checkpoint_handle *check = initialise_checkpoint(myRank);
 
-	///Setting up the solver
+///Setting up the solver
 
 	double tnow = 0.0;
-	//Error control variables
+//Error control variables
 	double TOL = 1e-6, absTOL = 1e-7;
 	double * thres = (double*) checked_malloc(grid.NEQ * sizeof(double),
 			"Threshod array for RKSUITE");
 	for (int i = 0; i < grid.NEQ; i++)
 		thres[i] = absTOL;
 
-	//Variables holding new and old values
+//Variables holding new and old values
 #ifdef CVODE
 	N_Vector ny;
 	ny = N_VNew_Serial(grid.NEQ);
@@ -393,7 +411,7 @@ int main(int argc, char* argv[]) {
 	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double),
 			"Solver array y for RKSUITE");
 
-	///Initialize different state variables and coupling data values.
+///Initialize different state variables and coupling data values.
 	int line_number = checkpoint(check, grid, &tnow, y, smc, ec);
 	int err = map_solver_to_cells(grid, y, smc, ec);
 
@@ -413,15 +431,14 @@ int main(int argc, char* argv[]) {
 	Total_cells_in_computational_domain(grid);
 	update_elapsed_time(check, grid, &elps_t);
 
-
-	 #ifdef CVODE
-	 cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
-	 #endif
-	 #ifndef CVODE
-	 rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres,
-	 file_write_per_unit_time, line_number, check);
-	 //rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
-	 #endif
+#ifdef CVODE
+	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
+#endif
+#ifndef CVODE
+	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres,
+			file_write_per_unit_time, line_number, check);
+//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
+#endif
 
 	if (grid.rank == 0) {
 		jplc_plot_data(grid, check);
