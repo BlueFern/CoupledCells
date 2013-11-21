@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <math.h>
 #include "macros.h"
 
@@ -299,14 +301,28 @@ void koenigsberger_ec_derivatives(double, double*, grid_parms, celltype2**);
 
 ///Checkpoint functions.
 checkpoint_handle* initialise_checkpoint(grid_parms);
+checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle*,grid_parms, int, char*);
+void dump_coords(grid_parms, celltype2**, checkpoint_handle*, const char*);
+
+void open_common_checkpoint(checkpoint_handle*, grid_parms);
+void open_tsoukias_smc_checkpoint(checkpoint_handle*, grid_parms,char*);
+void open_koenigsberger_smc_checkpoint(checkpoint_handle*,grid_parms , int, char*);
+void open_tsoukias_ec_checkpoint(checkpoint_handle*, grid_parms,char*);
+void open_koenigsberger_ec_checkpoint(checkpoint_handle*,grid_parms , int, char*);
+void open_coupling_data_checkpoint(checkpoint_handle*,grid_parms , int, char*);
+
 void dump_smc(grid_parms, celltype1**, checkpoint_handle*, int, int);
 void dump_ec(grid_parms, celltype2**, checkpoint_handle*, int, int);
 void dump_smc_async(grid_parms, celltype1**, checkpoint_handle*, int);
 void dump_ec_async(grid_parms, celltype2**, checkpoint_handle*, int);
 void dump_JPLC(grid_parms, celltype2**, checkpoint_handle*, const char*);
-void dump_data(checkpoint_handle*, grid_parms, int, double, celltype1**,
-		celltype2**, int);
+void dump_data(checkpoint_handle*, grid_parms, int, double, celltype1**,celltype2**, int);
 void final_checkpoint(checkpoint_handle*, grid_parms);
+void close_common_checkpoints(checkpoint_handle*);
+void close_time_wise_checkpoints(checkpoint_handle*);
+void close_time_profiling_checkpoints(checkpoint_handle*);
+
+
 void dump_rank_info(checkpoint_handle*, conductance, grid_parms);
 void dump_smc_with_ghost_cells(grid_parms, celltype1**, checkpoint_handle*,
 		int);
@@ -363,20 +379,6 @@ grid_parms z_coord_exchange(grid_parms, double theta);
 grid_parms update_global_subdomain_information(grid_parms, int, int**);
 grid_parms my_z_offset(grid_parms grid, double theta);
 celltype2** ith_ec_z_coordinate(grid_parms, celltype2**);
-void dump_coords(grid_parms, celltype2**, checkpoint_handle*, const char*);
-
-void open_common_checkpoint(checkpoint_handle* check, grid_parms grid,
-		char* suffix);
-void open_tsoukias_smc_checkpoint(checkpoint_handle* check, grid_parms grid,
-		char* suffix);
-void open_koenigsberger_smc_checkpoint(checkpoint_handle* check,
-		grid_parms grid, char* suffix);
-void open_tsoukias_ec_checkpoint(checkpoint_handle* check, grid_parms grid,
-		char* suffix);
-void open_koenigsberger_ec_checkpoint(checkpoint_handle* check, grid_parms grid,
-		char* suffix);
-void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid,
-		char* suffix);
 
 double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, celltype1** smc);

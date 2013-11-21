@@ -412,7 +412,9 @@ int main(int argc, char* argv[]) {
 			"Solver array y for RKSUITE");
 
 ///Initialize different state variables and coupling data values.
-	int line_number = checkpoint(check, grid, &tnow, y, smc, ec);
+	int line_number =0;// checkpoint(check, grid, &tnow, y, smc, ec);
+	Initialize_koeingsberger_smc(grid, y, smc);
+	Initialize_koeingsberger_ec(grid, y, ec);
 	int err = map_solver_to_cells(grid, y, smc, ec);
 
 	if (err != 0) {
@@ -443,10 +445,12 @@ int main(int argc, char* argv[]) {
 	if (grid.rank == 0) {
 		jplc_plot_data(grid, check);
 	}
+
 	update_elapsed_time(check, grid, &elps_t);
 	final_checkpoint(check, grid);
 
 //	fclose(grid.logptr);
 	MPI_Finalize();
+	return (0);
 } // end main()
 
