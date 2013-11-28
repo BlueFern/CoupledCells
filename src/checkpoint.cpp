@@ -261,7 +261,7 @@ void dump_rank_info(checkpoint_handle *check, conductance cpl_cef, grid_parms gr
 			grid.NEQ * grid.numtasks, grid.my_domain.z_offset_start, grid.my_domain.z_offset_end, grid.my_domain.local_z_start,
 			grid.my_domain.local_z_end);
 
-	disp = grid.rank * bytes;
+	disp = grid.universal_rank * bytes;
 
 	CHECK( MPI_File_write_at(check->logptr, disp, buffer, bytes, MPI_CHAR, &status));
 
@@ -620,7 +620,7 @@ void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper*
 	MPI_Status status;
 	char filename[50];
 
-	disp = grid.rank * sizeof(double);
+	disp = grid.universal_rank * sizeof(double);
 
 	elps_t->t_new = MPI_Wtime();
 	elps_t->elapsed_time = elps_t->t_new - elps_t->t_old;
@@ -629,14 +629,10 @@ void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper*
 		double time_from_file;
 		///if elapsed time is non-zero then open the elapsed time file and read the previously written data
 		///and updated it with new time; which is new elapsed time + previously written elapsed time.
-		/*	int err = sprintf(filename, "Elasped_time%s", grid.suffix);
-		 CHECK(
-		 MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
-		 */
 
-		check_flag(MPI_File_read_at(check->elapsed_time, disp, &time_from_file, 1, MPI_DOUBLE, &status), "error read elapsed time from file.");
+		//check_flag(MPI_File_read_at(check->elapsed_time, disp, &time_from_file, 1, MPI_DOUBLE, &status), "error read elapsed time from file.");
 
-		time_from_file = time_from_file + elps_t->elapsed_time;
+		time_from_file = /*time_from_file +*/ elps_t->elapsed_time;
 
 		check_flag(MPI_File_write_at(check->elapsed_time, disp, &time_from_file, 1, MPI_DOUBLE, &status), "error read elapsed time from file.");
 	}

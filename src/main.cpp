@@ -425,10 +425,10 @@ int main(int argc, char* argv[]) {
 	int state = couplingParms(CASE, &cpl_cef);
 	ec = ith_ec_z_coordinate(grid, ec);
 
-	if (((grid.rank + 1) % grid.n) == 0) {
+/*	if (((grid.rank + 1) % grid.n) == 0) {
 		dump_coords(grid, ec, check,
 				"recording z coordinate for all ECs in axial direction.\n");
-	}
+	}*/
 	dump_rank_info(check, cpl_cef, grid);
 	Total_cells_in_computational_domain(grid);
 	update_elapsed_time(check, grid, &elps_t);
