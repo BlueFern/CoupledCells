@@ -70,6 +70,8 @@ using namespace std;
 #define		smcCellType			9
 #define		ecCellType			10
 #define		ecCentroidCellType	11
+#define 	ec_ATP_Conc			12
+#define 	ec_WSS_val			13
 
 #define		smcDataLength		0
 #define		ecDataLength		1
@@ -200,6 +202,10 @@ typedef struct {
 	FILE* logptr;
 
 	int num_parameters;			///Number of parameters e.g. JPLC, ATP, WSS etc those are to be used to stimulate the discrete cell models.
+
+	int logfile_displacements;
+	char* logfile_write_buffer;
+	char solution_dir[50],time_profiling_dir[50],config_file[50];
 } grid_parms;
 
 ///Structure to store coupling data received from the neighbouring task.
@@ -283,7 +289,9 @@ typedef struct {
 			map_function_t1, map_function_t2, single_cell_fluxes_t1, single_cell_fluxes_t2, coupling_fluxes_t1, coupling_fluxes_t2, solver_t1,
 			solver_t2, write_t1, write_t2, diff_map_function, diff_single_cell_fluxes, diff_coupling_fluxes, diff_solver, diff_write;
 	int computeDerivatives_call_counter;
-
+	double aggregate_write,aggregate_compute,aggregate_comm;
+	double max_compute,max_comm,max_write, min_compute,min_comm,min_write;
+	int max_compute_index,max_comm_index,max_write_index, min_compute_index,min_comm_index,min_write_index;
 } time_stamps;
 
 typedef struct {
@@ -365,7 +373,7 @@ void close_common_checkpoints(checkpoint_handle*);
 void close_time_wise_checkpoints(checkpoint_handle*);
 void close_time_profiling_checkpoints(checkpoint_handle*);
 
-void dump_rank_info(checkpoint_handle*, conductance, grid_parms);
+void dump_rank_info(checkpoint_handle*, conductance, grid_parms, IO_domain_info*);
 void dump_smc_with_ghost_cells(grid_parms, celltype1**, checkpoint_handle*, int);
 void dump_ec_with_ghost_cells(grid_parms, celltype2**, checkpoint_handle*, int);
 void checkpoint_with_ghost_cells(checkpoint_handle*, grid_parms, double, celltype1**, celltype2**, int);
@@ -416,7 +424,7 @@ double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index, grid
 void Initialize_tsoukias_smc(grid_parms grid, double y[], celltype1** smc);
 int read_domain_info(int, char*, grid_parms*);
 void naming_convention(grid_parms* grid);
-void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper* elps_t);
+void update_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*,IO_domain_info*);
 int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid);
 
 void jplc_plot_data(grid_parms grid, checkpoint_handle* check);
@@ -424,8 +432,8 @@ void Total_cells_in_computational_domain(grid_parms gird);
 
 void Record_timing_data_in_arrays(grid_parms, double, time_stamps, int, double**);
 void process_time_profiling_data(grid_parms, double**, int);
-void min(double* table, int size, double *value, int *index);
-void max(double* table, int size, double *value, int *index);
+void minimum(double* table, int size, double *value, int *index);
+void maximum(double* table, int size, double *value, int *index);
 void average(double* table, int size, double *value);
 
 void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double *y, double* yp, int total, double TOL, double* thres,
@@ -448,3 +456,10 @@ void dump_process_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_
 void dump_agonists_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, celltype2**,char* path);
 void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer* , celltype1**, int);
 void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, celltype2**,int);
+
+void memory_diagnostics(FILE*);
+
+
+void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
+void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info);
+void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);

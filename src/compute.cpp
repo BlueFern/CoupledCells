@@ -967,8 +967,8 @@ void process_time_profiling_data(grid_parms grid, double** time_profiler,
 	double processed_data[11][3]; ///This will hold min max average of each of the 11 arrays.
 	int index, root = 0, sendcount = 3, recvcount = grid.numtasks * sendcount;
 	for (int n = 0; n < 11; n++) {
-		min(time_profiler[n], count, &processed_data[n][0], &index);
-		max(time_profiler[n], count, &processed_data[n][1], &index);
+		minimum(time_profiler[n], count, &processed_data[n][0], &index);
+		maximum(time_profiler[n], count, &processed_data[n][1], &index);
 		average(time_profiler[n], count, &processed_data[n][2]);
 	}
 	if (grid.universal_rank = 1000) {
@@ -1002,7 +1002,7 @@ void process_time_profiling_data(grid_parms grid, double** time_profiler,
 	MPI_Barrier(grid.universe);
 }
 /************************************************************/
-void min(double* table, int size, double *value, int *index) {
+void minimum(double* table, int size, double *value, int *index) {
 	///For evaluating minimum of an array.
 	*value = table[0];
 	for (int i = 0; i < size; i++) {
@@ -1013,11 +1013,11 @@ void min(double* table, int size, double *value, int *index) {
 	}
 }
 /************************************************************/
-void max(double* table, int size, double *value, int *index) {
+void maximum(double* table, int size, double *value, int *index) {
 	///For evaluating maximum of an array.
 	*value = table[0];
 	for (int i = 0; i < size; i++) {
-		if (*value > table[i]) {
+		if (*value < table[i]) {
 			*value = table[i];
 			*index = i;
 		}

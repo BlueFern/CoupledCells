@@ -60,8 +60,12 @@ int main(int argc, char* argv[]) {
 		for (int i = 0; i < argc; i++) {
 			if (argv[i][0] == '-') {
 				if (argv[i][1] == 'f') {
-					sprintf(filename, "%s", argv[i + 1]);
-				} else if (argv[i][1] == 't') {
+					sprintf(grid.config_file, "%s", argv[i + 1]);
+				}else if (argv[i][1] == 'S') {
+					sprintf(grid.solution_dir, "%s", argv[i + 1]);
+				}else if (argv[i][1] == 'T') {
+					sprintf(grid.time_profiling_dir, "%s", argv[i + 1]);
+				}else if (argv[i][1] == 't') {
 					tfinal = atof(argv[i + 1]);
 				} else if (argv[i][1] == 'w') {
 					data_writing_frequency = atof(argv[i + 1]);
@@ -72,7 +76,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	//Read domain configuration from input file domain_info.txt
-	error = read_domain_info(grid.universal_rank, filename, &grid);
+	error = read_domain_info(grid.universal_rank, grid.config_file, &grid);
 	//make subdomains according to the information read from domain_info.txt
 	grid = make_subdomains(grid, grid.num_domains, grid.domains);
 
@@ -348,14 +352,9 @@ int main(int argc, char* argv[]) {
 	}
 
 	int state = couplingParms(CASE, &cpl_cef);
-	ec = ith_ec_z_coordinate(grid, ec);
 
-	if (((grid.rank + 1) % grid.n) == 0) {
-		dump_coords(grid, ec, check, "recording z coordinate for all ECs in axial direction.\n");
-	}
-	dump_rank_info(check, cpl_cef, grid);
+	dump_rank_info(check, cpl_cef, grid, my_IO_domain_info);
 	Total_cells_in_computational_domain(grid);
-	update_elapsed_time(check, grid, &elps_t);
 
 	int ret = retrieve_topology_info("files/configuration_info.txt", &grid, smc, ec);
 	if (grid.rank == 0)
@@ -365,17 +364,13 @@ int main(int argc, char* argv[]) {
 	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
 #endif
 #ifndef CVODE
-	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres,file_write_per_unit_time, line_number, check,"solution",my_IO_domain_info);
+	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, line_number, check, grid.solution_dir,
+			my_IO_domain_info);
 //rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
 #endif
 
-	if (grid.rank == 0) {
-		jplc_plot_data(grid, check);
-	}
-
-	update_elapsed_time(check, grid, &elps_t);
 	final_checkpoint(check, grid);
-
+	update_elapsed_time(check, grid, &elps_t, my_IO_domain_info);
 //	fclose(grid.logptr);
 	MPI_Finalize();
 	return (0);
