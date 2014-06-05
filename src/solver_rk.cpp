@@ -128,7 +128,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				initialise_time_wise_checkpoint(check, grid, write_count, path, my_IO_domain_info);
 				dump_data(check, &grid, line_number, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
 				close_time_wise_checkpoints(check);
-
 			}
 
 			t_stamp.write_t2 = MPI_Wtime();

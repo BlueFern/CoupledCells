@@ -1365,26 +1365,8 @@ void close_common_checkpoints(checkpoint_handle* check) {
 }
 
 void close_time_wise_checkpoints(checkpoint_handle* check) {
-
 	MPI_File_close(&check->smc_data_file);
 	MPI_File_close(&check->ec_data_file);
-	/*MPI_File_close(&check->Time);
-	 MPI_File_close(&check->ci);
-	 MPI_File_close(&check->cj);
-	 MPI_File_close(&check->si);
-	 MPI_File_close(&check->sj);
-	 MPI_File_close(&check->vi);
-	 MPI_File_close(&check->vj);
-	 MPI_File_close(&check->wi);
-	 MPI_File_close(&check->Ii);
-	 MPI_File_close(&check->Ij);
-
-	 MPI_File_close(&check->cpCi);
-	 MPI_File_close(&check->cpCj);
-	 MPI_File_close(&check->cpVi);
-	 MPI_File_close(&check->cpVj);
-	 MPI_File_close(&check->cpIi);
-	 MPI_File_close(&check->cpIj);*/
 
 }
 void close_time_profiling_checkpoints(checkpoint_handle* check) {
@@ -3203,4 +3185,10 @@ void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, 
 	free(buffer);
 	free(disp);
 }
+
+
+
+
+
+
 

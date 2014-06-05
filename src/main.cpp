@@ -369,7 +369,7 @@ int main(int argc, char* argv[]) {
 //rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
 #endif
 
-	final_checkpoint(check, grid);
+	//final_checkpoint(check, grid);
 	update_elapsed_time(check, grid, &elps_t, my_IO_domain_info);
 //	fclose(grid.logptr);
 	MPI_Finalize();
