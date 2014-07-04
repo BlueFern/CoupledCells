@@ -46,6 +46,13 @@ this:
 
     model -f config.txt -S solution -T profiling -t 500.00 -w 1.0 -i 1e-2
 
+Input Files
+-----------
+
+The input files which contain the subdomain geometry mapped to the UV quads/MPI cores shoud be in
+the `files` subdirectory of the current working directory.
+    
+
 *WORK IN PROGRESS*
 
 
