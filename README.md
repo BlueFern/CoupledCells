@@ -38,7 +38,7 @@ directions respectively, the single line in the config file will look like
 this:
 
     0,1,12,112,-1,-1,-1,32,3
-      
+
 * `S` - Location of the generated output files.
 * `T` - Location of the pofiling output files.
 * `w` - Duration of the simulation in seconds.
