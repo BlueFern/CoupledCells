@@ -2,8 +2,8 @@ CC=mpixlcxx
 CFLAGS= -g
 OMP= 
 LIBS=
-cppfiles = $(shell ls *.cpp)
-hfiles = $(shell ls *.h)
+cppfiles = $(shell ls src/*.cpp)
+hfiles = $(shell ls src/*.h)
 ofiles = $(cppfiles:.cpp=.o)
 
 all: $(ofiles)

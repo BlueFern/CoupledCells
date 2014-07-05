@@ -1,0 +1,7 @@
+/.settings/
+/.ptp-sync/
+.cproject
+.project
+*.prefs
+src/.ptp-sync-folder
+
