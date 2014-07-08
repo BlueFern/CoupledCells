@@ -112,7 +112,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		if ((write_once <= 1) && (tnow >= grid.stimulus_onset_time)) {
 			write_once++;
 			if (grid.rank % grid.n == 0) {
-				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
+				//dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}
 		}
 
