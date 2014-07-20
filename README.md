@@ -42,12 +42,12 @@ directions respectively, the config file will look like
 this:
 
     1;
-    0,1,12,56,-1,-1,-1,32,3;
+    0,1,12,112,-1,-1,-1,32,3;
 
 * **S** - Location of the generated output files.
 * **T** - Location of the pofiling output files.
 * **t** - Duration of the simulation in seconds.
-* **w** - How often to write checkpont data in millisecords.
+* **w** - How often to write checkpont data in seconds.
 * **i** - Delta in milliseconds specifying the frequency of exchanging data betwen
   UV quads/MIP processes.
 
