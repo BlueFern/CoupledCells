@@ -31,3 +31,18 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}" FOR
 target_link_libraries(coupledCellsModel ${SUNDIALS_LIBRARIES} ${MPI_LIBRARIES})
 
 find_package(Doxygen)
+
+set(DOXY_INPUT_DIR ${PROJECT_SOURCE_DIR}/src)
+set(DOXY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/doc)
+
+if(DOXYGEN_FOUND)
+	file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/doc)
+	configure_file(
+	${PROJECT_SOURCE_DIR}/Doxyfile.in
+	${PROJECT_BINARY_DIR}/Doxyfile @ONLY)
+	add_custom_target(doxyDoc
+	COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+	COMMENT "Generating API documentation with Doxygen" VERBATIM
+	)
+endif(DOXYGEN_FOUND)
