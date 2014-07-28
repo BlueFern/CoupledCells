@@ -9,13 +9,23 @@ atherosclerotic plaques.
 How to Compile
 --------------
 
-Run *make* in the *src* directory. The generated executable file is called
-*model*.
+The project depends on MPI and Sundials libraries.
+
+Configure the project with CMake and specify the *out-of-source* build
+directory. CMake can be run in GUI or CLI modes. In the current BlueGene/P build
+environment CMake should be launched in the following manner in order to specify
+the MPI compiler and the location of the Sundials library:
+
+    CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
+
+After the the project has been configured, it can be opened and compiled with
+the target IDE, or in the case of Unix Makefile configuration simply run make in
+the build directory. The generated executable is called *coupledCellsModel*.
 
 How to Run
 ----------
 
-    model -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>"
+    coupledCellsModel -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>"
 
  where the command-line have the following meaning:
 
@@ -54,7 +64,7 @@ this:
 For example, to run a simulation for 500 seconds, with checkpoints written every
 second, the arguments would look like this:
 
-    model -f config.txt -S solution -T profiling -t 500.00 -w 1000 -i 1e-2
+    coupledCellsModel -f config.txt -S solution -T profiling -t 500.00 -w 1000 -i 1e-2
 
 Input Files
 -----------
