@@ -44,6 +44,8 @@ set(DOXY_INPUT_DIR ${PROJECT_SOURCE_DIR}/src)
 set(DOXY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/doc/doxygen)
 file(MAKE_DIRECTORY ${DOXY_OUTPUT_DIR})
 
+set(DOXY_API_LINK_TAGS ${DOXY_OUTPUT_DIR}/DoxyLink.tag)
+
 configure_file(
 	${PROJECT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
 	${PROJECT_BINARY_DIR}/Doxyfile
