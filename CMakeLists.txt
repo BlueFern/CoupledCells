@@ -2,6 +2,14 @@ cmake_minimum_required (VERSION 2.6)
 
 project(CoupledCells)
 
+set(PROJECT_NAME "Coupled Arterial Cells")
+set(PROJECT_COPYRIGHT "BlueFern, University of Canterbury, NZ")
+
+set(PROJECT_VERSION_MAJOR 0)
+set(PROJECT_VERSION_MINOR 9)
+set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+set(PROJECT_DESCRIPTION "Large-scale simulation of chemical species transport in coupled arterial cells.")
+
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -33,16 +41,49 @@ target_link_libraries(coupledCellsModel ${SUNDIALS_LIBRARIES} ${MPI_LIBRARIES})
 find_package(Doxygen)
 
 set(DOXY_INPUT_DIR ${PROJECT_SOURCE_DIR}/src)
-set(DOXY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/doc)
+set(DOXY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/doc/doxygen)
+file(MAKE_DIRECTORY ${DOXY_OUTPUT_DIR})
+
+configure_file(
+	${PROJECT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
+	${PROJECT_BINARY_DIR}/Doxyfile
+	@ONLY)
 
 if(DOXYGEN_FOUND)
-	file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/doc)
-	configure_file(
-	${PROJECT_SOURCE_DIR}/Doxyfile.in
-	${PROJECT_BINARY_DIR}/Doxyfile @ONLY)
-	add_custom_target(doxyDoc
+	add_custom_target(doxyDocs
 	COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
 	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-	COMMENT "Generating API documentation with Doxygen" VERBATIM
-	)
+	COMMENT "Generating API documentation with Doxygen" VERBATIM)
 endif(DOXYGEN_FOUND)
+
+find_package(Sphinx)
+
+if(NOT DEFINED SPHINX_THEME)
+	set(SPHINX_THEME default)
+endif()
+if(NOT DEFINED SPHINX_THEME_DIR)
+	set(SPHINX_THEME_DIR)
+endif()
+
+set(SPHINX_BUILD_DIR ${PROJECT_BINARY_DIR}/_sphinxbuild)
+# Muffle a warning about missing directory.
+# Might have to use _static directory in source to copy files here if necessary.
+file(MAKE_DIRECTORY ${SPHINX_BUILD_DIR}/_static)
+set(SPHINX_OUTPUT_DIR ${PROJECT_BINARY_DIR}/doc/sphinx)
+
+configure_file(
+    ${PROJECT_SOURCE_DIR}/doc/sphinx/conf.py.in
+    ${SPHINX_BUILD_DIR}/conf.py
+    @ONLY)
+
+if(SPHINX_FOUND)
+	add_custom_target(sphinxDocs
+    COMMAND ${SPHINX_EXECUTABLE}
+        -q -b html
+        -c ${SPHINX_BUILD_DIR}
+        -d ${SPHINX_BUILD_DIR}
+        ${PROJECT_SOURCE_DIR}/doc/sphinx
+        ${SPHINX_OUTPUT_DIR}
+    COMMENT "Building HTML documentation with Sphinx" VERBATIM)
+endif(SPHINX_FOUND)
+
