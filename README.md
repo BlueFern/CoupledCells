@@ -78,8 +78,10 @@ Project Documentation
 The documentation for the project is *work in progress*. Currently two types of
 documentation can be generated:
  1. Doxygen API documentation (if Doxygen is installed on the system).
- 1. Sphinx high-level project documentation (if Sphinx is installed on the
- system. See [Sphinx documentation pages](http://sphinx-doc.org) for details.)
+ 1. Sphinx high-level project documentation (if Sphinx and Doxylink are
+ installed on the system). See [Sphinx documentation pages](http://sphinx-doc.org)
+ and [Doxylink documentation pages](https://pypi.python.org/pypi/sphinxcontrib-doxylink)
+ for details.
 
 
 
