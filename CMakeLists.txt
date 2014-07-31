@@ -26,17 +26,20 @@ include_directories(${SUNDIALS_INCLUDES})
 file(GLOB HDRs src/*.h)
 file(GLOB SRCs src/*.cpp)
 
+include_directories(${PROJECT_SOURCE_DIR}/contrib)
+add_subdirectory(contrib)
+
 add_executable(coupledCellsModel ${SRCs} ${HDRs})
 
 # Can use either set_target_properties or set.
 # set_target_properties(coupledCellsModel PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}" FORCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 
 # Can use either set_target_properties or set.
 # set_target_properties(coupledCellsModel PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}" FORCE)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 
-target_link_libraries(coupledCellsModel ${SUNDIALS_LIBRARIES} ${MPI_LIBRARIES})
+target_link_libraries(coupledCellsModel ${SUNDIALS_LIBRARIES} ${MPI_LIBRARIES} RKSuite)
 
 find_package(Doxygen)
 
