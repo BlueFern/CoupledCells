@@ -12,6 +12,13 @@ Contents:
    :maxdepth: 2
 
    parameters
+   profiling
+
+TODO List
+=========
+This TODO list is far from completion...
+
+.. todolist::
 
 Indices and tables
 ==================
