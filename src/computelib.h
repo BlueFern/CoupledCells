@@ -459,7 +459,11 @@ void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*
 
 void memory_diagnostics(FILE*);
 
-
 void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
 void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info);
 void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
+
+/**
+ * \brief Catch failed memory allocation.
+ */
+void* checked_malloc(size_t bytes, const char* errmsg);

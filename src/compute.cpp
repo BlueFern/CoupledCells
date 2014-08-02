@@ -3,6 +3,26 @@
 using namespace std;
 time_stamps t_stamp;
 
+/**
+ * Wrapper around malloc to catch failed memory allocation. If allocation fails
+ * MPI_Abort is called.
+ *
+ * \param bytes is the size of requested memory.
+ * \param errmsg is the message produced in the event of failed memory allocation.
+ *
+ * \todo Perhaps the error messages should be printed to stderr.
+ */
+void* checked_malloc(size_t bytes, const char* errmsg) {
+	void *pval = malloc(bytes);
+
+	if (pval == NULL) {
+		fprintf(stdout, "%s", errmsg);
+		MPI_Abort(MPI_COMM_WORLD, 100);
+	}
+
+	return pval;
+}
+
 /*******************************************************************************************/
 int couplingParms(int CASE, conductance* cpl_cef)
 /*******************************************************************************************/
