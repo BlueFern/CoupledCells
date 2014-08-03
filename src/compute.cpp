@@ -795,12 +795,21 @@ double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 	return (y);
 }
 
-/*****************************************************************************/
+/**
+ *
+ * \param t_stamp
+ * \param grid
+ * \param smc
+ * \param ec
+ * \param cpl_cef
+ * \param t
+ * \param y
+ * \param f
+ * \return
+ */
 int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 		celltype1** smc, celltype2** ec, conductance cpl_cef, double t,
 		double* y, double* f) {
-	/*****************************************************************************/
-
 	int err;
 
 	t_stamp->map_function_t1 = MPI_Wtime();
@@ -848,8 +857,8 @@ int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 	t_stamp->diff_coupling_fluxes = t_stamp->diff_coupling_fluxes
 			+ (t_stamp->coupling_fluxes_t2 - t_stamp->coupling_fluxes_t1);
 
-	tsoukias_smc_derivatives(f, grid, smc);
-	koenigsberger_ec_derivatives(t, f, grid, ec);
+	//tsoukias_smc_derivatives(f, grid, smc);
+	//koenigsberger_ec_derivatives(t, f, grid, ec);
 	switch (grid.smc_model) {
 	case (TSK): {
 		tsoukias_smc_derivatives(f, grid, smc);
