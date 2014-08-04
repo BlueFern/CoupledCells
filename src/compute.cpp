@@ -475,9 +475,21 @@ void coupling(double t, double y[], grid_parms grid, celltype1** smc,
 
 }	//end of coupling()
 
-/**************************************************************************************/
+
+/**
+ * Provide a JPLC value for a given position along the axial dimension of the
+ * current domain. The value is provided by a sigmoid function.
+ *
+ * \todo Provide a formula for this equation.
+ *
+ * \param t
+ * \param grid
+ * \param i
+ * \param j
+ * \param axial_coordinate
+ * \return
+ */
 double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coordinate)
-/**************************************************************************************/
 {
 	double JPLC;
 	if (t > grid.stimulus_onset_time) {
