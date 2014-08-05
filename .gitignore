@@ -5,3 +5,5 @@
 *.prefs
 src/.ptp-sync-folder
 
+
+*.pyc

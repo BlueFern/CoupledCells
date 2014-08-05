@@ -74,9 +74,9 @@ int main(int argc, char* argv[]) {
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
-	grid.min_jplc = 0.18;
-	grid.max_jplc = 0.5;	//1e-3;
-	grid.gradient = 0.09e3;	//0.325e3;
+	grid.min_jplc = 0.20;
+	grid.max_jplc = 2.5; // 0.5; //1e-3;
+	grid.gradient = 0.288e3; //0.325e3;
 	grid.stimulus_onset_time = 99.00;
 
 	grid = set_geometry_parameters(grid);
