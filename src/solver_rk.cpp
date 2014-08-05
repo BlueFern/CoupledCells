@@ -135,8 +135,8 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			palce_holder_for_timing_max_min[2][write_count] = t_stamp.diff_write;
 			t_stamp.aggregate_write += t_stamp.diff_write;
 			write_count++;
-			if (my_IO_domain_info->writer_rank == 0)
-				cout << "tnow = " << tnow << endl;
+			// if (my_IO_domain_info->writer_rank == 0)
+			//	cout << "tnow = " << tnow << endl;
 		}		//end itteration
 
 		//checkpoint_timing_data(grid, check, tnow, t_stamp, itteration, file_offset_for_timing_data);

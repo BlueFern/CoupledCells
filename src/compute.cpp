@@ -1012,11 +1012,6 @@ void process_time_profiling_data(grid_parms grid, double** time_profiler,
 		maximum(time_profiler[n], count, &processed_data[n][1], &index);
 		average(time_profiler[n], count, &processed_data[n][2]);
 	}
-	if (grid.universal_rank = 1000) {
-		for (int i = 0; i < count; i++) {
-			printf("[%d] %lf\n", i, time_profiler[1][i]);
-		}
-	}
 
 	/*printf("[%d] %2.15lf\t%2.15lf\t%2.15lf\n", grid.universal_rank,
 	 processed_data[3][0], processed_data[3][1],
