@@ -14,49 +14,60 @@
 #endif
 
 using namespace std;
-#define success		0
-#define	 none		-1
 
-#define local	0
+#define success 0
+#define	none -1
+
+#define local 0
 #define remote 1
 
-#define NUM_DBL_TO_CHAR_BYTES			64			/// When converting double to char to writing via MPI-IO to write in ASCII format
-/// the double is to be truncated to 12 characters including the decimal point
-/// the 13th char is a white space (new line or tab)
+/**
+ * When converting double to char for writing via MPI-IO to write in ASCII format
+ * the double is to be truncated to 12 characters including the decimal point.
+ * The 13th char is a white space (new line or tab).
+ */
+#define NUM_DBL_TO_CHAR_BYTES 64
 
-#define WRITER_COLOR	43
-#define WRITER_KEY		43
-#define COMPUTE_ONLY_COLOR	1
-#define COMPUTE_ONLY_KEY	1
+#define WRITER_COLOR 43
+#define WRITER_KEY 43
+#define COMPUTE_ONLY_COLOR 1
+#define COMPUTE_ONLY_KEY 1
 
-#define UP1    0
-#define UP2		1
-#define DOWN1  2
-#define DOWN2	3
-#define LEFT1	4
-#define LEFT2	5
+#define UP1 0
+#define UP2 1
+#define DOWN1 2
+#define DOWN2 3
+#define LEFT1 4
+#define LEFT2 5
 #define RIGHT1 6
 #define RIGHT2 7
 
-#define UP		0
-#define DOWN 	1
-#define LEFT	2
-#define RIGHT	3
+#define UP 0
+#define DOWN 1
+#define LEFT 2
+#define RIGHT 3
 
-#define STRSEG		0		//a straight segment
-#define BIF			1		//a bifurcation
-#define P 		1		//parent
-#define L 		2		//Left branch
-#define R		3		//Right brach
-/// Macros for use in retrieving mesh topological data from grid.info.
+#define STRSEG 0 ///< A straight segment.
+#define BIF 1 ///< A bifurcation.
+#define P 1 ///< Parent.
+#define L 2 ///< Left branch.
+#define R 3 ///< Right branch.
+
+/**
+ * Macros for use in retrieving mesh topological data from grid_parms.info.
+ * @{ */
 #define 	TOTAL_POINTS		0
 #define		POINTS_m			1
-#define    POINTS_n				2
+#define     POINTS_n			2
 #define		TOTAL_CELLS			3
 #define		CELLS_m				4
 #define		CELLS_n				5
-/// Macros representing mesh types
-#define    ProcessMesh 			0
+/** @} */
+
+/**
+ * Macros representing mesh types.
+ * @{ */
+#define     ProcessMesh 		0
 #define 	smcMesh 			1
 #define		ecMesh 				2
 #define		ecCentroids 		3
@@ -72,45 +83,53 @@ using namespace std;
 #define		ecCentroidCellType	11
 #define 	ec_ATP_Conc			12
 #define 	ec_WSS_val			13
+/** @} */
 
 #define		smcDataLength		0
 #define		ecDataLength		1
 
-
-//#define top		0		//top edge of a subdomain
-//#define	 bottom 1		//bottom edge of a subdomain
-// helper functions for exponentiation to integer powers
+/**
+ * Helper functions for exponentiation to integer powers.
+ * @{ */
 #define P2(x) ((x)*(x))
 #define P3(x) ((x)*(x)*(x))
 #define P4(x) ((x)*(x)*(x)*(x))
+/** @} */
+
+/**
+ * Conductance... What do we say about it?
+ */
 struct conductance {
-	double Vm_hm_smc,	///homocellular membrane potential coupling between SMCs
-			Vm_hm_ec,	///homocellular membrane potential coupling between ECs
-			Ca_hm_smc,			///homocellular Ca coupling between SMCs
-			Ca_hm_ec,			///homocellular Ca coupling between ECs
-			IP3_hm_smc,			///homocellular IP3 coupling between SMCs
-			IP3_hm_ec,			///homocellular IP3 coupling between ECs
-			Vm_ht_smc,			///heterocellular membrane potential coupling between SMCs
-			Vm_ht_ec,			///heterocellular membrane potential coupling between ECs
-			Ca_ht_smc,			///heterocellular Ca coupling between SMCs
-			Ca_ht_ec,			///heterocellular Ca coupling between ECs
-			IP3_ht_smc,			///heterocellular IP3 coupling between SMCs
-			IP3_ht_ec;			///heterocellular IP3 coupling between ECs
+	double Vm_hm_smc,	///< Homocellular membrane potential coupling between SMCs.
+			Vm_hm_ec,	///< Homocellular membrane potential coupling between ECs.
+			Ca_hm_smc,	///< Homocellular Ca coupling between SMCs.
+			Ca_hm_ec,	///< Homocellular Ca coupling between ECs.
+			IP3_hm_smc,	///< Homocellular IP3 coupling between SMCs.
+			IP3_hm_ec,	///< Homocellular IP3 coupling between ECs.
+			Vm_ht_smc,	///< Heterocellular membrane potential coupling between SMCs.
+			Vm_ht_ec,	///< Heterocellular membrane potential coupling between ECs.
+			Ca_ht_smc,	///< Heterocellular Ca coupling between SMCs.
+			Ca_ht_ec,	///< Heterocellular Ca coupling between ECs.
+			IP3_ht_smc,	///< Heterocellular IP3 coupling between SMCs.
+			IP3_ht_ec;	///< Heterocellular IP3 coupling between ECs.
 };
+
 struct node {
-	int domain_type, domain_index,	///am I a bifurcation or a straight segment?
-			domain_start, domain_end,	///These are universal ranks from MPI_COMM_WORLD
-			parent_branch_case_bifurcation,	///if my parent is a bifurcation which branch am I a child of
-			m, n;						///row and columns in my MPI_sub_world
-	char boundary_tag;						///an identifier showing whether I am a rank from top or bottom edge of a subdomain.
-	int half_marker;						///a marker for demarcating the bottom edge of the Left/Right daughter artery
+	int domain_type, ///< Bifurcation or a straight segment.
+	    domain_index,
+	    domain_start, ///< Universal ranks from MPI_COMM_WORLD.
+	    domain_end, ///< Universal ranks from MPI_COMM_WORLD.
+		parent_branch_case_bifurcation,	///< If my parent is a bifurcation which branch am I a child of?
+			m, n; ///< Row and columns in my MPI_sub_world.
+	char boundary_tag; ///< An identifier showing whether I am a rank from top or bottom edge of a subdomain.
+	int half_marker; ///< A marker for demarcating the bottom edge of the Left/Right daughter artery.
 											///exists which couples not to the parent artery but the other daughter segment. This can have following values:
 											/// 1. half coupling to parent
 											/// 2. half coupling to other daughter
 											/// 3. half splitting in the middle with left portion coupling to parent, and right portion of data coupling
 											///    to other daughter segment.
 
-	double d, l;				//diameter and length scales
+	double d, l; ///< Diameter and length scales.
 
 };
 
@@ -135,7 +154,7 @@ struct glb_domn_inf {
 
 typedef struct {
 	double tfinal;
-	///General infomation on cell geometry and the geometric primitive constructed.
+	///General information on cell geometry and the geometric primitive constructed.
 	double hx_smc, hx_ec, hy_smc, hy_ec, requested_length, requested_diameter, corrected_length, corrected_diameter, new_circ;
 	int
 	///Global domain information storage
@@ -323,7 +342,6 @@ typedef struct {
 	int	 *buffer_length,*smc_stat_var_buffer_length,*ec_stat_var_buffer_length, *smc_cpl, *ec_cpl,jplc_buffer_length,atp_buffer_length,wss_buffer_length;
 } data_buffer;
 void check_flag(int, const char*);
-void* checked_malloc(size_t, const char*);
 
 int couplingParms(int CASE, conductance* cpl_cef);
 void Initialize_koeingsberger_smc(grid_parms, double*, celltype1**);

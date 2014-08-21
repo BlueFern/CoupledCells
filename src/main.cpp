@@ -15,31 +15,40 @@ time_keeper elps_t;
 
 int CASE = 1;
 
+/**
+ * The following steps in the ::main function are necessary for setting up
+ * the simulation.
+ */
 int main(int argc, char* argv[]) {
 
-	///Global declaration of request and status update place holders.
-	///Request and Status handles for nonblocking Send and Receive operations, for communicating with each of the four neighbours.
+	/// - Global declaration of request and status update place-holders.
+	/// Request and status handles for nonblocking send and receive operations,
+	/// for communicating with each of the four neighbours.
+
 	MPI_Request reqs[8];
 	MPI_Status stats[8];
-	///Initialize MPI
+
+	/// - Initialise MPI.
 	MPI_Init(&argc, &argv);
 
+	/// \todo What is the time_keeper struct used for?
 	elps_t.t_old = MPI_Wtime();
 
+	/// \todo What is the grid_parms struct used for?
 	grid.universe = MPI_COMM_WORLD;
 
-//Reveal information of myself and size of MPI_COMM_WORLD
+	/// - Reveal information of myself and size of MPI_COMM_WORLD
 	check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank), "error Comm_rank");
 	check_flag(MPI_Comm_size(grid.universe, &grid.numtasks), "error Comm_size");
 
 	char filename[50];
 	int error;
 
-	///Time variables
+	/// Time variables
 	double tfinal = 1e-2;
 	double interval = 1e-2;
 	double data_writing_frequency = 10.00;
-	//Read command line input
+	// Read command line input
 	// t - T_END for the simulation
 	// w - A number deciding how frequent the data should be recorded, default is every 10 seconds
 	// i - Time interval between two steps. Default is 1e-2
@@ -62,7 +71,9 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	}
-	//Read domain configuration from input file domain_info.txt
+
+	/// - Read domain configuration from input file domain_info.txt
+
 	error = read_domain_info(grid.universal_rank, grid.config_file, &grid);
 	//make subdomains according to the information read from domain_info.txt
 	grid = make_subdomains(grid, grid.num_domains, grid.domains);
@@ -99,13 +110,13 @@ int main(int argc, char* argv[]) {
 //Following is an example of a 5x7 grid with added ghost cells on all four sides. the 0s are the actual
 //members of the grid whereas the + are the ghost cells.
 
-// + + + + + + + + +
-// + 0 0 0 0 0 0 0 +
-// + 0 0 0 0 0 0 0 +
-// + 0 0 0 0 0 0 0 +
-// + 0 0 0 0 0 0 0 +
-// + 0 0 0 0 0 0 0 +
-// + + + + + + + + +
+/// + + + + + + + + +
+/// + 0 0 0 0 0 0 0 +
+/// + 0 0 0 0 0 0 0 +
+/// + 0 0 0 0 0 0 0 +
+/// + 0 0 0 0 0 0 0 +
+/// + 0 0 0 0 0 0 0 +
+/// + + + + + + + + +
 
 	smc = (celltype1**) checked_malloc((grid.num_smc_circumferentially + grid.num_ghost_cells) * sizeof(celltype1*), "smc");
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++) {
