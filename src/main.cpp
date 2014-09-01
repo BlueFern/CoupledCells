@@ -110,13 +110,17 @@ int main(int argc, char* argv[]) {
 //Following is an example of a 5x7 grid with added ghost cells on all four sides. the 0s are the actual
 //members of the grid whereas the + are the ghost cells.
 
-/// + + + + + + + + +
-/// + 0 0 0 0 0 0 0 +
-/// + 0 0 0 0 0 0 0 +
-/// + 0 0 0 0 0 0 0 +
-/// + 0 0 0 0 0 0 0 +
-/// + 0 0 0 0 0 0 0 +
-/// + + + + + + + + +
+	/**
+\verbatim
++ + + + + + + + +
++ 0 0 0 0 0 0 0 +
++ 0 0 0 0 0 0 0 +
++ 0 0 0 0 0 0 0 +
++ 0 0 0 0 0 0 0 +
++ 0 0 0 0 0 0 0 +
++ + + + + + + + +
+\endverbatim
+*/
 
 	smc = (celltype1**) checked_malloc((grid.num_smc_circumferentially + grid.num_ghost_cells) * sizeof(celltype1*), "smc");
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++) {
