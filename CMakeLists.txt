@@ -41,7 +41,19 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 
 target_link_libraries(coupledCellsModel ${SUNDIALS_LIBRARIES} ${MPI_LIBRARIES} RKSuite)
 
+
 find_package(Doxygen)
+
+find_Package(Graphviz)
+if(DOXYGEN_DOT_EXECUTABLE)
+	set(HAVE_DOT "YES")
+	set(CALL_GRAPH "YES")
+	set(CALLER_GRAPH "YES")
+else(DOXYGEN_DOT_EXECUTABLE)
+	set(HAVE_DOT "NO")
+	set(CALL_GRAPH "NO")
+	set(CALLER_GRAPH "NO")
+endif(DOXYGEN_DOT_EXECUTABLE)
 
 set(DOXY_INPUT_DIR ${PROJECT_SOURCE_DIR}/src)
 set(DOXY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/doc/doxygen)
