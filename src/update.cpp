@@ -109,7 +109,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 		{
 	/// For recording an error in communication. err can either be MPI_SUCCESS or !MPI_SUCCESS
 	int err;
-	/// 8 MPI variables of types Request and Status are declared. 4 of each are for sending information to 4 neighbours and the other 4 are to retrive the receive operation status.
+	/// 8 MPI variables of types Request and Status are declared. 4 of each are for sending information to 4 neighbours and the other 4 are to retriesve the receive operation status.
 	MPI_Request reqs[16];
 	MPI_Status stats[16];
 

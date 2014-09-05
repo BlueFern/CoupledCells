@@ -22,8 +22,8 @@ extern time_stamps t_stamp;
 ///***************************************************************************************/
 void computeDerivatives(double t, double y[], double f[]) {
 
-	//compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
-	compute(grid, smc, ec, cpl_cef, t, y, f);
+	compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
+	//compute(grid, smc, ec, cpl_cef, t, y, f);
 	t_stamp.computeDerivatives_call_counter += 1;
 
 }    //end of computeDerivatives()
@@ -60,12 +60,13 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			"allocation failed for smc_cpl_buffer_length array in data_buffer structure.");
 	writer_buffer->ec_cpl = (int*) checked_malloc((grid.num_coupling_species_ec) * sizeof(int),
 			"allocation failed for ec_cpl_buffer_length array in data_buffer structure.");
-
+	static_info_of_geometry* static_info = (static_info_of_geometry*) checked_malloc(sizeof(static_info_of_geometry),
+			"allocation for static geometry info failed in rk_CT function.\n");
 	/// Dump MPI task mesh representation into vtk file to menifest task map.
-	gather_tasks_mesh_point_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc, ec);
+	gather_tasks_mesh_point_data_on_writers_ver2(&grid, my_IO_domain_info, writer_buffer, smc, ec);
 	if (grid.rank == 0) {
-		dump_process_data(check, &grid, my_IO_domain_info, writer_buffer, path);
-	}
+	 dump_process_data_ver2(check, &grid, my_IO_domain_info, writer_buffer,static_info, path);
+	 }
 	/// Dump JPLC map on bifurcation into a vtk file.
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
@@ -112,7 +113,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		if ((write_once <= 1) && (tnow >= grid.stimulus_onset_time)) {
 			write_once++;
 			if (grid.rank % grid.n == 0) {
-				//dump_JPLC(grid, ec, check, "Local agonist after t=100s");
+			//	dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}
 		}
 
@@ -135,8 +136,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			palce_holder_for_timing_max_min[2][write_count] = t_stamp.diff_write;
 			t_stamp.aggregate_write += t_stamp.diff_write;
 			write_count++;
-			// if (my_IO_domain_info->writer_rank == 0)
-			//	cout << "tnow = " << tnow << endl;
 		}		//end itteration
 
 		//checkpoint_timing_data(grid, check, tnow, t_stamp, itteration, file_offset_for_timing_data);

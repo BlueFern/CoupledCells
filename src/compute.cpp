@@ -1,27 +1,8 @@
 //#include <omp.h>
 #include "computelib.h"
+
 using namespace std;
 time_stamps t_stamp;
-
-/**
- * Wrapper around malloc to catch failed memory allocation. If allocation fails
- * MPI_Abort is called.
- *
- * \param bytes Size of requested memory.
- * \param errmsg Message produced in the event of failed memory allocation.
- *
- * \todo Perhaps the error messages should be printed to stderr?
- */
-void* checked_malloc(size_t bytes, const char* errmsg) {
-	void *pval = malloc(bytes);
-
-	if (pval == NULL) {
-		fprintf(stdout, "%s", errmsg);
-		MPI_Abort(MPI_COMM_WORLD, 100);
-	}
-
-	return pval;
-}
 
 /*******************************************************************************************/
 int couplingParms(int CASE, conductance* cpl_cef)
@@ -475,21 +456,9 @@ void coupling(double t, double y[], grid_parms grid, celltype1** smc,
 
 }	//end of coupling()
 
-
-/**
- * Provide a JPLC value for a given position along the axial dimension of the
- * current domain. The value is provided by a sigmoid function.
- *
- * \todo Provide a formula for this equation.
- *
- * \param t
- * \param grid
- * \param i
- * \param j
- * \param axial_coordinate
- * \return
- */
+/**************************************************************************************/
 double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coordinate)
+/**************************************************************************************/
 {
 	double JPLC;
 	if (t > grid.stimulus_onset_time) {
@@ -498,7 +467,7 @@ double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coo
 		 (1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
 		 */
 		JPLC = grid.min_jplc
-				+ (grid.max_jplc / (1.0 + exp(-grid.gradient * axial_coordinate)));
+				+ (grid.max_jplc / (1e-3 + exp(-grid.gradient * axial_coordinate)));
 	} else if (t <= grid.stimulus_onset_time) {
 		JPLC = grid.uniform_jplc;
 	}
@@ -807,21 +776,12 @@ double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 	return (y);
 }
 
-/**
- *
- * \param t_stamp
- * \param grid
- * \param smc
- * \param ec
- * \param cpl_cef
- * \param t
- * \param y
- * \param f
- * \return
- */
+/*****************************************************************************/
 int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 		celltype1** smc, celltype2** ec, conductance cpl_cef, double t,
 		double* y, double* f) {
+	/*****************************************************************************/
+
 	int err;
 
 	t_stamp->map_function_t1 = MPI_Wtime();
@@ -869,8 +829,8 @@ int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 	t_stamp->diff_coupling_fluxes = t_stamp->diff_coupling_fluxes
 			+ (t_stamp->coupling_fluxes_t2 - t_stamp->coupling_fluxes_t1);
 
-	//tsoukias_smc_derivatives(f, grid, smc);
-	//koenigsberger_ec_derivatives(t, f, grid, ec);
+	tsoukias_smc_derivatives(f, grid, smc);
+	koenigsberger_ec_derivatives(t, f, grid, ec);
 	switch (grid.smc_model) {
 	case (TSK): {
 		tsoukias_smc_derivatives(f, grid, smc);
@@ -1013,6 +973,7 @@ void process_time_profiling_data(grid_parms grid, double** time_profiler,
 		average(time_profiler[n], count, &processed_data[n][2]);
 	}
 
+
 	/*printf("[%d] %2.15lf\t%2.15lf\t%2.15lf\n", grid.universal_rank,
 	 processed_data[3][0], processed_data[3][1],
 	 processed_data[3][2]);*/
@@ -1068,4 +1029,13 @@ void average(double* table, int size, double *value) {
 		*value += table[i];
 	}
 	*value = *value / (double) (size);
+}
+
+/***********************************************************/
+int sum_array(int num_elements,int* array){
+	int sum=0;
+	for(int i=0; i<num_elements; i++){
+		sum+=array[i];
+	}
+	return (sum);
 }

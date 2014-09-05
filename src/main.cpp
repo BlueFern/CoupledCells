@@ -14,41 +14,46 @@ grid_parms grid;
 time_keeper elps_t;
 
 int CASE = 1;
+///***************************************************************************************/
+///************ checked_malloc(size_t bytes, FILE* errfile, const char* errmsg)*************/
+///***************************************************************************************/
+void* checked_malloc(size_t bytes, const char* errmsg) {
+	void *pval = malloc(bytes);
 
-/**
- * The following steps in the ::main function are necessary for setting up
- * the simulation.
- */
+	if (pval == NULL) {
+		fprintf(stdout, "%s\n", errmsg);
+		//mem_check();
+		MPI_Abort(MPI_COMM_WORLD, 100);
+	}
+
+	return pval;
+}
+
 int main(int argc, char* argv[]) {
 
-	/// - Global declaration of request and status update place-holders.
-	/// Request and status handles for nonblocking send and receive operations,
-	/// for communicating with each of the four neighbours.
-
+	///Global declaration of request and status update place holders.
+	///Request and Status handles for nonblocking Send and Receive operations, for communicating with each of the four neighbours.
 	MPI_Request reqs[8];
 	MPI_Status stats[8];
-
-	/// - Initialise MPI.
+	///Initialize MPI
 	MPI_Init(&argc, &argv);
 
-	/// \todo What is the time_keeper struct used for?
 	elps_t.t_old = MPI_Wtime();
 
-	/// \todo What is the grid_parms struct used for?
 	grid.universe = MPI_COMM_WORLD;
 
-	/// - Reveal information of myself and size of MPI_COMM_WORLD
+//Reveal information of myself and size of MPI_COMM_WORLD
 	check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank), "error Comm_rank");
 	check_flag(MPI_Comm_size(grid.universe, &grid.numtasks), "error Comm_size");
 
 	char filename[50];
 	int error;
 
-	/// Time variables
+	///Time variables
 	double tfinal = 1e-2;
 	double interval = 1e-2;
 	double data_writing_frequency = 10.00;
-	// Read command line input
+	//Read command line input
 	// t - T_END for the simulation
 	// w - A number deciding how frequent the data should be recorded, default is every 10 seconds
 	// i - Time interval between two steps. Default is 1e-2
@@ -71,12 +76,10 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	}
-
-	/// - Read domain configuration from input file domain_info.txt
-
+	//Read domain configuration from input file domain_info.txt
 	error = read_domain_info(grid.universal_rank, grid.config_file, &grid);
 	//make subdomains according to the information read from domain_info.txt
-	grid = make_subdomains(grid, grid.num_domains, grid.domains);
+	make_subdomains(&grid, grid.num_domains, grid.domains);
 
 //File written every 1 second
 	int file_write_per_unit_time = (int) (data_writing_frequency * int(1 / interval));
@@ -85,9 +88,9 @@ int main(int argc, char* argv[]) {
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
-	grid.min_jplc = 0.20;
-	grid.max_jplc = 2.5; // 0.5; //1e-3;
-	grid.gradient = 0.288e3; //0.325e3;
+	grid.min_jplc = 0.18;
+	grid.max_jplc = 0.5;	//1e-3;
+	grid.gradient = 0.09e3;	//0.325e3;
 	grid.stimulus_onset_time = 99.00;
 
 	grid = set_geometry_parameters(grid);
@@ -100,6 +103,7 @@ int main(int argc, char* argv[]) {
 	grid = update_global_subdomain_information(grid, grid.num_domains, grid.domains);
 	naming_convention(&grid);
 
+
 ///Initialize checkpoint routine which opens files
 	checkpoint_handle *check = initialise_checkpoint(grid);
 /// Initializing IO_domain for creating writers.
@@ -110,17 +114,13 @@ int main(int argc, char* argv[]) {
 //Following is an example of a 5x7 grid with added ghost cells on all four sides. the 0s are the actual
 //members of the grid whereas the + are the ghost cells.
 
-	/**
-\verbatim
-+ + + + + + + + +
-+ 0 0 0 0 0 0 0 +
-+ 0 0 0 0 0 0 0 +
-+ 0 0 0 0 0 0 0 +
-+ 0 0 0 0 0 0 0 +
-+ 0 0 0 0 0 0 0 +
-+ + + + + + + + +
-\endverbatim
-*/
+// + + + + + + + + +
+// + 0 0 0 0 0 0 0 +
+// + 0 0 0 0 0 0 0 +
+// + 0 0 0 0 0 0 0 +
+// + 0 0 0 0 0 0 0 +
+// + 0 0 0 0 0 0 0 +
+// + + + + + + + + +
 
 	smc = (celltype1**) checked_malloc((grid.num_smc_circumferentially + grid.num_ghost_cells) * sizeof(celltype1*), "smc");
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++) {
@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
 
 	sendbuf[UP1] = (double*) checked_malloc(grid.num_elements_send_up * sizeof(double), "sendbuf[UP1] dimension 2");
 	if (grid.universal_rank == 10)
-		printf("grid.num_elements_send_up = %d\nextent_s = %d, extent_e = %d", grid.num_elements_send_up, extent_s, extent_e);
+		printf("grid.num_elements_send_up = %d\nextent_s = %d, extent_e = %d\n", grid.num_elements_send_up, extent_s, extent_e);
 	sendbuf[UP1][0] = (double) (1); //Start of the 1st segment of SMC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[UP1][1] = (double) (extent_s); //End of the 1st segment of SMC array in UP direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[UP1][2] = (double) (1); //Start of the 1st segment of EC array in UP direction (circumferential direction) to be sent to neighbouring processor
@@ -357,7 +357,7 @@ int main(int argc, char* argv[]) {
 
 	dump_rank_info(check, cpl_cef, grid, my_IO_domain_info);
 	Total_cells_in_computational_domain(grid);
-
+/*
 	int ret = retrieve_topology_info("files/configuration_info.txt", &grid, smc, ec);
 	if (grid.rank == 0)
 		printf("[%d] return from retrieve = %d \n", grid.universal_rank, ret);
@@ -373,7 +373,7 @@ int main(int argc, char* argv[]) {
 
 	//final_checkpoint(check, grid);
 	update_elapsed_time(check, grid, &elps_t, my_IO_domain_info);
-//	fclose(grid.logptr);
+//	fclose(grid.logptr);*/
 	MPI_Finalize();
 	return (0);
 } // end main()
