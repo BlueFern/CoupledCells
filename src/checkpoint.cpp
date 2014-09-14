@@ -1619,15 +1619,7 @@ void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper*
 void naming_convention(grid_parms* grid) {
 //Prepare the suffix which indicates my subdomain information and if I am a bifurcation, then also tells about which branch do I belong to
 	int subdomain, branch, err;
-	/*
-	 if (grid->my_domain.internal_info.domain_type == STRSEG) {
-	 subdomain = grid->my_domain.internal_info.domain_index;
-	 err = sprintf(grid->suffix, "%d", subdomain);
-	 } else if (grid->my_domain.internal_info.domain_type == BIF) {
-	 subdomain = grid->my_domain.internal_info.domain_index;
-	 branch = grid->branch_tag;
-	 err = sprintf(grid->suffix, "%d_%d", subdomain, branch);
-	 }*/
+
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
 		err = sprintf(grid->suffix, "%d_%d", grid->my_domain.internal_info.domain_branch, grid->my_domain.internal_info.domain_local_subdomain);
 
@@ -1706,13 +1698,13 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 	 */
 
 	/// info is a 2d array in the structure grid which will have the information on the amount of data to be read by the reading processor and to decide which data belongs to which processor/MPI-task of the MPI_COMM_WORLD
-	grid->info = (int**) checked_malloc(4 * sizeof(int*), "memory allocation for info failed");	/// 4 levels of information i.e. MPI-Tasks(ProcessMesh), SMC grid (smcMesh), EC grid (ecMesh), EC centroids(ecCentroids).
+	grid->info = (int**) checked_malloc(4 * sizeof(int*), "memory allocation for info failed"); /// 4 levels of information i.e. MPI-Tasks(ProcessMesh), SMC grid (smcMesh), EC grid (ecMesh), EC centroids(ecCentroids).
 	for (int i = 0; i < 4; i++) {
-		grid->info[i] = (int*) checked_malloc(2 * sizeof(int), "memory allocation for info failed d2");	/// Each information level has the information for Points and Cells (total, in axial direction, in circumferential direction) of that respective category.
+		grid->info[i] = (int*) checked_malloc(2 * sizeof(int), "memory allocation for info failed d2"); /// Each information level has the information for Points and Cells (total, in axial direction, in circumferential direction) of that respective category.
 	}
 
-	grid->info[ProcessMesh][0] = grid->domains[grid->my_domain.internal_info.domain_index][17];	/// Record total number of points for processor/MPI-task grid to be read
-	grid->info[ProcessMesh][1] = grid->domains[grid->my_domain.internal_info.domain_index][20];	/// Record total number of cells for processor/MPI-task grid to be read
+	grid->info[ProcessMesh][0] = grid->domains[grid->my_domain.internal_info.domain_index][17]; /// Record total number of points for processor/MPI-task grid to be read
+	grid->info[ProcessMesh][1] = grid->domains[grid->my_domain.internal_info.domain_index][20]; /// Record total number of cells for processor/MPI-task grid to be read
 	grid->info[smcMesh][0] = grid->domains[grid->my_domain.internal_info.domain_index][18]; /// Record total number of points for smcMesh grid to be read
 	grid->info[smcMesh][1] = grid->domains[grid->my_domain.internal_info.domain_index][21]; /// Record total number of cells for smcMesh grid to be read
 	grid->info[ecMesh][0] = grid->domains[grid->my_domain.internal_info.domain_index][19]; /// Record total number of points for ecMesh grid to be read
@@ -1723,12 +1715,11 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 	int *disp, *send_count, recv_count, root = 0;
 	double *send_points, *recv_points;
 	int* indx = (int*) malloc(2 * sizeof(int));
-	int num_tuple_components,num_tuples;
+	int num_tuple_components, num_tuples;
 	int tuple_offset;
 
-
 	/// Setting up file reading environment for reading in the ProcessMesh vertices from the process mesh.
-	num_tuple_components= 3;
+	num_tuple_components = 3;
 	num_tuples = 4;
 	tuple_offset = num_tuple_components * num_tuples;
 
@@ -1737,7 +1728,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 	for (int i = 0; i < num_tuples; i++) {
 		grid->coordinates[i] = (double*) checked_malloc(num_tuple_components * sizeof(double), "allocation error in D2 of grid coordinates.");
 	}
-
 
 	send_count = (int*) malloc(grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(int));
 	disp = (int*) malloc(grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(int));
@@ -1757,7 +1747,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 			process_mesh->cells[i] = (int*) malloc(5 * sizeof(int));
 		}
 
-		indx = read_coordinates(grid->info, process_mesh, branch, ProcessMesh, grid->info[ProcessMesh][TOTAL_POINTS],
+		indx = read_coordinates(grid, grid->info, process_mesh, ProcessMesh, grid->info[ProcessMesh][TOTAL_POINTS],
 				grid->info[ProcessMesh][TOTAL_CELLS]);
 		for (int i = 0; i < indx[1]; i++) {
 			send_points[(i * tuple_offset) + 0] = process_mesh->points[process_mesh->cells[i][1]][0];
@@ -1819,7 +1809,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 			smc_mesh->cells[i] = (int*) malloc(5 * sizeof(int));
 		}
 
-		indx = read_coordinates(grid->info, smc_mesh, branch, smcMesh, (grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_POINTS]),
+		indx = read_coordinates(grid, grid->info, smc_mesh, smcMesh, (grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_POINTS]),
 				(grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_CELLS]));
 
 		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS]; i++) {
@@ -1872,7 +1862,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 	recv_count = tuple_offset * grid->info[smcMesh][TOTAL_CELLS];
 
 	check_flag(MPI_Scatterv(send_points, send_count, disp, MPI_DOUBLE, recv_points, recv_count, MPI_DOUBLE, root, grid->cart_comm),
-			"error scattering SMC mesh coordinates.");
+			"error scattering SMC mesh coordinates.ß");
 
 	int count = 0;
 	for (int n = 1; n <= grid->num_smc_axially; n++) {
@@ -1902,7 +1892,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 			ec_mesh->cells[i] = (int*) malloc(5 * sizeof(int));
 		}
 
-		indx = read_coordinates(grid->info, ec_mesh, branch, ecMesh, (grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[ecMesh][TOTAL_POINTS]),
+		indx = read_coordinates(grid,grid->info, ec_mesh, ecMesh, (grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[ecMesh][TOTAL_POINTS]),
 				(grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[ecMesh][TOTAL_CELLS]));
 
 		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS]; i++) {
@@ -1986,7 +1976,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 			ec_centroids->cells[i] = (int*) malloc(2 * sizeof(int));
 		}
 
-		indx = read_coordinates(grid->info, ec_centroids, branch, ecCentroids,
+		indx = read_coordinates(grid, grid->info, ec_centroids, ecCentroids,
 				(grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[ecCentroids][TOTAL_POINTS]),
 				(grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[ecCentroids][TOTAL_CELLS]));
 
@@ -2038,7 +2028,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 }
 
 /*******************************************************************************************************/
-int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int num_points, int num_cells)
+int* read_coordinates(grid_parms* grid, int** info, vtk_info* mesh, int mesh_type, int num_points, int num_cells)
 /*******************************************************************************************************/
 {
 
@@ -2054,49 +2044,70 @@ int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 	int* indx = (int*) malloc(2 * sizeof(int));
 	indx[0] = 0;
 	indx[1] = 0;
+	sprintf(grid->input_file_path, "files");
 	if (mesh_type == 0) {
-		if (branch == P) {
-			sprintf(filename_points, "files/parent_points.txt");
-			sprintf(filename_cells, "files/parent_cells.txt");
-		} else if (branch == L) {
-			sprintf(filename_points, "files/left_daughter_points.txt");
-			sprintf(filename_cells, "files/left_daughter_cells.txt");
-		} else if (branch == R) {
-			sprintf(filename_points, "files/right_daughter_points.txt");
-			sprintf(filename_cells, "files/right_daughter_cells.txt");
+		if (grid->my_domain.internal_info.domain_type == STRSEG) {
+			sprintf(filename_points, "%s/branch_%d_subdomain_%d_points.txt", grid->input_file_path, grid->my_domain.internal_info.domain_branch,
+					grid->my_domain.internal_info.domain_local_subdomain);
+		} else if (grid->my_domain.internal_info.domain_type == BIF) {
+			if (grid->branch_tag == P) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_points.txt", grid->input_file_path, grid->my_domain.internal_info.domain_branch,
+						grid->my_domain.internal_info.domain_local_subdomain);
+			} else if (grid->branch_tag == L) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_points.txt", grid->input_file_path, grid->my_domain.left_child.domain_branch,
+						grid->my_domain.left_child.domain_local_subdomain - 1);
+			} else if (grid->branch_tag == R) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_points.txt", grid->input_file_path, grid->my_domain.right_child.domain_branch,
+						grid->my_domain.right_child.domain_local_subdomain - 1);
+			}
 		}
 	} else if (mesh_type == 1) {
-		if (branch == P) {
-			sprintf(filename_points, "files/parent_smc_mesh_points.txt");
-			sprintf(filename_cells, "files/parent_smc_mesh_cells.txt");
-		} else if (branch == L) {
-			sprintf(filename_points, "files/left_daughter_smc_mesh_points.txt");
-			sprintf(filename_cells, "files/left_daughter_smc_mesh_cells.txt");
-		} else if (branch == R) {
-			sprintf(filename_points, "files/right_daughter_smc_mesh_points.txt");
-			sprintf(filename_cells, "files/right_daughter_smc_mesh_cells.txt");
+		if (grid->my_domain.internal_info.domain_type == STRSEG) {
+			sprintf(filename_points, "%s/branch_%d_subdomain_%d_smc_mesh_points.txt", grid->input_file_path,
+					grid->my_domain.internal_info.domain_branch, grid->my_domain.internal_info.domain_local_subdomain);
+		} else if (grid->my_domain.internal_info.domain_type == BIF) {
+			if (grid->branch_tag == P) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_smc_mesh_points.txt", grid->input_file_path,
+						grid->my_domain.internal_info.domain_branch, grid->my_domain.internal_info.domain_local_subdomain);
+			} else if (grid->branch_tag == L) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_smc_mesh_points.txt", grid->input_file_path,
+						grid->my_domain.left_child.domain_branch, grid->my_domain.left_child.domain_local_subdomain - 1);
+			} else if (grid->branch_tag == R) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_smc_mesh_points.txt", grid->input_file_path,
+						grid->my_domain.right_child.domain_branch, grid->my_domain.right_child.domain_local_subdomain - 1);
+			}
 		}
 	} else if (mesh_type == 2) {
-		if (branch == P) {
-			sprintf(filename_points, "files/parent_ec_mesh_points.txt");
-			sprintf(filename_cells, "files/parent_ec_mesh_cells.txt");
-		} else if (branch == L) {
-			sprintf(filename_points, "files/left_daughter_ec_mesh_points.txt");
-			sprintf(filename_cells, "files/left_daughter_ec_mesh_cells.txt");
-		} else if (branch == R) {
-			sprintf(filename_points, "files/right_daughter_ec_mesh_points.txt");
-			sprintf(filename_cells, "files/right_daughter_ec_mesh_cells.txt");
+		if (grid->my_domain.internal_info.domain_type == STRSEG) {
+			sprintf(filename_points, "%s/branch_%d_subdomain_%d_ec_mesh_points.txt", grid->input_file_path,
+					grid->my_domain.internal_info.domain_branch, grid->my_domain.internal_info.domain_local_subdomain);
+		} else if (grid->my_domain.internal_info.domain_type == BIF) {
+			if (grid->branch_tag == P) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_ec_mesh_points.txt", grid->input_file_path,
+						grid->my_domain.internal_info.domain_branch, grid->my_domain.internal_info.domain_local_subdomain);
+			} else if (grid->branch_tag == L) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_ec_mesh_points.txt", grid->input_file_path,
+						grid->my_domain.left_child.domain_branch, grid->my_domain.left_child.domain_local_subdomain - 1);
+			} else if (grid->branch_tag == R) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_ec_mesh_points.txt", grid->input_file_path,
+						grid->my_domain.right_child.domain_branch, grid->my_domain.right_child.domain_local_subdomain - 1);
+			}
 		}
 	} else if (mesh_type == 3) {
-		if (branch == P) {
-			sprintf(filename_points, "files/parent_ec_centeroid_points.txt");
-			sprintf(filename_cells, "files/parent_ec_centeroid_cells.txt");
-		} else if (branch == L) {
-			sprintf(filename_points, "files/left_daughter_ec_centeroid_points.txt");
-			sprintf(filename_cells, "files/left_daughter_ec_centeroid_cells.txt");
-		} else if (branch == R) {
-			sprintf(filename_points, "files/right_daughter_ec_centeroid_points.txt");
-			sprintf(filename_cells, "files/right_daughter_ec_centeroid_cells.txt");
+		if (grid->my_domain.internal_info.domain_type == STRSEG) {
+			sprintf(filename_points, "%s/branch_%d_subdomain_%d_ec_centeroid_points.txt", grid->input_file_path,
+					grid->my_domain.internal_info.domain_branch, grid->my_domain.internal_info.domain_local_subdomain);
+		} else if (grid->my_domain.internal_info.domain_type == BIF) {
+			if (grid->branch_tag == P) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_ec_centeroid_points.txt", grid->input_file_path,
+						grid->my_domain.internal_info.domain_branch, grid->my_domain.internal_info.domain_local_subdomain);
+			} else if (grid->branch_tag == L) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%_ec_centeroid_points.txt", grid->input_file_path,
+						grid->my_domain.left_child.domain_branch, grid->my_domain.left_child.domain_local_subdomain - 1);
+			} else if (grid->branch_tag == R) {
+				sprintf(filename_points, "%s/branch_%d_subdomain_%d_ec_centeroid_points.txt", grid->input_file_path,
+						grid->my_domain.right_child.domain_branch, grid->my_domain.right_child.domain_local_subdomain - 1);
+			}
 		}
 	}
 
@@ -2148,7 +2159,8 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	int *disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
 
-	char *send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
+	char *send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 	int length = 0;
 	for (int i = 0; i < num_tuples; i++) {
@@ -2180,7 +2192,8 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 
 	length = sprintf(send_buffer, "%d %d %d %d %d\n", 4, (branch * grid->tasks * 4) + 4 * grid->rank + 0,
@@ -2211,7 +2224,8 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 
 	length = sprintf(send_buffer, "%d\n", 9);
@@ -2250,7 +2264,8 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	int *disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
 
-	char *send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
+	char *send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 	int length = 0;
 
@@ -2287,7 +2302,8 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 	num_tuple_components = 5;
 	num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 
 	int* global_smc_point_offset_info = (int*) checked_malloc(grid->numtasks * sizeof(int),
@@ -2336,7 +2352,8 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 	num_tuple_components = 1;
 	num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 	length = 0;
 	for (int i = 0; i < grid->num_smc_axially; i++) {
@@ -2381,7 +2398,8 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	int *disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
 
-	char *send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
+	char *send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 	int length = 0;
 
@@ -2418,7 +2436,8 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 	num_tuple_components = 5;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 
 	int* global_ec_point_offset_info = (int*) checked_malloc(grid->numtasks * sizeof(int),
@@ -2467,7 +2486,8 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 	num_tuple_components = 1;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 	length = 0;
 	for (int i = 0; i < grid->num_ec_axially; i++) {
@@ -2516,8 +2536,8 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	num_tuple_components = 1;
 	num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 
-	char* send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_smcData.");
+	char* send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_smcData.");
 
 	int length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
@@ -2555,8 +2575,8 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	num_tuple_components = 1;
 	num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_smcData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_smcData.");
 
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
@@ -2594,8 +2614,8 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	num_tuple_components = 1;
 	num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_smcData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_smcData.");
 
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
@@ -2632,8 +2652,8 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	num_tuple_components = 1;
 	num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_smcData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_smcData.");
 
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
@@ -2670,8 +2690,8 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	num_tuple_components = 1;
 	num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_smcData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_smcData.");
 
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
@@ -2707,8 +2727,8 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_smcData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_smcData.");
 
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
@@ -2741,8 +2761,8 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	num_tuple_components = 1;
 	num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_smcData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_smcData.");
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
@@ -2778,8 +2798,8 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	num_tuple_components = 1;
 	num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_smcData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_smcData.");
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
@@ -2830,8 +2850,8 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	num_tuple_components = 1;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	char* send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_ecData.");
+	char* send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_ecData.");
 
 	int length = 0;
 	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {
@@ -2864,8 +2884,8 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	num_tuple_components = 1;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_ecData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_ecData.");
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
@@ -2900,8 +2920,8 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	num_tuple_components = 1;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_ecData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_ecData.");
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
@@ -2936,8 +2956,8 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	num_tuple_components = 1;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_ecData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_ecData.");
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
@@ -2973,8 +2993,8 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	num_tuple_components = 1;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_ecData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_ecData.");
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
@@ -3010,8 +3030,8 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	num_tuple_components = 1;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_ecData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_ecData.");
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
@@ -3047,8 +3067,8 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	num_tuple_components = 1;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_ecData.");
+	send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_ecData.");
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
 	disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
@@ -3098,8 +3118,8 @@ void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_b
 	num_tuple_components = 1;
 	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	char* send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_ecData.");
+	char* send_buffer = (char*) checked_malloc(
+	NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), "error allocating send_buffer in gather_ecData.");
 
 	int length = 0;
 	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {

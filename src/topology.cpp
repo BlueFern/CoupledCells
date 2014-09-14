@@ -234,8 +234,9 @@ grid_parms make_bifucation(grid_parms grid) {
 	grid.offset_L = (grid.m * grid.n) + ((grid.m - 1) * grid.n);
 	grid.offset_R = 2 * (grid.m * grid.n) + ((grid.m - 1) * grid.n);
 
-	//check whether number of processors in circumferential direction are EVEN or ODD.
+	///check whether number of processors in circumferential direction are EVEN or ODD.
 	grid.scheme = grid.n % 2;
+	///Tage the branches with a branch tag in case the subdomain is a bifurcation.
 	if (grid.color == 0) {
 		grid.branch_tag = P;
 	} else if (grid.color == 1) {

@@ -204,6 +204,7 @@ typedef struct {
 	int logfile_displacements;
 	char* logfile_write_buffer;
 	char solution_dir[50],time_profiling_dir[50],config_file[50];
+	char input_file_path[50];
 } grid_parms;
 
 ///Structure to store coupling data received from the neighbouring task.
@@ -450,7 +451,7 @@ void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check);
 
 int retrieve_topology_info(char*, grid_parms*, celltype1**, celltype2**);
-int* read_coordinates(int**, vtk_info*, int, int, int, int);
+int* read_coordinates(grid_parms*, int**, vtk_info*, int, int, int);
 IO_domain_info* make_io_domains(grid_parms* grid);
 
 void gather_tasks_mesh_point_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, celltype1**, celltype2**);
