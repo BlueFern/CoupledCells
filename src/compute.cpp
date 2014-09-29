@@ -1,4 +1,5 @@
 //#include <omp.h>
+#include "bgq_specific.h"
 #include "computelib.h"
 using namespace std;
 time_stamps t_stamp;
@@ -17,6 +18,9 @@ void* checked_malloc(size_t bytes, const char* errmsg) {
 
 	if (pval == NULL) {
 		fprintf(stdout, "%s", errmsg);
+#ifdef BGQ
+		mem_check();
+#endif
 		MPI_Abort(MPI_COMM_WORLD, 100);
 	}
 
