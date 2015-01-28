@@ -5,8 +5,6 @@
 using namespace std;
 time_stamps t_stamp;
 
-<<<<<<< HEAD
-=======
 /**
  * Wrapper around malloc to catch failed memory allocation. If allocation fails
  * MPI_Abort is called.
@@ -30,7 +28,6 @@ void* checked_malloc(size_t bytes, const char* errmsg) {
 	return pval;
 }
 
->>>>>>> devel
 /*******************************************************************************************/
 int couplingParms(int CASE, conductance* cpl_cef)
 /*******************************************************************************************/
