@@ -14,9 +14,9 @@ void mem_check()
 	Kernel_GetMemorySize(KERNEL_MEMSIZE_GUARD, &guard);
 	Kernel_GetMemorySize(KERNEL_MEMSIZE_MMAP, &mmap);
 
-	printf("Allocated heap: %.2f MB, avail. heap: %.2f MB\n",(double)heap/(1024*1024),(double)heapavail/(1024*1024));
-	printf("Allocated stack: %.2f MB, avail. stack: %.2f MB\n",(double)stack/(1024*1024), (double)stackavail/(1024*1024));
-	printf("Memory: shared: %.2f MB, persist: %.2f MB, guard: %.2f MB, mmap: %.2f MB\n",(double)shared/(1024*1024), (double)persist/(1024*1024), (double)guard/(1024*1024), (double)mmap/(1024*1024));
+	printf("Allocated heap: %.2f MB, avail. heap: %.2f MB\n", (double)heap/(1024*1024), (double)heapavail/(1024*1024));
+	printf("Allocated stack: %.2f MB, avail. stack: %.2f MB\n", (double)stack/(1024*1024), (double)stackavail/(1024*1024));
+	printf("Memory: shared: %.2f MB, persist: %.2f MB, guard: %.2f MB, mmap: %.2f MB\n", (double)shared/(1024*1024), (double)persist/(1024*1024), (double)guard/(1024*1024), (double)mmap/(1024*1024));
 }
 #endif
 
