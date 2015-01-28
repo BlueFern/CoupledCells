@@ -47,12 +47,12 @@ How to Run
 
 For example, for a fist subdomain of type BIF, with 12 cores along the axial
 direction, 112 cores in the cirfumferrential direction, with no parent or child
-subdomains, and with 32 ECs and 3 SMCs in the axial and cirfumferrential
+subdomains, and with 2 ECs and 3 SMCs in the axial and cirfumferrential
 directions respectively, the config file will look like
 this:
 
     1;
-    0,1,12,112,-1,-1,-1,32,3;
+    0,1,12,112,-1,-1,-1,2,3;
 
 * **S** - Location of the generated output files.
 * **T** - Location of the pofiling output files.

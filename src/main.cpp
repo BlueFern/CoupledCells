@@ -14,20 +14,6 @@ grid_parms grid;
 time_keeper elps_t;
 
 int CASE = 1;
-///***************************************************************************************/
-///************ checked_malloc(size_t bytes, FILE* errfile, const char* errmsg)*************/
-///***************************************************************************************/
-void* checked_malloc(size_t bytes, const char* errmsg) {
-	void *pval = malloc(bytes);
-
-	if (pval == NULL) {
-		fprintf(stdout, "%s\n", errmsg);
-		//mem_check();
-		MPI_Abort(MPI_COMM_WORLD, 100);
-	}
-
-	return pval;
-}
 
 int main(int argc, char* argv[]) {
 

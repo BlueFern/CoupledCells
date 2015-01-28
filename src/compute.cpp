@@ -1,14 +1,42 @@
 //#include <omp.h>
+#include "bgq_specific.h"
 #include "computelib.h"
 
 using namespace std;
 time_stamps t_stamp;
 
+<<<<<<< HEAD
+=======
+/**
+ * Wrapper around malloc to catch failed memory allocation. If allocation fails
+ * MPI_Abort is called.
+ *
+ * \param bytes Size of requested memory.
+ * \param errmsg Message produced in the event of failed memory allocation.
+ *
+ * \todo Perhaps the error messages should be printed to stderr?
+ */
+void* checked_malloc(size_t bytes, const char* errmsg) {
+	void *pval = malloc(bytes);
+
+	if (pval == NULL) {
+		fprintf(stdout, "%s", errmsg);
+#ifdef BGQ
+		mem_check();
+#endif
+		MPI_Abort(MPI_COMM_WORLD, 100);
+	}
+
+	return pval;
+}
+
+>>>>>>> devel
 /*******************************************************************************************/
 int couplingParms(int CASE, conductance* cpl_cef)
 /*******************************************************************************************/
 {
-	if (CASE == 1) {
+	if (CASE == 1)
+	{
 		cpl_cef->Vm_hm_smc = 1000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
@@ -26,7 +54,9 @@ int couplingParms(int CASE, conductance* cpl_cef)
 
 		cpl_cef->IP3_ht_smc = 0.05;
 		cpl_cef->IP3_ht_ec = 0.05;
-	} else if (CASE == 2) {
+	}
+	else if (CASE == 2)
+	{
 		cpl_cef->Vm_hm_smc = 1000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
@@ -39,12 +69,14 @@ int couplingParms(int CASE, conductance* cpl_cef)
 		cpl_cef->Vm_ht_smc = 50.0;
 		cpl_cef->Vm_ht_ec = 50.0;
 
-		cpl_cef->Ca_ht_smc = 0.05;
-		cpl_cef->Ca_ht_ec = 0.05;
+		cpl_cef->Ca_ht_smc = 0.05; // *
+		cpl_cef->Ca_ht_ec = 0.05; // *
 
 		cpl_cef->IP3_ht_smc = 0.05;
 		cpl_cef->IP3_ht_ec = 0.05;
-	} else if (CASE == 3) {
+	}
+	else if (CASE == 3)
+	{
 		cpl_cef->Vm_hm_smc = 1000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
@@ -52,7 +84,7 @@ int couplingParms(int CASE, conductance* cpl_cef)
 		cpl_cef->Ca_hm_ec = 0.05;
 
 		cpl_cef->IP3_hm_smc = 0.05;
-		cpl_cef->IP3_hm_ec = 0.05;
+		cpl_cef->IP3_hm_ec = 0.05; // *
 
 		cpl_cef->Vm_ht_smc = 50.0;
 		cpl_cef->Vm_ht_ec = 50.0;
@@ -62,28 +94,32 @@ int couplingParms(int CASE, conductance* cpl_cef)
 
 		cpl_cef->IP3_ht_smc = 0.05;
 		cpl_cef->IP3_ht_ec = 0.05;
-	} else if (CASE == 4) {
+	}
+	else if (CASE == 4)
+	{
 		cpl_cef->Vm_hm_smc = 1000.00;
-		cpl_cef->Vm_hm_ec = 0.00;
+		cpl_cef->Vm_hm_ec = 0.00; // *
 
 		cpl_cef->Ca_hm_smc = 0.05;
-		cpl_cef->Ca_hm_ec = 0.00;
+		cpl_cef->Ca_hm_ec = 0.00; // *
 
 		cpl_cef->IP3_hm_smc = 0.05;
 		cpl_cef->IP3_hm_ec = 0.05;
 
-		cpl_cef->Vm_ht_smc = 0.0;
-		cpl_cef->Vm_ht_ec = 0.0;
+		cpl_cef->Vm_ht_smc = 0.0; // *
+		cpl_cef->Vm_ht_ec = 0.0; // *
 
-		cpl_cef->Ca_ht_smc = 0.0;
-		cpl_cef->Ca_ht_ec = 0.0;
+		cpl_cef->Ca_ht_smc = 0.0; // *
+		cpl_cef->Ca_ht_ec = 0.0; // *
 
 		cpl_cef->IP3_ht_smc = 0.05;
 		cpl_cef->IP3_ht_ec = 0.05;
-	} else if (CASE == 5) // Simulating for experiments suggested by Dr. James Kazloski (IBM Watson Centre).
-			// The homocellular Ca coupling between SMCs is changed to investigate the effects of
-			//strreangth on coupling on the propagation speed of the spatial waves.
-			{
+	}
+	else if (CASE == 5)
+	{
+		// Simulating the experiments suggested by Dr. James Kazloski (IBM Watson Centre).
+		// The homocellular Ca coupling between SMCs is changed to investigate the effects of
+		// Strength on coupling on the propagation speed of the spatial waves.
 		cpl_cef->Vm_hm_smc = 0.00;
 		cpl_cef->Vm_hm_ec = 0.00;
 
@@ -101,8 +137,10 @@ int couplingParms(int CASE, conductance* cpl_cef)
 
 		cpl_cef->IP3_ht_smc = 0.05;
 		cpl_cef->IP3_ht_ec = 0.05;
-	} else if (CASE == 6)// Simulating for experiments suggested by Dr. James Kazloski (IBM Watson Centre)
-			{
+	}
+	else if (CASE == 6)
+	{
+		// Simulating for experiments suggested by Dr. James Kazloski (IBM Watson Centre).
 		cpl_cef->Vm_hm_smc = 4000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
@@ -120,8 +158,10 @@ int couplingParms(int CASE, conductance* cpl_cef)
 
 		cpl_cef->IP3_ht_smc = 0.05;
 		cpl_cef->IP3_ht_ec = 0.05;
-	} else if (CASE == 7)// Simulating for experiments suggested by Dr. James Kazloski (IBM Watson Centre)
-			{
+	}
+	else if (CASE == 7)
+	{
+		// Simulating for experiments suggested by Dr. James Kazloski (IBM Watson Centre).
 		cpl_cef->Vm_hm_smc = 6000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
@@ -139,7 +179,9 @@ int couplingParms(int CASE, conductance* cpl_cef)
 
 		cpl_cef->IP3_ht_smc = 0.05;
 		cpl_cef->IP3_ht_ec = 0.05;
-	} else if (CASE == 8) {
+	}
+	else if (CASE == 8)
+	{
 		cpl_cef->Vm_hm_smc = 0.00;
 		cpl_cef->Vm_hm_ec = 0.00;
 
@@ -158,7 +200,6 @@ int couplingParms(int CASE, conductance* cpl_cef)
 		cpl_cef->IP3_ht_smc = 0.05;
 		cpl_cef->IP3_ht_ec = 0.05;
 	}
-
 	return 0;
 }
 
