@@ -1,37 +1,41 @@
 
-/****** marcos for identifying models ******/
+/****** Macros for identifying models types. ******/
 #define 		KNBGR			0
 #define 		TSK				1
 
 
-/*******Koenigsberger model*******/
-//SMC state variables
+/******* Koenigsberger model. *******/
+
+// SMC state variables.
 #define     smc_Ca              0
 #define     smc_SR              1
 #define     smc_Vm              2
 #define     smc_IP3             3
-#define		 smc_w				 4
-//EC state variables
+#define		smc_w				4
+
+// EC state variables.
 #define     ec_Ca               0
 #define     ec_SR               1
 #define     ec_Vm               2
 #define     ec_IP3              3
 
-//Ionic currents common to both celltypes
+// Ionic currents common to both cell types.
 #define     J_IP3               0
 #define     J_SERCA             1
 #define     J_CICR              2
 #define     J_Extrusion         3
 #define     J_Leak              4
 #define     J_IP3_deg           5
-//SMC specific currents
+
+// SMC specific currents.
 #define     J_VOCC              6
 #define     J_Na_Ca             7
 #define     J_Na_K              8
-#define     J_Cl	             9
+#define     J_Cl	            9
 #define     J_K                 10
 #define     K_activation        11
-//EC specific currents
+
+// EC specific currents
 #define     J_NSC               6
 #define     J_BK_Ca             7
 #define     J_SK_Ca             8
@@ -39,14 +43,13 @@
 #define     J_Residual          10
 #define     J_trivial_Ca        11
 
-
-
 #define	    cpl_Ca		         0
 #define	    cpl_Vm		         1
 #define	    cpl_IP3		         2
 
-/*******Tsoukias model*******/
-//SMC state variables in Tsoukias model
+/******* Tsoukias model *******/
+
+// SMC state variables in Tsoukias model.
 #define		smc_q_1		    	smc_w		/// Kv fast inact q1 gate probability
 #define		smc_q_2		    	5			/// Kv slow inact q2 gate probability
 #define 	smc_d_L 	    	6			/// L-type Ca d gate probability
@@ -75,29 +78,29 @@
 #define 	E_Na				1	// Na+ Nernst potential
 #define 	E_Ca				2	// Ca2+ Nernst potential
 #define 	E_Cl				3	// Cl- Nernst potential
-#define		dbar_L	   			4		// L-type Ca SS d gate prob
-#define 	fbar_L	    		5		// L-type Ca SS f gate prob
+#define		dbar_L	   			4	// L-type Ca SS d gate prob
+#define 	fbar_L	    		5	// L-type Ca SS f gate prob
 #define 	tau_dL				6	// L-type Ca d gate time const
 #define 	tau_fL				7	// L-type Ca f gate time const
 #define 	I_VOCC				8	// L-type Ca total channel current
 #define		P_KCa				9	// BKCa total fast/slow gate prob
 #define		i_KCa				10	// BKCa single channel current
 #define		R_NO				11	// BKCa NO V50KCa shift fact
-#define 	R_cGMP	   			12		// BKCa cGMP V50KCa shift fact
+#define 	R_cGMP	   			12	// BKCa cGMP V50KCa shift fact
 #define		V_half_KCa			13	// BKCa 1/2 max act membr potential
-#define		pbar_o	    		14		// BKCa SS fast/slow gate prob
+#define		pbar_o	    		14	// BKCa SS fast/slow gate prob
 #define		I_BKCa				15	// BKCa total channel current
-#define		pbar_K	    		16		// Kv SS act p gate probability
+#define		pbar_K	    		16	// Kv SS act p gate probability
 #define		qbar				17	// Kv SS inact q1/q2 gate probability
 #define		tau_pK				18	// Kv act p gate time constant
 #define		I_Kv				19	// Kv total channel current
 #define		I_Kleak				20	// Kleak total channel current
-#define		Po_NSC	    		21		// NSC act gate probability
+#define		Po_NSC	    		21	// NSC act gate probability
 #define		INa_NSC				22	// NSC total Na+ current
 #define		IK_NSC				23	// NSC total K+ current
 #define		ICa_NSC				24	// NSC total Ca2+ current
 #define		I_NSC				25	// NSC total channel current
-#define		P_SOC	    		26		// SOC act gate probability
+#define		P_SOC	    		26	// SOC act gate probability
 #define 	INa_SOC				27	// SOC total Na+ current
 #define 	ICa_SOC				28	// SOC total Ca2+ current
 #define 	I_SOC				29	// SOC total channel current
@@ -133,5 +136,3 @@
 #define 	r_h_G       		59
 #define 	rho_r_G     		60
 #define 	delta_G     		61
-
-

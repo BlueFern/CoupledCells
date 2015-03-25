@@ -6,86 +6,116 @@
 
 using namespace std;
 
-conductance cpl_cef;
+grid_parms grid;
 celltype1** smc;
 celltype2** ec;
+conductance cpl_cef;
+
 double **sendbuf, **recvbuf;
-grid_parms grid;
+
 time_keeper elps_t;
 
 int CASE = 1;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
 
-	///Global declaration of request and status update place holders.
-	///Request and Status handles for nonblocking Send and Receive operations, for communicating with each of the four neighbours.
+	// Global declaration of request and status update place holders.
+	// Request and Status handles for nonblocking Send and Receive operations, for communicating with each of the four neighbours.
 	MPI_Request reqs[8];
 	MPI_Status stats[8];
-	///Initialize MPI
+
+	// Initialise MPI.
 	MPI_Init(&argc, &argv);
 
 	elps_t.t_old = MPI_Wtime();
 
 	grid.universe = MPI_COMM_WORLD;
 
-//Reveal information of myself and size of MPI_COMM_WORLD
+	// Reveal information about the current rank and size of MPI_COMM_WORLD.
 	check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank), "error Comm_rank");
 	check_flag(MPI_Comm_size(grid.universe, &grid.numtasks), "error Comm_size");
 
 	char filename[50];
 	int error;
 
-	///Time variables
+	// Time variables.
 	double tfinal = 1e-2;
 	double interval = 1e-2;
+	// TODO: If it is frequency, then it is 10 times per what?
 	double data_writing_frequency = 10.00;
-	//Read command line input
-	// t - T_END for the simulation
-	// w - A number deciding how frequent the data should be recorded, default is every 10 seconds
-	// i - Time interval between two steps. Default is 1e-2
-	if (argc > 1) {
-		for (int i = 0; i < argc; i++) {
-			if (argv[i][0] == '-') {
-				if (argv[i][1] == 'f') {
+
+	/// Read command line arguments: <BR>
+	/// f - configuration file name <BR>
+	/// S - solution directory name to write output to <BR>
+	/// T - time profiling directory name to write time profiling output <BR>
+	/// t - time duration for the simulation (seconds), default is 1e-2 <BR>
+	/// w - interval between saving time step data (seconds), default is every 10 seconds <BR>
+	/// i - time step duration (seconds), default is 1e-2 <BR>
+	if (argc > 1)
+	{
+		for (int i = 0; i < argc; i++)
+		{
+			if (argv[i][0] == '-')
+			{
+				if (argv[i][1] == 'f')
+				{
 					sprintf(grid.config_file, "%s", argv[i + 1]);
-				}else if (argv[i][1] == 'S') {
+				}
+				else if (argv[i][1] == 'S')
+				{
 					sprintf(grid.solution_dir, "%s", argv[i + 1]);
-				}else if (argv[i][1] == 'T') {
+				}
+				else if (argv[i][1] == 'T')
+				{
 					sprintf(grid.time_profiling_dir, "%s", argv[i + 1]);
-				}else if (argv[i][1] == 't') {
+				}
+				else if (argv[i][1] == 't')
+				{
 					tfinal = atof(argv[i + 1]);
-				} else if (argv[i][1] == 'w') {
+				}
+				else if (argv[i][1] == 'w')
+				{
 					data_writing_frequency = atof(argv[i + 1]);
-				} else if (argv[i][1] == 'i') {
+				}
+				else if (argv[i][1] == 'i')
+				{
 					interval = atof(argv[i + 1]);
 				}
 			}
 		}
 	}
-	//Read domain configuration from input file domain_info.txt
+
+	/// Read domain configuration from input configuration file.
 	error = read_domain_info(grid.universal_rank, grid.config_file, &grid);
-	//make subdomains according to the information read from domain_info.txt
+
+	/// Make subdomains according to the information read from configuration file.
 	make_subdomains(&grid, grid.num_domains, grid.domains);
 
-//File written every 1 second
-	int file_write_per_unit_time = (int) (data_writing_frequency * int(1 / interval));
+	// Time step written every 0.1 second with the default value.
+	// TODO: What is the unit of time?
+	int file_write_per_unit_time = (int)(data_writing_frequency * (int)(1 / interval));
+
 	grid.NO_path = 0;
 	grid.cGMP_path = 0;
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
 	grid.min_jplc = 0.18;
-	grid.max_jplc = 0.5;	//1e-3;
-	grid.gradient = 0.09e3;	//0.325e3;
+	grid.max_jplc = 0.5;
+	grid.gradient = 0.09e3;
 	grid.stimulus_onset_time = 99.00;
 
+	// TODO: What does this do?
 	grid = set_geometry_parameters(grid);
 
+	// TODO: What does this do?
 	if (grid.my_domain.internal_info.domain_type == STRSEG) {
 		grid = make_straight_segment(grid);
 	} else if (grid.my_domain.internal_info.domain_type == BIF) {
 		grid = make_bifucation(grid);
 	}
+
 	grid = update_global_subdomain_information(grid, grid.num_domains, grid.domains);
 	naming_convention(&grid);
 
@@ -347,19 +377,19 @@ int main(int argc, char* argv[]) {
 	int ret = retrieve_topology_info("files/configuration_info.txt", &grid, smc, ec);
 	if (grid.rank == 0)
 		printf("[%d] return from retrieve = %d \n", grid.universal_rank, ret);
-	/*
+
 #ifdef CVODE
 	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
 #endif
 #ifndef CVODE
 	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, line_number, check, grid.solution_dir,
 			my_IO_domain_info);
-//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
+	//rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
 #endif
 
 	//final_checkpoint(check, grid);
 	update_elapsed_time(check, grid, &elps_t, my_IO_domain_info);
-//	fclose(grid.logptr);*/
+	// fclose(grid.logptr);*/
 	MPI_Finalize();
 	return (0);
 } // end main()
