@@ -1,15 +1,14 @@
-/*
+/**
  * koenigsberger_model.cpp
  *
  *  Created on: 12/06/2013
- *      Author: mohsinshaikh
+ *  Author: Mohsin Shaikh
  */
+
 #include "computelib.h"
 #include "koenigsberger_constants.h"
 
-/*******************************************************************************************/
 void Initialize_koeingsberger_smc(grid_parms grid, double* y, celltype1** smc)
-/*******************************************************************************************/
 {
 	int k = 0, offset;
 
@@ -47,9 +46,7 @@ void Initialize_koeingsberger_smc(grid_parms grid, double* y, celltype1** smc)
 	}
 }
 
-/*******************************************************************************************/
 void Initialize_koeingsberger_ec(grid_parms grid, double* y, celltype2** ec)
-/*******************************************************************************************/
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 
@@ -82,55 +79,51 @@ void Initialize_koeingsberger_ec(grid_parms grid, double* y, celltype2** ec)
 		}
 	}
 }
-/*******************************************************************************************/
-void koenigsberger_smc(grid_parms grid, celltype1** smc)
-/*******************************************************************************************/
-{
 
+void koenigsberger_smc(grid_parms grid, celltype1** smc)
+{
 	int i, j, k;
-//#pragma omp for private(j)
-//EVALUATING SINGLE CELL FLUXES :::::::For SMC::::::::
+
+	// EVALUATING SINGLE CELL FLUXES FOR SMC.
 	for (i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (j = 1; j <= grid.num_smc_axially; j++) {
 
-			//JIP3
+			// J IP3.
 			smc[i][j].A[J_IP3] = (Fi * P2(smc[i][j].p[smc_IP3])) / (P2(Kri) + P2(smc[i][j].p[smc_IP3]));
-			//JSRuptake
+			// J.SRuptake.
 			smc[i][j].A[J_SERCA] = (Bi * P2(smc[i][j].p[smc_Ca])) / (P2(
 					smc[i][j].p[smc_Ca]) + P2(cbi));
-			//Jcicr
+			// J cicr.
 			smc[i][j].A[J_CICR] = (CICRi * (P2(smc[i][j].p[smc_SR]) * P4(
 					smc[i][j].p[smc_Ca]))) / ((P2(sci) + P2(smc[i][j].p[smc_SR]))
 			* (P4(cci)+ P4(
 							smc[i][j].p[smc_Ca])));
-			//Jextrusion
+			// J extrusion.
 			smc[i][j].A[J_Extrusion] = Di * smc[i][j].p[smc_Ca] * (1 + ((smc[i][j].p[smc_Vm] - vdi) / Rdi));
 
-			//Jleak
+			// J leak.
 			smc[i][j].A[J_Leak] = Li * smc[i][j].p[smc_SR];
-			//Jvocc
+			// J vocc.
 			smc[i][j].A[J_VOCC] = GCai * (smc[i][j].p[smc_Vm] - vCa1) / (1 + ((double) (exp(((-1) * (smc[i][j].p[smc_Vm] - vCa2)) / RCai))));
-			//J Na/Ca
+			// J Na/Ca.
 			smc[i][j].A[J_Na_Ca] = GNaCai * smc[i][j].p[smc_Ca] * (smc[i][j].p[smc_Vm] - vNaCai) / (smc[i][j].p[smc_Ca] + cNaCai);
-			//JNa/K
+			// J Na/K.
 			smc[i][j].A[J_Na_K] = FNaK;
-			//J Cl
+			// J Cl.
 			smc[i][j].A[J_Cl] = GCli * (smc[i][j].p[smc_Vm] - vCl);
-			//JK
+			// J K.
 			smc[i][j].A[J_K] = GKi * smc[i][j].p[smc_w] * (smc[i][j].p[smc_Vm] - vKi);
-			//Kactivation
+			// K activation.
 			smc[i][j].A[K_activation] = P2(smc[i][j].p[smc_Ca] + cwi) / (P2(
 					smc[i][j].p[smc_Ca] + cwi) + (beta * ((double) exp((-1) * (smc[i][j].p[smc_Vm] - vCa3) / RKi))));
-//Jdegradation
+			//J degradation.
 			smc[i][j].A[J_IP3_deg] = ki * smc[i][j].p[smc_IP3];
 
-		} //end for j
-	} //end for i
+		}
+	}
 }
-/***************************************************************************/
-void koenigsberger_smc_derivatives(double* f, grid_parms grid, celltype1** smc) {
-	/***************************************************************************/
 
+void koenigsberger_smc_derivatives(double* f, grid_parms grid, celltype1** smc) {
 	int k;
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
@@ -154,55 +147,52 @@ void koenigsberger_smc_derivatives(double* f, grid_parms grid, celltype1** smc) 
 	}
 }
 
-/************************************************************/
-void koenigsberger_ec(grid_parms grid, celltype2** ec)
-/*************************************************************                                                                                                                                                                         *
+/**
  * This is the multicell version for evaluating single cell ionic
  * currents in an EC
- *************************************************************/
+ */
+void koenigsberger_ec(grid_parms grid, celltype2** ec)
 {
-	//EVALUATING SINGLE CELL FLUXES For EC
+	//EVALUATING SINGLE CELL FLUXES FOR EC
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
-//JIP3
+			// J IP3.
 			ec[i][j].A[J_IP3] = (Fj * P2(ec[i][j].q[ec_IP3])) / (P2(Krj) + P2(ec[i][j].q[ec_IP3]));
-//JSRuptake
+			// J SRuptake.
 			ec[i][j].A[J_SERCA] = (Bj * P2(ec[i][j].q[ec_Ca])) / (P2(ec[i][j].q[ec_Ca]) + P2(cbj));
-//Jcicr
+			// J cicr.
 			ec[i][j].A[J_CICR] = (CICRj * P2(ec[i][j].q[ec_SR]) * P4(ec[i][j].q[ec_Ca]))
 					/ ((P2(ec[i][j].q[ec_SR]) + P2(scj))*(P4(ec[i][j].q[ec_Ca])+P4(ccj)));
-//Jextrusion
+			// J extrusion.
 			ec[i][j].A[J_Extrusion] = Dj * ec[i][j].q[ec_Ca];
-//Jleak
+			// J leak.
 			ec[i][j].A[J_Leak] = Lj * ec[i][j].q[ec_SR];
-//J_NonSelective Cation channels
+			// J_NonSelective Cation channels.
 			ec[i][j].A[J_NSC] = (Gcatj * (ECa - ec[i][j].q[ec_Vm]) * 0.5)
 					* (1 + ((double) (tanh((double) (((double) (log10((double) (ec[i][j].q[ec_Ca]))) - m3cat) / m4cat)))));
-//BK_channels
+			// BK_channels.
 			ec[i][j].A[J_BK_Ca] =
 					(0.4 / 2)
 							* (1
 									+ (double) (tanh(
 											(double) ((((((double) (log10((double) (ec[i][j].q[ec_Ca]))) - c1j) * (ec[i][j].q[ec_Vm] - bj)) - a1j)
 													/ ((m3b * (P2(ec[i][j].q[ec_Vm]+(a2j*((double) (log10 ((double) (ec[i][j].q[ec_Ca])))-c1j))-bj)))+m4b))))));
-//SK_channels
+			// SK_channels.
 			ec[i][j].A[J_SK_Ca] = (0.6 / 2) * (1 + (double) (tanh((double) (((double) (log10((double) (ec[i][j].q[ec_Ca]))) - m3s) / m4s))));
-//Total K flux
+			// Total K flux.
 			ec[i][j].A[J_Ktot] = Gtot * (ec[i][j].q[ec_Vm] - vKj) * (ec[i][j].A[J_BK_Ca] + ec[i][j].A[J_SK_Ca]);
-//Residual currents
+			// Residual currents.
 			ec[i][j].A[J_Residual] = GRj * (ec[i][j].q[ec_Vm] - vrestj);
-//IP3 degradation
+			// IP3 degradation.
 			ec[i][j].A[J_IP3_deg] = kj * ec[i][j].q[ec_IP3];
-//Grouping all other trivial Ca fluxes
+			// Grouping all other trivial Ca fluxes.
 			ec[i][j].A[J_trivial_Ca] = J0j;
 
-		} //end for j
-	} //end for i
+		}
+	}
 }
 
-/***************************************************************************/
 void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid, celltype2** ec) {
-	/***************************************************************************/
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {

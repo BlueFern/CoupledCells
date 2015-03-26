@@ -14,192 +14,193 @@
 #endif
 
 using namespace std;
-#define success		0
-#define	 none		-1
 
-#define local	0
+#define success 0
+#define	none -1
+
+#define local 0
 #define remote 1
 
-#define NUM_DBL_TO_CHAR_BYTES			64			/// When converting double to char to writing via MPI-IO to write in ASCII format
+/// When converting double to char to writing via MPI-IO to write in ASCII format
 /// the double is to be truncated to 12 characters including the decimal point
-/// the 13th char is a white space (new line or tab)
+/// the 13th char is a white space (new line or tab).
+#define NUM_DBL_TO_CHAR_BYTES 64
 
-#define WRITER_COLOR	43
-#define WRITER_KEY		43
-#define COMPUTE_ONLY_COLOR	1
-#define COMPUTE_ONLY_KEY	1
+#define WRITER_COLOR 43
+#define WRITER_KEY 43
+#define COMPUTE_ONLY_COLOR 1
+#define COMPUTE_ONLY_KEY 1
 
-#define UP1    0
-#define UP2		1
-#define DOWN1  2
-#define DOWN2	3
-#define LEFT1	4
-#define LEFT2	5
+#define UP1 0
+#define UP2 1
+#define DOWN1 2
+#define DOWN2 3
+#define LEFT1 4
+#define LEFT2 5
 #define RIGHT1 6
 #define RIGHT2 7
 
-#define UP		0
-#define DOWN 	1
-#define LEFT	2
-#define RIGHT	3
+#define UP 0
+#define DOWN 1
+#define LEFT 2
+#define RIGHT 3
 
-#define STRSEG		0		//a straight segment
-#define BIF			1		//a bifurcation
-#define P 		1		//parent
-#define L 		2		//Left branch
-#define R		3		//Right brach
+#define STRSEG 0 // A straight segment.
+#define BIF 1 // A bifurcation.
+#define P 1 // Parent.
+#define L 2 // Left branch.
+#define R 3 // Right branch.
+
 /// Macros for use in retrieving mesh topological data from grid.info.
-#define 	TOTAL_POINTS		0
-#define		TOTAL_CELLS			1
+#define TOTAL_POINTS 0
+#define TOTAL_CELLS 1
 
-/// Macros representing mesh types
-#define    ProcessMesh 			0
-#define 	smcMesh 			1
-#define		ecMesh 				2
-#define		ecCentroids 		3
+/// Macros representing mesh types.
+#define ProcessMesh 0
+#define smcMesh 1
+#define ecMesh 2
+#define ecCentroids 3
 
-#define 	ProcessCell			4
-#define 	smcCell				5
-#define		ecCell				6
-#define		ecCentroidCell		7
+#define ProcessCell 4
+#define smcCell 5
+#define ecCell 6
+#define ecCentroidCell 7
 
-#define 	ProcessCellType		8
-#define		smcCellType			9
-#define		ecCellType			10
-#define		ecCentroidCellType	11
-#define 	ec_ATP_Conc			12
-#define 	ec_WSS_val			13
+#define ProcessCellType 8
+#define smcCellType 9
+#define ecCellType 10
+#define ecCentroidCellType 11
+#define ec_ATP_Conc 12
+#define ec_WSS_val 13
 
-#define		smcDataLength		0
-#define		ecDataLength		1
+#define smcDataLength		0
+#define ecDataLength		1
 
-
-//#define top		0		//top edge of a subdomain
-//#define	 bottom 1		//bottom edge of a subdomain
-// helper functions for exponentiation to integer powers
+// Helper functions for exponentiation to integer powers.
+// TODO: Is there a reason why pow(x, y) no good here?
 #define P2(x) ((x)*(x))
 #define P3(x) ((x)*(x)*(x))
 #define P4(x) ((x)*(x)*(x)*(x))
+
 struct conductance {
-	double Vm_hm_smc,	///homocellular membrane potential coupling between SMCs
-			Vm_hm_ec,	///homocellular membrane potential coupling between ECs
-			Ca_hm_smc,			///homocellular Ca coupling between SMCs
-			Ca_hm_ec,			///homocellular Ca coupling between ECs
-			IP3_hm_smc,			///homocellular IP3 coupling between SMCs
-			IP3_hm_ec,			///homocellular IP3 coupling between ECs
-			Vm_ht_smc,			///heterocellular membrane potential coupling between SMCs
-			Vm_ht_ec,			///heterocellular membrane potential coupling between ECs
-			Ca_ht_smc,			///heterocellular Ca coupling between SMCs
-			Ca_ht_ec,			///heterocellular Ca coupling between ECs
-			IP3_ht_smc,			///heterocellular IP3 coupling between SMCs
-			IP3_ht_ec;			///heterocellular IP3 coupling between ECs
+	double Vm_hm_smc, // Homocellular membrane potential coupling between SMCs.
+			Vm_hm_ec, // Homocellular membrane potential coupling between ECs.
+			Ca_hm_smc, // Homocellular Ca coupling between SMCs.
+			Ca_hm_ec, // Homocellular Ca coupling between ECs.
+			IP3_hm_smc, // Homocellular IP3 coupling between SMCs.
+			IP3_hm_ec, // Homocellular IP3 coupling between ECs.
+			Vm_ht_smc, // Heterocellular membrane potential coupling between SMCs.
+			Vm_ht_ec, // Heterocellular membrane potential coupling between ECs.
+			Ca_ht_smc, // Heterocellular Ca coupling between SMCs.
+			Ca_ht_ec, // Heterocellular Ca coupling between ECs.
+			IP3_ht_smc, // Heterocellular IP3 coupling between SMCs.
+			IP3_ht_ec; // Heterocellular IP3 coupling between ECs.
 };
 struct node {
-	int domain_type, domain_index,	///am I a bifurcation or a straight segment?
-			domain_start, domain_end,	///These are universal ranks from MPI_COMM_WORLD
-			parent_branch_case_bifurcation,	///if my parent is a bifurcation which branch am I a child of
-			m, n;						///row and columns in my MPI_sub_world
-	int domain_branch, 					///The branch index of which the subdomain of the calling processor/MPI-Task belongs to.
-		domain_local_subdomain;			///The local subdomain in the branch to which the calling processor/MPI-Task belongs to.
-	char boundary_tag;						///an identifier showing whether I am a rank from top or bottom edge of a subdomain.
-	int half_marker;						///a marker for demarcating the bottom edge of the Left/Right daughter artery in the case of a bifurcation.
-											///exists which couples not to the parent artery but the other daughter segment. This can have following values:
-											/// 1. half coupling to parent
-											/// 2. half coupling to other daughter
-											/// 3. half splitting in the middle with left portion coupling to parent, and right portion of data coupling
-											///    to other daughter segment.
+	int domain_type, domain_index, /// Am I a bifurcation or a straight segment?
+			domain_start, domain_end, /// These are universal ranks from MPI_COMM_WORLD.
+			parent_branch_case_bifurcation, /// If my parent is a bifurcation which branch am I a child of.
+			m, n; /// Row and column in my MPI_sub_world.
+	int domain_branch, /// The branch index of which the subdomain of the calling processor/MPI-Task belongs to.
+		domain_local_subdomain; /// The local subdomain in the branch to which the calling processor/MPI-Task belongs to.
+	char boundary_tag; /// An identifier showing whether I am a rank from top or bottom edge of a subdomain.
+	int half_marker; /// A marker for indicating the bottom edge of the Left/Right daughter artery in the case of a bifurcation.
+ 					 /// exists which couples not to the parent artery but the other daughter segment. This can have following values:
+ 					 /// 1. half coupling to parent
+ 					 /// 2. half coupling to other daughter
+ 					 /// 3. half splitting in the middle with left portion coupling to parent, and right portion of data coupling
+					 /// to other daughter segment.
 
-	double d, l;				//diameter and length scales
-
+	double d, l; // Diameter and length scales.
 };
 
 struct my_tree {
 	node internal_info;
 	node left_child, right_child, parent;
-	double z_offset_start, z_offset_end;				/// These are domain offsets start and end points to demacated distance in
-														/// z direction spanned by a processor's own sub-domain that it belongs to.
+	double z_offset_start, z_offset_end; /// These are domain offsets start and end points to indicate distance in
+										 /// z direction spanned by a processor's own sub-domain that it belongs to.
 	double local_z_start, local_z_end;
 
 };
+
 struct glb_domn_inf {
-	int num_subdomains,							///number of total subdomains
-			*m, *n,	///number of grid points axially, number of grid points circumferentially
-			*list_type_subdomains,	///list of types of subdomains, either STRSEG=0 or BIF=1
-			*list_num_ec_axially_per_domain;	///list of number of ECs axially in each subdomain in sequence of increasing z_coordinate of distance.
-	double **list_domain_z_coord_index;	///stores the start and end of each subdomain in axial direction. This will be used to estimate the agonist
+	int num_subdomains, /// Number of total subdomains.
+			*m, *n, /// Number of grid points axially, number of grid points circumferentially.
+			*list_type_subdomains, /// List of types of subdomains, either STRSEG=0 or BIF=1.
+			*list_num_ec_axially_per_domain; /// List of number of ECs axially in each subdomain in sequence of increasing z_coordinate of distance.
+	double **list_domain_z_coord_index; /// The start and end of each subdomain in axial direction. This will be used to estimate the agonist
+										/// on that particular z coordinate. First two elements store the coords for any STRSEG or Left/Right child of
+										/// bifurcation where as the last two elements store coords for the parent segment of a bifurcation, if the domain
+										/// type is BIF.
 };
-///on that particular z coordinate. First two elements store the coords for any STRSEG or Left/Right child of
-///bifurcation where as the last two elements store coords for the parent segment of a bifurcation, if the domain
-///type is BIF
 
 typedef struct {
 	double tfinal;
-	///General infomation on cell geometry and the geometric primitive constructed.
+	/// General information on cell geometry and the geometric primitive constructed.
 	double hx_smc, hx_ec, hy_smc, hy_ec, requested_length, requested_diameter, corrected_length, corrected_diameter, new_circ;
 	int
-	///Global domain information storage
+	/// Global domain information storage.
 	num_domains, **domains,
-			///this is a node local information
+	/// This is the local node information.
 
-			///Topology information (fundamental unit or block of cells)
-			num_smc_fundblk_circumferentially, num_ec_fundblk_circumferentially, num_smc_fundblk_axially, num_ec_fundblk_axially,
+	/// Topology information (fundamental unit or block of cells).
+	num_smc_fundblk_circumferentially, num_ec_fundblk_circumferentially, num_smc_fundblk_axially, num_ec_fundblk_axially,
 
-			///Total number of ghost cells to be added in the computational in each dimension (circumferentail and axial)
-			num_ghost_cells,
-			///total grid points axially
-			m,
-			///total grid points circumferentially
-			n,
-			///place holder to retrieve information from topology files
-			**info,
-			/// My coordinates
-			coords[2],
-			///Coordinates for neighbour tasks
-			nbrs[2][4],
-			///Node payload information(number of cells laid out on a node)
-			num_ec_axially, num_ec_circumferentially, num_smc_axially, num_smc_circumferentially, neq_ec_axially, neq_smc_axially,
-			///Model related parameters
-			///number of equations modelling an EC or SMC
-			neq_smc, neq_ec,
-			///Total number of state variables in the computational domain
-			NEQ, num_fluxes_smc, num_fluxes_ec, num_coupling_species_smc, num_coupling_species_ec,
-			///Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task
-			added_info_in_send_buf,
-			///this is global and local MPI information
-			numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank, rank,
-			tasks, 				/// numtasks = total CPUs in MPI_COMM_WORLD,
-								/// tasks = total CPUs in my-subdomain's comm
-			my_domain_color, my_domain_key, color, key,
+	/// Total number of ghost cells to be added in the computational in each dimension (circumferentail and axial).
+	num_ghost_cells,
+	/// Total grid points axially.
+	m,
+	/// Total grid points circumferentially.
+	n,
+	/// Place holder to retrieve information from topology files.
+	**info,
+	/// My coordinates.
+	coords[2],
+	/// Coordinates for neighbour tasks.
+	nbrs[2][4],
+	/// Node payload information(number of cells laid out on a node).
+	num_ec_axially, num_ec_circumferentially, num_smc_axially, num_smc_circumferentially, neq_ec_axially, neq_smc_axially,
+	/// Model related parameters.
+	/// Number of equations modelling an EC or SMC.
+	neq_smc, neq_ec,
+	/// Total number of state variables in the computational domain.
+	NEQ, num_fluxes_smc, num_fluxes_ec, num_coupling_species_smc, num_coupling_species_ec,
+	/// Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task.
+	added_info_in_send_buf,
+	/// Global and local MPI information.
+	numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank, rank,
+	tasks, /// numtasks = total CPUs in MPI_COMM_WORLD,
+		   /// tasks = total CPUs in my-subdomain's comm.
+	my_domain_color, my_domain_key, color, key,
 
-			//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
-			//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
-			branch_tag,
-			///variables for remote MPI information (P=parent, L & R = Left & Right branch respectively)
-			scheme, offset_P, offset_L, offset_R, flip_array[4],
-			///number of elements being sent and received
-			num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right, num_elements_recv_up,
-			num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
+	// Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right branch = 3.
+	// If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
+	branch_tag,
+	/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
+	scheme, offset_P, offset_L, offset_R, flip_array[4],
+	/// Number of elements being sent and received.
+	num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right, num_elements_recv_up,
+	num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
 	double **coordinates;
-	///Information for spatial variation in agonist
-	double min_jplc, max_jplc, gradient, uniform_jplc, stimulus_onset_time;	/// the time when spatially varying agonist kicks in
+	/// Information for spatial variation in agonist.
+	double min_jplc, max_jplc, gradient, uniform_jplc, stimulus_onset_time;	/// The time when spatially varying agonist kicks in.
 
 	my_tree my_domain;
 	glb_domn_inf global_domain_info;
 
-	//Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
-	//operation on MPI_COMM_WORLD and the other a Cartisian communicator arising from Cart_create operation
+	/// Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
+	/// operation on MPI_COMM_WORLD and the other a Cartesian communicator arising from Cart_create operation.
 	MPI_Comm universe, sub_universe, split_comm, cart_comm;
 
-	int smc_model, ec_model;	// These are placeholders for the selection of model to be simulated in each cell.
-	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
+	int smc_model, ec_model; /// These are placeholders for the selection of model to be simulated in each cell.
+	int NO_path, cGMP_path;	/// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
 
-	char suffix[10];	// this is for use in the naming convention of the IO files to construct file names with global information such as Logfiles and Elapsed Time files.
-	char input_file[10];
-						///Temporary array for use in time profiling checkpointing
+	char suffix[10]; /// This is for use in the naming convention of the IO files to construct file names with global information such as log files and Elapsed Time files.
+	char input_file[10]; /// Temporary array for use in time profiling checkpointing
 	double **time_profile;
 	FILE* logptr;
 
-	int num_parameters;			///Number of parameters e.g. JPLC, ATP, WSS etc those are to be used to stimulate the discrete cell models.
+	int num_parameters; /// Number of parameters e.g. JPLC, ATP, WSS etc those are to be used to stimulate the discrete cell models.
 
 	int logfile_displacements;
 	char* logfile_write_buffer;
@@ -207,86 +208,85 @@ typedef struct {
 	char input_file_path[50];
 } grid_parms;
 
-///Structure to store coupling data received from the neighbouring task.
+/// Structure to store coupling data received from the neighbouring task.
 typedef struct {
 	double c, v, I;
 } nbrs_data;
 
 typedef struct {
-	double *p;		///storage for the state variables corresponding to an SMC.
-	double NO, NE, I_stim;		///specific to Tsoukias model
-	int node_row, node_col;	///stores coordinates of the node on which I am located.
-	int my_row, my_col;		///stores my location on the node.
-	double* A;			    ///stores single cell fluxes
-	double* B;			    ///stores homogeneous coupling fluxes
-	double* C;			    ///stores heterogeneous coupling fluxes
+	double *p; /// Storage for the state variables corresponding to an SMC.
+	double NO, NE, I_stim; /// Specific to Tsoukias model.
+	int node_row, node_col;	/// Stores coordinates of the node on which I am located.
+	int my_row, my_col; /// Stores my location on the node.
+	double* A; /// Stores single cell fluxes.
+	double* B; /// Stores homogeneous coupling fluxes.
+	double* C; /// Stores heterogeneous coupling fluxes.
 	double x_coordinate[4], y_coordinate[4], z_coordinate[4];
 	int cell_index[4];
 	conductance cpl_cef;
 } celltype1;
 
 typedef struct {
-	double *q;		///storage for the state variables corresponding to an SMC.
-	int node_row, node_col;	///stores coordinates of the node on which I am located.
-	int my_row, my_col;		///stores my location on the node.
-	double* A;			    ///stores single cell fluxes
-	double* B;			    ///stores homogeneous coupling fluxes
-	double* C;			    ///stores heterogeneous coupling fluxes
+	double *q; /// Storage for the state variables corresponding to an EC.
+	int node_row, node_col; /// Stores coordinates of the node on which I am located.
+	int my_row, my_col; /// Stores my location on the node.
+	double* A; /// Stores single cell fluxes.
+	double* B; /// Stores homogeneous coupling fluxes.
+	double* C; /// Stores heterogeneous coupling fluxes.
 	double z_coord;
 	double x_coordinate[4], y_coordinate[4], z_coordinate[4];
 	int cell_indx[4];
 	double centeroid_point[3];
 	int centeroid_cell;
-	double JPLC;			    ///local agonsit concentration  on my GPCR receptor (an ith EC)
+	double JPLC; /// Local agonist concentration  on my GPCR receptor (an ith EC).
 	conductance cpl_cef;
 } celltype2;
-//#ifdef PARALLEL_IO
+
 typedef struct {
 	MPI_File
-	/* common handlers */
+	// Common handles.
 	logptr, Time, elapsed_time, jplc, coords,
 
-///time profiling file handles.
-			time_profiling, async_calls, async_wait, barrier_before_comm, map_function, single_cell_fluxes, coupling_fluxes, solver, writer_func,
-			derivative_calls, itter_count, line_number, remote_async_calls, remote_async_wait, send_buf_update, recv_buf_update, total_comms_cost,
-//handlers specific for Tsoukias-SMC model variables
-			tsk_Ca, tsk_V, tsk_IP3, tsk_q_1, tsk_q_2, tsk_d_L, tsk_f_L, tsk_p_f, tsk_p_s, tsk_p_K, tsk_h_IP3, tsk_Ca_u, tsk_Ca_r, tsk_R_10, tsk_R_11,
-			tsk_R_01, tsk_V_cGMP, tsk_cGMP, tsk_Na, tsk_K, tsk_Cl, tsk_DAG, tsk_PIP2, tsk_R_S_G, tsk_R_S_P_G, tsk_G,
-//handlers specific for Koenigsberger-SMC model variables
-			ci, si, vi, wi, Ii,
-//handlers specific for Koenigsberger-EC model variables
-			cj, sj, vj, Ij,
-//common handlers to record coupling data
-			cpCi, cpVi, cpIi, cpCj, cpVj, cpIj,
-//Task topology file
-			task_mesh,
-//SMC Data file
-			smc_data_file,
-//EC Data file
-			ec_data_file,
-//Agonist records
-			ec_agonist_file;
+	// Time profiling file handles.
+	time_profiling, async_calls, async_wait, barrier_before_comm, map_function, single_cell_fluxes, coupling_fluxes, solver, writer_func,
+	derivative_calls, itter_count, line_number, remote_async_calls, remote_async_wait, send_buf_update, recv_buf_update, total_comms_cost,
+
+	// Handles specific for Tsoukias-SMC model variables.
+	tsk_Ca, tsk_V, tsk_IP3, tsk_q_1, tsk_q_2, tsk_d_L, tsk_f_L, tsk_p_f, tsk_p_s, tsk_p_K, tsk_h_IP3, tsk_Ca_u, tsk_Ca_r, tsk_R_10, tsk_R_11,
+	tsk_R_01, tsk_V_cGMP, tsk_cGMP, tsk_Na, tsk_K, tsk_Cl, tsk_DAG, tsk_PIP2, tsk_R_S_G, tsk_R_S_P_G, tsk_G,
+
+	// Handles specific for Koenigsberger-SMC model variables.
+	ci, si, vi, wi, Ii,
+	// Handles specific for Koenigsberger-EC model variables.
+	cj, sj, vj, Ij,
+
+	// Common handlers to record coupling data.
+	cpCi, cpVi, cpIi, cpCj, cpVj, cpIj,
+
+	// Task topology file.
+	task_mesh,
+
+	// SMC Data file.
+	smc_data_file,
+
+	// EC Data file.
+	ec_data_file,
+
+	// Agonist records.
+	ec_agonist_file;
 } checkpoint_handle;
-
-/*#else
- typedef struct {
- FILE *logptr, *Time, *ci, *si, *vi, *wi, *Ii, *cpCi, *cpVi, *cpIi, *cj,
- *sj, *vj, *Ij, *cpCj, *cpVj, *cpIj;
- }checkpoint_handle;
-
- #endif*/
 
 typedef struct {
 	double
-	///Communication profilers
+	// Communication profilers
 	async_comm_calls_t1, async_comm_calls_t2, async_comm_calls_wait_t1, async_comm_calls_wait_t2, remote_async_comm_calls_t1,
-			remote_async_comm_calls_t2, remote_async_comm_calls_wait_t1, remote_async_comm_calls_wait_t2, update_sendbuf_t1, update_sendbuf_t2,
-			update_recvbuf_t1, update_recvbuf_t2, barrier_in_solver_before_comm_t1, barrier_in_solver_before_comm_t2, total_comms_cost_t1,
-			total_comms_cost_t2, diff_update_sendbuf, diff_update_recvbuf, diff_async_comm_calls, diff_async_comm_calls_wait,
-			diff_remote_async_comm_calls, diff_remote_async_comm_calls_wait, diff_barrier_in_solver_before_comm, diff_total_comms_cost,
-			///Solver profilers
-			map_function_t1, map_function_t2, single_cell_fluxes_t1, single_cell_fluxes_t2, coupling_fluxes_t1, coupling_fluxes_t2, solver_t1,
-			solver_t2, write_t1, write_t2, diff_map_function, diff_single_cell_fluxes, diff_coupling_fluxes, diff_solver, diff_write;
+	remote_async_comm_calls_t2, remote_async_comm_calls_wait_t1, remote_async_comm_calls_wait_t2, update_sendbuf_t1, update_sendbuf_t2,
+	update_recvbuf_t1, update_recvbuf_t2, barrier_in_solver_before_comm_t1, barrier_in_solver_before_comm_t2, total_comms_cost_t1,
+	total_comms_cost_t2, diff_update_sendbuf, diff_update_recvbuf, diff_async_comm_calls, diff_async_comm_calls_wait,
+	diff_remote_async_comm_calls, diff_remote_async_comm_calls_wait, diff_barrier_in_solver_before_comm, diff_total_comms_cost,
+	// Solver profilers
+	map_function_t1, map_function_t2, single_cell_fluxes_t1, single_cell_fluxes_t2, coupling_fluxes_t1, coupling_fluxes_t2, solver_t1,
+	solver_t2, write_t1, write_t2, diff_map_function, diff_single_cell_fluxes, diff_coupling_fluxes, diff_solver, diff_write;
 	int computeDerivatives_call_counter;
 	double aggregate_write,aggregate_compute,aggregate_comm;
 	double max_compute,max_comm,max_write, min_compute,min_comm,min_write;
@@ -303,12 +303,12 @@ typedef struct {
 } vtk_info;
 
 typedef struct {
-	///IO_domain related members
+	// IO_domain related members.
 	int IO_rank, IO_domain_ID, num_IO_tasks, num_IO_domains, writer_rank, writer_tasks;
 	int my_IO_domain_color, my_IO_domain_key;
 	int *my_IO_domain_members;
-	char ***data_filenames;				/// root rank stores receives data into this array
-	char **my_data_filenames;						/// filenames of files each Rank is suppose to have its data in.
+	char ***data_filenames; // Root rank stores receives data into this array.
+	char **my_data_filenames; // Filenames of files each Rank is suppose to have its data in.
 	int *my_IO_domain_member_disp;
 	MPI_Comm IO_COMM, writer_comm;
 	int num_vtk_points_mesh, num_vtk_cells_mesh,
@@ -331,7 +331,8 @@ typedef struct{
 	int *num_mesh_points,*num_mesh_cells,
 		*num_smc_points, *num_smc_cells,
 		*num_ec_points, *num_ec_cells;
-}static_info_of_geometry;
+} static_info_of_geometry;
+
 void check_flag(int, const char*);
 void* checked_malloc(size_t, const char*);
 
@@ -350,7 +351,7 @@ void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf, ce
 void communication_update_recvbuf_modified(grid_parms, double**, celltype1**, celltype2**);
 void communication_update_recvbuf_modified2(grid_parms, double**, celltype1**, celltype2**);
 
-//Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
+/// Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
 void single_cell(double, double*, grid_parms, celltype1**, celltype2**);
 void coupling(double, double*, grid_parms, celltype1**, celltype2**, conductance);
 void tsoukias_smc(grid_parms, celltype1**);
@@ -360,7 +361,7 @@ void koenigsberger_smc_derivatives(double*, grid_parms, celltype1**);
 void koenigsberger_ec(grid_parms, celltype2**);
 void koenigsberger_ec_derivatives(double, double*, grid_parms, celltype2**);
 
-///Checkpoint functions.
+/// Checkpoint functions.
 checkpoint_handle* initialise_checkpoint(grid_parms);
 checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
 void dump_coords(grid_parms, celltype2**, checkpoint_handle*, const char*);
@@ -395,7 +396,7 @@ double* reinitialize_koenigsberger_smc(checkpoint_handle*, int, grid_parms, doub
 double* reinitialize_koenigsberger_ec(checkpoint_handle*, int, grid_parms, double*, celltype2**);
 int checkpoint(checkpoint_handle*, grid_parms, double*, double*, celltype1**, celltype2**);
 
-//Solver related funtions
+/// Solver related functions.
 void computeDerivatives(double, double*, double*);
 void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, int, checkpoint_handle*, char*, IO_domain_info*);
 void rksuite_solver_UT(double, double, double, double *, double*, int, double, double*, int, int, checkpoint_handle*);
@@ -404,18 +405,18 @@ void rksuite_solver_UT(double, double, double, double *, double*, int, double, d
 static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
 void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
 		int file_write_per_unit_time,int, checkpoint_handle *check, time_keeper* elps_t);
-#endif /* CVODE */
+#endif
 
 int compute_with_time_profiling(time_stamps*, grid_parms, celltype1**, celltype2**, conductance cpl_cef, double, double*, double*);
 int compute(grid_parms, celltype1**, celltype2**, conductance cpl_cef, double, double*, double*);
 
-///These are debugging functions, not used in production runs.
+/// Debugging functions, not used in production runs.
 void print_domains(FILE*, grid_parms, celltype1**, celltype2**);
 void print_send_buffer(FILE*, grid_parms, double**);
 void print_recv_buffer(FILE*, grid_parms, double**);
 void print_compare(double, double*, grid_parms, celltype1**, celltype2**);
 
-//Topology related functions
+/// Topology related functions.
 grid_parms make_bifucation(grid_parms);
 grid_parms make_straight_segment(grid_parms);
 grid_parms set_geometry_parameters(grid_parms);
@@ -469,7 +470,6 @@ void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buff
 void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, celltype2**,int);
 
 void memory_diagnostics(FILE*);
-
 
 void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
 void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info);

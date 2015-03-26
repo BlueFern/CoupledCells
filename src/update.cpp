@@ -17,7 +17,7 @@ extern time_stamps t_stamp;
 ///************************************/
 ///************ check_flag*************/
 ///************************************/
-void check_flag(int err, const char* errmsg) {
+void check_flag(int err, const char *errmsg) {
 	if (err != MPI_SUCCESS) {
 		fprintf(stdout, "%s", errmsg);
 		MPI_Abort(MPI_COMM_WORLD, 200);

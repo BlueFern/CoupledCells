@@ -1,4 +1,4 @@
-//#include <omp.h>
+
 #include "bgq_specific.h"
 #include "computelib.h"
 
@@ -28,9 +28,7 @@ void* checked_malloc(size_t bytes, const char* errmsg) {
 	return pval;
 }
 
-/*******************************************************************************************/
 int couplingParms(int CASE, conductance* cpl_cef)
-/*******************************************************************************************/
 {
 	if (CASE == 1)
 	{
@@ -200,148 +198,145 @@ int couplingParms(int CASE, conductance* cpl_cef)
 	return 0;
 }
 
-/*************************************************************************/
-int map_solver_to_cells(grid_parms grid, double* y, celltype1** smc,
-		celltype2** ec) {
-	/*************************************************************************/
+int map_solver_to_cells(grid_parms grid, double* y, celltype1** smc, celltype2** ec) {
 	int err = 0;
+
 	switch (grid.smc_model) {
-	case (TSK): {
-		int k = 0, offset;
-		for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-			for (int j = 1; j <= grid.num_smc_axially; j++) {
-				if (i > 1)
-					k = ((i - 1) * grid.neq_smc_axially);
-				else if (i == 1)
-					k = 0;
-				smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
-				smc[i][j].p[smc_d_L] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_d_L];
-				smc[i][j].p[smc_f_L] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_f_L];
-				smc[i][j].p[smc_p_f] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_p_f];
-				smc[i][j].p[smc_p_s] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_p_s];
-				smc[i][j].p[smc_q_1] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_q_1];
-				smc[i][j].p[smc_q_2] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_q_2];
-				smc[i][j].p[smc_p_K] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_p_K];
-				smc[i][j].p[smc_Ca_u] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_Ca_u];
-				smc[i][j].p[smc_Ca_r] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_Ca_r];
-				smc[i][j].p[smc_R_10] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_10];
-				smc[i][j].p[smc_R_11] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_11];
-				smc[i][j].p[smc_R_01] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_01];
-				smc[i][j].p[smc_h_IP3] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_h_IP3];
-				smc[i][j].p[smc_R_S_G] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_S_G];
-				smc[i][j].p[smc_R_S_P_G] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_S_P_G];
-				smc[i][j].p[smc_G] = y[k + ((j - 1) * grid.neq_smc) + smc_G];
-				smc[i][j].p[smc_IP3] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
-				smc[i][j].p[smc_PIP2] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_PIP2];
-				smc[i][j].p[smc_V_cGMP] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_V_cGMP];
-				smc[i][j].p[smc_cGMP_i] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_cGMP_i];
-				smc[i][j].p[smc_Ca] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca];
-				smc[i][j].p[smc_Na_i] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_Na_i];
-				smc[i][j].p[smc_K_i] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_K_i];
-				smc[i][j].p[smc_Cl_i] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_Cl_i];
-				smc[i][j].p[smc_DAG] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_DAG];
+		case (TSK): {
+			int k = 0, offset;
+			for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+				for (int j = 1; j <= grid.num_smc_axially; j++) {
+					if (i > 1)
+						k = ((i - 1) * grid.neq_smc_axially);
+					else if (i == 1)
+						k = 0;
+					smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
+					smc[i][j].p[smc_d_L] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_d_L];
+					smc[i][j].p[smc_f_L] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_f_L];
+					smc[i][j].p[smc_p_f] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_p_f];
+					smc[i][j].p[smc_p_s] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_p_s];
+					smc[i][j].p[smc_q_1] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_q_1];
+					smc[i][j].p[smc_q_2] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_q_2];
+					smc[i][j].p[smc_p_K] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_p_K];
+					smc[i][j].p[smc_Ca_u] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_Ca_u];
+					smc[i][j].p[smc_Ca_r] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_Ca_r];
+					smc[i][j].p[smc_R_10] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_R_10];
+					smc[i][j].p[smc_R_11] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_R_11];
+					smc[i][j].p[smc_R_01] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_R_01];
+					smc[i][j].p[smc_h_IP3] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_h_IP3];
+					smc[i][j].p[smc_R_S_G] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_R_S_G];
+					smc[i][j].p[smc_R_S_P_G] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_R_S_P_G];
+					smc[i][j].p[smc_G] = y[k + ((j - 1) * grid.neq_smc) + smc_G];
+					smc[i][j].p[smc_IP3] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
+					smc[i][j].p[smc_PIP2] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_PIP2];
+					smc[i][j].p[smc_V_cGMP] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_V_cGMP];
+					smc[i][j].p[smc_cGMP_i] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_cGMP_i];
+					smc[i][j].p[smc_Ca] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca];
+					smc[i][j].p[smc_Na_i] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_Na_i];
+					smc[i][j].p[smc_K_i] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_K_i];
+					smc[i][j].p[smc_Cl_i] = y[k + ((j - 1) * grid.neq_smc)
+							+ smc_Cl_i];
+					smc[i][j].p[smc_DAG] =
+							y[k + ((j - 1) * grid.neq_smc) + smc_DAG];
+				}
 			}
+			break;
 		}
-		break;
-	}
-	case (KNBGR): {
-		int k = 0, offset;
-		for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-			for (int j = 1; j <= grid.num_smc_axially; j++) {
-				if (i > 1)
-					k = ((i - 1) * grid.neq_smc_axially);
-				else if (i == 1)
-					k = 0;
-				smc[i][j].p[smc_Ca] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca];
-				smc[i][j].p[smc_SR] = y[k + ((j - 1) * grid.neq_smc) + smc_SR];
-				smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
-				smc[i][j].p[smc_w] = y[k + ((j - 1) * grid.neq_smc) + smc_w];
-				smc[i][j].p[smc_IP3] =y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
+		case (KNBGR): {
+			int k = 0, offset;
+			for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+				for (int j = 1; j <= grid.num_smc_axially; j++) {
+					if (i > 1)
+						k = ((i - 1) * grid.neq_smc_axially);
+					else if (i == 1)
+						k = 0;
+					smc[i][j].p[smc_Ca] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca];
+					smc[i][j].p[smc_SR] = y[k + ((j - 1) * grid.neq_smc) + smc_SR];
+					smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
+					smc[i][j].p[smc_w] = y[k + ((j - 1) * grid.neq_smc) + smc_w];
+					smc[i][j].p[smc_IP3] =y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
 
+				}
 			}
+			break;
 		}
-		break;
+		default: {
+			err = 1;
+			break;
+		}
 	}
-	default: {
-		err = 1;
-		break;
-	}
-	}
+
 	switch (grid.ec_model) {
-	case (TSK): {
-		int k, offset = (grid.neq_smc * grid.num_smc_circumferentially
-				* grid.num_smc_axially);
+		case (TSK): {
+			int k, offset = (grid.neq_smc * grid.num_smc_circumferentially
+					* grid.num_smc_axially);
 
-		for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-			for (int j = 1; j <= grid.num_ec_axially; j++) {
-				if (i > 1)
-					k = offset + ((i - 1) * grid.neq_ec_axially);
-				else if (i == 1)
-					k = offset + 0;
-				ec[i][j].q[ec_Ca] = y[k + ((j - 1) * grid.neq_ec) + ec_Ca];
-				ec[i][j].q[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
-				ec[i][j].q[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
-				ec[i][j].q[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
+			for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+				for (int j = 1; j <= grid.num_ec_axially; j++) {
+					if (i > 1)
+						k = offset + ((i - 1) * grid.neq_ec_axially);
+					else if (i == 1)
+						k = offset + 0;
+					ec[i][j].q[ec_Ca] = y[k + ((j - 1) * grid.neq_ec) + ec_Ca];
+					ec[i][j].q[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
+					ec[i][j].q[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
+					ec[i][j].q[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
+				}
 			}
+			break;
 		}
-		break;
-	}
-	case (KNBGR): {
-		int k, offset = (grid.neq_smc * grid.num_smc_circumferentially
-				* grid.num_smc_axially);
+		case (KNBGR): {
+			int k, offset = (grid.neq_smc * grid.num_smc_circumferentially
+					* grid.num_smc_axially);
 
-		for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-			for (int j = 1; j <= grid.num_ec_axially; j++) {
-				if (i > 1)
-					k = offset + ((i - 1) * grid.neq_ec_axially);
-				else if (i == 1)
-					k = offset + 0;
-				ec[i][j].q[ec_Ca] = y[k + ((j - 1) * grid.neq_ec) + ec_Ca];
-				ec[i][j].q[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
-				ec[i][j].q[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
-				ec[i][j].q[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
+			for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+				for (int j = 1; j <= grid.num_ec_axially; j++) {
+					if (i > 1)
+						k = offset + ((i - 1) * grid.neq_ec_axially);
+					else if (i == 1)
+						k = offset + 0;
+					ec[i][j].q[ec_Ca] = y[k + ((j - 1) * grid.neq_ec) + ec_Ca];
+					ec[i][j].q[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
+					ec[i][j].q[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
+					ec[i][j].q[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
+				}
 			}
+			break;
 		}
-		break;
-	}
-	default: {
-		err = 1;
-		break;
-	}
+		default: {
+			err = 1;
+			break;
+		}
 	}
 
 	return (err);
 }
 
-/*******************************************************************************************/
 void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
-/*******************************************************************************************/
 {
-	///Allocating arrays of appropriate lengths for holding values of ghost cell variable to which the relevant smc[i][j] and ec[i][j] members will point to.
-	///The rest of the computational domain is to point to the solution vector y of the solver.
+	// Allocating arrays of appropriate lengths for holding values of ghost cell variable to which the relevant smc[i][j] and ec[i][j] members will point to.
+	// The rest of the computational domain is to point to the solution vector y of the solver.
 	double **ghost_cells_smc_circumferentially,
 			**ghost_cells_ec_circumferentially, **ghost_cells_smc_axially,
 			**ghost_cells_ec_axially;
@@ -383,15 +378,13 @@ void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
 	}
 }
 
-/*******************************************************************************************/
 void coupling(double t, double y[], grid_parms grid, celltype1** smc,
 		celltype2** ec, conductance cpl_cef)
-		/*******************************************************************************************/
 		{
 
 	int i, j, k, l;
 
-////******************** HOMOCELLULAR COUPLING *********************/
+	// HOMOCELLULAR COUPLING.
 	for (i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (j = 1; j <= grid.num_smc_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
@@ -414,8 +407,8 @@ void coupling(double t, double y[], grid_parms grid, celltype1** smc,
 											- smc[left][j].p[smc_IP3])
 									+ (smc[i][j].p[smc_IP3]
 											- smc[right][j].p[smc_IP3]));
-		}	//end j
-	}	//end i
+		}
+	}
 
 	for (i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (j = 1; j <= grid.num_ec_axially; j++) {
@@ -436,10 +429,10 @@ void coupling(double t, double y[], grid_parms grid, celltype1** smc,
 							+ (ec[i][j].q[ec_IP3] - ec[left][j].q[ec_IP3])
 							+ (ec[i][j].q[ec_IP3] - ec[right][j].q[ec_IP3]));
 
-		}	//end j
-	}	//end i
+		}
+	}
 
-////******************** HETROCELLULAR COUPLING *********************/
+	// HETROCELLULAR COUPLING.
 	int offset_smc_circumferentially, offset_ec_axially;
 
 	i = 0;
@@ -492,17 +485,15 @@ void coupling(double t, double y[], grid_parms grid, celltype1** smc,
 		}
 	}
 
-}	//end of coupling()
+}
 
-/**************************************************************************************/
 double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coordinate)
-/**************************************************************************************/
 {
 	double JPLC;
 	if (t > grid.stimulus_onset_time) {
 
-		/*	JPLC =grid.min_jplc+ (grid.max_jplc/
-		 (1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
+		/*
+		 JPLC = grid.min_jplc+ (grid.max_jplc / (1 + exp(-grid.gradient * (((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) - (grid.m*grid.num_ec_axially / 2)))));
 		 */
 		JPLC = grid.min_jplc
 				+ (grid.max_jplc / (1e-3 + exp(-grid.gradient * axial_coordinate)));
@@ -512,29 +503,9 @@ double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coo
 	return JPLC;
 }
 
-/**********************************************************************/
 celltype2** ith_ec_z_coordinate(grid_parms grid, celltype2** ec)
-/**********************************************************************/
 {
-	/*	double array[2 * grid.num_ec_axially];
-
-	 for (int i = 0; i <= 2 * grid.num_ec_axially; i++) {
-	 array[i] = grid.my_domain.local_z_end
-	 + (i)
-	 * ((grid.my_domain.local_z_start
-	 - grid.my_domain.local_z_end)
-	 / (2 * grid.num_ec_axially));
-	 }
-
-	 for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-	 int indx = 2 * grid.num_ec_axially - 1;
-	 for (int j = 1; j <= grid.num_ec_axially; j++) {
-	 ec[i][j].z_coord = array[indx];
-	 indx -= 2;
-	 }
-	 }
-	 return (ec);*/
-	double adapted_ec_length = grid.hx_ec;//-(grid.my_domain.local_z_end	- grid.my_domain.local_z_start) / grid.num_ec_axially;
+	double adapted_ec_length = grid.hx_ec; // -(grid.my_domain.local_z_end - grid.my_domain.local_z_start) / grid.num_ec_axially;
 	double array[grid.num_ec_axially];
 	for (int i = 0; i < grid.num_ec_axially; i++) {
 		array[i] = grid.my_domain.local_z_end
@@ -549,7 +520,7 @@ celltype2** ith_ec_z_coordinate(grid_parms grid, celltype2** ec)
 
 	return (ec);
 }
-/**********************************************************************/
+
 void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_async_comm_calls = 0.0;
 	t_stamp->diff_async_comm_calls_wait = 0.0;
@@ -558,9 +529,8 @@ void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_single_cell_fluxes = 0.0;
 	t_stamp->diff_coupling_fluxes = 0.0;
 }
-/********************************************************************************/
+
 int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
-	/*******************************************************************************/
 	MPI_Offset disp;
 	MPI_Status status;
 	int index;
@@ -572,10 +542,9 @@ int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
 			"error reading the line number in recognize_end_of_file_index.");
 	return (index);
 }
-/********************************************************************************/
+
 double reinitialize_time(checkpoint_handle* check, int line_index,
 		grid_parms grid) {
-	/************************************************************************/
 	MPI_Offset disp;
 	MPI_Status status;
 
@@ -589,10 +558,9 @@ double reinitialize_time(checkpoint_handle* check, int line_index,
 					&status), "error read in the reinit data in reinit_smc.");
 	return (time);
 }
-/********************************************************************************/
+
 double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, celltype1** smc) {
-	/***********************************************************************************/
 	MPI_Offset disp;
 	MPI_Status status;
 
@@ -650,10 +618,9 @@ double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
 	}
 	return (y);
 }
-/********************************************************************************/
+
 double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, celltype1** smc) {
-	/***********************************************************************************/
 	MPI_Offset disp;
 	MPI_Status status;
 
@@ -755,10 +722,9 @@ double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 	}
 	return (y);
 }
-/************************************************************************************/
+
 double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, celltype2** ec) {
-	/************************************************************************************/
 	MPI_Offset disp;
 	MPI_Status status;
 
@@ -814,11 +780,9 @@ double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 	return (y);
 }
 
-/*****************************************************************************/
 int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 		celltype1** smc, celltype2** ec, conductance cpl_cef, double t,
 		double* y, double* f) {
-	/*****************************************************************************/
 
 	int err;
 
@@ -900,10 +864,8 @@ int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 	return (err);
 }
 
-/*****************************************************************************/
 int compute(grid_parms grid, celltype1** smc, celltype2** ec,
 		conductance cpl_cef, double t, double* y, double* f) {
-	/*****************************************************************************/
 
 	int err;
 
@@ -970,11 +932,10 @@ int compute(grid_parms grid, celltype1** smc, celltype2** ec,
 	return (err);
 }
 
-/*****************************************************************************/
-void Total_cells_in_computational_domain(grid_parms grid) {
-/// Gathers local information on each CPU about the number of ECs and SMCs and sends to the Root
+/// Gather local information on each CPU about the number of ECs and SMCs and send to the Root
 /// which evaluates the total number of ECs and SMCs constituting the global computational domain.
-	/****************************************************************************/
+void Total_cells_in_computational_domain(grid_parms grid) {
+
 	int sendcount = 2, recvcount = 2;
 	int root = 0;
 	int sendarray[2], recvarray[sendcount * grid.numtasks];
@@ -998,23 +959,16 @@ void Total_cells_in_computational_domain(grid_parms grid) {
 	}
 }
 
-/****************************************************************************/
+/// Evaluate min, max, average of the stored time profiling data for every processor.
 void process_time_profiling_data(grid_parms grid, double** time_profiler,
 		int count) {
-///This function is suppose to evaluate min, max, average of the stored time profiling data
-// for every processor.
-	double processed_data[11][3]; ///This will hold min max average of each of the 11 arrays.
+	double processed_data[11][3]; // This will hold min max average of each of the 11 arrays.
 	int index, root = 0, sendcount = 3, recvcount = grid.numtasks * sendcount;
 	for (int n = 0; n < 11; n++) {
 		minimum(time_profiler[n], count, &processed_data[n][0], &index);
 		maximum(time_profiler[n], count, &processed_data[n][1], &index);
 		average(time_profiler[n], count, &processed_data[n][2]);
 	}
-
-
-	/*printf("[%d] %2.15lf\t%2.15lf\t%2.15lf\n", grid.universal_rank,
-	 processed_data[3][0], processed_data[3][1],
-	 processed_data[3][2]);*/
 
 	double *sendarray = (double*) malloc(sendcount * sizeof(double));
 	double *recvarray = (double*) malloc(recvcount * sizeof(double));
@@ -1036,9 +990,9 @@ void process_time_profiling_data(grid_parms grid, double** time_profiler,
 	}
 	MPI_Barrier(grid.universe);
 }
-/************************************************************/
+
 void minimum(double* table, int size, double *value, int *index) {
-	///For evaluating minimum of an array.
+	// For evaluating minimum of an array.
 	*value = table[0];
 	for (int i = 0; i < size; i++) {
 		if (*value > table[i]) {
@@ -1047,9 +1001,9 @@ void minimum(double* table, int size, double *value, int *index) {
 		}
 	}
 }
-/************************************************************/
+
 void maximum(double* table, int size, double *value, int *index) {
-	///For evaluating maximum of an array.
+	// For evaluating maximum of an array.
 	*value = table[0];
 	for (int i = 0; i < size; i++) {
 		if (*value < table[i]) {
@@ -1059,9 +1013,8 @@ void maximum(double* table, int size, double *value, int *index) {
 	}
 }
 
-/************************************************************/
 void average(double* table, int size, double *value) {
-	///For evaluating average of an array.
+	// For evaluating average of an array.
 	*value = 0;
 	for (int i = 0; i < size; i++) {
 		*value += table[i];
@@ -1069,8 +1022,8 @@ void average(double* table, int size, double *value) {
 	*value = *value / (double) (size);
 }
 
-/***********************************************************/
-int sum_array(int num_elements,int* array){
+int sum_array(int num_elements, int* array) {
+	// For evaluating the sum of all array elements.
 	int sum=0;
 	for(int i=0; i<num_elements; i++){
 		sum+=array[i];

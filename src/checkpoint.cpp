@@ -1504,7 +1504,7 @@ int read_domain_info(int rank, char* filename, grid_parms* grid) {
 	err = MPI_File_read_at(data, disp, buffer, chunk, MPI_CHAR, &status);
 	err = MPI_Get_count(&status, MPI_CHAR, &count);
 	char *token;
-	char *delimiter = ";,\n";
+	char *delimiter = (char *)";,\n";
 	token = strtok(buffer, delimiter);
 	int index = 0;
 	while (token != NULL) {
@@ -3098,13 +3098,13 @@ void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_b
 
 void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info) {
 
-	push_coarse_timing_data_to_file("aggregated_compute_time", grid, t_stamp->aggregate_compute, my_IO_domain_info);
-	push_coarse_timing_data_to_file("aggregated_comm_time", grid, t_stamp->aggregate_comm, my_IO_domain_info);
-	push_coarse_timing_data_to_file("aggregated_write_time", grid, t_stamp->aggregate_write, my_IO_domain_info);
+	push_coarse_timing_data_to_file((char *)"aggregated_compute_time", grid, t_stamp->aggregate_compute, my_IO_domain_info);
+	push_coarse_timing_data_to_file((char *)"aggregated_comm_time", grid, t_stamp->aggregate_comm, my_IO_domain_info);
+	push_coarse_timing_data_to_file((char *)"aggregated_write_time", grid, t_stamp->aggregate_write, my_IO_domain_info);
 
-	push_task_wise_min_max_of_time_profile("min_max_of_aggregate_compute", grid, t_stamp->aggregate_compute, my_IO_domain_info);
-	push_task_wise_min_max_of_time_profile("min_max_of_aggregate_comm", grid, t_stamp->aggregate_comm, my_IO_domain_info);
-	push_task_wise_min_max_of_time_profile("min_max_of_aggregate_write", grid, t_stamp->aggregate_write, my_IO_domain_info);
+	push_task_wise_min_max_of_time_profile((char *)"min_max_of_aggregate_compute", grid, t_stamp->aggregate_compute, my_IO_domain_info);
+	push_task_wise_min_max_of_time_profile((char *)"min_max_of_aggregate_comm", grid, t_stamp->aggregate_comm, my_IO_domain_info);
+	push_task_wise_min_max_of_time_profile((char *)"min_max_of_aggregate_write", grid, t_stamp->aggregate_write, my_IO_domain_info);
 }
 
 void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info) {
