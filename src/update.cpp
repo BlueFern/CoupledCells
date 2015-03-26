@@ -5,18 +5,10 @@
 #include <math.h>
 #include "computelib.h"
 
-/*extern	   conductance		cpl_cef;
- extern	   celltype1** 		smc;
- extern	   celltype2** 		ec;
- extern 	   double       	**sendbuf,**recvbuf;
- extern	   grid_parms		grid;
- */
 using namespace std;
+
 extern time_stamps t_stamp;
 
-///************************************/
-///************ check_flag*************/
-///************************************/
 void check_flag(int err, const char *errmsg) {
 	if (err != MPI_SUCCESS) {
 		fprintf(stdout, "%s", errmsg);
@@ -29,37 +21,36 @@ void determin_source_destination(grid_parms grid, int source[], int dest[]) {
 		dest[UP] = grid.nbrs[local][UP];
 		source[UP] = grid.nbrs[local][UP];
 	} else if (grid.nbrs[local][UP] < 0) {
-		dest[UP] = grid.rank; //MPI_PROC_NULL;
-		source[UP] = grid.rank; //MPI_PROC_NULL;
+		dest[UP] = grid.rank; // MPI_PROC_NULL;
+		source[UP] = grid.rank; // MPI_PROC_NULL;
 	}
 
 	if (grid.nbrs[local][DOWN] >= 0) {
 		dest[DOWN] = grid.nbrs[local][DOWN];
 		source[DOWN] = grid.nbrs[local][DOWN];
 	} else if (grid.nbrs[local][DOWN] < 0) {
-		dest[DOWN] = grid.rank; //MPI_PROC_NULL;
-		source[DOWN] = grid.rank; //MPI_PROC_NULL;
+		dest[DOWN] = grid.rank; // MPI_PROC_NULL;
+		source[DOWN] = grid.rank; // MPI_PROC_NULL;
 	}
 
 	if (grid.nbrs[local][LEFT] >= 0) {
 		dest[LEFT] = grid.nbrs[local][LEFT];
 		source[LEFT] = grid.nbrs[local][LEFT];
 	} else if (grid.nbrs[local][LEFT] < 0) {
-		dest[LEFT] = grid.rank; //MPI_PROC_NULL;
-		source[LEFT] = grid.rank; //MPI_PROC_NULL;
+		dest[LEFT] = grid.rank; // MPI_PROC_NULL;
+		source[LEFT] = grid.rank; // MPI_PROC_NULL;
 	}
 
 	if (grid.nbrs[local][RIGHT] >= 0) {
 		dest[RIGHT] = grid.nbrs[local][RIGHT];
 		source[RIGHT] = grid.nbrs[local][RIGHT];
 	} else if (grid.nbrs[local][RIGHT] < 0) {
-		dest[RIGHT] = grid.rank; //MPI_PROC_NULL;
+		dest[RIGHT] = grid.rank; // MPI_PROC_NULL;
 		source[RIGHT] = grid.rank; // MPI_PROC_NULL;
 	}
 }
-/*******************************************************************************************/
+
 grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
-/*******************************************************************************************/
 {
 	int err;
 	MPI_Request reqs[8];
@@ -102,33 +93,34 @@ grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
 	return (grid);
 
 }
-/*******************************************************************************************/
+
 void communication_async_send_recv(grid_parms grid, double** sendbuf,
 		double** recvbuf, celltype1** smc, celltype2** ec)
-		/*******************************************************************************************/
 		{
-	/// For recording an error in communication. err can either be MPI_SUCCESS or !MPI_SUCCESS
+	// For recording an error in communication, can either be MPI_SUCCESS or !MPI_SUCCESS.
 	int err;
-	/// 8 MPI variables of types Request and Status are declared. 4 of each are for sending information to 4 neighbours and the other 4 are to retriesve the receive operation status.
+
+	// 8 MPI variables of types Request and Status are declared.
+	// 4 of each are for sending information to 4 neighbours
+	// and the other 4 are to retrieve the receive operation status.
 	MPI_Request reqs[16];
 	MPI_Status stats[16];
 
-	/// Two array, source and dest, hold the ranks for the communicating tasks.
-	/// dest has ranks to which my task will send a message to.
-	/// source contains tasks from which I expect a message.
+	// Two array, source and dest, hold the ranks for the communicating tasks.
+	// dest has ranks to which my task will send a message to.
+	// source contains tasks from which I expect a message.
 	int source[4], dest[4];
-	/// Message tag 1 and 2 representing segment 1 and 2 send or received by processor.
+
+	// Message tag 1 and 2 representing segment 1 and 2 send or received by processor.
 	int tag_1 = 1, tag_2 = 2;
 	determin_source_destination(grid, source, dest);
 	t_stamp.update_sendbuf_t1 = MPI_Wtime();
 	communication_update_sendbuf(grid, sendbuf, smc, ec);
 	t_stamp.update_sendbuf_t2 = MPI_Wtime();
-	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2
-			- t_stamp.update_sendbuf_t1;
+	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2 - t_stamp.update_sendbuf_t1;
 	t_stamp.async_comm_calls_t1 = MPI_Wtime();
 
-
-	/// Communication block
+	// Communication block.
 	check_flag(
 			MPI_Irecv(&recvbuf[UP1][0], grid.num_elements_recv_up, MPI_DOUBLE,
 					source[UP], tag_1, grid.cart_comm, &reqs[8 + UP1]),
@@ -338,22 +330,20 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	t_stamp.update_recvbuf_t1 = MPI_Wtime();
 	communication_update_recvbuf_modified(grid, recvbuf, smc, ec);
 	t_stamp.update_recvbuf_t2 = MPI_Wtime();
-	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2
-			- t_stamp.update_recvbuf_t1;
+	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2 - t_stamp.update_recvbuf_t1;
 
-}	//end of update_async()
+}
 
-/*******************************************************************************************/
 void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		celltype1** smc, celltype2** ec)
-/*******************************************************************************************/
 		{
 	int k, buf_offset;
 
-///UP direction	///
-	///UP1
+	// UP direction.
+	// UP1.
 	buf_offset = grid.added_info_in_send_buf;
-	//Updating SEND BUFFERwith SMC information  to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFERwith SMC information  to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int i = (int) sendbuf[UP1][0]; i <= (int) sendbuf[UP1][1]; i++) {
 		int j = 1;
@@ -363,11 +353,12 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_smc;
 	}
 
-	//Setting up the offset to transfer the EC info into SEND BUFFER
+	// Setting up the offset to transfer the EC info into SEND BUFFER.
 	buf_offset = grid.added_info_in_send_buf
 			+ grid.num_coupling_species_smc
 					* (sendbuf[UP1][1] - sendbuf[UP1][0] + 1);
-	//Updating SEND BUFFER with EC information to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER with EC information to be sent in UP1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 
 	for (int i = (int) sendbuf[UP1][2]; i <= (int) sendbuf[UP1][3]; i++) {
@@ -376,12 +367,12 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		sendbuf[UP1][buf_offset + k + 1] = ec[i][j].q[ec_Vm];
 		sendbuf[UP1][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
 		k += grid.num_coupling_species_ec;
-
 	}
 
-	///UP2
+	// UP2.
 	buf_offset = grid.added_info_in_send_buf;
-	//Updating SEND BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int i = (int) sendbuf[UP2][0]; i <= (int) sendbuf[UP2][1]; i++) {
 		int j = 1;
@@ -391,11 +382,12 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_smc;
 	}
 
-	//Setting up the offset to transfer the EC info into SEND BUFFER
+	// Setting up the offset to transfer the EC info into SEND BUFFER
 	buf_offset = grid.added_info_in_send_buf
 			+ grid.num_coupling_species_smc
 					* (sendbuf[UP2][1] - sendbuf[UP2][0] + 1);
-	//Updating SEND BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER to be sent in UP2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int i = (int) sendbuf[UP2][2]; i <= (int) sendbuf[UP2][3]; i++) {
 		int j = 1;
@@ -405,10 +397,11 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_ec;
 	}
 
-///DOWN direction	///
-	///DOWN1
+	// DOWN direction.
+	// DOWN1.
 	buf_offset = grid.added_info_in_send_buf;
-	//Updating SEND BUFFERwith SMC information  to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFERwith SMC information  to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int i = (int) sendbuf[DOWN1][0]; i <= (int) sendbuf[DOWN1][1]; i++) {
 		int j = grid.num_smc_axially;
@@ -417,11 +410,13 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		sendbuf[DOWN1][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
 		k += grid.num_coupling_species_smc;
 	}
-	//Setting up the offset to transfer the EC info into SEND BUFFER
+
+	// Setting up the offset to transfer the EC info into SEND BUFFER.
 	buf_offset = grid.added_info_in_send_buf
 			+ grid.num_coupling_species_smc
 					* (sendbuf[DOWN1][1] - sendbuf[DOWN1][0] + 1);
-	//Updating SEND BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int i = (int) sendbuf[DOWN1][2]; i <= (int) sendbuf[DOWN1][3]; i++) {
 		int j = grid.num_ec_axially;
@@ -431,9 +426,10 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_ec;
 	}
 
-	///DOWN2
+	// DOWN2.
 	buf_offset = grid.added_info_in_send_buf;
-	//Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int i = (int) sendbuf[DOWN2][0]; i <= (int) sendbuf[DOWN2][1]; i++) {
 		int j = grid.num_smc_axially;
@@ -443,11 +439,12 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_smc;
 	}
 
-	//Setting up the offset to transfer the EC info into SEND BUFFER
+	// Setting up the offset to transfer the EC info into SEND BUFFER.
 	buf_offset = grid.added_info_in_send_buf
 			+ grid.num_coupling_species_smc
 					* (sendbuf[DOWN2][1] - sendbuf[DOWN2][0] + 1);
-	//Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int i = (int) sendbuf[DOWN2][2]; i <= (int) sendbuf[DOWN2][3]; i++) {
 		int j = grid.num_ec_axially;
@@ -457,10 +454,11 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_ec;
 	}
 
-///LEFT direction	///
-	///LEFT1
+	// LEFT direction.
+	// LEFT1.
 	buf_offset = grid.added_info_in_send_buf;
-	//Updating SEND BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[LEFT1][0]; j <= (int) sendbuf[LEFT1][1]; j++) {
 		int i = 1;
@@ -469,11 +467,13 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		sendbuf[LEFT1][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
 		k += grid.num_coupling_species_smc;
 	}
-	//Setting up the offset to transfer the EC info into SEND BUFFER
+
+	// Setting up the offset to transfer the EC info into SEND BUFFER.
 	buf_offset = grid.added_info_in_send_buf
 			+ grid.num_coupling_species_smc
 					* (sendbuf[LEFT1][1] - sendbuf[LEFT1][0] + 1);
-	//Updating SEND BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER with EC information to be sent in DOWN1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[LEFT1][2]; j <= (int) sendbuf[LEFT1][3]; j++) {
 		int i = 1;
@@ -483,9 +483,10 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_ec;
 	}
 
-	///LEFT2
+	// LEFT2.
 	buf_offset = grid.added_info_in_send_buf;
-	//Updating SEND BUFFER to be sent in LEFT2 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER to be sent in LEFT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[LEFT2][0]; j <= (int) sendbuf[LEFT2][1]; j++) {
 		int i = 1;
@@ -494,11 +495,13 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		sendbuf[LEFT2][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
 		k += grid.num_coupling_species_smc;
 	}
-	//Setting up the offset to transfer the EC info into SEND BUFFER
+
+	// Setting up the offset to transfer the EC info into SEND BUFFER.
 	buf_offset = grid.added_info_in_send_buf
 			+ grid.num_coupling_species_smc
 					* (sendbuf[LEFT2][1] - sendbuf[LEFT2][0] + 1);
-	//Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER to be sent in DOWN2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[LEFT2][2]; j <= (int) sendbuf[LEFT2][3]; j++) {
 		int i = 1;
@@ -508,10 +511,11 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_ec;
 	}
 
-///RIGHT direction	///
-	///RIGHT1
+	// RIGHT direction.
+	// RIGHT1.
 	buf_offset = grid.added_info_in_send_buf;
-	//Updating SEND BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER with SMC information  to be sent in LEFT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT1][0]; j <= (int) sendbuf[RIGHT1][1]; j++) {
 		int i = grid.num_smc_circumferentially;
@@ -520,11 +524,13 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		sendbuf[RIGHT1][buf_offset + k + 2] = smc[i][j].p[smc_IP3];
 		k += grid.num_coupling_species_smc;
 	}
-	//Setting up the offset to transfer the EC info into SEND BUFFER
+
+	// Setting up the offset to transfer the EC info into SEND BUFFER.
 	buf_offset = grid.added_info_in_send_buf
 			+ grid.num_coupling_species_smc
 					* (sendbuf[RIGHT1][1] - sendbuf[RIGHT1][0] + 1);
-	//Updating SEND BUFFER with EC information to be sent in RIGHT1 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER with EC information to be sent in RIGHT1 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT1][2]; j <= (int) sendbuf[RIGHT1][3]; j++) {
 		int i = grid.num_ec_circumferentially;
@@ -534,9 +540,10 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_ec;
 	}
 
-	///RIGHT2
+	// RIGHT2.
 	buf_offset = grid.added_info_in_send_buf;
-	//Updating SEND BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT2][0]; j <= (int) sendbuf[RIGHT2][1]; j++) {
 		int i = grid.num_smc_circumferentially;
@@ -546,11 +553,12 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_smc;
 	}
 
-	//Setting up the offset to transfer the EC info into SEND BUFFER
+	// Setting up the offset to transfer the EC info into SEND BUFFER.
 	buf_offset = grid.added_info_in_send_buf
 			+ grid.num_coupling_species_smc
 					* (sendbuf[RIGHT2][1] - sendbuf[RIGHT2][0] + 1);
-	//Updating SEND BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
+
+	// Updating SEND BUFFER to be sent in RIGHT2 direction with corresponding downstream neighbour cells located locally.
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT2][2]; j <= (int) sendbuf[RIGHT2][3]; j++) {
 		int i = grid.num_ec_circumferentially;
@@ -560,13 +568,10 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		sendbuf[RIGHT2][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
 		k += grid.num_coupling_species_ec;
 	}
+}
 
-}	// end of communication_update_sendbuf()
-
-/*******************************************************************************************/
 void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 		celltype1** smc, celltype2** ec)
-		/*******************************************************************************************/
 		{
 	int k, buf_offset;
 ///UP direction	///
@@ -785,12 +790,10 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 		ec[i][j].q[ec_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
 		k += grid.num_coupling_species_ec;
 	}
-}	// end of communication_update_recvbuf()
+}
 
-/*******************************************************************************************/
 void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
 		celltype1** smc, celltype2** ec)
-/*******************************************************************************************/
 		{
 	int k, buf_offset;
 ///UP direction	///
@@ -1005,12 +1008,11 @@ void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
 	}
 }	// end of communication_update_sendbuf()
 
-/*******************************************************************************************/
 void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
 		celltype1** smc, celltype2** ec)
-		/*******************************************************************************************/
 		{
 	int k, buf_offset;
+
 ///UP direction	///
 ///UP1
 	buf_offset = grid.added_info_in_send_buf;
@@ -1274,13 +1276,11 @@ void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
 	}
 }	// end of communication_update_recvbuf()
 
-
-/*******************************************************************************************/
 void communication_update_recvbuf_modified2(grid_parms grid, double** recvbuf,
 		celltype1** smc, celltype2** ec)
-		/*******************************************************************************************/
 		{
 	int k, buf_offset;
+
 ///UP direction	///
 ///UP1
 	buf_offset = grid.added_info_in_send_buf;
@@ -1542,4 +1542,4 @@ void communication_update_recvbuf_modified2(grid_parms grid, double** recvbuf,
 		ec[i][j].q[ec_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
 		k += grid.num_coupling_species_ec;
 	}
-}	// end of communication_update_recvbuf()
+}
