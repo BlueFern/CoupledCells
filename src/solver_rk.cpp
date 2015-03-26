@@ -1,4 +1,5 @@
 #ifndef CVODE
+
 #include <mpi.h>
 #include <iostream>
 #include <fstream>
@@ -17,16 +18,13 @@ extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
 extern time_stamps t_stamp;
 
-///***************************************************************************************/
-///************ComputeDerivates(tnow, state_variables[], first_derivatives[])*************/
-///***************************************************************************************/
 void computeDerivatives(double t, double y[], double f[]) {
 
 	compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
 	//compute(grid, smc, ec, cpl_cef, t, y, f);
 	t_stamp.computeDerivatives_call_counter += 1;
+}
 
-}    //end of computeDerivatives()
 void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp, int total, double TOL, double* thres,
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check, char* path, IO_domain_info* my_IO_domain_info) {
 
@@ -44,9 +42,10 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	rksuite.setup(total, tnow, y, tend, TOL, thres, method, "CT", false, 0.0, false);
 	communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
 
-	//computeDerivatives(tnow, y, yp);
+	// ComputeDerivatives(tnow, y, yp);
 	MPI_Barrier(grid.universe);
-	//int file_offset_for_timing_data = determine_file_offset_for_timing_data(check, grid);
+
+	// int file_offset_for_timing_data = determine_file_offset_for_timing_data(check, grid);
 	int totf, stpcst, stpsok;
 	double waste, hnext;
 	int err;
@@ -62,12 +61,13 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			"allocation failed for ec_cpl_buffer_length array in data_buffer structure.");
 	static_info_of_geometry* static_info = (static_info_of_geometry*) checked_malloc(sizeof(static_info_of_geometry),
 			"allocation for static geometry info failed in rk_CT function.\n");
-	/// Dump MPI task mesh representation into vtk file to menifest task map.
+
+	// Dump MPI task mesh representation into vtk file to manifest task map.
 	gather_tasks_mesh_point_data_on_writers_ver2(&grid, my_IO_domain_info, writer_buffer, smc, ec);
 	if (grid.rank == 0) {
 	 dump_process_data_ver2(check, &grid, my_IO_domain_info, writer_buffer,static_info, path);
 	 }
-	/// Dump JPLC map on bifurcation into a vtk file.
+	// Dump JPLC map on bifurcation into a vtk file.
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
 			ec[i][j].JPLC = agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);
@@ -79,9 +79,10 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		dump_agonists_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
 	}
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
-/// ITERATION loop to go from INITIAL time to FINAL time.
+
+	// Loop to go from INITIAL time to FINAL time.
 	while (tnow <= tfinal) {
-		// the ct() function does not guarantee to advance all the
+		// The ct() function does not guarantee to advance all the
 		// way to the stop time.  Keep stepping until it does.
 		t_stamp.solver_t1 = MPI_Wtime();
 		do {
@@ -91,21 +92,23 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				MPI_Abort(MPI_COMM_WORLD, 300);
 			}
 		} while (tnow < tend);
-		/// rksuite.stat() routine calls the to gather statistic on the performance of the solver.
-		/// Amongst other things it also informs about what the next step size should be.
+
+		// rksuite.stat() routine calls the to gather statistic on the performance of the solver.
+		// Amongst other things it also informs about what the next step size should be.
 		rksuite.stat(totf, stpcst, waste, stpsok, hnext);
 		t_stamp.solver_t2 = MPI_Wtime();
 		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
 		palce_holder_for_timing_max_min[0][itteration] = t_stamp.diff_solver;
 		t_stamp.aggregate_compute += t_stamp.diff_solver;
 
-		/// Call for interprocessor communication
+		// Call for interprocessor communication.
 		t_stamp.total_comms_cost_t1 = MPI_Wtime();
 		communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
 		t_stamp.total_comms_cost_t2 = MPI_Wtime();
 		t_stamp.diff_total_comms_cost = t_stamp.total_comms_cost_t2 - t_stamp.total_comms_cost_t1;
 		palce_holder_for_timing_max_min[1][itteration] = t_stamp.diff_total_comms_cost;
 		t_stamp.aggregate_comm += t_stamp.diff_total_comms_cost;
+
 		/*if (itteration == 5) {
 		 dump_JPLC(grid, ec, check, "Local agonist before t=100s\n");
 		 }*/
@@ -113,7 +116,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		if ((write_once <= 1) && (tnow >= grid.stimulus_onset_time)) {
 			write_once++;
 			if (grid.rank % grid.n == 0) {
-			//	dump_JPLC(grid, ec, check, "Local agonist after t=100s");
+			// dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}
 		}
 
@@ -136,18 +139,18 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			palce_holder_for_timing_max_min[2][write_count] = t_stamp.diff_write;
 			t_stamp.aggregate_write += t_stamp.diff_write;
 			write_count++;
-		}		//end itteration
+		}
 
-		//checkpoint_timing_data(grid, check, tnow, t_stamp, itteration, file_offset_for_timing_data);
+		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
 		initialize_t_stamp(&t_stamp);
-		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
+		// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
 		itteration++;
 		tend += interval;
 		rksuite.reset(tend);
-	}			//end while()
-	//t_stamp.aggregate_compute = t_stamp.aggregate_compute / itteration;
-	//t_stamp.aggregate_comm = t_stamp.aggregate_comm / itteration;
-	//t_stamp.aggregate_write = t_stamp.aggregate_write / write_count;
+	}
+	// t_stamp.aggregate_compute = t_stamp.aggregate_compute / iteration;
+	// t_stamp.aggregate_comm = t_stamp.aggregate_comm / iteration;
+	// t_stamp.aggregate_write = t_stamp.aggregate_write / write_count;
 
 	double tmp_array[write_count];
 	for (int i = 0; i < write_count; i++) {

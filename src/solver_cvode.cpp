@@ -21,19 +21,17 @@ extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
 extern time_stamps t_stamp;
 
-/********************************************************************************************/
-/**/static int check_cvode_flag(void *flagvalue, char *funcname, int opt) /**/
-/********************************************************************************************/
+static int check_cvode_flag(void *flagvalue, char *funcname, int opt)
 {
 	int *errflag;
 
-	/* Check if SUNDIALS function returned NULL pointer - no memory allocated */
+	/* Check if SUNDIALS function returned NULL pointer - no memory allocated. */
 	if (opt == 0 && flagvalue == NULL) {
 		fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
 				funcname);
 		return(1);}
 
-	/* Check if flag < 0 */
+	/* Check if flag < 0. */
 	else if (opt == 1) {
 		errflag = (int *) flagvalue;
 		if (*errflag < 0) {
@@ -41,7 +39,7 @@ extern time_stamps t_stamp;
 					funcname, *errflag);
 			return(1);}}
 
-	/* Check if function returned NULL pointer - no memory allocated */
+	/* Check if function returned NULL pointer - no memory allocated. */
 	else if (opt == 2 && flagvalue == NULL) {
 		fprintf(stderr, "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
 				funcname);
@@ -50,16 +48,12 @@ extern time_stamps t_stamp;
 	return(0);
 }
 
-///***************************************************************************************/
-///************ComputeDerivates(tnow, state_variables[], first_derivatives[])*************/
-///***************************************************************************************/
 void computeDerivatives(double t, double y[], double f[]) {
-
 	compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y,f);
 	//compute(grid, smc, ec, cpl_cef, t, y,f);
 	t_stamp.computeDerivatives_call_counter += 1;
 
-}    //end of computeDerivatives()
+}
 
 static int f(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 	double tnow = (double)(t);
@@ -109,13 +103,13 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 
 	int file_offset_for_timing_data = determine_file_offset_for_timing_data(check,grid);
 
-	///Temporary insertion Time profiling min,max,avg
+	// Temporary insertion Time profiling min, max, avg.
 	double **time_profiler;
 	time_profiler = (double**)checked_malloc(11*sizeof(double*),"Time profile array allocation failed.");
 	for (int i =0;i<11;i++) {
 		time_profiler[i] = (double*)checked_malloc(int((tfinal/1e-2)+(2/1e-2))*sizeof(double),"Time profile array column allocation failed.");
 	}
-	///Iterative  calls to the solver start here.
+	// Iterative  calls to the solver start here.
 	for (double k = tnow; k < tfinal; k += interval) {
 		t_stamp.solver_t1 = MPI_Wtime();
 		flag = CVode(cvode_mem, k, y, &t, CV_NORMAL);
@@ -124,10 +118,11 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 		}
 		t_stamp.solver_t2 = MPI_Wtime();
 		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
-		///Increament the itteration as rksuite has finished solving between bounds tnow<= t <= tend.
+
+		// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
 		itteration++;
 
-		/// Call for interprocessor communication
+		// Call for interprocessor communication.
 		t_stamp.barrier_in_solver_before_comm_t1 = MPI_Wtime();
 		MPI_Barrier(grid.universe); /* time stamp this*/
 		t_stamp.barrier_in_solver_before_comm_t2 = MPI_Wtime();
@@ -146,25 +141,27 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
 			}
 		}
+
 		/* time stamp this*/
 		t_stamp.write_t1 = MPI_Wtime();
 		if ((itteration % file_write_per_unit_time) == 0) { 
 			dump_data(check, grid, line_number,tnow, smc, ec,write_count);
 			update_line_number(check, grid,write_count);
 			write_count++;
-		}		//end itteration
+		}
 		t_stamp.write_t2 = MPI_Wtime();
 		t_stamp.diff_write = t_stamp.write_t2-t_stamp.write_t1;
 
 
 		checkpoint_timing_data(grid,check,tnow,t_stamp,count,file_offset_for_timing_data);
-		//Record_timing_data_in_arrays(grid,tnow,t_stamp, itteration,time_profiler);
+		// Record_timing_data_in_arrays(grid, tnow, t_stamp, iteration,time_profiler);
 		initialize_t_stamp(&t_stamp);
 		count++;
-		//update_elapsed_time(check,grid,elps_t);
-		//MPI_Barrier(grid.universe);
-	}		//end of for loop on TEND
 
-		process_time_profiling_data(grid,time_profiler,count);
+		// update_elapsed_time(check,grid,elps_t);
+		// MPI_Barrier(grid.universe);
+	}
+
+	process_time_profiling_data(grid,time_profiler,count);
 }
-#endif	/* CVODE */
+#endif

@@ -1,6 +1,7 @@
-/**@ This file declears the functions which, when given a group of processors, make either
- *  a bifurcation or a straight segment, and recognize its remote and local neighbours.
- *  These function are called in main.cpp.
+/**
+ * This file declares the functions which, when given a group of processors, make either
+ * a bifurcation or a straight segment, and recognise its remote and local neighbours.
+ * These function are called in main.cpp.
  */
 
 #include <mpi.h>
@@ -161,7 +162,7 @@ void make_subdomains(grid_parms* grid, int num_subdomains, int** domains) {
 	check_flag(MPI_Comm_size(grid->sub_universe, &grid->sub_universe_numtasks), "error retrieving Subdomain_size");
 }
 
-/* *
+/**
  * Calculates the number of ECs & SMCs per node.
  */
 grid_parms set_geometry_parameters(grid_parms grid) {
