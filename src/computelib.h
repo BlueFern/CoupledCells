@@ -344,12 +344,12 @@ int map_solver_to_cells(grid_parms, double*, celltype1**, celltype2**);
 
 grid_parms communicate_num_recv_elements_to_nbrs(grid_parms);
 void communication_update_sendbuf(grid_parms, double**, celltype1**, celltype2**);
-void communication_update_recvbuf(grid_parms, double**, celltype1**, celltype2**);
-void determin_source_destination(grid_parms, int*, int*);
+// void communication_update_recvbuf(grid_parms, double**, celltype1**, celltype2**);
+void determine_source_destination(grid_parms, int*, int*);
 void communication_async_send_recv(grid_parms, double**, double**, celltype1**, celltype2**);
-void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf, celltype1** smc, celltype2** ec);
+// void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf, celltype1** smc, celltype2** ec);
 void communication_update_recvbuf_modified(grid_parms, double**, celltype1**, celltype2**);
-void communication_update_recvbuf_modified2(grid_parms, double**, celltype1**, celltype2**);
+// void communication_update_recvbuf_modified2(grid_parms, double**, celltype1**, celltype2**);
 
 /// Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
 void single_cell(double, double*, grid_parms, celltype1**, celltype2**);
@@ -455,7 +455,7 @@ int retrieve_topology_info(char*, grid_parms*, celltype1**, celltype2**);
 int* read_coordinates(grid_parms*, int**, vtk_info*, int, int, int);
 IO_domain_info* make_io_domains(grid_parms* grid);
 
-void gather_tasks_mesh_point_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, celltype1**, celltype2**);
+// void gather_tasks_mesh_point_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, celltype1**, celltype2**);
 void gather_smc_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, celltype1**);
 void gather_ec_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, celltype2**);
 
@@ -463,8 +463,7 @@ void gather_smcData(grid_parms* , IO_domain_info* , data_buffer* , celltype1**, 
 void gather_ecData(grid_parms*, IO_domain_info*, data_buffer*, celltype2**, int);
 void gather_JPLC_map(grid_parms*, IO_domain_info*, data_buffer*, celltype2**);
 
-
-void dump_process_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer*, char*);
+// void dump_process_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer*, char*);
 void dump_agonists_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, celltype2**,char* path);
 void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer* , celltype1**, int);
 void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, celltype2**,int);
@@ -480,4 +479,4 @@ void gather_tasks_mesh_point_data_on_writers_ver2(grid_parms* grid, IO_domain_in
 void dump_process_data_ver2(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer,static_info_of_geometry*, char* path);
 void gather_static_info_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, static_info_of_geometry* static_info);
 
-grid_parms make_subdomains_ver2(grid_parms grid, int num_subdomains, int** domains);
+// grid_parms make_subdomains_ver2(grid_parms grid, int num_subdomains, int** domains);

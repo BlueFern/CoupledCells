@@ -185,6 +185,7 @@ void dump_data(checkpoint_handle* check, grid_parms* grid, int line_number, doub
 	dump_ec_data(check, grid, my_IO_domain_info, writer_buffer, ec, write_count);
 }
 
+#if 0
 void dump_process_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, char* path)
 {
 	MPI_Status status;
@@ -293,6 +294,7 @@ void dump_process_data(checkpoint_handle* check, grid_parms* grid, IO_domain_inf
 
 	MPI_File_close(&check->task_mesh);
 }
+#endif
 
 void dump_smc_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype1** smc,
 		int write_count) {
@@ -2088,6 +2090,7 @@ int* read_coordinates(grid_parms* grid, int** info, vtk_info* mesh, int mesh_typ
 	return (indx);
 }
 
+#if 0
 void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype1** smc,
 		celltype2** ec) {
 
@@ -2194,6 +2197,7 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 	free(send_buffer);
 	free(disp);
 }
+#endif
 
 void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype1** smc) {
 	int branch;

@@ -29,6 +29,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check, char* path, IO_domain_info* my_IO_domain_info) {
 
 	RKSUITE rksuite;
+
 	//Solver method
 	int method = 2;		//RK(4,5)
 	double tend;
@@ -40,6 +41,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	initialize_t_stamp(&t_stamp);
 	tend = interval;
 	rksuite.setup(total, tnow, y, tend, TOL, thres, method, "CT", false, 0.0, false);
+
 	communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
 
 	// ComputeDerivatives(tnow, y, yp);

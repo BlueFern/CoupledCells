@@ -16,7 +16,7 @@ void check_flag(int err, const char *errmsg) {
 	}
 }
 
-void determin_source_destination(grid_parms grid, int source[], int dest[]) {
+void determine_source_destination(grid_parms grid, int source[], int dest[]) {
 	if (grid.nbrs[local][UP] >= 0) {
 		dest[UP] = grid.nbrs[local][UP];
 		source[UP] = grid.nbrs[local][UP];
@@ -59,7 +59,7 @@ grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
 	int source[4], dest[4];
 	int tag;
 	int num[4];
-	determin_source_destination(grid, source, dest);
+	determine_source_destination(grid, source, dest);
 
 	tag = 0;
 	int tmp[4];
@@ -113,7 +113,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 
 	// Message tag 1 and 2 representing segment 1 and 2 send or received by processor.
 	int tag_1 = 1, tag_2 = 2;
-	determin_source_destination(grid, source, dest);
+	determine_source_destination(grid, source, dest);
 	t_stamp.update_sendbuf_t1 = MPI_Wtime();
 	communication_update_sendbuf(grid, sendbuf, smc, ec);
 	t_stamp.update_sendbuf_t2 = MPI_Wtime();
@@ -570,6 +570,7 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 	}
 }
 
+#if 0
 void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 		celltype1** smc, celltype2** ec)
 		{
@@ -791,7 +792,9 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 		k += grid.num_coupling_species_ec;
 	}
 }
+#endif
 
+#if 0
 void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
 		celltype1** smc, celltype2** ec)
 		{
@@ -1006,7 +1009,8 @@ void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
 		sendbuf[RIGHT2][buf_offset + k + 2] = ec[i][j].q[ec_IP3];
 		k += grid.num_coupling_species_ec;
 	}
-}	// end of communication_update_sendbuf()
+}
+#endif
 
 void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
 		celltype1** smc, celltype2** ec)
@@ -1274,8 +1278,9 @@ void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
 		ec[i][j].q[ec_IP3] = recvbuf[RIGHT2][buf_offset + k + 2];
 		k += grid.num_coupling_species_ec;
 	}
-}	// end of communication_update_recvbuf()
+}
 
+#if 0
 void communication_update_recvbuf_modified2(grid_parms grid, double** recvbuf,
 		celltype1** smc, celltype2** ec)
 		{
@@ -1543,3 +1548,4 @@ void communication_update_recvbuf_modified2(grid_parms grid, double** recvbuf,
 		k += grid.num_coupling_species_ec;
 	}
 }
+#endif
