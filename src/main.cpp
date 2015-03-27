@@ -31,10 +31,8 @@ int main(int argc, char* argv[]) {
 	/// - Initialise MPI.
 	MPI_Init(&argc, &argv);
 
-	/// \todo What is the time_keeper struct used for?
 	elps_t.t_old = MPI_Wtime();
 
-	/// \todo What is the grid_parms struct used for?
 	grid.universe = MPI_COMM_WORLD;
 
 	/// - Reveal information of myself and size of MPI_COMM_WORLD
