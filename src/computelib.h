@@ -424,8 +424,8 @@ void print_recv_buffer(FILE*, grid_parms, double**);
 void print_compare(double, double*, grid_parms, celltype1**, celltype2**);
 
 //Topology related functions
-grid_parms make_bifucation(grid_parms);
-grid_parms make_straight_segment(grid_parms);
+grid_parms make_bifucation_cart_grids(grid_parms);
+grid_parms make_straight_segment_cart_grids(grid_parms);
 grid_parms set_task_parameters(grid_parms);
 grid_parms configure_subdomains_topology(grid_parms, int, int**);
 

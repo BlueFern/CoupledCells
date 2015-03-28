@@ -72,11 +72,11 @@ int main(int argc, char* argv[]) {
 	}
 
 	/// - Read domain configuration from input config file (domain_info.txt).
-	// Why does this function need three parameters? They all come from the same struct.
+	/// Why does this function need three parameters? They all come from the same struct.
 	error = read_config_file(grid.universal_rank, grid.config_file, &grid);
 
 	/// Make subdomains according to the information read from the config file (domain_info.txt).
-	// Why does this function need three parameters? They all come from the same struct.
+	/// Why does this function need three parameters? They all come from the same struct.
 	grid = configure_subdomains_topology(grid, grid.num_domains, grid.domains);
 
 	// File written every 1 second.
@@ -91,12 +91,13 @@ int main(int argc, char* argv[]) {
 	grid.gradient = 0.288e3;
 	grid.stimulus_onset_time = 99.00;
 
+	/// Calculate the number of cells per task.
 	grid = set_task_parameters(grid);
 
 	if (grid.my_domain.internal_info.domain_type == STRSEG) {
-		grid = make_straight_segment(grid);
+		grid = make_straight_segment_cart_grids(grid);
 	} else if (grid.my_domain.internal_info.domain_type == BIF) {
-		grid = make_bifucation(grid);
+		grid = make_bifucation_cart_grids(grid);
 	}
 	grid = update_global_subdomain_information(grid, grid.num_domains, grid.domains);
 	naming_convention(&grid);

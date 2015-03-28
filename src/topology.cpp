@@ -278,7 +278,7 @@ grid_parms set_task_parameters(grid_parms grid)
 	return grid;
 }
 
-grid_parms make_bifucation(grid_parms grid) {
+grid_parms make_bifucation_cart_grids(grid_parms grid) {
 	//Since there are 3 branches, there needs to be three values of a variable color, to identify association of a rank to a particular sub-universe partitioned out of MPI_COMM_WORLD.
 
 	grid.color = int(grid.sub_universe_rank / (grid.m * grid.n));
@@ -477,18 +477,20 @@ grid_parms make_bifucation(grid_parms grid) {
 			}
 		}
 	}
-	return grid;
-}			// end of make_bifurcation
 
-grid_parms make_straight_segment(grid_parms grid) {
-	//Since there no branch, all processors have same color.
+	// Why do we need to return the grid, if it is passed as the argument?
+	return grid;
+}
+
+grid_parms make_straight_segment_cart_grids(grid_parms grid) {
+	// Since there no branch, all processors have same colour.
 
 	grid.color = 0;
 	grid.key = 0;
 
 	check_flag(MPI_Comm_split(grid.sub_universe, grid.color, grid.key, &grid.split_comm), "Comm-split failed");
 
-	///Global variables that are to be read by each processor
+	// Global variables that are to be read by each processor.
 	int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
 	ndims = 2;
 	dims[0] = grid.m;
@@ -497,15 +499,15 @@ grid_parms make_straight_segment(grid_parms grid) {
 	periodic[1] = 1;
 	reorder = 0;
 
-	check_flag(MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder, &grid.cart_comm), "failed at cart create");
-	check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), "failed at comm rank");
-	check_flag(MPI_Comm_size(grid.cart_comm, &grid.tasks), "failed at cart comm tasks");
-	check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords), "failed at cart coords");
+	check_flag(MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder, &grid.cart_comm), "Failed at cart create.");
+	check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), "Failed at comm rank.");
+	check_flag(MPI_Comm_size(grid.cart_comm, &grid.tasks), "Failed at cart comm tasks.");
+	check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords), "Failed at cart coords.");
 
-	check_flag(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]), "failed at cart shift up down");
-	check_flag(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]), "failed at cart left right");
+	check_flag(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]), "Failed at cart shift up down.");
+	check_flag(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]), "Failed at cart shift left right.");
 
-	//Label the ranks on the subdomain edges of at STRAIGHT SEGMENT as top (T) or bottom boundary (B) or none (N).
+	// Label the ranks on the subdomain edges of a STRAIGHT SEGMENT as top (T) or bottom boundary (B) or none (N).
 	for (int i = 0; i < (grid.m * grid.n); i++) {
 		if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
 			grid.my_domain.internal_info.boundary_tag = 'B';
@@ -518,26 +520,29 @@ grid_parms make_straight_segment(grid_parms grid) {
 
 	//Find remote nearest neighbours on remote domains
 
-	//if a parent domain exists for me
+	// If a parent domain exists for this subdomain.
 	if (grid.my_domain.parent.domain_index >= 0) {
-		//if I am a bottom row in my m x n cart grid
+		// If we are in the bottom row in our m x n cart grid.
 		if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
 			int stride = grid.rank - ((grid.m - 1) * grid.n);
 			grid.nbrs[remote][DOWN1] = grid.my_domain.parent.domain_start + stride;
 			grid.nbrs[remote][DOWN2] = grid.my_domain.parent.domain_start + stride;
 		}
 	}
-	//if a child exists from me
+
+	// If a child domain exists for this subdomain.
 	if (grid.my_domain.left_child.domain_index >= 0) {
-		//if I am top row in my m x n cart grid
+		// If we are in the top row in our m x n cart grid.
 		if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
 			int stride = grid.rank;
 			grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start + stride;
 			grid.nbrs[remote][UP2] = grid.my_domain.left_child.domain_start + stride;
 		}
 	}
+
+	// Why do we need to return the grid, if it is passed as the argument?
 	return grid;
-}			//end of make_straight_segment()
+}
 
 /**************** Update global subdomain information ***************/
 grid_parms update_global_subdomain_information(grid_parms grid, int num_subdomains, int** domains)
