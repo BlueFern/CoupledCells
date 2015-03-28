@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
 	double tfinal = 1e-2;
 	double interval = 1e-2;
 	double data_writing_frequency = 10.00;
+
 	// Read command line input
 	// t - T_END for the simulation
 	// w - A number deciding how frequent the data should be recorded, default is every 10 seconds
@@ -70,13 +71,15 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	/// - Read domain configuration from input file domain_info.txt
+	/// - Read domain configuration from input config file (domain_info.txt).
+	// Why does this function need three parameters? They all come from the same struct.
+	error = read_config_file(grid.universal_rank, grid.config_file, &grid);
 
-	error = read_domain_info(grid.universal_rank, grid.config_file, &grid);
-	//make subdomains according to the information read from domain_info.txt
-	grid = make_subdomains(grid, grid.num_domains, grid.domains);
+	/// Make subdomains according to the information read from the config file (domain_info.txt).
+	// Why does this function need three parameters? They all come from the same struct.
+	grid = configure_subdomains_topology(grid, grid.num_domains, grid.domains);
 
-//File written every 1 second
+	// File written every 1 second.
 	int file_write_per_unit_time = (int) (data_writing_frequency * int(1 / interval));
 	grid.NO_path = 0;
 	grid.cGMP_path = 0;
@@ -84,11 +87,11 @@ int main(int argc, char* argv[]) {
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
 	grid.min_jplc = 0.20;
-	grid.max_jplc = 2.5; // 0.5; //1e-3;
-	grid.gradient = 0.288e3; //0.325e3;
+	grid.max_jplc = 2.5;
+	grid.gradient = 0.288e3;
 	grid.stimulus_onset_time = 99.00;
 
-	grid = set_geometry_parameters(grid);
+	grid = set_task_parameters(grid);
 
 	if (grid.my_domain.internal_info.domain_type == STRSEG) {
 		grid = make_straight_segment(grid);

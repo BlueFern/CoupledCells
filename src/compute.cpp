@@ -469,11 +469,9 @@ void coupling(double t, double y[], grid_parms grid, celltype1** smc,
 			ec[i][j].C[cpl_Ca] = -cpl_cef.Ca_ht_ec * dummy_ec[cpl_Ca];
 			ec[i][j].C[cpl_Vm] = -cpl_cef.Vm_ht_ec * dummy_ec[cpl_Vm];
 			ec[i][j].C[cpl_IP3] = -cpl_cef.IP3_ht_ec * dummy_ec[cpl_IP3];
-
 		}
 	}
-
-}	//end of coupling()
+}
 
 
 /**

@@ -1,29 +1,31 @@
 #include "computelib.h"
-#define CHECK(fn) {int errcode; errcode = (fn);if (errcode != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD,1); }
-//#ifdef PARALLEL_IO
+
+#define NUM_CONFIG_ELEMENTS 9
+
+#define CHECK(fn) { int errcode; errcode = (fn); if(errcode != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD,1); }
+
 checkpoint_handle* initialise_checkpoint(grid_parms grid) {
 
 	checkpoint_handle *check = (checkpoint_handle*) malloc(sizeof(checkpoint_handle));
 
 	return (check);
 }
-/*********************************************************************/
+
 void open_common_checkpoint(checkpoint_handle* check, grid_parms grid) {
-	/*********************************************************************/
 
 	int err;
 	char filename[50];
 	err = sprintf(filename, "Log_file%s.txt", grid.suffix);
-	CHECK( MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->logptr));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->logptr));
 
 	err = sprintf(filename, "Elasped_time%s.txt", grid.suffix);
-	CHECK( MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
 
 	err = sprintf(filename, "JPLC%s.txt", grid.suffix);
-	CHECK( MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->jplc));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->jplc));
 
 	err = sprintf(filename, "coords%s.txt", grid.suffix);
-	CHECK( MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->coords));
+	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->coords));
 }
 
 /*******************************************************************************************************************************************************/
@@ -33,17 +35,17 @@ void open_koenigsberger_smc_checkpoint(checkpoint_handle* check, grid_parms grid
 	int err;
 	char filename[50];
 	err = sprintf(filename, "%s/smc_Data_t_%d.vtk", path, write_count);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->smc_data_file));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->smc_data_file));
 	/*err = sprintf(filename, "%s/smc_Ca_t_%d.vtk", path, write_count);
-	 CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->ci));
+	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->ci));
 	 err = sprintf(filename, "%s/smc_SERCA_t_%d.vtk", path, write_count);
-	 CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->si));
+	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->si));
 	 err = sprintf(filename, "%s/smc_V_t_%d.vtk", path, write_count);
-	 CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->vi));
+	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->vi));
 	 err = sprintf(filename, "%s/smc_KCa_t_%d.vtk", path, write_count);
-	 CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->wi));
+	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->wi));
 	 err = sprintf(filename, "%s/smc_IP3_t_%d.vtk", path, write_count);
-	 CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ii));*/
+	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ii));*/
 }
 
 /*************************************************************************/
@@ -52,15 +54,15 @@ void open_koenigsberger_ec_checkpoint(checkpoint_handle* check, grid_parms grid,
 	int err;
 	char filename[50];
 	err = sprintf(filename, "%s/ec_Data_t_%d.vtk", path, write_count);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->ec_data_file));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->ec_data_file));
 	/*err = sprintf(filename, "%s/ec_Ca_t_%d.vtk", path, write_count);
-	 CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cj));
+	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cj));
 	 err = sprintf(filename, "%s/ec_SERCA_t_%d.vtk", path, write_count);
-	 CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->sj));
+	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->sj));
 	 err = sprintf(filename, "%s/ec_V_t_%d.vtk", path, write_count);
-	 CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->vj));
+	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->vj));
 	 err = sprintf(filename, "%s/ec_IP3_t_%d.vtk", path, write_count);
-	 CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ij));*/
+	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ij));*/
 }
 
 /*************************************************************************/
@@ -69,22 +71,22 @@ void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid, in
 	int err;
 	char filename[50];
 	err = sprintf(filename, "%s/smc_cpc_t_%d.vtk", path, write_count);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpCi));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpCi));
 
 	err = sprintf(filename, "%s/ec_cpc_t_%d.vtk", path, write_count);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpCj));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpCj));
 
 	err = sprintf(filename, "%s/smc_cpV_t_%d.vtk", path, write_count);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpVi));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpVi));
 
 	err = sprintf(filename, "%s/ec_cpV_t_%d.vtk", path, write_count);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpVj));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpVj));
 
 	err = sprintf(filename, "%s/smc_cpIP3_t_%d.vtk", path, write_count);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIi));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIi));
 
 	err = sprintf(filename, "%s/ec_cpIP3_t_%d.vtk", path, write_count);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIj));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIj));
 
 }
 /***************************************************************************/
@@ -125,16 +127,16 @@ void dump_smc(grid_parms grid, celltype1 **smc, checkpoint_handle *check, int li
 		}
 	}
 	disp = /*file_offset + time_offset_in_file + */(grid.rank * write_element_count * sizeof(double));
-	CHECK( MPI_File_write_at(check->ci, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
-	CHECK( MPI_File_write_at(check->vi, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
-	CHECK( MPI_File_write_at(check->Ii, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
-	CHECK( MPI_File_write_at(check->si, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
+	CHECK(MPI_File_write_at(check->ci, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
+	CHECK(MPI_File_write_at(check->vi, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
+	CHECK(MPI_File_write_at(check->Ii, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
+	CHECK(MPI_File_write_at(check->si, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
 
-	CHECK( MPI_File_write_at(check->wi, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
+	CHECK(MPI_File_write_at(check->wi, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
 
-	CHECK( MPI_File_write_at(check->cpCi, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
-	CHECK( MPI_File_write_at(check->cpVi, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
-	CHECK( MPI_File_write_at(check->cpIi, disp, &b8, write_element_count, MPI_DOUBLE, &status[7]));
+	CHECK(MPI_File_write_at(check->cpCi, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
+	CHECK(MPI_File_write_at(check->cpVi, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
+	CHECK(MPI_File_write_at(check->cpIi, disp, &b8, write_element_count, MPI_DOUBLE, &status[7]));
 }
 /***********************************************************************/
 void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check, int line_number, int write_count) {
@@ -174,14 +176,14 @@ void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check, int line
 		}
 	}
 	disp = /*file_offset + time_offset_in_file + */(grid.rank * write_element_count * sizeof(double));
-	CHECK( MPI_File_write_at(check->cj, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
+	CHECK(MPI_File_write_at(check->cj, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
 
-	CHECK( MPI_File_write_at(check->vj, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
-	CHECK( MPI_File_write_at(check->Ij, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
-	CHECK( MPI_File_write_at(check->sj, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
-	CHECK( MPI_File_write_at(check->cpCj, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
-	CHECK( MPI_File_write_at(check->cpVj, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
-	CHECK( MPI_File_write_at(check->cpIj, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
+	CHECK(MPI_File_write_at(check->vj, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
+	CHECK(MPI_File_write_at(check->Ij, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
+	CHECK(MPI_File_write_at(check->sj, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
+	CHECK(MPI_File_write_at(check->cpCj, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
+	CHECK(MPI_File_write_at(check->cpVj, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
+	CHECK(MPI_File_write_at(check->cpIj, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
 }
 
 void dump_data(checkpoint_handle* check, grid_parms* grid, int line_number, double tnow, celltype1** smc, celltype2** ec, int write_count,
@@ -198,7 +200,7 @@ void dump_process_data(checkpoint_handle* check, grid_parms* grid, IO_domain_inf
 	MPI_Offset disp;
 	char filename[50];
 	int err = sprintf(filename, "%s/task_mesh.vtk", path);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->task_mesh));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->task_mesh));
 
 	int write_element_count = 1, header_offset[3] = { 0, 0, 0 }, point_offset = 0, cell_offset = 0, celltype_offset = 0, count = 0;
 	char* header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
@@ -657,7 +659,7 @@ void dump_agonists_map(checkpoint_handle* check, grid_parms* grid, IO_domain_inf
 	MPI_Offset disp;
 	char filename[50];
 	int err = sprintf(filename, "%s/Agonist_map.vtk", path);
-	CHECK( MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->ec_agonist_file));
+	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->ec_agonist_file));
 
 	int write_element_count = 1, *header_offset, point_offset = 0, cell_offset = 0, celltype_offset = 0, *ecDataOffset;
 	header_offset = (int*) checked_malloc((3 + grid->num_parameters) * sizeof(int),
@@ -1127,7 +1129,7 @@ void update_line_number(checkpoint_handle* check, grid_parms grid, int line_numb
 	MPI_Offset disp;
 
 	disp = grid.universal_rank * sizeof(int);
-	CHECK( MPI_File_write_at(check->line_number, disp, &line_number, 1, MPI_INT, &status));
+	CHECK(MPI_File_write_at(check->line_number, disp, &line_number, 1, MPI_INT, &status));
 }
 /****************************************************************************************/
 void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms grid, IO_domain_info* my_IO_domain_info) {
@@ -1255,7 +1257,7 @@ void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check, const 
 		k++;
 	}
 	disp = grid.num_ec_axially * (grid.m - ((grid.rank + 1) / grid.n)) * sizeof(double);
-	CHECK( MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
 }
 
 void dump_coords(grid_parms grid, celltype2** ec, checkpoint_handle* check, const char* message) {
@@ -1278,7 +1280,7 @@ void dump_coords(grid_parms grid, celltype2** ec, checkpoint_handle* check, cons
 //disp = (offset * write_element_count * sizeof(double));
 
 	disp = grid.num_ec_axially * (grid.m - ((grid.rank + 1) / grid.n)) * sizeof(double);
-	CHECK( MPI_File_write_at(check->coords, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at(check->coords, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
 }
 
 void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tnow, time_stamps t_stamp, int itteration, int append_point) {
@@ -1315,23 +1317,23 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 	disp_write = time_offset_in_file + file_offset + (grid.rank * write_element_count * sizeof(double));
 	disp_itteration = (grid.rank * write_element_count * sizeof(int));
 
-	CHECK( MPI_File_write_at_all(check->time_profiling, disp_write, &buffer[0], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->async_calls, disp_write, &buffer[1], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->async_wait, disp_write, &buffer[2], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->barrier_before_comm, disp_write, &buffer[3], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->map_function, disp_write, &buffer[4], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->single_cell_fluxes, disp_write, &buffer[5], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->coupling_fluxes, disp_write, &buffer[6], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->solver, disp_write, &buffer[7], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->writer_func, disp_write, &buffer[8], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->derivative_calls, disp_write, &buffer[9], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->itter_count, disp_write, &buffer[10], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->time_profiling, disp_write, &buffer[0], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->async_calls, disp_write, &buffer[1], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->async_wait, disp_write, &buffer[2], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->barrier_before_comm, disp_write, &buffer[3], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->map_function, disp_write, &buffer[4], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->single_cell_fluxes, disp_write, &buffer[5], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->coupling_fluxes, disp_write, &buffer[6], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->solver, disp_write, &buffer[7], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->writer_func, disp_write, &buffer[8], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->derivative_calls, disp_write, &buffer[9], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->itter_count, disp_write, &buffer[10], 1, MPI_DOUBLE, &status));
 /// Write Comms time profiling data...
-	CHECK( MPI_File_write_at_all(check->remote_async_calls, disp_write, &buffer[11], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->remote_async_wait, disp_write, &buffer[12], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->send_buf_update, disp_write, &buffer[13], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->recv_buf_update, disp_write, &buffer[14], 1, MPI_DOUBLE, &status));
-	CHECK( MPI_File_write_at_all(check->total_comms_cost, disp_write, &buffer[15], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->remote_async_calls, disp_write, &buffer[11], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->remote_async_wait, disp_write, &buffer[12], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->send_buf_update, disp_write, &buffer[13], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->recv_buf_update, disp_write, &buffer[14], 1, MPI_DOUBLE, &status));
+	CHECK(MPI_File_write_at_all(check->total_comms_cost, disp_write, &buffer[15], 1, MPI_DOUBLE, &status));
 
 }
 
@@ -1472,16 +1474,31 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow, double* 
 	return (line_index);
 }
 
-/*********************************************************************/
-int read_domain_info(int rank, char* filename, grid_parms* grid) {
-	/*********************************************************************/
-/// Read data from the domain_info.txt to retrieve  the information related to how the domain is set up.
+/// Read data from the domain_info.txt to retrieve the information related to how the domain is set up.
 /// All tasks open the same file to read.
-/// Every task has the same displacement so each start to read data from the same position
-/// Each task decide the read buffer size to be allocated by looking at the file size of the file opened
-/// for read operation.
-/// The data is read and sorted into delimiters and numbers and stored into corresponding place holder,
+/// Every task has the same displacement so each start to read data from the same position.
+/// Each task decides the read buffer size to be allocated by looking at the file size of the file opened for read operation.
+/// The data is read and sorted into delimited strings; numbers and stored into corresponding place holders in the array
 /// domains[][] in the structure grid_parms grid.
+///
+/// The arrays in the domains[][] store the following information:
+///
+/// Element 0: 	Key_val or serial number of the subdomain
+/// Element 1:	Subdomain Type (2 possibilities and their values)
+/// 				1. Straight Segment (STRSEG)					(0)
+/// 				2. Bifurcation	(BIF)							(1)
+/// Element 2: Axial extent of processor of current key_val
+/// Element 3: Circumferential extent of processors of current key_val
+/// Element 4: Parent subdomain key_val of current Key_val.
+/// Element 5: Left child subdomain key_val of the current Key_val.
+/// Element 6: Right child subdomain key_val of the current Key_val.
+/// Element 7: Required number of endothelial cells axially per node.
+/// Element 8: Required number of smooth muscle cells circumferentially per node.
+///
+/// In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left child is positive or zero, and right child is negative.
+/// If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.
+
+int read_config_file(int rank, char* filename, grid_parms* grid) {
 	int err;
 	MPI_File data;
 	MPI_Offset file_size, disp;
@@ -1489,7 +1506,8 @@ int read_domain_info(int rank, char* filename, grid_parms* grid) {
 	int chunk, count;
 	char* buffer;
 	int *p;
-	CHECK( MPI_File_open(grid->universe, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &data));
+
+	CHECK(MPI_File_open(grid->universe, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &data));
 
 	err = MPI_File_get_size(data, &file_size);
 	chunk = (int) (file_size / sizeof(char));
@@ -1499,11 +1517,13 @@ int read_domain_info(int rank, char* filename, grid_parms* grid) {
 		printf("[%d]: error allocating p\n", grid->universal_rank);
 		MPI_Abort(grid->universe, 10001);
 	}
+
 	disp = 0;
 	err = MPI_File_read_at(data, disp, buffer, chunk, MPI_CHAR, &status);
 	err = MPI_Get_count(&status, MPI_CHAR, &count);
+
 	char *token;
-	char *delimiter = ";,\n";
+	char *delimiter = (char *)";,\n";
 	token = strtok(buffer, delimiter);
 	int index = 0;
 	while (token != NULL) {
@@ -1511,35 +1531,31 @@ int read_domain_info(int rank, char* filename, grid_parms* grid) {
 		token = strtok(NULL, delimiter);
 		index++;
 	}
+
+	// For a bifurcation as well as a straight segment there's only one domain.
 	grid->num_domains = p[0];
 
-	grid->domains = (int**) checked_malloc(grid->num_domains * sizeof(int*), "Subdomain information allocation");
+	// TODO: Define a function for allocating 2D arrays.
+	// TODO: Check the allocated memory is released when appropriate.
+	// TODO: Define a function for releasing 2D arrays.
 
-/// second coordinate has following information:
-/// Element 0: 	Key_val or serial number of the subdomain
-/// Element 1:	Subdomain Type (2 possibilities and their values)
-/// 				1. Straight Segment (STRSEG)					(0)
-/// 				2. Bifurcation	(BIF)							(1)
-/// Element 2:	Axial extent of processor of current key_val
-/// Element 3: 	circumferential extent of processors of current key_val
-/// Element 4:	Parent subdomain key_val of current Key_val.
-/// Element 5: 	Left Child subdomain key_val of the current Key_val.
-/// Element 6:   Right Child subdomain key_val of the current Key_val.
-/// Element 7:   Required number of Endothelial cells axially per node.
-/// Element 8:   Required number of Smooth muscle cells circumferentially per node.
-///
-/// In the case of elements 6 & 7, if subdomain type of current key_val is a straight segment, left Child is positive or zero, and right Child is negative.
-/// If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative.
-////
+	// Allocate first dimension array.
+	grid->domains = (int**) checked_malloc(grid->num_domains * sizeof(int*), "Subdomain information allocation.");
+
+	// Allocate second dimension arrays.
 	for (int i = 0; i < grid->num_domains; i++) {
-		grid->domains[i] = (int*) checked_malloc(9 * sizeof(int), "Subdomains array elements allocation");
+		grid->domains[i] = (int*) checked_malloc(NUM_CONFIG_ELEMENTS * sizeof(int), "Subdomains array elements allocation.");
 	}
+
+	// Copy the data into the domains array from the p array.
 	for (int i = 0; i < grid->num_domains; i++) {
-		for (int j = 0; j < 9; j++) {
-			grid->domains[i][j] = p[1 + (i * 9) + j];
+		for (int j = 0; j < NUM_CONFIG_ELEMENTS; j++) {
+			grid->domains[i][j] = p[1 + (i * NUM_CONFIG_ELEMENTS) + j];
 		}
 	}
+
 	MPI_File_close(&data);
+
 	return (0);
 }
 
@@ -1618,7 +1634,7 @@ int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms g
 	/*CHECK(
 	 MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->itter_count));
 	 */
-	CHECK( MPI_File_read_at(check->itter_count, disp, &file_offset, 1, MPI_INT, &status));
+	CHECK(MPI_File_read_at(check->itter_count, disp, &file_offset, 1, MPI_INT, &status));
 
 	return (file_offset);
 
@@ -1637,8 +1653,8 @@ void jplc_plot_data(grid_parms grid, checkpoint_handle* check) {
 	for (int i = 0; i < (grid.m * grid.num_ec_axially); i++) {
 		disp = i * sizeof(double);
 		int count = grid.num_ec_axially * grid.m;
-		CHECK( MPI_File_read_at(check->coords, disp, &z, 1, MPI_DOUBLE, &status));
-		CHECK( MPI_File_read_at(check->jplc, disp, &jplc, 1,MPI_DOUBLE, &status));
+		CHECK(MPI_File_read_at(check->coords, disp, &z, 1, MPI_DOUBLE, &status));
+		CHECK(MPI_File_read_at(check->jplc, disp, &jplc, 1,MPI_DOUBLE, &status));
 		fprintf(fh, "%2.8lf\t%2.8lf\n", z, jplc);
 	}
 	fclose(fh);

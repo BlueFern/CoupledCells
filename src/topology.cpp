@@ -1,6 +1,7 @@
-/* This file declears the functions which, when given a group of processors, make either
- *  a bifurcation or a straight segment, and recognize its remote and local neighbours.
- *  These function are called in main.cpp.
+/*
+ * This file declares the functions which, when given a group of processors, make either
+ * a bifurcation or a straight segment, and recognise its remote and local neighbours.
+ * These function are called in main.cpp.
  */
 
 #include <mpi.h>
@@ -10,12 +11,21 @@
 #include <math.h>
 #include "computelib.h"
 
-grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains) {
-	int **subdomain_extents; //Element 1: offset , Element 2: Start universal_rank, Element 3: End universal_rank;
-	subdomain_extents = (int**) checked_malloc(num_subdomains * sizeof(int*), "Subdomain information allocation");
+/**
+ * Calculate parameters of subdomains, including the parameters of parent and child subdomains.
+ */
+grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, int** domains)
+{
+	int **subdomain_extents;
+
+	// TODO: Define a function for allocating 2D arrays.
+	subdomain_extents = (int**) checked_malloc(num_subdomains * sizeof(int*), "Subdomain information allocation.");
+
 	for (int i = 0; i < num_subdomains; i++) {
-		subdomain_extents[i] = (int*) checked_malloc(3 * sizeof(int), "Subdomains array elements allocation");
+		subdomain_extents[i] = (int*) checked_malloc(3 * sizeof(int), "Subdomains array elements allocation.");
 	}
+
+	// Element 1: offset, Element 2: Start universal_rank, Element 3: End universal_rank.
 	for (int i = 0; i < num_subdomains; i++) {
 		subdomain_extents[i][0] = 0;
 		subdomain_extents[i][1] = 0;
@@ -23,38 +33,66 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains) {
 	}
 
 	int a;
-	for (int i = 0; i < num_subdomains; i++)	/// if the subdomain type is Straight segment
-			{
-		if ((domains[i][1] == 0) || (domains[i][1] == 2) || (domains[i][3] == 3)) {
-			a = domains[i][2] * domains[i][3];		///total number of tasks mapping to the straight segment are m x n
-		} else if (domains[i][1] == 1) {
-			a = 3 * domains[i][2] * domains[i][3]; ///total number of tasks mapping to the bifurcation are 3 x m x n
+	for(int i = 0; i < num_subdomains; i++)
+	{
+		// If the subdomain type is straight segment.
+
+		// This looks like BS. What is the meaning of the 0, 1 and 3 in those positions?
+		// if ((domains[i][1] == 0) || (domains[i][1] == 2) || (domains[i][3] == 3))
+		// Changing to this:
+		if(domains[i][1] == STRSEG)
+		{
+			a = domains[i][2] * domains[i][3]; // Total number of tasks mapping to the straight segment are m x n.
 		}
-		//setting up the offset bit
-		if (i == 0) {
+		// If the subdomain is a part of a bifurcation.
+		else if(domains[i][1] == BIF)
+		{
+			a = 3 * domains[i][2] * domains[i][3]; // Total number of tasks mapping to the bifurcation are 3 x m x n.
+		}
+
+		// Setting up the offset bit.
+		if(i == 0)
+		{
+			// Always zero offset on the first domain.
 			subdomain_extents[i][0] = 0;
-		} else {
-			if ((domains[i - 1][1] == 0) || (domains[i - 1][1] == 2) || (domains[i - 1][3] == 3)) {
+		}
+		else
+		{
+			// Again, this looks like BS. What is the meaning of the 0, 1 and 3 in those positions?
+			// If the previous domain is a straight segment?
+			// if((domains[i - 1][1] == 0) || (domains[i - 1][1] == 2) || (domains[i - 1][3] == 3))
+			// Changing to this:
+			if((domains[i - 1][1] == STRSEG))
+			{
+				// The offset for the current domain is the offset of the previous domain plus the size of the previous domain.
 				subdomain_extents[i][0] = subdomain_extents[i - 1][0] + (domains[i - 1][2] * domains[i - 1][3]);
-			} else if (domains[i - 1][1] == 1) {
+			}
+			// If this is a bifurcation.
+			else if(domains[i - 1][1] == BIF)
+			{
+				// The offset for the current domain is the offset of the previous domain plus the size of the previous domain.
 				subdomain_extents[i][0] = subdomain_extents[i - 1][0] + (3 * domains[i - 1][2] * domains[i - 1][3]);
 			}
 		}
 
-		subdomain_extents[i][1] = subdomain_extents[i][0]; //start universal_rank in MPI_COMM_WORLD
-		subdomain_extents[i][2] = subdomain_extents[i][0] + a - 1; //end universal_rank in MPI_COMM_WORLD
+		subdomain_extents[i][1] = subdomain_extents[i][0]; // Start universal_rank in MPI_COMM_WORLD.
+		subdomain_extents[i][2] = subdomain_extents[i][0] + a - 1; // End universal_rank in MPI_COMM_WORLD.
 	}
 
 	/* Now all processors have the information where each domain starts and ends. Using this information, each processor can identify which domain
-	 * it belongs and can mark a color (0 to num_domains-1). This color can now be used to split the MPI_COMM_WORLD into sub_domains.
+	 * it belongs and can mark a colour (0 to num_domains - 1). This colour can now be used to split the MPI_COMM_WORLD into sub_domains.
 	 * Identify the new reordered ranks in grid.sub_universe_ranks in these new communicators recorded in grid.sub_universe and update the size of this sub_domain in
 	 * grid.sub_universe_numtasks.
-	 * Since each processor has the information of its parent and child(ren) domains in domain[][] array, use this to update the my_tree structure.
+	 * Since each processor has the information of its parent and child domains in domain[][] array, use this to update the my_tree structure.
 	 * Update remote nearest neighbour locations accordingly.
 	 */
 
-	for (int i = 0; i < num_subdomains; i++) {
-		if ((grid.universal_rank >= subdomain_extents[i][1]) && (grid.universal_rank <= subdomain_extents[i][2])) {
+	for(int i = 0; i < num_subdomains; i++)
+	{
+		// Where is grid.universal_rank written to in the first place?
+		// Now, this grid.universal_rank is the universal rank of what?
+		if((grid.universal_rank >= subdomain_extents[i][1]) && (grid.universal_rank <= subdomain_extents[i][2]))
+		{
 			grid.my_domain_color = i;
 			grid.my_domain_key = 0;
 
@@ -69,115 +107,159 @@ grid_parms make_subdomains(grid_parms grid, int num_subdomains, int** domains) {
 
 			grid.my_domain.parent.domain_index = domains[i][4];
 
-			//If I have a parent domain
-			if (grid.my_domain.parent.domain_index >= 0) {
+			// If I have a parent domain.
+			if(grid.my_domain.parent.domain_index >= 0)
+			{
 				grid.my_domain.parent.domain_type = domains[grid.my_domain.parent.domain_index][1];
 				grid.my_domain.parent.m = domains[grid.my_domain.parent.domain_index][2];
 				grid.my_domain.parent.n = domains[grid.my_domain.parent.domain_index][3];
-				//Now decide which Branch in the parent domain (in case of a bifurcation) do I belong to as a child
-				if (grid.my_domain.parent.domain_type == BIF) {
-					if (grid.my_domain.internal_info.domain_index == domains[grid.my_domain.parent.domain_index][5]) {
+
+				// Now decide which branch in the parent domain (in case of a bifurcation) do I belong to as a child.
+				if(grid.my_domain.parent.domain_type == BIF)
+				{
+					if(grid.my_domain.internal_info.domain_index == domains[grid.my_domain.parent.domain_index][5])
+					{
 						grid.my_domain.internal_info.parent_branch_case_bifurcation = L;
-					} else if (grid.my_domain.internal_info.domain_index == domains[grid.my_domain.parent.domain_index][6]) {
+					}
+					else if(grid.my_domain.internal_info.domain_index == domains[grid.my_domain.parent.domain_index][6])
+					{
 						grid.my_domain.internal_info.parent_branch_case_bifurcation = R;
 					}
-				} else if (grid.my_domain.parent.domain_type == STRSEG) {
+				}
+				else if(grid.my_domain.parent.domain_type == STRSEG)
+				{
 					grid.my_domain.internal_info.parent_branch_case_bifurcation = -1;
 				}
-				//If my parent is a bifurcation decide accordingly if I am a child from left branch or right.
-				//The ranks stored for the domains will be of MPI_COMM_WORLD.
-				if (grid.my_domain.internal_info.parent_branch_case_bifurcation >= 0) {
-					if (grid.my_domain.internal_info.parent_branch_case_bifurcation == L) {
+
+				// If my parent is a bifurcation decide accordingly if I am a child from left or right branch.
+				// The ranks stored for the domains will be of MPI_COMM_WORLD.
+				if(grid.my_domain.internal_info.parent_branch_case_bifurcation >= 0)
+				{
+					if(grid.my_domain.internal_info.parent_branch_case_bifurcation == L)
+					{
 						grid.my_domain.parent.domain_start = subdomain_extents[grid.my_domain.parent.domain_index][1]
 								+ (grid.my_domain.parent.m * grid.my_domain.parent.n);
 						grid.my_domain.parent.domain_end = grid.my_domain.parent.domain_start + (grid.my_domain.parent.n - 1);
-					} else if (grid.my_domain.internal_info.parent_branch_case_bifurcation == R) {
+					}
+					else if(grid.my_domain.internal_info.parent_branch_case_bifurcation == R)
+					{
 						grid.my_domain.parent.domain_start = subdomain_extents[grid.my_domain.parent.domain_index][1]
 								+ 2 * (grid.my_domain.parent.m * grid.my_domain.parent.n);
 						grid.my_domain.parent.domain_end = grid.my_domain.parent.domain_start + (grid.my_domain.parent.n - 1);
 					}
-				} else if ((grid.my_domain.internal_info.parent_branch_case_bifurcation == -1) && (grid.my_domain.parent.domain_type == STRSEG)) {
+				}
+				else if((grid.my_domain.internal_info.parent_branch_case_bifurcation == -1) && (grid.my_domain.parent.domain_type == STRSEG))
+				{
 					grid.my_domain.parent.domain_start = subdomain_extents[grid.my_domain.parent.domain_index][1];
 					grid.my_domain.parent.domain_end = grid.my_domain.parent.domain_start + (grid.my_domain.parent.n - 1);
 				}
-			} else {
+			}
+			// No parent domain.
+			else
+			{
 				grid.my_domain.parent.domain_type = -1;
 				grid.my_domain.parent.domain_start = -1;
 				grid.my_domain.parent.domain_end = -1;
 			}
 
 			grid.my_domain.left_child.domain_index = domains[i][5];
-			//In case I have a child domain
-			if (grid.my_domain.left_child.domain_index >= 0) {
+
+			// If we have a left child domain.
+			if(grid.my_domain.left_child.domain_index >= 0)
+			{
 				grid.my_domain.left_child.domain_type = domains[grid.my_domain.left_child.domain_index][1];
 				grid.my_domain.left_child.m = domains[grid.my_domain.left_child.domain_index][2];
 				grid.my_domain.left_child.n = domains[grid.my_domain.left_child.domain_index][3];
-				//Irrespective of the domain type, the last row of my child's m by n grid is of my interest
+
+				// Irrespective of the domain type, the last row of my child's m by n grid is of my interest.
 				grid.my_domain.left_child.domain_start = subdomain_extents[grid.my_domain.left_child.domain_index][1]
 						+ ((grid.my_domain.left_child.m - 1) * grid.my_domain.left_child.n);
 				grid.my_domain.left_child.domain_end = grid.my_domain.left_child.domain_start + (grid.my_domain.left_child.n - 1);
-			} else {
+			}
+			// No child domain.
+			else
+			{
 				grid.my_domain.left_child.domain_type = -1;
 				grid.my_domain.left_child.domain_start = -1;
 				grid.my_domain.left_child.domain_end = -1;
 			}
 
 			grid.my_domain.right_child.domain_index = domains[i][6];
-			if (grid.my_domain.right_child.domain_index >= 0) {
+
+			// If we have a right child domain.
+			if(grid.my_domain.right_child.domain_index >= 0)
+			{
 				grid.my_domain.right_child.domain_type = domains[grid.my_domain.right_child.domain_index][1];
 				grid.my_domain.right_child.m = domains[grid.my_domain.right_child.domain_index][2];
 				grid.my_domain.right_child.n = domains[grid.my_domain.right_child.domain_index][3];
 
-				//Irrespective of the domain type, the last row of my child's m by n grid is of my interest
+				// Irrespective of the domain type, the last row of my child's m by n grid is of my interest.
 				grid.my_domain.right_child.domain_start = subdomain_extents[grid.my_domain.right_child.domain_index][1]
 						+ ((grid.my_domain.right_child.m - 1) * grid.my_domain.right_child.n);
 				grid.my_domain.right_child.domain_end = grid.my_domain.right_child.domain_start + (grid.my_domain.right_child.n - 1);
-			} else {
+			}
+			else
+			{
 				grid.my_domain.right_child.domain_type = -1;
 				grid.my_domain.right_child.domain_start = -1;
 				grid.my_domain.right_child.domain_end = -1;
 			}
-
 		}
 	}
 
-	///Do the domain spliting to make subdomains.
-	check_flag(MPI_Comm_split(grid.universe, grid.my_domain_color, grid.my_domain_key, &grid.sub_universe), "Comm-split failed at subdomain level.");
+	// TODO: Define a function for releasing 2D arrays.
+	// Memory was not deallocated here.
+	for (int i = 0; i < num_subdomains; i++) {
+		free(subdomain_extents[i]);
+	}
+	free(subdomain_extents);
 
-	//Reveal information of myself and size of grid.sub_universe
-	check_flag(MPI_Comm_rank(grid.sub_universe, &grid.sub_universe_rank), "error retrieving Subdomain_rank");
-	check_flag(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks), "error retrieving Subdomain_size");
+	// Do the domain spiting to make subdomains.
+	check_flag(MPI_Comm_split(grid.universe, grid.my_domain_color, grid.my_domain_key, &grid.sub_universe), "Communicator split failed at subdomain level.");
+
+	// Reveal information of myself and size of grid.sub_universe.
+	check_flag(MPI_Comm_rank(grid.sub_universe, &grid.sub_universe_rank), "Retrieving subdomain rank.");
+	check_flag(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks), "Retrieving subdomain size.");
 
 	return grid;
-} //end of make_subdomains()
+}
 
-grid_parms set_geometry_parameters(grid_parms grid) {
-	///Each tasks now calculates the number of ECs per node.
+grid_parms set_task_parameters(grid_parms grid)
+{
+	// Each tasks now calculates the number of ECs per node.
 
-	///Each tasks now calculates the number of ECs per node.
-	///topological information of a functional block of coupled cells. This is the minimum required to simulate a relevant coupled topology.
-	grid.num_smc_fundblk_circumferentially = 1;
-	grid.num_ec_fundblk_circumferentially = 5;
-	grid.num_smc_fundblk_axially = 13;
-	grid.num_ec_fundblk_axially = 1;
+	// Each tasks now calculates the number of ECs per node.
+	// Topological information of a functional block of coupled cells.
+	// This is the minimum required to simulate a relevant coupled topology.
 
-	grid.num_ghost_cells = 2;
+	{
+		// TODO: These should be set in the struct definition, ast all these members are constants.
+		grid.num_smc_fundblk_circumferentially = 1;
+		grid.num_ec_fundblk_circumferentially = 5;
+		grid.num_smc_fundblk_axially = 13;
+		grid.num_ec_fundblk_axially = 1;
 
-	grid.num_fluxes_smc = 12;		///number of SMC Ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
-	grid.num_fluxes_ec = 12;		///number of EC Ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
+		grid.num_ghost_cells = 2;
 
-	grid.num_coupling_species_smc = 3;		///number of SMC coupling species homogenic /heterogenic
-	grid.num_coupling_species_ec = 3;		///number of SMC coupling species homogenic /heterogenic
+		grid.num_fluxes_smc = 12; // Number of SMC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
+		grid.num_fluxes_ec = 12; // Number of EC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
 
-	grid.neq_smc = 5;			/// number of SMC ODEs for a single cell
-	grid.neq_ec = 4;			/// number of EC ODEs for a single cell
+		grid.num_coupling_species_smc = 3; // Number of SMC coupling species homogenic/heterogenic.
+		grid.num_coupling_species_ec = 3; // Number of SMC coupling species homogenic/heterogenic.
 
-	for (int i = 0; i < grid.num_domains; i++) {
-		for (int j = 0; j < 9; j++) {
-			grid.num_ec_axially = grid.domains[i][7] * 1;
-			grid.num_smc_axially = grid.num_ec_axially * 13;
-			grid.num_smc_circumferentially = grid.domains[i][8] * 1;
-			grid.num_ec_circumferentially = grid.num_smc_circumferentially * 5;
+		grid.neq_smc = 5; // Number of SMC ODEs for a single cell.
+		grid.neq_ec = 4; // Number of EC ODEs for a single cell.
+	}
+
+	for(int i = 0; i < grid.num_domains; i++)
+	{
+		// Perhaps this block does not need to be executed 9 times?
+		// for(int j = 0; j < 9; j++)
+		{
+			grid.num_ec_axially = grid.domains[i][7] * grid.num_ec_fundblk_axially;
+			grid.num_smc_axially = grid.num_ec_axially * grid.num_smc_fundblk_axially;
+			grid.num_smc_circumferentially = grid.domains[i][8] * grid.num_smc_fundblk_circumferentially;
+			grid.num_ec_circumferentially = grid.num_smc_circumferentially * grid.num_ec_fundblk_circumferentially;
 		}
 	}
 
@@ -194,7 +276,7 @@ grid_parms set_geometry_parameters(grid_parms grid) {
 
 	grid.num_parameters = 2;
 	return grid;
-}			// end of set_geometry_parameters()
+}
 
 grid_parms make_bifucation(grid_parms grid) {
 	//Since there are 3 branches, there needs to be three values of a variable color, to identify association of a rank to a particular sub-universe partitioned out of MPI_COMM_WORLD.

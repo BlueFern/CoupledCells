@@ -159,12 +159,12 @@ typedef struct {
 	int
 	///Global domain information storage
 	num_domains, **domains,
-			///this is a node local information
+	/// This is a node local information.
 
-			///Topology information (fundamental unit or block of cells)
-			num_smc_fundblk_circumferentially, num_ec_fundblk_circumferentially, num_smc_fundblk_axially, num_ec_fundblk_axially,
+	/// Topology information (fundamental unit or block of cells).
+	num_smc_fundblk_circumferentially, num_ec_fundblk_circumferentially, num_smc_fundblk_axially, num_ec_fundblk_axially,
 
-			///Total number of ghost cells to be added in the computational in each dimension (circumferentail and axial)
+			/// Total number of ghost cells to be added in the computational in each dimension (circumferentail and axial).
 			num_ghost_cells,
 			///total grid points axially
 			m,
@@ -426,8 +426,8 @@ void print_compare(double, double*, grid_parms, celltype1**, celltype2**);
 //Topology related functions
 grid_parms make_bifucation(grid_parms);
 grid_parms make_straight_segment(grid_parms);
-grid_parms set_geometry_parameters(grid_parms);
-grid_parms make_subdomains(grid_parms, int, int**);
+grid_parms set_task_parameters(grid_parms);
+grid_parms configure_subdomains_topology(grid_parms, int, int**);
 
 void checkpoint_timing_data(grid_parms, checkpoint_handle*, double, time_stamps, int, int);
 double agonist_profile(double, grid_parms, int, int, double);
@@ -440,7 +440,7 @@ celltype2** ith_ec_z_coordinate(grid_parms, celltype2**);
 
 double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index, grid_parms grid, double* y, celltype1** smc);
 void Initialize_tsoukias_smc(grid_parms grid, double y[], celltype1** smc);
-int read_domain_info(int, char*, grid_parms*);
+int read_config_file(int, char*, grid_parms*);
 void naming_convention(grid_parms* grid);
 void update_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*,IO_domain_info*);
 int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid);
