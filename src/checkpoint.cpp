@@ -1796,7 +1796,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 	free(send_points);
 	free(recv_points);
 
-//Reading in SMC mesh and communicating to each branch communicator memeber.
+	// Reading in SMC mesh and communicating to each branch communicator member.
 	send_points = (double*) malloc(tuple_offset * grid->info[smcMesh][TOTAL_CELLS] * grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(double));
 
 	if (grid->rank == 0) {
@@ -1880,7 +1880,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 	free(send_points);
 	free(recv_points);
 
-//Reading in EC mesh and communicating to each branch communicator memeber.
+	// Reading in EC mesh and communicating to each branch communicator member.
 	send_points = (double*) malloc(tuple_offset * grid->info[ecMesh][TOTAL_CELLS] * grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(double));
 
 	if (grid->rank == 0) {
@@ -1961,7 +1961,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, ce
 	free(send_points);
 	free(recv_points);
 
-//Reading in EC centroids and communicating to each branch communicator memeber.
+	// Reading in EC centroids and communicating to each branch communicator member.
 	num_tuples = 1;
 	tuple_offset = num_tuple_components * num_tuples;
 
