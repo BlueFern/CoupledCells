@@ -1599,14 +1599,18 @@ void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper*
 
 }
 
-void naming_convention(grid_parms* grid) {
-//Prepare the suffix which indicates my subdomain information and if I am a bifurcation, then also tells about which branch do I belong to
+// Prepare the suffix which indicates our subdomain information, bifurcation or tube segment suffix, and the containing branch info.
+void set_file_naming_strings(grid_parms* grid)
+{
 	int subdomain, branch, err;
 
-	if (grid->my_domain.internal_info.domain_type == STRSEG) {
+	if(grid->my_domain.internal_info.domain_type == STRSEG)
+	{
 		subdomain = grid->my_domain.internal_info.domain_index;
 		err = sprintf(grid->suffix, "%d", subdomain);
-	} else if (grid->my_domain.internal_info.domain_type == BIF) {
+	}
+	else if(grid->my_domain.internal_info.domain_type == BIF)
+	{
 		subdomain = grid->my_domain.internal_info.domain_index;
 		branch = grid->branch_tag;
 		err = sprintf(grid->suffix, "%d_%d", subdomain, branch);

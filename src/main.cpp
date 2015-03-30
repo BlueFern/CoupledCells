@@ -76,7 +76,10 @@ int main(int argc, char* argv[]) {
 	error = read_config_file(grid.universal_rank, grid.config_file, &grid);
 
 	/// - Make subdomains according to the information read from the config file (domain_info.txt).
-	/// Why does this function need three parameters? They all come from the same struct.
+
+	// WARNING: Why does this function need three parameters? They all come from the same struct.
+	// WARNING: In this case and many other cases the structs are passed by value. That's why
+	// they all return copies of structs overwriting the initial structs.
 	grid = configure_subdomains_topology(grid, grid.num_domains, grid.domains);
 
 	// File written every 1 second.
@@ -100,18 +103,21 @@ int main(int argc, char* argv[]) {
 		grid = make_bifucation_cart_grids(grid);
 	}
 
+	// WARNING: It appears that the grid struct members updated in the following call are not used anywhere else in the code.
 	grid = update_global_subdomain_information(grid, grid.num_domains, grid.domains);
-	naming_convention(&grid);
 
-///Initialize checkpoint routine which opens files
+	set_file_naming_strings(&grid);
+
+	/// Initialise checkpoint routine which opens files.
 	checkpoint_handle *check = initialise_checkpoint(grid);
-/// Initializing IO_domain for creating writers.
-	IO_domain_info* my_IO_domain_info = make_io_domains(&grid);
-///Now allocate memory space for the structures represegird.nting the cells and the various members of those structures.
 
-//Each of the two cell grids have two additional rows and two additional columns as ghost cells.
-//Following is an example of a 5x7 grid with added ghost cells on all four sides. the 0s are the actual
-//members of the grid whereas the + are the ghost cells.
+	/// Initialising IO_domain for creating writers.
+	IO_domain_info* my_IO_domain_info = make_io_domains(&grid);
+
+	/// Now allocate memory for the structures represegird.nting the cells and the various members of those structures.
+	/// Each of the two cell grids have two additional rows and two additional columns as ghost cells.
+	/// Following is an example of a 5x7 grid with added ghost cells on all four sides. the 0s are the actual
+	/// members of the grid whereas the + are the ghost cells.
 
 	/**
 \verbatim

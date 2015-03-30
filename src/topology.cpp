@@ -599,9 +599,7 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid)
 	return grid;
 }
 
-/**************** Update global subdomain information ***************/
 grid_parms update_global_subdomain_information(grid_parms grid, int num_subdomains, int** domains)
-/********************************************************************/
 {
 	grid.global_domain_info.num_subdomains = num_subdomains;
 
@@ -611,6 +609,7 @@ grid_parms update_global_subdomain_information(grid_parms grid, int num_subdomai
 	grid.global_domain_info.list_type_subdomains = (int*) checked_malloc((grid.global_domain_info.num_subdomains * sizeof(int)), "cc");
 	grid.global_domain_info.list_num_ec_axially_per_domain = (int*) checked_malloc((grid.global_domain_info.num_subdomains * sizeof(int)), "dd");
 	grid.global_domain_info.list_domain_z_coord_index = (double**) checked_malloc((grid.global_domain_info.num_subdomains * sizeof(double*)), "ee");
+
 	for (int i = 0; i < grid.global_domain_info.num_subdomains; i++) {
 		grid.global_domain_info.list_domain_z_coord_index[i] = (double*) checked_malloc((4 * sizeof(double)), "ff");
 	}
@@ -619,6 +618,7 @@ grid_parms update_global_subdomain_information(grid_parms grid, int num_subdomai
 	grid.my_domain.z_offset_end = 0.0;
 	double theta = 3.1415 / 4;
 	grid = z_coord_exchange(grid, theta);
+
 	return (grid);
 }
 /********************************************************/

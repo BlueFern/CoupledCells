@@ -213,7 +213,7 @@ typedef struct {
 	int smc_model, ec_model;	// These are placeholders for the selection of model to be simulated in each cell.
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
 
-	char suffix[10];	// this is for use in the naming convention of the IO files to recognize and record
+	char suffix[16];	// this is for use in the naming convention of the IO files to recognize and record
 						// which files are associated with a given task/processor.
 
 						///Temporary array for use in time profiling checkpointing
@@ -440,7 +440,7 @@ celltype2** ith_ec_z_coordinate(grid_parms, celltype2**);
 double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index, grid_parms grid, double* y, celltype1** smc);
 void Initialize_tsoukias_smc(grid_parms grid, double y[], celltype1** smc);
 int read_config_file(int, char*, grid_parms*);
-void naming_convention(grid_parms* grid);
+void set_file_naming_strings(grid_parms* grid);
 void update_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*,IO_domain_info*);
 int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid);
 
