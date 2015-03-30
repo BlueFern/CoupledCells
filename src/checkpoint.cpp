@@ -1123,16 +1123,11 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 	free(writer_buffer->cpIj);
 }
 
-/*************************************************************************************/
-void update_line_number(checkpoint_handle* check, grid_parms grid, int line_number) {
-	MPI_Status status;
-	MPI_Offset disp;
-
-	disp = grid.universal_rank * sizeof(int);
-	CHECK(MPI_File_write_at(check->line_number, disp, &line_number, 1, MPI_INT, &status));
-}
-/****************************************************************************************/
-void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms grid, IO_domain_info* my_IO_domain_info) {
+/**
+ * Dump info/debug output to a log file.
+ */
+void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms grid, IO_domain_info* my_IO_domain_info)
+{
 	MPI_Status status;
 	MPI_Offset displacement = 0;
 	char* buffer = (char*) checked_malloc(2 * 1024 * sizeof(char), "allocation for logfile segment space\n");
@@ -1140,9 +1135,9 @@ void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms gr
 	char filename[50];
 	int length =
 			sprintf(buffer,
-					"BRANCH_TAG	=	%d\n[Universal_Rank, Cart_Rank= (%d,%d)] \tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d) \t "
+					"BRANCH_TAG	= %d\n[Universal_Rank, Cart_Rank= (%d,%d)] \tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d)\t "
 							"remote: (up1,up2,down1,down2)=(%d %d %d %d)\n\n flip_array: (%d,%d,%d,%d)\n\n"
-							"Boundary_tag = %c\n(T = Top\t B= Bottom\t I=Interior edges of the bifurcation segmensts, parent or children\t N=Interior of the subdomain)\n"
+							"Boundary_tag = %c\n(T = Top\t B= Bottom\t I=Interior edges of the bifurcation segments, parent or children\t N=Interior of the subdomain)\n"
 							"COUPLING COEFFICIENTS\n"
 							"Vm_hm_smc=%2.5lf\nVm_hm_ec=%2.5lf\nCa_hm_smc=%2.5lf\nCa_hm_ec=%2.5lf\nIP3_hm_smc=%2.5lf\n"
 							"IP3_hm_ec=%2.5lf\nVm_ht_smc=%2.5lf\nVm_ht_ec=%2.5lf\nCa_ht_smc=%2.5lf\nCa_ht_ec=%2.5lf\n"
@@ -1180,12 +1175,12 @@ void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms gr
 					grid.my_domain.local_z_end);
 
 	int *recv_count = (int*) checked_malloc(grid.tasks * sizeof(int),
-			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
-	int *disp = (int*) checked_malloc(grid.tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
+			"Allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers.");
+	int *disp = (int*) checked_malloc(grid.tasks * sizeof(int), "Allocation failed for disp array in gather_tasks_mesh_point_data_on_writers.");
 
-	/// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
+	// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
 	check_flag(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid.cart_comm),
-			"error in MPI_Gather gathering Logfile buffer length by each process.");
+			"Error in MPI_Gather gathering log file buffer length by each process.");
 	grid.logfile_displacements = 0;
 	for (int i = 0; i < grid.tasks; i++) {
 		disp[i] = grid.logfile_displacements;
@@ -1197,20 +1192,19 @@ void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms gr
 				"allocation error for writer_buffer for Logfile.");
 	}
 	check_flag(MPI_Gatherv(buffer, length, MPI_CHAR, grid.logfile_write_buffer, recv_count, disp, MPI_CHAR, root, grid.cart_comm),
-			"Error gathering Logfile data.");
+			"Error gathering log file data.");
 
 	if (grid.rank == 0) {
 		sprintf(filename, "Logfile_%s.txt", grid.suffix);
-		check_flag(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &check->logptr), "error opening Logfile");
+		check_flag(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &check->logptr), "Error opening log file.");
 		check_flag(MPI_File_write_at(check->logptr, displacement, grid.logfile_write_buffer, grid.logfile_displacements, MPI_CHAR, &status),
-				"Error writing data into Logfile.");
+				"Error writing data into log file.");
 		MPI_File_close(&check->logptr);
 		free(grid.logfile_write_buffer);
 	}
 
 	free(recv_count);
 	free(disp);
-
 }
 
 void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check, const char *message) {

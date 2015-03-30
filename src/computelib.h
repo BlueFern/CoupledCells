@@ -194,9 +194,9 @@ typedef struct {
 			//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
 			//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 			branch_tag,
-			///variables for remote MPI information (P=parent, L & R = Left & Right branch respectively)
+			/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
 			scheme, offset_P, offset_L, offset_R, flip_array[4],
-			///number of elements being sent and received
+			/// Number of elements being sent and received.
 			num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right, num_elements_recv_up,
 			num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
 	double **coordinates;
@@ -206,8 +206,8 @@ typedef struct {
 	my_tree my_domain;
 	glb_domn_inf global_domain_info;
 
-	//Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
-	//operation on MPI_COMM_WORLD and the other a Cartisian communicator arising from Cart_create operation
+	// Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
+	// operation on MPI_COMM_WORLD and the other a Cartesian communicator arising from Cart_create operation.
 	MPI_Comm universe, sub_universe, split_comm, cart_comm;
 
 	int smc_model, ec_model;	// These are placeholders for the selection of model to be simulated in each cell.
@@ -395,7 +395,6 @@ void dump_rank_info(checkpoint_handle*, conductance, grid_parms, IO_domain_info*
 void dump_smc_with_ghost_cells(grid_parms, celltype1**, checkpoint_handle*, int);
 void dump_ec_with_ghost_cells(grid_parms, celltype2**, checkpoint_handle*, int);
 void checkpoint_with_ghost_cells(checkpoint_handle*, grid_parms, double, celltype1**, celltype2**, int);
-void update_line_number(checkpoint_handle*, grid_parms, int);
 
 int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid);
 double reinitialize_time(checkpoint_handle*, int, grid_parms);

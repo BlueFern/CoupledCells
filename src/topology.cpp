@@ -278,15 +278,19 @@ grid_parms set_task_parameters(grid_parms grid)
 	return grid;
 }
 
-grid_parms make_bifucation_cart_grids(grid_parms grid) {
-	//Since there are 3 branches, there needs to be three values of a variable color, to identify association of a rank to a particular sub-universe partitioned out of MPI_COMM_WORLD.
-
+/**
+ * Create a Cartesian grid for the components of a bifurcation, find the send and receive addresses for the edge tasks.
+ */
+grid_parms make_bifucation_cart_grids(grid_parms grid)
+{
+	// Since there are 3 branches, there needs to be three values of a variable colour,
+	// to identify the grouping of a rank to a particular sub-universe partitioned out of MPI_COMM_WORLD.
 	grid.color = int(grid.sub_universe_rank / (grid.m * grid.n));
-	grid.key = 0;			//grid.color * ((grid.m * grid.n) - 1);
+	grid.key = 0;
 
-	check_flag(MPI_Comm_split(grid.sub_universe, grid.color, grid.key, &grid.split_comm), "Comm-split failed");
+	check_flag(MPI_Comm_split(grid.sub_universe, grid.color, grid.key, &grid.split_comm), "Comm-split failed.");
 
-	///Global variables that are to be read by each processor
+	/// Parameters for cart create call.
 	int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
 	ndims = 2;
 	dims[0] = grid.m;
@@ -295,52 +299,74 @@ grid_parms make_bifucation_cart_grids(grid_parms grid) {
 	periodic[1] = 1;
 	reorder = 0;
 
-	check_flag(MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder, &grid.cart_comm), "failed at cart create");
-	check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), "failed at cart comm rank");
-	check_flag(MPI_Comm_size(grid.cart_comm, &grid.tasks), "failed at cart comm tasks");
-	check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords), "failed at cart coords");
+	check_flag(MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder, &grid.cart_comm), "Failed at cart create.");
+	check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), "Failed at cart comm rank.");
+	check_flag(MPI_Comm_size(grid.cart_comm, &grid.tasks), "Failed at cart comm tasks.");
 
-	check_flag(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]), "failed at cart shift up down");
-	check_flag(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]), "failed at cart left right");
+	// The inverse mapping, rank-to-coordinates translation.
+	check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords), "Failed at cart coords.");
 
-	//Identifying remote neighbours
+	check_flag(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]), "Failed at cart shift up down.");
+	check_flag(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]), "Failed at cart left right.");
 
+	// Identifying remote neighbours.
 	grid.offset_P = 0;
 	grid.offset_L = (grid.m * grid.n) + ((grid.m - 1) * grid.n);
 	grid.offset_R = 2 * (grid.m * grid.n) + ((grid.m - 1) * grid.n);
 
-	//check whether number of processors in circumferential direction are EVEN or ODD.
-	grid.scheme = grid.n % 2;
-	if (grid.color == 0) {
+	if (grid.color == 0)
+	{
 		grid.branch_tag = P;
-	} else if (grid.color == 1) {
+	}
+	else if (grid.color == 1)
+	{
 		grid.branch_tag = L;
-	} else if (grid.color == 2) {
+	}
+	else if (grid.color == 2)
+	{
 		grid.branch_tag = R;
 	}
 
-	//Label the ranks on the subdomain edges of at STRAIGHT SEGMENT as top or bottom boundary.
-	for (int i = 0; i < (3 * grid.m * grid.n); i++) {
-		if (grid.branch_tag == P) {
-			if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
+	// Label the ranks on the subdomain edges of a STRAIGHT SEGMENT as top or bottom boundary.
+	for (int i = 0; i < (3 * grid.m * grid.n); i++)
+	{
+		if (grid.branch_tag == P)
+		{
+			if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1)))
+			{
 				grid.my_domain.internal_info.boundary_tag = 'B';
-			} else {
+			}
+			else
+			{
 				grid.my_domain.internal_info.boundary_tag = 'N';
 			}
-		} else if ((grid.branch_tag == L) || (grid.branch_tag == R)) {
-			if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
+		}
+		else if ((grid.branch_tag == L) || (grid.branch_tag == R))
+		{
+			if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
+			{
 				grid.my_domain.internal_info.boundary_tag = 'T';
-			} else {
+			}
+			else
+			{
 				grid.my_domain.internal_info.boundary_tag = 'N';
 			}
 		}
 	}
 
-	//If number of processors in circumferential dimension are EVEN
+	// Check whether number of processors in circumferential direction are EVEN or ODD.
+	grid.scheme = grid.n % 2;
+
+	// TODO: Did we not try to get the neighbours information with the cart shift call? Why is this UP1, UP2, DOWN1, DOWN2?
+
+	// If number of processors in circumferential dimension is EVEN.
 	if (grid.scheme == 0) {
-		//For parent branch edge
-		if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n)) {
-			grid.my_domain.internal_info.boundary_tag = 'I';			//Top edge which couples to Left/Right child branch
+		// For parent branch edge.
+		if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
+		{
+			grid.my_domain.internal_info.boundary_tag = 'I';
+
+			//Top edge which couples to left/right child branch.
 			if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2)) {
 				grid.nbrs[remote][UP1] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
 				grid.nbrs[remote][UP2] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
@@ -348,8 +374,9 @@ grid_parms make_bifucation_cart_grids(grid_parms grid) {
 				grid.nbrs[remote][UP1] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
 				grid.nbrs[remote][UP2] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
 			}
-			//For Left daughter branch edge
-		} else if ((grid.sub_universe_rank >= grid.offset_L) && (grid.sub_universe_rank < (grid.offset_L + grid.n))) {
+		}
+		// For left daughter branch edge.
+		else if ((grid.sub_universe_rank >= grid.offset_L) && (grid.sub_universe_rank < (grid.offset_L + grid.n))) {
 			grid.my_domain.internal_info.boundary_tag = 'I';
 			if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2)) {
 				grid.nbrs[remote][DOWN1] = grid.sub_universe_rank - grid.offset_L;
@@ -363,7 +390,7 @@ grid_parms make_bifucation_cart_grids(grid_parms grid) {
 				grid.my_domain.internal_info.half_marker = 2;
 			}
 		}
-		//For Right daughter branch edge
+		// For Right daughter branch edge.
 		else if ((grid.sub_universe_rank >= grid.offset_R) && (grid.sub_universe_rank < (grid.offset_R + grid.n))) {
 			grid.my_domain.internal_info.boundary_tag = 'I';
 			if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2)) {
@@ -380,10 +407,11 @@ grid_parms make_bifucation_cart_grids(grid_parms grid) {
 		}
 	}
 
-	//If number of processors in circumferential dimension are ODD
+	// TODO: Did we not try to get the neighbours information with the cart shift call?  Why is this UP1, UP2, DOWN1, DOWN2?
 
+	// If number of processors in circumferential dimension are ODD.
 	if (grid.scheme != 0) {
-		//The parent artery edge
+		// The parent artery edge.
 		if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n)) {
 			grid.my_domain.internal_info.boundary_tag = 'I';
 			if ((grid.sub_universe_rank - grid.offset_P) < ((grid.n - 1) / 2)) {
@@ -398,7 +426,8 @@ grid_parms make_bifucation_cart_grids(grid_parms grid) {
 			}
 		}
 		//The left daughter artery edge
-		else if ((grid.sub_universe_rank >= grid.offset_L) && (grid.sub_universe_rank < grid.offset_L + grid.n)) {
+		else if ((grid.sub_universe_rank >= grid.offset_L) && (grid.sub_universe_rank < grid.offset_L + grid.n))
+		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
 			if ((grid.sub_universe_rank - grid.offset_L) < ((grid.n - 1) / 2)) {
 				grid.nbrs[remote][DOWN1] = (grid.sub_universe_rank - grid.offset_L);
@@ -418,8 +447,9 @@ grid_parms make_bifucation_cart_grids(grid_parms grid) {
 				grid.my_domain.internal_info.half_marker = 3;
 			}
 		}
-		//The right daughter artery edge
-		else if ((grid.sub_universe_rank >= grid.offset_R) && (grid.sub_universe_rank < grid.offset_R + grid.n)) {
+		// The right daughter artery edge.
+		else if ((grid.sub_universe_rank >= grid.offset_R) && (grid.sub_universe_rank < grid.offset_R + grid.n))
+		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
 			if ((grid.sub_universe_rank - grid.offset_R) < ((grid.n - 1) / 2)) {
 				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
@@ -441,11 +471,16 @@ grid_parms make_bifucation_cart_grids(grid_parms grid) {
 		}
 	}
 
-	//If I am a parent branch in my domain
-	if (grid.branch_tag == P) {
-		//if a parent domain exists for me
-		if (grid.my_domain.parent.domain_index >= 0) {
-			//if I am a bottom row in my m x n cart grid
+	// OMG! FTLOP! FFS! For the millionth time, everyone can read a simple clause in a conditional statement,
+	// but what the hell is happening in the body of the statement? What is the action? What is it for?
+
+	// If I am a parent branch in my domain.
+	if (grid.branch_tag == P)
+	{
+		// If a parent domain exists for me.
+		if (grid.my_domain.parent.domain_index >= 0)
+		{
+			// if I am a bottom row in my m x n cart grid.
 			if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
 				int stride = grid.rank - ((grid.m - 1) * grid.n);
 				grid.nbrs[remote][DOWN1] = grid.my_domain.parent.domain_start + stride;
@@ -453,24 +488,30 @@ grid_parms make_bifucation_cart_grids(grid_parms grid) {
 			}
 		}
 	}
-	//If I am a left daughter branch in my domain
-	else if (grid.branch_tag == L) {
-		//if a child exists from me
-		if (grid.my_domain.left_child.domain_index >= 0) {
-			//if I am top row in my m x n cart grid
-			if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
+	// If I am a left daughter branch in my domain.
+	else if (grid.branch_tag == L)
+	{
+		// If a child exists from me.
+		if (grid.my_domain.left_child.domain_index >= 0)
+		{
+			// If I am top row in my m x n cart grid.
+			if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
+			{
 				int stride = grid.rank;
 				grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start + stride;
 				grid.nbrs[remote][UP2] = grid.my_domain.left_child.domain_start + stride;
 			}
 		}
 	}
-	//If I am a right daughter branch in my domain
-	else if (grid.branch_tag == R) {
-		//if a child exists from me
-		if (grid.my_domain.right_child.domain_index >= 0) {
-			//if I am top row in my m x n cart grid
-			if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
+	// If I am a right daughter branch in my domain.
+	else if (grid.branch_tag == R)
+	{
+		// If a child exists from me.
+		if (grid.my_domain.right_child.domain_index >= 0)
+		{
+			// If I am top row in my m x n cart grid.
+			if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
+			{
 				int stride = grid.rank;
 				grid.nbrs[remote][UP1] = grid.my_domain.right_child.domain_start + stride;
 				grid.nbrs[remote][UP2] = grid.my_domain.right_child.domain_start + stride;
@@ -482,9 +523,12 @@ grid_parms make_bifucation_cart_grids(grid_parms grid) {
 	return grid;
 }
 
-grid_parms make_straight_segment_cart_grids(grid_parms grid) {
+/**
+ * Create a Cartesian grid for a tube segment, find the send and receive addresses for the edge tasks.
+ */
+grid_parms make_straight_segment_cart_grids(grid_parms grid)
+{
 	// Since there no branch, all processors have same colour.
-
 	grid.color = 0;
 	grid.key = 0;
 
@@ -502,26 +546,37 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid) {
 	check_flag(MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder, &grid.cart_comm), "Failed at cart create.");
 	check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), "Failed at comm rank.");
 	check_flag(MPI_Comm_size(grid.cart_comm, &grid.tasks), "Failed at cart comm tasks.");
+
+	// The inverse mapping, rank-to-coordinates translation.
 	check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords), "Failed at cart coords.");
 
+	// TODO: Is this right? Source is assigned to the up side, destination is the down side?
 	check_flag(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]), "Failed at cart shift up down.");
+	// TODO: Is this right? Our Cartesian grids are periodic, hence we don't need to know our LEFT and RIGHT neighbours.
 	check_flag(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]), "Failed at cart shift left right.");
 
 	// Label the ranks on the subdomain edges of a STRAIGHT SEGMENT as top (T) or bottom boundary (B) or none (N).
-	for (int i = 0; i < (grid.m * grid.n); i++) {
-		if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
+	for (int i = 0; i < (grid.m * grid.n); i++)
+	{
+		if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1)))
+		{
 			grid.my_domain.internal_info.boundary_tag = 'B';
-		} else if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
+		}
+		else if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
+		{
 			grid.my_domain.internal_info.boundary_tag = 'T';
-		} else {
+		}
+		else
+		{
 			grid.my_domain.internal_info.boundary_tag = 'N';
 		}
 	}
 
-	//Find remote nearest neighbours on remote domains
+	// Find remote nearest neighbours on remote domains.
 
 	// If a parent domain exists for this subdomain.
-	if (grid.my_domain.parent.domain_index >= 0) {
+	if (grid.my_domain.parent.domain_index >= 0)
+	{
 		// If we are in the bottom row in our m x n cart grid.
 		if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
 			int stride = grid.rank - ((grid.m - 1) * grid.n);

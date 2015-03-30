@@ -7,6 +7,9 @@
 #include <math.h>
 #include "computelib.h"
 
+// TODO: Perhaps we it would make sense to have the declarations for this code in a header file of its own.
+void update_line_number(checkpoint_handle*, grid_parms, int);
+
 #include <cvode/cvode.h>
 #include <cvode/cvode_spgmr.h>
 #include <nvector/nvector_serial.h>
@@ -166,5 +169,13 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 	}		//end of for loop on TEND
 
 		process_time_profiling_data(grid,time_profiler,count);
+}
+
+void update_line_number(checkpoint_handle* check, grid_parms grid, int line_number) {
+	MPI_Status status;
+	MPI_Offset disp;
+
+	disp = grid.universal_rank * sizeof(int);
+	CHECK(MPI_File_write_at(check->line_number, disp, &line_number, 1, MPI_INT, &status));
 }
 #endif	/* CVODE */
