@@ -104,7 +104,7 @@ grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
 }
 /*******************************************************************************************/
 void communication_async_send_recv(grid_parms grid, double** sendbuf,
-		double** recvbuf, celltype1** smc, celltype2** ec)
+		double** recvbuf, SMC_cell** smc, EC_cell** ec)
 		/*******************************************************************************************/
 		{
 	/// For recording an error in communication. err can either be MPI_SUCCESS or !MPI_SUCCESS
@@ -345,7 +345,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 
 /*******************************************************************************************/
 void communication_update_sendbuf(grid_parms grid, double** sendbuf,
-		celltype1** smc, celltype2** ec)
+		SMC_cell** smc, EC_cell** ec)
 /*******************************************************************************************/
 		{
 	int k, buf_offset;
@@ -565,7 +565,7 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 
 /*******************************************************************************************/
 void communication_update_recvbuf(grid_parms grid, double** recvbuf,
-		celltype1** smc, celltype2** ec)
+		SMC_cell** smc, EC_cell** ec)
 		/*******************************************************************************************/
 		{
 	int k, buf_offset;
@@ -789,7 +789,7 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 
 /*******************************************************************************************/
 void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
-		celltype1** smc, celltype2** ec)
+		SMC_cell** smc, EC_cell** ec)
 /*******************************************************************************************/
 		{
 	int k, buf_offset;
@@ -1007,7 +1007,7 @@ void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
 
 /*******************************************************************************************/
 void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
-		celltype1** smc, celltype2** ec)
+		SMC_cell** smc, EC_cell** ec)
 		/*******************************************************************************************/
 		{
 	int k, buf_offset;
@@ -1277,7 +1277,7 @@ void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
 
 /*******************************************************************************************/
 void communication_update_recvbuf_modified2(grid_parms grid, double** recvbuf,
-		celltype1** smc, celltype2** ec)
+		SMC_cell** smc, EC_cell** ec)
 		/*******************************************************************************************/
 		{
 	int k, buf_offset;

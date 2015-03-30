@@ -182,8 +182,8 @@ int couplingParms(int CASE, conductance* cpl_cef)
 }
 
 /*************************************************************************/
-int map_solver_to_cells(grid_parms grid, double* y, celltype1** smc,
-		celltype2** ec) {
+int map_solver_to_cells(grid_parms grid, double* y, SMC_cell** smc,
+		EC_cell** ec) {
 	/*************************************************************************/
 	int err = 0;
 	switch (grid.smc_model) {
@@ -318,7 +318,7 @@ int map_solver_to_cells(grid_parms grid, double* y, celltype1** smc,
 }
 
 /*******************************************************************************************/
-void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
+void map_GhostCells_to_cells(SMC_cell** smc, EC_cell** ec, grid_parms grid)
 /*******************************************************************************************/
 {
 	///Allocating arrays of appropriate lengths for holding values of ghost cell variable to which the relevant smc[i][j] and ec[i][j] members will point to.
@@ -365,8 +365,8 @@ void map_GhostCells_to_cells(celltype1** smc, celltype2** ec, grid_parms grid)
 }
 
 /*******************************************************************************************/
-void coupling(double t, double y[], grid_parms grid, celltype1** smc,
-		celltype2** ec, conductance cpl_cef)
+void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
+		EC_cell** ec, conductance cpl_cef)
 		/*******************************************************************************************/
 		{
 
@@ -504,7 +504,7 @@ double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coo
 }
 
 /**********************************************************************/
-celltype2** ith_ec_z_coordinate(grid_parms grid, celltype2** ec)
+EC_cell** ith_ec_z_coordinate(grid_parms grid, EC_cell** ec)
 /**********************************************************************/
 {
 	/*	double array[2 * grid.num_ec_axially];
@@ -582,7 +582,7 @@ double reinitialize_time(checkpoint_handle* check, int line_index,
 }
 /********************************************************************************/
 double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
-		grid_parms grid, double* y, celltype1** smc) {
+		grid_parms grid, double* y, SMC_cell** smc) {
 	/***********************************************************************************/
 	MPI_Offset disp;
 	MPI_Status status;
@@ -643,7 +643,7 @@ double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
 }
 /********************************************************************************/
 double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
-		grid_parms grid, double* y, celltype1** smc) {
+		grid_parms grid, double* y, SMC_cell** smc) {
 	/***********************************************************************************/
 	MPI_Offset disp;
 	MPI_Status status;
@@ -748,7 +748,7 @@ double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 }
 /************************************************************************************/
 double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
-		grid_parms grid, double* y, celltype2** ec) {
+		grid_parms grid, double* y, EC_cell** ec) {
 	/************************************************************************************/
 	MPI_Offset disp;
 	MPI_Status status;
@@ -818,7 +818,7 @@ double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
  * \return
  */
 int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
-		celltype1** smc, celltype2** ec, conductance cpl_cef, double t,
+		SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t,
 		double* y, double* f) {
 	int err;
 
@@ -901,7 +901,7 @@ int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 }
 
 /*****************************************************************************/
-int compute(grid_parms grid, celltype1** smc, celltype2** ec,
+int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec,
 		conductance cpl_cef, double t, double* y, double* f) {
 	/*****************************************************************************/
 

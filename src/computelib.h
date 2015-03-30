@@ -243,7 +243,7 @@ typedef struct {
 	double x_coordinate[4], y_coordinate[4], z_coordinate[4];
 	int cell_index[4];
 	conductance cpl_cef;
-} celltype1;
+} SMC_cell;
 
 typedef struct {
 	double *q;		///storage for the state variables corresponding to an SMC.
@@ -259,7 +259,7 @@ typedef struct {
 	int centeroid_cell;
 	double JPLC;			    ///local agonsit concentration  on my GPCR receptor (an ith EC)
 	conductance cpl_cef;
-} celltype2;
+} EC_cell;
 
 // WARNING: Most members of this struct are never used in the rest of the code.
 typedef struct {
@@ -336,34 +336,34 @@ typedef struct {
 } data_buffer;
 
 int couplingParms(int CASE, conductance* cpl_cef);
-void Initialize_koeingsberger_smc(grid_parms, double*, celltype1**);
-void Initialize_koeingsberger_ec(grid_parms, double*, celltype2**);
-void map_GhostCells_to_cells(celltype1**, celltype2**, grid_parms);
-int map_solver_to_cells(grid_parms, double*, celltype1**, celltype2**);
+void Initialize_koeingsberger_smc(grid_parms, double*, SMC_cell**);
+void Initialize_koeingsberger_ec(grid_parms, double*, EC_cell**);
+void map_GhostCells_to_cells(SMC_cell**, EC_cell**, grid_parms);
+int map_solver_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
 grid_parms communicate_num_recv_elements_to_nbrs(grid_parms);
-void communication_update_sendbuf(grid_parms, double**, celltype1**, celltype2**);
-void communication_update_recvbuf(grid_parms, double**, celltype1**, celltype2**);
+void communication_update_sendbuf(grid_parms, double**, SMC_cell**, EC_cell**);
+void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void determin_source_destination(grid_parms, int*, int*);
-void communication_async_send_recv(grid_parms, double**, double**, celltype1**, celltype2**);
-void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf, celltype1** smc, celltype2** ec);
-void communication_update_recvbuf_modified(grid_parms, double**, celltype1**, celltype2**);
-void communication_update_recvbuf_modified2(grid_parms, double**, celltype1**, celltype2**);
+void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, EC_cell**);
+void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf, SMC_cell** smc, EC_cell** ec);
+void communication_update_recvbuf_modified(grid_parms, double**, SMC_cell**, EC_cell**);
+void communication_update_recvbuf_modified2(grid_parms, double**, SMC_cell**, EC_cell**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
-void single_cell(double, double*, grid_parms, celltype1**, celltype2**);
-void coupling(double, double*, grid_parms, celltype1**, celltype2**, conductance);
-void tsoukias_smc(grid_parms, celltype1**);
-void koenigsberger_smc(grid_parms, celltype1**);
-void tsoukias_smc_derivatives(double*, grid_parms, celltype1**);
-void koenigsberger_smc_derivatives(double*, grid_parms, celltype1**);
-void koenigsberger_ec(grid_parms, celltype2**);
-void koenigsberger_ec_derivatives(double, double*, grid_parms, celltype2**);
+void single_cell(double, double*, grid_parms, SMC_cell**, EC_cell**);
+void coupling(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
+void tsoukias_smc(grid_parms, SMC_cell**);
+void koenigsberger_smc(grid_parms, SMC_cell**);
+void tsoukias_smc_derivatives(double*, grid_parms, SMC_cell**);
+void koenigsberger_smc_derivatives(double*, grid_parms, SMC_cell**);
+void koenigsberger_ec(grid_parms, EC_cell**);
+void koenigsberger_ec_derivatives(double, double*, grid_parms, EC_cell**);
 
 ///Checkpoint functions.
 checkpoint_handle* initialise_checkpoint(grid_parms);
 checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
-void dump_coords(grid_parms, celltype2**, checkpoint_handle*, const char*);
+void dump_coords(grid_parms, EC_cell**, checkpoint_handle*, const char*);
 
 void open_common_checkpoint(checkpoint_handle*, grid_parms);
 void open_tsoukias_smc_checkpoint(checkpoint_handle*, grid_parms, char*);
@@ -372,27 +372,27 @@ void open_tsoukias_ec_checkpoint(checkpoint_handle*, grid_parms, char*);
 void open_koenigsberger_ec_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
 void open_coupling_data_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
 
-void dump_smc(grid_parms, celltype1**, checkpoint_handle*, int, int);
-void dump_ec(grid_parms, celltype2**, checkpoint_handle*, int, int);
-void dump_smc_async(grid_parms, celltype1**, checkpoint_handle*, int);
-void dump_ec_async(grid_parms, celltype2**, checkpoint_handle*, int);
-void dump_JPLC(grid_parms, celltype2**, checkpoint_handle*, const char*);
-void dump_data(checkpoint_handle*, grid_parms*, int, double, celltype1**, celltype2**, int, IO_domain_info*,data_buffer*);
+void dump_smc(grid_parms, SMC_cell**, checkpoint_handle*, int, int);
+void dump_ec(grid_parms, EC_cell**, checkpoint_handle*, int, int);
+void dump_smc_async(grid_parms, SMC_cell**, checkpoint_handle*, int);
+void dump_ec_async(grid_parms, EC_cell**, checkpoint_handle*, int);
+void dump_JPLC(grid_parms, EC_cell**, checkpoint_handle*, const char*);
+void dump_data(checkpoint_handle*, grid_parms*, int, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
 void final_checkpoint(checkpoint_handle*, grid_parms);
 void close_common_checkpoints(checkpoint_handle*);
 void close_time_wise_checkpoints(checkpoint_handle*);
 void close_time_profiling_checkpoints(checkpoint_handle*);
 
 void dump_rank_info(checkpoint_handle*, conductance, grid_parms, IO_domain_info*);
-void dump_smc_with_ghost_cells(grid_parms, celltype1**, checkpoint_handle*, int);
-void dump_ec_with_ghost_cells(grid_parms, celltype2**, checkpoint_handle*, int);
-void checkpoint_with_ghost_cells(checkpoint_handle*, grid_parms, double, celltype1**, celltype2**, int);
+void dump_smc_with_ghost_cells(grid_parms, SMC_cell**, checkpoint_handle*, int);
+void dump_ec_with_ghost_cells(grid_parms, EC_cell**, checkpoint_handle*, int);
+void checkpoint_with_ghost_cells(checkpoint_handle*, grid_parms, double, SMC_cell**, EC_cell**, int);
 
 int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid);
 double reinitialize_time(checkpoint_handle*, int, grid_parms);
-double* reinitialize_koenigsberger_smc(checkpoint_handle*, int, grid_parms, double*, celltype1**);
-double* reinitialize_koenigsberger_ec(checkpoint_handle*, int, grid_parms, double*, celltype2**);
-int checkpoint(checkpoint_handle*, grid_parms, double*, double*, celltype1**, celltype2**);
+double* reinitialize_koenigsberger_smc(checkpoint_handle*, int, grid_parms, double*, SMC_cell**);
+double* reinitialize_koenigsberger_ec(checkpoint_handle*, int, grid_parms, double*, EC_cell**);
+int checkpoint(checkpoint_handle*, grid_parms, double*, double*, SMC_cell**, EC_cell**);
 
 //Solver related funtions
 void computeDerivatives(double, double*, double*);
@@ -405,14 +405,14 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 		int file_write_per_unit_time,int, checkpoint_handle *check, time_keeper* elps_t);
 #endif /* CVODE */
 
-int compute_with_time_profiling(time_stamps*, grid_parms, celltype1**, celltype2**, conductance cpl_cef, double, double*, double*);
-int compute(grid_parms, celltype1**, celltype2**, conductance cpl_cef, double, double*, double*);
+int compute_with_time_profiling(time_stamps*, grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
+int compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 
 ///These are debugging functions, not used in production runs.
-void print_domains(FILE*, grid_parms, celltype1**, celltype2**);
+void print_domains(FILE*, grid_parms, SMC_cell**, EC_cell**);
 void print_send_buffer(FILE*, grid_parms, double**);
 void print_recv_buffer(FILE*, grid_parms, double**);
-void print_compare(double, double*, grid_parms, celltype1**, celltype2**);
+void print_compare(double, double*, grid_parms, SMC_cell**, EC_cell**);
 
 //Topology related functions
 grid_parms make_bifucation_cart_grids(grid_parms);
@@ -427,10 +427,10 @@ void initialize_t_stamp(time_stamps*);
 grid_parms z_coord_exchange(grid_parms, double theta);
 grid_parms update_global_subdomain_information(grid_parms, int, int**);
 grid_parms my_z_offset(grid_parms grid, double theta);
-celltype2** ith_ec_z_coordinate(grid_parms, celltype2**);
+EC_cell** ith_ec_z_coordinate(grid_parms, EC_cell**);
 
-double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index, grid_parms grid, double* y, celltype1** smc);
-void Initialize_tsoukias_smc(grid_parms grid, double y[], celltype1** smc);
+double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index, grid_parms grid, double* y, SMC_cell** smc);
+void Initialize_tsoukias_smc(grid_parms grid, double y[], SMC_cell** smc);
 int read_config_file(int, char*, grid_parms*);
 void set_file_naming_strings(grid_parms* grid);
 void update_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*,IO_domain_info*);
@@ -448,23 +448,23 @@ void average(double* table, int size, double *value);
 void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double *y, double* yp, int total, double TOL, double* thres,
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check);
 
-int retrieve_topology_info(char*, grid_parms*, celltype1**, celltype2**);
+int retrieve_topology_info(char*, grid_parms*, SMC_cell**, EC_cell**);
 int* read_coordinates(int**, vtk_info*, int, int, int, int);
 IO_domain_info* make_io_domains(grid_parms* grid);
 
-void gather_tasks_mesh_point_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, celltype1**, celltype2**);
-void gather_smc_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, celltype1**);
-void gather_ec_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, celltype2**);
+void gather_tasks_mesh_point_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, SMC_cell**, EC_cell**);
+void gather_smc_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, SMC_cell**);
+void gather_ec_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**);
 
-void gather_smcData(grid_parms* , IO_domain_info* , data_buffer* , celltype1**, int );
-void gather_ecData(grid_parms*, IO_domain_info*, data_buffer*, celltype2**, int);
-void gather_JPLC_map(grid_parms*, IO_domain_info*, data_buffer*, celltype2**);
+void gather_smcData(grid_parms* , IO_domain_info* , data_buffer* , SMC_cell**, int );
+void gather_ecData(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**, int);
+void gather_JPLC_map(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**);
 
 
 void dump_process_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer*, char*);
-void dump_agonists_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, celltype2**,char* path);
-void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer* , celltype1**, int);
-void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, celltype2**,int);
+void dump_agonists_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,char* path);
+void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer* , SMC_cell**, int);
+void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,int);
 
 void memory_diagnostics(FILE*);
 

@@ -8,7 +8,7 @@
 #include "koenigsberger_constants.h"
 
 /*******************************************************************************************/
-void Initialize_koeingsberger_smc(grid_parms grid, double* y, celltype1** smc)
+void Initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 /*******************************************************************************************/
 {
 	int k = 0, offset;
@@ -48,7 +48,7 @@ void Initialize_koeingsberger_smc(grid_parms grid, double* y, celltype1** smc)
 }
 
 /*******************************************************************************************/
-void Initialize_koeingsberger_ec(grid_parms grid, double* y, celltype2** ec)
+void Initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 /*******************************************************************************************/
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
@@ -83,7 +83,7 @@ void Initialize_koeingsberger_ec(grid_parms grid, double* y, celltype2** ec)
 	}
 }
 /*******************************************************************************************/
-void koenigsberger_smc(grid_parms grid, celltype1** smc)
+void koenigsberger_smc(grid_parms grid, SMC_cell** smc)
 /*******************************************************************************************/
 {
 
@@ -128,7 +128,7 @@ void koenigsberger_smc(grid_parms grid, celltype1** smc)
 	} //end for i
 }
 /***************************************************************************/
-void koenigsberger_smc_derivatives(double* f, grid_parms grid, celltype1** smc) {
+void koenigsberger_smc_derivatives(double* f, grid_parms grid, SMC_cell** smc) {
 	/***************************************************************************/
 
 	int k;
@@ -155,7 +155,7 @@ void koenigsberger_smc_derivatives(double* f, grid_parms grid, celltype1** smc) 
 }
 
 /************************************************************/
-void koenigsberger_ec(grid_parms grid, celltype2** ec)
+void koenigsberger_ec(grid_parms grid, EC_cell** ec)
 /*************************************************************                                                                                                                                                                         *
  * This is the multicell version for evaluating single cell ionic
  * currents in an EC
@@ -201,7 +201,7 @@ void koenigsberger_ec(grid_parms grid, celltype2** ec)
 }
 
 /***************************************************************************/
-void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid, celltype2** ec) {
+void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid, EC_cell** ec) {
 	/***************************************************************************/
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {

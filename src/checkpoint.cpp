@@ -90,7 +90,7 @@ void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid, in
 
 }
 /***************************************************************************/
-void dump_smc(grid_parms grid, celltype1 **smc, checkpoint_handle *check, int line_number, int write_count) {
+void dump_smc(grid_parms grid, SMC_cell **smc, checkpoint_handle *check, int line_number, int write_count) {
 	/***************************************************************************/
 	MPI_Status status[8];
 	MPI_Request req[8];
@@ -139,7 +139,7 @@ void dump_smc(grid_parms grid, celltype1 **smc, checkpoint_handle *check, int li
 	CHECK(MPI_File_write_at(check->cpIi, disp, &b8, write_element_count, MPI_DOUBLE, &status[7]));
 }
 /***********************************************************************/
-void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check, int line_number, int write_count) {
+void dump_ec(grid_parms grid, EC_cell **ec, checkpoint_handle *check, int line_number, int write_count) {
 	/***********************************************************************/
 	MPI_Status status[8];
 
@@ -186,7 +186,7 @@ void dump_ec(grid_parms grid, celltype2 **ec, checkpoint_handle *check, int line
 	CHECK(MPI_File_write_at(check->cpIj, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
 }
 
-void dump_data(checkpoint_handle* check, grid_parms* grid, int line_number, double tnow, celltype1** smc, celltype2** ec, int write_count,
+void dump_data(checkpoint_handle* check, grid_parms* grid, int line_number, double tnow, SMC_cell** smc, EC_cell** ec, int write_count,
 		IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer) {
 
 	dump_smc_data(check, grid, my_IO_domain_info, writer_buffer, smc, write_count);
@@ -301,7 +301,7 @@ void dump_process_data(checkpoint_handle* check, grid_parms* grid, IO_domain_inf
 	MPI_File_close(&check->task_mesh);
 }
 /**************************************************************************************/
-void dump_smc_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype1** smc,
+void dump_smc_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc,
 		int write_count) {
 	MPI_Status status;
 	MPI_Offset disp;
@@ -653,7 +653,7 @@ void dump_smc_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* m
 }
 
 /**************************************************************************************/
-void dump_agonists_map(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype2** ec,
+void dump_agonists_map(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec,
 		char* path) {
 	MPI_Status status;
 	MPI_Offset disp;
@@ -806,7 +806,7 @@ void dump_agonists_map(checkpoint_handle* check, grid_parms* grid, IO_domain_inf
 }
 /*************************************************************************************/
 /**************************************************************************************/
-void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype2** ec,
+void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec,
 		int write_count) {
 	MPI_Status status;
 	MPI_Offset disp;
@@ -1207,7 +1207,7 @@ void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms gr
 	free(disp);
 }
 
-void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check, const char *message) {
+void dump_JPLC(grid_parms grid, EC_cell **ec, checkpoint_handle *check, const char *message) {
 
 	/*	MPI_Status	status;
 	 MPI_Offset	disp;
@@ -1254,7 +1254,7 @@ void dump_JPLC(grid_parms grid, celltype2 **ec, checkpoint_handle *check, const 
 	CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
 }
 
-void dump_coords(grid_parms grid, celltype2** ec, checkpoint_handle* check, const char* message) {
+void dump_coords(grid_parms grid, EC_cell** ec, checkpoint_handle* check, const char* message) {
 
 	MPI_Status status;
 	MPI_Offset disp;
@@ -1388,7 +1388,7 @@ void close_time_profiling_checkpoints(checkpoint_handle* check) {
 	MPI_File_close(&check->total_comms_cost);
 }
 /******************************************************************************/
-int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow, double* y, celltype1** smc, celltype2** ec) {
+int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow, double* y, SMC_cell** smc, EC_cell** ec) {
 	/******************************************************************************/
 /// After when the MPI_IO files have been opened, check whether their current instance is first or did they previously existed.
 /// This is checked by retrieving the file size of the file recording line number of the the timefile.
@@ -1674,7 +1674,7 @@ checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle* check, gri
 
 //Read coordinates from relevant geometry files for each ec and smc in the computational domain.
 /************************************************************************************************/
-int retrieve_topology_info(char* filename, grid_parms* grid, celltype1 **smc, celltype2 **ec)
+int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell **ec)
 /************************************************************************************************/
 {
 	int buffer[24];
@@ -2113,8 +2113,8 @@ int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 	return (indx);
 }
 /************************************************/
-void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype1** smc,
-		celltype2** ec) {
+void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc,
+		EC_cell** ec) {
 
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -2217,7 +2217,7 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 }
 
 /*****************************************************************************************/
-void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype1** smc) {
+void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
 		branch = P - 1;
@@ -2348,7 +2348,7 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 	free(disp);
 }
 /*****************************************************************************************/
-void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype2** ec) {
+void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
 		branch = P - 1;
@@ -2480,7 +2480,7 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 }
 
 /********************************************************************************************************/
-void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype1** smc, int write_count) {
+void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc, int write_count) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
 		branch = P - 1;
@@ -2793,7 +2793,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	free(disp);
 }
 /********************************************************************************************************/
-void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype2** ec, int write_count) {
+void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec, int write_count) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
 		branch = P - 1;
@@ -3061,7 +3061,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	free(send_buffer);
 	free(disp);
 }
-void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, celltype2** ec) {
+void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
 		branch = P - 1;

@@ -7,7 +7,7 @@
 #include "computelib.h"
 #include "tsoukias_constants.h"
 /*******************************************************************************************/
-void Initialize_tsoukias_smc(grid_parms grid, double y[], celltype1** smc)
+void Initialize_tsoukias_smc(grid_parms grid, double y[], SMC_cell** smc)
 /*******************************************************************************************/
 {
 
@@ -104,7 +104,7 @@ void Initialize_tsoukias_smc(grid_parms grid, double y[], celltype1** smc)
 		}
 }
 /************************************************************************************************/
-void tsoukias_smc(grid_parms grid, celltype1** smc)
+void tsoukias_smc(grid_parms grid, SMC_cell** smc)
 /*																				   		      	*
  * This is the multicell version of the function tosukias_smc() used for single   		  	  	*
  * EC-SMC Unit simulation.														  		  		*
@@ -319,7 +319,7 @@ void tsoukias_smc(grid_parms grid, celltype1** smc)
 
 }
 /**************************************************************************************/
-/**/ void tsoukias_smc_derivatives(double* f, grid_parms grid,celltype1** smc) /**/
+/**/ void tsoukias_smc_derivatives(double* f, grid_parms grid,SMC_cell** smc) /**/
 /**************************************************************************************/
 {
 	int k;

@@ -11,8 +11,8 @@ extern "C" {
 }
 
 extern conductance cpl_cef;
-extern celltype1** smc;
-extern celltype2** ec;
+extern SMC_cell** smc;
+extern EC_cell** ec;
 extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
 extern time_stamps t_stamp;
