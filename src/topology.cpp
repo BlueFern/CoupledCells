@@ -214,7 +214,7 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 	}
 	free(subdomain_extents);
 
-	// Do the domain spiting to make subdomains.
+	// Do the domain splitting to make subdomains.
 	check_flag(MPI_Comm_split(grid.universe, grid.my_domain_color, grid.my_domain_key, &grid.sub_universe), "Communicator split failed at subdomain level.");
 
 	// Reveal information of myself and size of grid.sub_universe.
@@ -740,39 +740,48 @@ grid_parms my_z_offset(grid_parms grid, double theta)
 	return (grid);
 }
 
-/*************************************************/
+/**
+ * Allocate MPI tasks/cores to IO.
+ */
 IO_domain_info* make_io_domains(grid_parms* grid)
-/*************************************************/
 {
-	IO_domain_info *my_IO_domain_info = (IO_domain_info*) checked_malloc((sizeof(IO_domain_info)),
-			"allocation of IO_domain info structure failed in topology.cpp");
-	if (grid->rank == 0) {
+	IO_domain_info *my_IO_domain_info = (IO_domain_info*)checked_malloc((sizeof(IO_domain_info)),
+			"Allocation of IO_domain info structure failed.");
+
+	if (grid->rank == 0)
+	{
 		my_IO_domain_info->my_IO_domain_color = WRITER_COLOR;
 		my_IO_domain_info->my_IO_domain_key = WRITER_KEY;
-	} else {
+	}
+	else
+	{
 		my_IO_domain_info->my_IO_domain_color = COMPUTE_ONLY_COLOR;
 		my_IO_domain_info->my_IO_domain_key = COMPUTE_ONLY_KEY;
 	}
 
 	MPI_Comm tmp_comm;
 
-	/// Spliting MPI_COMM_WORLD into communicators aggregating Writers (i.e. all bridge processes located near IO nodes)
-	/// and non-Writers
+	// Splitting MPI_COMM_WORLD into communicators aggregating writers (i.e. all bridge processes located near IO nodes) and non-writers.
 	check_flag(MPI_Comm_split(grid->universe, my_IO_domain_info->my_IO_domain_color, my_IO_domain_info->my_IO_domain_key, &tmp_comm),
-			"error constructing IO_comm for writer nodes.");
-	if (my_IO_domain_info->my_IO_domain_color == WRITER_COLOR) {
-		check_flag(MPI_Comm_dup(tmp_comm, &my_IO_domain_info->writer_comm),
-				"Comm_duplicate failed while processing the name change of the io-handlers communicator.");
-	}
-	check_flag(MPI_Comm_free(&tmp_comm), "Error freeing MPI_Comm tmp_comm that was created from MPI_COMM_WORLD.");
+			"Error constructing IO_comm for writer nodes.");
 
-	///Reveal and record rank information of members of writer domains.
-	for (int i = 0; i < grid->numtasks; i++) {
+	if(my_IO_domain_info->my_IO_domain_color == WRITER_COLOR)
+	{
+		check_flag(MPI_Comm_dup(tmp_comm, &my_IO_domain_info->writer_comm),
+				"Comm_duplicate failed while processing the name change of the IO-handlers communicator.");
+	}
+
+	check_flag(MPI_Comm_free(&tmp_comm), "Error freeing MPI_Comm tmp_comm created from MPI_COMM_WORLD.");
+
+	// Reveal and record rank information of writer domain members.
+	for (int i = 0; i < grid->numtasks; i++)
+	{
 		my_IO_domain_info->writer_rank = -1;
 		my_IO_domain_info->writer_tasks = -1;
 	}
 
-	if (my_IO_domain_info->my_IO_domain_color == WRITER_COLOR) {
+	if (my_IO_domain_info->my_IO_domain_color == WRITER_COLOR)
+	{
 		check_flag(MPI_Comm_rank(my_IO_domain_info->writer_comm, &my_IO_domain_info->writer_rank),
 				"Error revealing the rank of writer-domain members.");
 		check_flag(MPI_Comm_size(my_IO_domain_info->writer_comm, &my_IO_domain_info->writer_tasks),

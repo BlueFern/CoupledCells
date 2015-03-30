@@ -106,6 +106,7 @@ int main(int argc, char* argv[]) {
 	// WARNING: It appears that the grid struct members updated in the following call are not used anywhere else in the code.
 	grid = update_global_subdomain_information(grid, grid.num_domains, grid.domains);
 
+	/// Set prefixes for output files.
 	set_file_naming_strings(&grid);
 
 	/// Initialise checkpoint routine which opens files.
@@ -114,10 +115,10 @@ int main(int argc, char* argv[]) {
 	/// Initialising IO_domain for creating writers.
 	IO_domain_info* my_IO_domain_info = make_io_domains(&grid);
 
-	/// Now allocate memory for the structures represegird.nting the cells and the various members of those structures.
+	/// Now allocate memory for the structures representing the cells and the various members of those structures.
 	/// Each of the two cell grids have two additional rows and two additional columns as ghost cells.
-	/// Following is an example of a 5x7 grid with added ghost cells on all four sides. the 0s are the actual
-	/// members of the grid whereas the + are the ghost cells.
+	/// Following is an example of a 5x7 grid with added ghost cells on all four sides. the '0's are the actual
+	/// members of the grid whereas the '+'s are the ghost cells.
 
 	/**
 \verbatim

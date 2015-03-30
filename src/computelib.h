@@ -260,7 +260,8 @@ typedef struct {
 	double JPLC;			    ///local agonsit concentration  on my GPCR receptor (an ith EC)
 	conductance cpl_cef;
 } celltype2;
-//#ifdef PARALLEL_IO
+
+// WARNING: Most members of this struct are never used in the rest of the code.
 typedef struct {
 	MPI_File
 	/* common handlers */
@@ -287,14 +288,6 @@ typedef struct {
 //Agonist records
 			ec_agonist_file;
 } checkpoint_handle;
-
-/*#else
- typedef struct {
- FILE *logptr, *Time, *ci, *si, *vi, *wi, *Ii, *cpCi, *cpVi, *cpIi, *cj,
- *sj, *vj, *Ij, *cpCj, *cpVj, *cpIj;
- }checkpoint_handle;
-
- #endif*/
 
 typedef struct {
 	double
@@ -341,7 +334,6 @@ typedef struct {
 	char *jplc,*atp,*wss;
 	int	 *buffer_length,*smc_stat_var_buffer_length,*ec_stat_var_buffer_length, *smc_cpl, *ec_cpl,jplc_buffer_length,atp_buffer_length,wss_buffer_length;
 } data_buffer;
-void check_flag(int, const char*);
 
 int couplingParms(int CASE, conductance* cpl_cef);
 void Initialize_koeingsberger_smc(grid_parms, double*, celltype1**);
@@ -479,6 +471,11 @@ void memory_diagnostics(FILE*);
 void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
 void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info);
 void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
+
+/**
+ * \brief Catch failure in an MPI call.
+ */
+void check_flag(int, const char*);
 
 /**
  * \brief Catch failed memory allocation.
