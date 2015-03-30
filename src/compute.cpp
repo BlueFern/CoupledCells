@@ -900,72 +900,88 @@ int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 	return (err);
 }
 
-/*****************************************************************************/
-int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec,
-		conductance cpl_cef, double t, double* y, double* f) {
-	/*****************************************************************************/
-
+int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
+		double t, double* y, double* f) {
 	int err;
 
 	map_solver_to_cells(grid, y, smc, ec);
 
-	switch (grid.smc_model) {
-	case (TSK): {
-		tsoukias_smc(grid, smc);
-		break;
+	switch (grid.smc_model)
+	{
+		case (TSK):
+		{
+			tsoukias_smc(grid, smc);
+			break;
+		}
+		case (KNBGR):
+		{
+			koenigsberger_smc(grid, smc);
+			break;
+		}
+		default:
+		{
+			err = 1;
+			break;
+		}
 	}
-	case (KNBGR): {
-		koenigsberger_smc(grid, smc);
-		break;
+
+	switch (grid.ec_model)
+	{
+		case (TSK):
+		{
+			koenigsberger_ec(grid, ec);
+			break;
+		}
+		case (KNBGR):
+		{
+			koenigsberger_ec(grid, ec);
+			break;
+		}
+		default:
+		{
+			err = 1;
+			break;
+		}
 	}
-	default: {
-		err = 1;
-		break;
-	}
-	}
-	switch (grid.ec_model) {
-	case (TSK): {
-		koenigsberger_ec(grid, ec);
-		break;
-	}
-	case (KNBGR): {
-		koenigsberger_ec(grid, ec);
-		break;
-	}
-	default: {
-		err = 1;
-		break;
-	}
-	}
+
 	coupling(t, y, grid, smc, ec, cpl_cef);
 
-	switch (grid.smc_model) {
-	case (TSK): {
-		tsoukias_smc_derivatives(f, grid, smc);
-		break;
+	switch (grid.smc_model)
+	{
+		case (TSK):
+		{
+			tsoukias_smc_derivatives(f, grid, smc);
+			break;
+		}
+		case (KNBGR):
+		{
+			koenigsberger_smc_derivatives(f, grid, smc);
+			break;
+		}
+		default:
+		{
+			err = 1;
+			break;
+		}
 	}
-	case (KNBGR): {
-		koenigsberger_smc_derivatives(f, grid, smc);
-		break;
-	}
-	default: {
-		err = 1;
-		break;
-	}
-	}
-	switch (grid.ec_model) {
-	case (TSK): {
-		koenigsberger_ec_derivatives(t, f, grid, ec);
-		break;
-	}
-	case (KNBGR): {
-		koenigsberger_ec_derivatives(t, f, grid, ec);
-		break;
-	}
-	default: {
-		err = 1;
-		break;
-	}
+
+	switch (grid.ec_model)
+	{
+		case (TSK):
+		{
+			koenigsberger_ec_derivatives(t, f, grid, ec);
+			break;
+		}
+		case (KNBGR):
+			{
+			koenigsberger_ec_derivatives(t, f, grid, ec);
+			break;
+		}
+		default:
+		{
+			err = 1;
+			break;
+		}
 	}
 	return (err);
 }

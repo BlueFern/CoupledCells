@@ -1672,23 +1672,25 @@ checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle* check, gri
 	return (check);
 }
 
-//Read coordinates from relevant geometry files for each ec and smc in the computational domain.
-/************************************************************************************************/
+/// Read coordinates from relevant geometry files for each ec and smc in the computational domain.
 int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell **ec)
-/************************************************************************************************/
 {
 	int buffer[24];
 	int msg_tag_1 = 1, msg_tag_2 = 2, msg_tag_3 = 3, msg_tag_4 = 4;
 	MPI_Status status;
-	if (grid->universal_rank == 0) {
+
+	if(grid->universal_rank == 0)
+	{
 		FILE *fr, *fw;
 		fr = fopen(filename, "r+");
-		if (fr == NULL) {
+		if(fr == NULL)
+		{
 			printf("[%d] Unable to open %s for reading.\n", grid->universal_rank, filename);
 			MPI_Abort(grid->universe, 101);
 		}
 		int p = 0;
-		while (fgetc(fr) != EOF) {
+		while(fgetc(fr) != EOF)
+		{
 			int err = fscanf(fr, "%d", &buffer[p]);
 			if (err > 0)
 				p++;
@@ -1698,11 +1700,11 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 
 	check_flag(MPI_Bcast(buffer, 24, MPI_INT, 0, grid->universe), "error broadcasting info retrieved from configuration_info.txt");
 
-/// These kinds of meshes are to be read. For each mesh type the points and cells are to be read
-/// into a structure vtk_info. Using these retrieved data root will send coordinates to all processes,
-/// for their specific boundaries, and their constituent SMCs and ECs.
+	/// These kinds of meshes are to be read. For each mesh type the points and cells are to be read
+	/// into a structure vtk_info. Using the retrieved data the root will send coordinates to all processes,
+	/// for their specific boundaries, and their constituent SMCs and ECs.
 
-/// The following int are used as macros below:
+	/// The following ints are used as macros below:
 
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -1711,9 +1713,10 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 		branch = grid->branch_tag;
 	}
 
-	grid->info = (int**) checked_malloc(4 * sizeof(int*), "memory allocation for info failed");
-	for (int i = 0; i < 4; i++) {
-		grid->info[i] = (int*) checked_malloc(6 * sizeof(int), "memory allocation for info failed d2");
+	grid->info = (int**) checked_malloc(4 * sizeof(int*), "Memory allocation for info failed.");
+	for (int i = 0; i < 4; i++)
+	{
+		grid->info[i] = (int*) checked_malloc(6 * sizeof(int), "Memory allocation for info failed.");
 	}
 
 	for (int i = 0; i < 4; i++) {
@@ -1722,6 +1725,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 
 		}
 	}
+
 	int *disp, *send_count, recv_count, root = 0;
 	double *send_points, *recv_points;
 	int* indx = (int*) malloc(2 * sizeof(int));
@@ -1729,27 +1733,35 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	int tuple_offset = num_tuple_components * num_tuples;
 
 	grid->coordinates = (double**) checked_malloc(num_tuples * sizeof(double*), "allocation error in D1 of grid coordinates.");
-	for (int i = 0; i < num_tuples; i++) {
-		grid->coordinates[i] = (double*) checked_malloc(num_tuple_components * sizeof(double), "allocation error in D2 of grid coordinates.");
+	for(int i = 0; i < num_tuples; i++)
+	{
+		grid->coordinates[i] = (double*)checked_malloc(num_tuple_components * sizeof(double), "allocation error in D2 of grid coordinates.");
 	}
-	send_count = (int*) malloc(grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(int));
-	disp = (int*) malloc(grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(int));
 
-	send_points = (double*) malloc(tuple_offset * grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(double));
-	if (grid->rank == 0) {
+	send_count = (int*)malloc(grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(int));
+	disp = (int*)malloc(grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(int));
+
+	send_points = (double*)malloc(tuple_offset * grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(double));
+
+	if (grid->rank == 0)
+	{
 		vtk_info* process_mesh = (vtk_info*) malloc(sizeof(vtk_info));
 		process_mesh->points = (double**) malloc(grid->info[ProcessMesh][TOTAL_POINTS] * sizeof(double*));
-		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_POINTS]; i++) {
+		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_POINTS]; i++)
+		{
 			process_mesh->points[i] = (double*) malloc(3 * sizeof(double));
 		}
 		process_mesh->cells = (int**) malloc(grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(int*));
-		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS]; i++) {
+		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS]; i++)
+		{
 			process_mesh->cells[i] = (int*) malloc(5 * sizeof(int));
 		}
 
 		indx = read_coordinates(grid->info, process_mesh, branch, ProcessMesh, grid->info[ProcessMesh][TOTAL_POINTS],
 				grid->info[ProcessMesh][TOTAL_CELLS]);
-		for (int i = 0; i < indx[1]; i++) {
+
+		for(int i = 0; i < indx[1]; i++)
+		{
 			send_points[(i * tuple_offset) + 0] = process_mesh->points[process_mesh->cells[i][1]][0];
 			send_points[(i * tuple_offset) + 1] = process_mesh->points[process_mesh->cells[i][1]][1];
 			send_points[(i * tuple_offset) + 2] = process_mesh->points[process_mesh->cells[i][1]][2];
@@ -1767,53 +1779,68 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 			send_points[(i * tuple_offset) + 11] = process_mesh->points[process_mesh->cells[i][4]][2];
 		}
 
-		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_POINTS]; i++) {
+		for(int i = 0; i < grid->info[ProcessMesh][TOTAL_POINTS]; i++)
+		{
 			free(process_mesh->points[i]);
 		}
-		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS]; i++) {
+		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS]; i++)
+		{
 			free(process_mesh->cells[i]);
 		}
 		free(process_mesh->points);
 		free(process_mesh->cells);
 		free(process_mesh);
 	}
+
 	recv_points = (double*) malloc(tuple_offset * sizeof(double));
 
-	for (int i = 0; i < grid->tasks; i++) {
+	for(int i = 0; i < grid->tasks; i++)
+	{
 		send_count[i] = tuple_offset;
 		disp[i] = tuple_offset * i;
 	}
+
 	recv_count = tuple_offset;
+
 	check_flag(MPI_Scatterv(send_points, send_count, disp, MPI_DOUBLE, recv_points, recv_count, MPI_DOUBLE, root, grid->cart_comm),
-			"error in scatter of coordinates");
-	for (int i = 0; i < num_tuples; i++) {
+			"Error in scatter of coordinates.");
+
+	for(int i = 0; i < num_tuples; i++)
+	{
 		grid->coordinates[i][0] = recv_points[(i * num_tuple_components) + 0];
 		grid->coordinates[i][1] = recv_points[(i * num_tuple_components) + 1];
 		grid->coordinates[i][2] = recv_points[(i * num_tuple_components) + 2];
 	}
+
 	free(send_points);
 	free(recv_points);
 
 	// Reading in SMC mesh and communicating to each branch communicator member.
 	send_points = (double*) malloc(tuple_offset * grid->info[smcMesh][TOTAL_CELLS] * grid->info[ProcessMesh][TOTAL_CELLS] * sizeof(double));
 
-	if (grid->rank == 0) {
-
+	if(grid->rank == 0)
+	{
 		vtk_info* smc_mesh = (vtk_info*) malloc(sizeof(vtk_info));
 		smc_mesh->points = (double**) malloc(grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_POINTS] * sizeof(double*));
-		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_POINTS]; i++) {
+
+		for(int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_POINTS]; i++)
+		{
 			smc_mesh->points[i] = (double*) malloc(3 * sizeof(double));
 		}
 		smc_mesh->cells = (int**) malloc(grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_CELLS] * sizeof(int*));
-		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_CELLS]; i++) {
+
+		for(int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_CELLS]; i++)
+		{
 			smc_mesh->cells[i] = (int*) malloc(5 * sizeof(int));
 		}
 
 		indx = read_coordinates(grid->info, smc_mesh, branch, smcMesh, (grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_POINTS]),
 				(grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_CELLS]));
 
-		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS]; i++) {
-			for (int j = 0; j < grid->info[smcMesh][TOTAL_CELLS]; j++) {
+		for(int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS]; i++)
+		{
+			for(int j = 0; j < grid->info[smcMesh][TOTAL_CELLS]; j++)
+			{
 				send_points[(i * grid->info[smcMesh][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 0] = smc_mesh->points[smc_mesh->cells[(i
 						* grid->info[smcMesh][TOTAL_CELLS]) + j][1]][0];
 				send_points[(i * grid->info[smcMesh][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 1] = smc_mesh->points[smc_mesh->cells[(i
@@ -1843,10 +1870,14 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 						* grid->info[smcMesh][TOTAL_CELLS]) + j][4]][2];
 			}
 		}
-		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_POINTS]; i++) {
+
+		for(int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_POINTS]; i++)
+		{
 			free(smc_mesh->points[i]);
 		}
-		for (int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_CELLS]; i++) {
+
+		for(int i = 0; i < grid->info[ProcessMesh][TOTAL_CELLS] * grid->info[smcMesh][TOTAL_CELLS]; i++)
+		{
 			free(smc_mesh->cells[i]);
 		}
 		free(smc_mesh->points);
@@ -1865,9 +1896,12 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 			"error scattering SMC mesh coordinates.");
 
 	int count = 0;
-	for (int n = 1; n <= grid->num_smc_axially; n++) {
-		for (int m = 1; m <= grid->num_smc_circumferentially; m++) {
-			for (int l = 0; l < 4; l++) {
+	for(int n = 1; n <= grid->num_smc_axially; n++)
+	{
+		for(int m = 1; m <= grid->num_smc_circumferentially; m++)
+		{
+			for(int l = 0; l < 4; l++)
+			{
 				smc[m][n].x_coordinate[l] = recv_points[count * tuple_offset + l * 3 + 0];
 				smc[m][n].y_coordinate[l] = recv_points[count * tuple_offset + l * 3 + 1];
 				smc[m][n].z_coordinate[l] = recv_points[count * tuple_offset + l * 3 + 2];
@@ -2027,9 +2061,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	return (0);
 }
 
-/*******************************************************************************************************/
 int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells)
-/*******************************************************************************************************/
 {
 	FILE *fr;
 	char filename_points[50], filename_cells[50];
@@ -2112,9 +2144,10 @@ int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 
 	return (indx);
 }
-/************************************************/
+
 void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc,
-		EC_cell** ec) {
+		EC_cell** ec)
+{
 
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -2155,6 +2188,7 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 	free(recv_count);
 	free(send_buffer);
 	free(disp);
+
 	/************* Cell data *************/
 	num_tuple_components = 5;
 	num_tuples = 1;
@@ -2216,7 +2250,6 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 	free(disp);
 }
 
-/*****************************************************************************************/
 void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -2245,7 +2278,7 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 		}
 	}
 
-/// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
+	/// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
 	check_flag(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm), "error in MPI_Gather.");
 	writer_buffer->buffer_length[smcMesh] = 0;
 	for (int i = 0; i < grid->tasks; i++) {
@@ -2347,7 +2380,7 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 	free(send_buffer);
 	free(disp);
 }
-/*****************************************************************************************/
+
 void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -2376,7 +2409,7 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 		}
 	}
 
-/// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
+	/// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
 	check_flag(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm), "error in MPI_Gather.");
 	writer_buffer->buffer_length[ecMesh] = 0;
 	for (int i = 0; i < grid->tasks; i++) {
@@ -2479,7 +2512,6 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 	free(disp);
 }
 
-/********************************************************************************************************/
 void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc, int write_count) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -2487,6 +2519,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	} else if (grid->my_domain.internal_info.domain_type == BIF) {
 		branch = grid->branch_tag - 1;
 	}
+
 	/************* smcCa field data *************/
 	int num_tuple_components = 1, num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 	int root = 0;
@@ -2604,6 +2637,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	free(recv_count);
 	free(send_buffer);
 	free(disp);
+
 	/************* smc_w field data *************/
 	num_tuple_components = 1, num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
@@ -2642,6 +2676,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	free(recv_count);
 	free(send_buffer);
 	free(disp);
+
 	/************* smc_IP3 field data *************/
 	num_tuple_components = 1, num_tuples = grid->num_smc_axially * grid->num_smc_circumferentially;
 	recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
@@ -2792,7 +2827,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	free(send_buffer);
 	free(disp);
 }
-/********************************************************************************************************/
+
 void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec, int write_count) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -2877,6 +2912,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	free(recv_count);
 	free(send_buffer);
 	free(disp);
+
 	/************* ecVm field data *************/
 	my_branch_ec_offset = 0;
 	num_tuple_components = 1;
@@ -2913,6 +2949,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	free(recv_count);
 	free(send_buffer);
 	free(disp);
+
 	/************* ec_IP3 field data *************/
 	my_branch_ec_offset = 0;
 	num_tuple_components = 1;
@@ -3061,6 +3098,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	free(send_buffer);
 	free(disp);
 }
+
 void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -3121,6 +3159,7 @@ void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp
 	push_task_wise_min_max_of_time_profile("min_max_of_aggregate_comm" , grid, t_stamp->aggregate_comm, my_IO_domain_info);
 	push_task_wise_min_max_of_time_profile("min_max_of_aggregate_write" , grid, t_stamp->aggregate_write, my_IO_domain_info);
 }
+
 void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info) {
 	MPI_Status status;
 	MPI_Offset displacement = 0;
@@ -3164,8 +3203,8 @@ void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double 
 	free(disp);
 }
 
-void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info) {
-
+void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info)
+{
 	MPI_Status status;
 	MPI_Offset displacement = 0;
 	MPI_File fw;
