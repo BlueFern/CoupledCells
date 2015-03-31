@@ -17,9 +17,9 @@ extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
 extern time_stamps t_stamp;
 
-void computeDerivatives(double t, double y[], double f[]) {
-
-	//compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
+void computeDerivatives(double t, double y[], double f[])
+{
+	// compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
 	compute(grid, smc, ec, cpl_cef, t, y, f);
 	t_stamp.computeDerivatives_call_counter += 1;
 
@@ -40,7 +40,8 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	int count = 0;
 	initialize_t_stamp(&t_stamp);
 	tend = interval;
-	rksuite.setup(total, tnow, y, tend, TOL, thres, method, "CT", false, 0.0, false);
+	char CTstr[] = "CT";
+	rksuite.setup(total, tnow, y, tend, TOL, thres, method, CTstr, false, 0.0, false);
 	communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
 
 	//computeDerivatives(tnow, y, yp);
@@ -98,9 +99,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				MPI_Abort(MPI_COMM_WORLD, 300);
 			}
 		}
-
-		// TODO: What does this mean?
-		while(tnow < tend);
+		while (tnow < tend);
 
 		/// rksuite.stat() routine calls the to gather statistic on the performance of the solver.
 		/// Amongst other things it also informs about what the next step size should be.
@@ -118,7 +117,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		palce_holder_for_timing_max_min[1][iteration] = t_stamp.diff_total_comms_cost;
 		t_stamp.aggregate_comm += t_stamp.diff_total_comms_cost;
 
-		/*if (itteration == 5) {
+		/*if (iteration == 5) {
 		 dump_JPLC(grid, ec, check, "Local agonist before t=100s\n");
 		 }*/
 
@@ -155,7 +154,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			// cout << "tnow = " << tnow << endl;
 		}
 
-		// checkpoint_timing_data(grid, check, tnow, t_stamp, itteration, file_offset_for_timing_data);
+		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
 		initialize_t_stamp(&t_stamp);
 		/// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
 		iteration++;

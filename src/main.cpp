@@ -180,8 +180,6 @@ int main(int argc, char* argv[]) {
 
 	/// sendbuf and recvbuf are 2D arrays having up, down, left and right directions as their first dimension.
 	/// Each dimension is broken into two segments, e.g. UP1, UP2, DOWN1 & DOWN2, etc.
-	/// Why, oh why? Gimme an explanation, half a kingdom for any explanation!
-
 	/// The length of the second dimension is equal to half the number of cells for which the information is to be sent and received.
 	/// Thus each communicating pair will exchange data twice to get the full length.
 
