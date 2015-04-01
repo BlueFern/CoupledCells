@@ -24,7 +24,7 @@ void check_flag(int err, const char* errmsg) {
 	}
 }
 
-void determin_source_destination(grid_parms grid, int source[], int dest[]) {
+void determine_source_destination(grid_parms grid, int source[], int dest[]) {
 	if (grid.nbrs[local][UP] >= 0) {
 		dest[UP] = grid.nbrs[local][UP];
 		source[UP] = grid.nbrs[local][UP];
@@ -68,7 +68,7 @@ grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
 	int source[4], dest[4];
 	int tag;
 	int num[4];
-	determin_source_destination(grid, source, dest);
+	determine_source_destination(grid, source, dest);
 
 	tag = 0;
 	int tmp[4];
@@ -102,7 +102,8 @@ grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
 	return (grid);
 
 }
-/*******************************************************************************************/
+
+// Carry out asynchronous communication send and receive of edge cell data.
 void communication_async_send_recv(grid_parms grid, double** sendbuf,
 		double** recvbuf, SMC_cell** smc, EC_cell** ec)
 		/*******************************************************************************************/
@@ -119,9 +120,14 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	int source[4], dest[4];
 	/// Message tag 1 and 2 representing segment 1 and 2 send or received by processor.
 	int tag_1 = 1, tag_2 = 2;
-	determin_source_destination(grid, source, dest);
+
+	// Get nearest neighbours indices.
+	determine_source_destination(grid, source, dest);
 	t_stamp.update_sendbuf_t1 = MPI_Wtime();
+
+	// Prepare the buffer for exchanging edge cell data with ghost cells.
 	communication_update_sendbuf(grid, sendbuf, smc, ec);
+
 	t_stamp.update_sendbuf_t2 = MPI_Wtime();
 	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2
 			- t_stamp.update_sendbuf_t1;
@@ -336,14 +342,17 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	}
 
 	t_stamp.update_recvbuf_t1 = MPI_Wtime();
-	communication_update_recvbuf_modified(grid, recvbuf, smc, ec);
+
+	// Unpack received data int ghost cells.
+	communication_update_recvbuf(grid, recvbuf, smc, ec);
+
 	t_stamp.update_recvbuf_t2 = MPI_Wtime();
 	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2
 			- t_stamp.update_recvbuf_t1;
 
 }	//end of update_async()
 
-/*******************************************************************************************/
+// Prepare the sendbuf pub putting ECs's and SMCs's edge data to be sent to the neighbours's ghost cells.
 void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		SMC_cell** smc, EC_cell** ec)
 /*******************************************************************************************/
@@ -563,8 +572,8 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 
 }	// end of communication_update_sendbuf()
 
-/*******************************************************************************************/
-void communication_update_recvbuf(grid_parms grid, double** recvbuf,
+#if 0
+void communication_update_recvbuf_buggy(grid_parms grid, double** recvbuf,
 		SMC_cell** smc, EC_cell** ec)
 		/*******************************************************************************************/
 		{
@@ -786,8 +795,9 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 		k += grid.num_coupling_species_ec;
 	}
 }	// end of communication_update_recvbuf()
+#endif
 
-/*******************************************************************************************/
+#if 0
 void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
 		SMC_cell** smc, EC_cell** ec)
 /*******************************************************************************************/
@@ -1004,9 +1014,10 @@ void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf,
 		k += grid.num_coupling_species_ec;
 	}
 }	// end of communication_update_sendbuf()
+#endif
 
-/*******************************************************************************************/
-void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
+// Unpacking received data into ghost cells.
+void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 		SMC_cell** smc, EC_cell** ec)
 		/*******************************************************************************************/
 		{
@@ -1275,7 +1286,7 @@ void communication_update_recvbuf_modified(grid_parms grid, double** recvbuf,
 }	// end of communication_update_recvbuf()
 
 
-/*******************************************************************************************/
+#if 0
 void communication_update_recvbuf_modified2(grid_parms grid, double** recvbuf,
 		SMC_cell** smc, EC_cell** ec)
 		/*******************************************************************************************/
@@ -1543,3 +1554,4 @@ void communication_update_recvbuf_modified2(grid_parms grid, double** recvbuf,
 		k += grid.num_coupling_species_ec;
 	}
 }	// end of communication_update_recvbuf()
+#endif

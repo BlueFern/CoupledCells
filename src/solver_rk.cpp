@@ -25,13 +25,14 @@ void computeDerivatives(double t, double y[], double f[])
 
 }
 
+// line_number: redundant parameter.
 void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp, int total, double TOL, double* thres,
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check, char* path, IO_domain_info* my_IO_domain_info)
 {
-
 	RKSUITE rksuite;
-	//Solver method
-	int method = 2; // RK(4,5)
+
+	// Solver method.
+	int method = 2; // RK(4,5): Forth order evaluation and fifth order correction.
 	double tend;
 	int cflag = 0;
 	int iteration = 0;
@@ -42,15 +43,22 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	tend = interval;
 	char CTstr[] = "CT";
 	rksuite.setup(total, tnow, y, tend, TOL, thres, method, CTstr, false, 0.0, false);
+
+	// Exchange SMC and EC variables in the ghost cells.
+	// Essential for restarts when data is loaded from a checkpoint.
 	communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
 
-	//computeDerivatives(tnow, y, yp);
+	// This is the way it is done in RKSUITE examples to ensure realistic values of y.
+	// Do not need this for a restart on initialised run.
+	// computeDerivatives(tnow, y, yp);
 	MPI_Barrier(grid.universe);
+
 	// int file_offset_for_timing_data = determine_file_offset_for_timing_data(check, grid);
 	int totf, stpcst, stpsok;
 	double waste, hnext;
 	int err;
 
+	// Aggregation of data for the writer.
 	data_buffer* writer_buffer = (data_buffer*) checked_malloc(sizeof(data_buffer), "allocation failed for data_buffer");
 	writer_buffer->buffer_length = (int*) checked_malloc(12 * sizeof(int), "allocation failed for buffer_length array in data_buffer structure.");
 	writer_buffer->smc_stat_var_buffer_length = (int*) checked_malloc((grid.neq_smc) * sizeof(int),
@@ -62,36 +70,46 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	writer_buffer->ec_cpl = (int*) checked_malloc((grid.num_coupling_species_ec) * sizeof(int),
 			"allocation failed for ec_cpl_buffer_length array in data_buffer structure.");
 
-	/// Dump MPI task mesh representation into vtk file to manifest task map.
+	// Dump MPI task mesh representation into vtk file to manifest task map.
 	gather_tasks_mesh_point_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc, ec);
 	if (grid.rank == 0)
 	{
-		dump_process_data(check, &grid, my_IO_domain_info, writer_buffer, path);
+		// Validation, debugging.
+		write_process_mesh(check, &grid, my_IO_domain_info, writer_buffer, path);
 	}
 
-	/// Dump JPLC map on bifurcation into a vtk file.
-	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_ec_axially; j++) {
+	// Set JPLC values for all ECs from the agonist profile function.
+	for (int i = 1; i <= grid.num_ec_circumferentially; i++)
+	{
+		for (int j = 1; j <= grid.num_ec_axially; j++)
+		{
 			ec[i][j].JPLC = agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);
 		}
 	}
+	// Dump JPLC map on bifurcation into a vtk file.
 	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
 	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
 	if (grid.rank == 0)
 	{
-		dump_agonists_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
+		// Initial concentration of JPLC in the EC cells.
+		write_agonists_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
 	}
 
+	// Profiling.
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
 
 	// ITERATION loop to go from INITIAL time to FINAL time.
+	// TODO: Perhaps tnow needs to be a pointer to have the rksuite.ct call alter it.
 	while(tnow <= tfinal)
 	{
 		// the ct() function does not guarantee to advance all the
 		// way to the stop time. Keep stepping until it does.
 		t_stamp.solver_t1 = MPI_Wtime();
+
+		// Solver decides step magnitude depending on the stiffness of the problem.
 		do
 		{
+			// tnow needsto be a pointer to have it updated here.
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
 			if (cflag >= 5)
 			{
@@ -111,7 +129,9 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 		/// Call for interprocessor communication.
 		t_stamp.total_comms_cost_t1 = MPI_Wtime();
+
 		communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
+
 		t_stamp.total_comms_cost_t2 = MPI_Wtime();
 		t_stamp.diff_total_comms_cost = t_stamp.total_comms_cost_t2 - t_stamp.total_comms_cost_t1;
 		palce_holder_for_timing_max_min[1][iteration] = t_stamp.diff_total_comms_cost;
@@ -133,14 +153,16 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		{
 			t_stamp.write_t1 = MPI_Wtime();
 
+			// Geometry.
 			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc);
 			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
+			// State variables to be written as attributes.
 			gather_smcData(&grid, my_IO_domain_info, writer_buffer, smc, write_count);
 			gather_ecData(&grid, my_IO_domain_info, writer_buffer, ec, write_count);
 
 			if (grid.rank == 0) {
 				initialise_time_wise_checkpoint(check, grid, write_count, path, my_IO_domain_info);
-				dump_data(check, &grid, line_number, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
+				write_smc_and_ec_data(check, &grid, line_number, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
 				close_time_wise_checkpoints(check);
 			}
 
@@ -166,6 +188,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	//t_stamp.aggregate_comm = t_stamp.aggregate_comm / iteration;
 	//t_stamp.aggregate_write = t_stamp.aggregate_write / write_count;
 
+	// Prepare time profiling data.
 	double tmp_array[write_count];
 
 	for(int i = 0; i < write_count; i++)
@@ -180,7 +203,8 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	minimum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.min_comm, &t_stamp.min_comm_index);
 	minimum(tmp_array, write_count, &t_stamp.min_write, &t_stamp.min_write_index);
 
+	// Write time profiling data.
+	// Time profiling data gets lost in the event of a crash.
 	checkpoint_coarse_time_profiling_data(grid, &t_stamp, my_IO_domain_info);
 }
-
 #endif

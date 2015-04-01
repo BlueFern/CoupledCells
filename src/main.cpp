@@ -359,27 +359,37 @@ int main(int argc, char* argv[]) {
 	ny = N_VNew_Serial(grid.NEQ);
 	double *y = NV_DATA_S(ny);
 #else
+	// State variables.
 	double* y = (double*) checked_malloc(grid.NEQ * sizeof(double), "Solver array y for RKSUITE");
 #endif
-	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double), "Solver array y for RKSUITE");
+	// Internal work space.
+	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double), "Workspace array y for RKSUITE");
 
 	/// Initialise different state variables and coupling data values.
 	int line_number = 0;
 	// checkpoint(check, grid, &tnow, y, smc, ec);
 	Initialize_koeingsberger_smc(grid, y, smc);
 	Initialize_koeingsberger_ec(grid, y, ec);
-	int err = map_solver_to_cells(grid, y, smc, ec);
+
+	// Reverse mapping from state vector to cells.
+	// Essential for restarts, when data is loaded from a checkpoint.
+	int err = map_solver_output_to_cells(grid, y, smc, ec);
 
 	if (err != 0) {
 		printf("[%d] error in mapping y to cells\n", grid.universal_rank);
 		MPI_Abort(grid.universe, 1000);
 	}
 
+	// Initialising the coupling coefficients to be used in the ODEs.
 	int state = couplingParms(CASE, &cpl_cef);
 
+	// Debug output.
 	dump_rank_info(check, cpl_cef, grid, my_IO_domain_info);
+
+	// Debug/validation/reporting.
 	Total_cells_in_computational_domain(grid);
 
+	// Reading all points coordinates.
 	int ret = retrieve_topology_info("files/configuration_info.txt", &grid, smc, ec);
 	if (grid.rank == 0)
 		printf("[%d] return from retrieve = %d \n", grid.universal_rank, ret);

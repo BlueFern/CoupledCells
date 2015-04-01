@@ -181,12 +181,12 @@ int couplingParms(int CASE, conductance* cpl_cef)
 	return 0;
 }
 
-/*************************************************************************/
-int map_solver_to_cells(grid_parms grid, double* y, SMC_cell** smc,
-		EC_cell** ec) {
-	/*************************************************************************/
+// Mapping from state variable vector to cells.
+int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_cell** ec)
+{
 	int err = 0;
-	switch (grid.smc_model) {
+	switch (grid.smc_model)
+	{
 	case (TSK): {
 		int k = 0, offset;
 		for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
@@ -378,9 +378,9 @@ void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 			smc[i][j].B[cpl_Ca] = -cpl_cef.Ca_hm_smc
 					* ((smc[i][j].p[smc_Ca] - smc[i][up].p[smc_Ca])
-							+ (smc[i][j].p[smc_Ca] - smc[i][down].p[smc_Ca])
-							+ (smc[i][j].p[smc_Ca] - smc[left][j].p[smc_Ca])
-							+ (smc[i][j].p[smc_Ca] - smc[right][j].p[smc_Ca]));
+					+ (smc[i][j].p[smc_Ca] - smc[i][down].p[smc_Ca])
+					+ (smc[i][j].p[smc_Ca] - smc[left][j].p[smc_Ca])
+					+ (smc[i][j].p[smc_Ca] - smc[right][j].p[smc_Ca]));
 			smc[i][j].B[cpl_Vm] = -cpl_cef.Vm_hm_smc
 					* ((smc[i][j].p[smc_Vm] - smc[i][up].p[smc_Vm])
 							+ (smc[i][j].p[smc_Vm] - smc[i][down].p[smc_Vm])
@@ -823,7 +823,7 @@ int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 	int err;
 
 	t_stamp->map_function_t1 = MPI_Wtime();
-	map_solver_to_cells(grid, y, smc, ec);
+	map_solver_output_to_cells(grid, y, smc, ec);
 	t_stamp->map_function_t2 = MPI_Wtime();
 	t_stamp->diff_map_function = t_stamp->diff_map_function
 			+ (t_stamp->map_function_t2 - t_stamp->map_function_t1);
@@ -904,7 +904,7 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 		double t, double* y, double* f) {
 	int err;
 
-	map_solver_to_cells(grid, y, smc, ec);
+	map_solver_output_to_cells(grid, y, smc, ec);
 
 	switch (grid.smc_model)
 	{
@@ -986,7 +986,7 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 	return (err);
 }
 
-/*****************************************************************************/
+// Get the total number of cells for validation/debugging purposes.
 void Total_cells_in_computational_domain(grid_parms grid) {
 /// Gathers local information on each CPU about the number of ECs and SMCs and sends to the Root
 /// which evaluates the total number of ECs and SMCs constituting the global computational domain.

@@ -339,16 +339,16 @@ int couplingParms(int CASE, conductance* cpl_cef);
 void Initialize_koeingsberger_smc(grid_parms, double*, SMC_cell**);
 void Initialize_koeingsberger_ec(grid_parms, double*, EC_cell**);
 void map_GhostCells_to_cells(SMC_cell**, EC_cell**, grid_parms);
-int map_solver_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
+int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
 grid_parms communicate_num_recv_elements_to_nbrs(grid_parms);
 void communication_update_sendbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
-void determin_source_destination(grid_parms, int*, int*);
+void determine_source_destination(grid_parms, int*, int*);
 void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, EC_cell**);
-void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf, SMC_cell** smc, EC_cell** ec);
-void communication_update_recvbuf_modified(grid_parms, double**, SMC_cell**, EC_cell**);
-void communication_update_recvbuf_modified2(grid_parms, double**, SMC_cell**, EC_cell**);
+//void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf, SMC_cell** smc, EC_cell** ec);
+//void communication_update_recvbuf_modified(grid_parms, double**, SMC_cell**, EC_cell**);
+//void communication_update_recvbuf_modified2(grid_parms, double**, SMC_cell**, EC_cell**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
 void single_cell(double, double*, grid_parms, SMC_cell**, EC_cell**);
@@ -377,7 +377,7 @@ void dump_ec(grid_parms, EC_cell**, checkpoint_handle*, int, int);
 void dump_smc_async(grid_parms, SMC_cell**, checkpoint_handle*, int);
 void dump_ec_async(grid_parms, EC_cell**, checkpoint_handle*, int);
 void dump_JPLC(grid_parms, EC_cell**, checkpoint_handle*, const char*);
-void dump_data(checkpoint_handle*, grid_parms*, int, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
+void write_smc_and_ec_data(checkpoint_handle*, grid_parms*, int, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
 void final_checkpoint(checkpoint_handle*, grid_parms);
 void close_common_checkpoints(checkpoint_handle*);
 void close_time_wise_checkpoints(checkpoint_handle*);
@@ -461,8 +461,8 @@ void gather_ecData(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**, int);
 void gather_JPLC_map(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**);
 
 
-void dump_process_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer*, char*);
-void dump_agonists_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,char* path);
+void write_process_mesh(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer*, char*);
+void write_agonists_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,char* path);
 void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer* , SMC_cell**, int);
 void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,int);
 
