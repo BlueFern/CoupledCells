@@ -986,11 +986,16 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 	return (err);
 }
 
-// Get the total number of cells for validation/debugging purposes.
-void Total_cells_in_computational_domain(grid_parms grid) {
-/// Gathers local information on each CPU about the number of ECs and SMCs and sends to the Root
+/// Get the total number of cells for validation/debugging purposes.
+/// Gather local information on each CPU about the number of ECs and SMCs and sends to the root
 /// which evaluates the total number of ECs and SMCs constituting the global computational domain.
-	/****************************************************************************/
+void Total_cells_in_computational_domain(grid_parms grid)
+{
+	if(grid.universal_rank == 0)
+	{
+		printf("%s:%s\n", __FILE__, __FUNCTION__);
+	}
+
 	int sendcount = 2, recvcount = 2;
 	int root = 0;
 	int sendarray[2], recvarray[sendcount * grid.numtasks];
@@ -1001,11 +1006,15 @@ void Total_cells_in_computational_domain(grid_parms grid) {
 	check_flag(
 			MPI_Gather(sendarray, sendcount, MPI_INT, recvarray, recvcount,
 					MPI_INT, root, grid.universe), "error MPI_Gather");
-	if (grid.universal_rank == 0) {
-		for (int i = 0; i < grid.numtasks * recvcount; i += 2) {
+
+	if(grid.universal_rank == 0)
+	{
+		for(int i = 0; i < grid.numtasks * recvcount; i += 2)
+		{
 			sumEC += recvarray[i];
 		}
-		for (int i = 1; i < grid.numtasks * recvcount; i += 2) {
+		for(int i = 1; i < grid.numtasks * recvcount; i += 2)
+		{
 			sumSMC += recvarray[i];
 		}
 		printf("Total number of ECs = %d\n", sumEC);
