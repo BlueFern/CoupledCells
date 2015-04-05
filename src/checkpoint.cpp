@@ -2108,7 +2108,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells)
 {
 	FILE *fr;
-	char filename_points[50], filename_cells[50];
+	char filename_points[64], filename_cells[64];
 	int* indx = (int*) malloc(2 * sizeof(int));
 	indx[0] = 0;
 	indx[1] = 0;
@@ -2166,6 +2166,7 @@ int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 		indx[0]++;
 	}
 	fclose(fr);
+	printf("Read %d points from %s\n", indx[0], filename_points);
 
 	fr = fopen(filename_cells, "r+");
 	if (mesh_type < 3) {
@@ -2185,6 +2186,7 @@ int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 		}
 	}
 	fclose(fr);
+	printf("Read %d cells from %s\n", indx[1], filename_cells);
 
 	return (indx);
 }
