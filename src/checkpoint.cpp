@@ -1134,11 +1134,6 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
  */
 void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms grid, IO_domain_info* my_IO_domain_info)
 {
-	if(grid.universal_rank == 0)
-	{
-		printf("%s:%s\n", __FILE__, __FUNCTION__);
-	}
-
 	MPI_Status status;
 	MPI_Offset displacement = 0;
 	char* buffer = (char*) checked_malloc(2 * 1024 * sizeof(char), "allocation for logfile segment space\n");
@@ -1519,12 +1514,9 @@ int read_config_file(int rank, char* filename, grid_parms* grid) {
 
 	err = MPI_File_get_size(data, &file_size);
 	chunk = (int) (file_size / sizeof(char));
-	buffer = (char*) malloc(chunk * sizeof(char));
-	p = (int*) malloc(chunk * sizeof(int));
-	if (p == NULL) {
-		printf("[%d]: error allocating p\n", grid->universal_rank);
-		MPI_Abort(grid->universe, 10001);
-	}
+	buffer = (char*)checked_malloc(chunk * sizeof(char), SRC_LOC);
+
+	p = (int*)checked_malloc(chunk * sizeof(int), SRC_LOC);
 
 	disp = 0;
 	err = MPI_File_read_at(data, disp, buffer, chunk, MPI_CHAR, &status);
@@ -1563,6 +1555,9 @@ int read_config_file(int rank, char* filename, grid_parms* grid) {
 	}
 
 	MPI_File_close(&data);
+
+	free(buffer);
+	free(p);
 
 	return (0);
 }
