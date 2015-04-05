@@ -67,10 +67,10 @@ using namespace std;
 /**
  * Macros representing mesh types.
  * @{ */
-#define     ProcessMesh 		0
-#define 	smcMesh 			1
-#define		ecMesh 				2
-#define		ecCentroids 		3
+#define     PROCESS_MESH 		0
+#define 	SMC_MESH 			1
+#define		EC_MESH 				2
+#define		EC_CENT_MESH 		3
 
 #define 	ProcessCell			4
 #define 	smcCell				5
