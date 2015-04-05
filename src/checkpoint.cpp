@@ -1870,33 +1870,26 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 		{
 			for(int j = 0; j < grid->info[SMC_MESH][TOTAL_CELLS]; j++)
 			{
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 0] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][1]][0];
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 1] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][1]][1];
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 2] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][1]][2];
+				// Declare two local variables to reduce the number of the initial additions and multiplications
+				// to 1/12th because these variables can be used in the next 12 lines. Could reduce it further.
+				int sp_off = (i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset);
+				int cell_id = (i * grid->info[SMC_MESH][TOTAL_CELLS]) + j;
 
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 3] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][2]][0];
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 4] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][2]][1];
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 5] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][2]][2];
+				send_points[sp_off + 0] = smc_mesh->points[smc_mesh->cells[cell_id][1]][0];
+				send_points[sp_off + 1] = smc_mesh->points[smc_mesh->cells[cell_id][1]][1];
+				send_points[sp_off + 2] = smc_mesh->points[smc_mesh->cells[cell_id][1]][2];
 
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 6] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][3]][0];
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 7] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][3]][1];
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 8] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][3]][2];
+				send_points[sp_off + 3] = smc_mesh->points[smc_mesh->cells[cell_id][2]][0];
+				send_points[sp_off + 4] = smc_mesh->points[smc_mesh->cells[cell_id][2]][1];
+				send_points[sp_off + 5] = smc_mesh->points[smc_mesh->cells[cell_id][2]][2];
 
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 9] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][4]][0];
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 10] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][4]][1];
-				send_points[(i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset) + 11] = smc_mesh->points[smc_mesh->cells[(i
-						* grid->info[SMC_MESH][TOTAL_CELLS]) + j][4]][2];
+				send_points[sp_off + 6] = smc_mesh->points[smc_mesh->cells[cell_id][3]][0];
+				send_points[sp_off + 7] = smc_mesh->points[smc_mesh->cells[cell_id][3]][1];
+				send_points[sp_off + 8] = smc_mesh->points[smc_mesh->cells[cell_id][3]][2];
+
+				send_points[sp_off + 9] = smc_mesh->points[smc_mesh->cells[cell_id][4]][0];
+				send_points[sp_off + 10] = smc_mesh->points[smc_mesh->cells[cell_id][4]][1];
+				send_points[sp_off + 11] = smc_mesh->points[smc_mesh->cells[cell_id][4]][2];
 			}
 		}
 
@@ -1954,12 +1947,16 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 
 	if (grid->rank == 0) {
 		vtk_info* ec_mesh = (vtk_info*) malloc(sizeof(vtk_info));
+
 		ec_mesh->points = (double**) malloc(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS] * sizeof(double*));
-		for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]; i++) {
+		for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]; i++)
+		{
 			ec_mesh->points[i] = (double*) malloc(3 * sizeof(double));
 		}
+
 		ec_mesh->cells = (int**) malloc(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * sizeof(int*));
-		for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]; i++) {
+		for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]; i++)
+		{
 			ec_mesh->cells[i] = (int*) malloc(5 * sizeof(int));
 		}
 
@@ -2019,7 +2016,8 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
 
 	recv_points = (double*) malloc(tuple_offset * grid->info[EC_MESH][TOTAL_CELLS] * sizeof(double));
-	for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++) {
+	for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++)
+	{
 		send_count[i] = tuple_offset * grid->info[EC_MESH][TOTAL_CELLS];
 		disp[i] = tuple_offset * grid->info[EC_MESH][TOTAL_CELLS] * i;
 	}
