@@ -1837,10 +1837,11 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 
 	if(grid->rank == 0)
 	{
-		vtk_info* smc_mesh = (vtk_info*)checked_malloc(sizeof(vtk_info), SRC_LOC);
 
 		int num_SMC_points = grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS];
 		int num_SMC_cells = grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS];
+
+		vtk_info* smc_mesh = (vtk_info*)checked_malloc(sizeof(vtk_info), SRC_LOC);
 
 		smc_mesh->points = (double**)checked_malloc(num_SMC_points * sizeof(double*), SRC_LOC);
 		for(int i = 0; i < num_SMC_points; i++)
@@ -1859,6 +1860,11 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 				(num_SMC_points),
 				(num_SMC_cells),
 				read_counts);
+
+		for(int c = 0; c < num_SMC_cells; c++)
+		{
+			printf("\t%d %d %d %d %d\n", smc_mesh->cells[c][0], smc_mesh->cells[c][1], smc_mesh->cells[c][2], smc_mesh->cells[c][3], smc_mesh->cells[c][4]);
+		}
 
 		assert(read_counts[0] == (num_SMC_points) && read_counts[1] == (num_SMC_cells));
 
@@ -2176,6 +2182,9 @@ void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 			fscanf(fr, "%d", &mesh->cells[i][2]);
 			fscanf(fr, "%d", &mesh->cells[i][3]);
 			fscanf(fr, "%d", &mesh->cells[i][4]);
+
+			printf("%d %d %d %d %d\n", mesh->cells[i][0], mesh->cells[i][1], mesh->cells[i][2], mesh->cells[i][3], mesh->cells[i][4]);
+
 			read_counts[1]++;
 		}
 	} else if (mesh_type == 3) {
