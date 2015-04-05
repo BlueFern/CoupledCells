@@ -2159,6 +2159,7 @@ int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 	}
 
 	fr = fopen(filename_points, "r+");
+	printf("Reading points from %s, FILE is %s\n", filename_points, fr == NULL ? "NULL" : "OK");
 	for (int i = 0; i < points; i++) {
 		fscanf(fr, "%lf", &mesh->points[i][0]);
 		fscanf(fr, "%lf", &mesh->points[i][1]);
@@ -2169,6 +2170,7 @@ int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 	printf("Read %d points from %s\n", indx[0], filename_points);
 
 	fr = fopen(filename_cells, "r+");
+	printf("Reading cells from %s, FILE is %s\n", filename_cells, fr == NULL ? "NULL" : "OK");
 	if (mesh_type < 3) {
 		for (int i = 0; i < cells; i++) {
 			fscanf(fr, "%d", &mesh->cells[i][0]);
