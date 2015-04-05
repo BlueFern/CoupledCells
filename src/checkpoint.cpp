@@ -1875,26 +1875,26 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 				int sp_off = (i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset);
 				int cell_pos = (i * grid->info[SMC_MESH][TOTAL_CELLS]) + j;
 
-				int cell_id_1 = smc_mesh->cells[cell_pos][1];
-				int cell_id_2 = smc_mesh->cells[cell_pos][2];
-				int cell_id_3 = smc_mesh->cells[cell_pos][3];
-				int cell_id_4 = smc_mesh->cells[cell_pos][4];
+				int pt_id_1 = smc_mesh->cells[cell_pos][1];
+				int pt_id_2 = smc_mesh->cells[cell_pos][2];
+				int pt_id_3 = smc_mesh->cells[cell_pos][3];
+				int pt_id_4 = smc_mesh->cells[cell_pos][4];
 
-				send_points[sp_off + 0] = smc_mesh->points[cell_id_1][0];
-				send_points[sp_off + 1] = smc_mesh->points[cell_id_1][1];
-				send_points[sp_off + 2] = smc_mesh->points[cell_id_1][2];
+				send_points[sp_off + 0] = smc_mesh->points[pt_id_1][0];
+				send_points[sp_off + 1] = smc_mesh->points[pt_id_1][1];
+				send_points[sp_off + 2] = smc_mesh->points[pt_id_1][2];
 
-				send_points[sp_off + 3] = smc_mesh->points[cell_id_2][0];
-				send_points[sp_off + 4] = smc_mesh->points[cell_id_2][1];
-				send_points[sp_off + 5] = smc_mesh->points[cell_id_2][2];
+				send_points[sp_off + 3] = smc_mesh->points[pt_id_2][0];
+				send_points[sp_off + 4] = smc_mesh->points[pt_id_2][1];
+				send_points[sp_off + 5] = smc_mesh->points[pt_id_2][2];
 
-				send_points[sp_off + 6] = smc_mesh->points[cell_id_3][0];
-				send_points[sp_off + 7] = smc_mesh->points[cell_id_3][1];
-				send_points[sp_off + 8] = smc_mesh->points[cell_id_3][2];
+				send_points[sp_off + 6] = smc_mesh->points[pt_id_3][0];
+				send_points[sp_off + 7] = smc_mesh->points[pt_id_3][1];
+				send_points[sp_off + 8] = smc_mesh->points[pt_id_3][2];
 
-				send_points[sp_off + 9] = smc_mesh->points[cell_id_4][0];
-				send_points[sp_off + 10] = smc_mesh->points[cell_id_4][1];
-				send_points[sp_off + 11] = smc_mesh->points[cell_id_4][2];
+				send_points[sp_off + 9] = smc_mesh->points[pt_id_4][0];
+				send_points[sp_off + 10] = smc_mesh->points[pt_id_4][1];
+				send_points[sp_off + 11] = smc_mesh->points[pt_id_4][2];
 			}
 		}
 
