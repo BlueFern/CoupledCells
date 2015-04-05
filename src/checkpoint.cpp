@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "computelib.h"
 
 #define NUM_CONFIG_ELEMENTS 9
@@ -1745,7 +1746,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 
 	int *disp, *send_count, recv_count, root = 0;
 	double *send_points, *recv_points;
-	int* indx = (int*) malloc(2 * sizeof(int));
+
 	int num_tuple_components = 3, num_tuples = 4;
 	int tuple_offset = num_tuple_components * num_tuples;
 
@@ -1778,11 +1779,17 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 
 		printf("Calling read_coordinates(grid->info, process_mesh, %d, %d\n", branch, PROCESS_MESH);
 
-		indx = read_coordinates(grid->info, process_mesh, branch, PROCESS_MESH,
+		int read_counts[2] = {0, 0};
+		read_coordinates(grid->info, process_mesh, branch, PROCESS_MESH,
 				grid->info[PROCESS_MESH][TOTAL_POINTS],
-				grid->info[PROCESS_MESH][TOTAL_CELLS]);
+				grid->info[PROCESS_MESH][TOTAL_CELLS],
+				read_counts);
 
-		for(int i = 0; i < indx[1]; i++)
+		assert(read_counts[0] == grid->info[PROCESS_MESH][TOTAL_POINTS] &&
+				read_counts[1] == grid->info[PROCESS_MESH][TOTAL_CELLS]);
+
+		// Do we really want to iterate over the cells here?
+		for(int i = 0; i < read_counts[1]; i++)
 		{
 			send_points[(i * tuple_offset) + 0] = process_mesh->points[process_mesh->cells[i][1]][0];
 			send_points[(i * tuple_offset) + 1] = process_mesh->points[process_mesh->cells[i][1]][1];
@@ -1862,9 +1869,14 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 
 		printf("Calling read_coordinates(grid->info, smc_mesh, %d, %d\n", branch, SMC_MESH);
 
-		indx = read_coordinates(grid->info, smc_mesh, branch, SMC_MESH,
+		int read_counts[2] = {0, 0};
+		read_coordinates(grid->info, smc_mesh, branch, SMC_MESH,
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS]),
-				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS]));
+				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS]),
+				read_counts);
+
+		assert(read_counts[0] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS]) &&
+				read_counts[1] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS]));
 
 		for(int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++)
 		{
@@ -1970,11 +1982,16 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]),
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]));
 
-		indx = read_coordinates(grid->info, ec_mesh, branch, EC_MESH,
+		int read_counts[2] = {0, 0};
+		read_coordinates(grid->info, ec_mesh, branch, EC_MESH,
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]),
-				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]));
+				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]),
+				read_counts);
 
-		printf("From calling the above received %d points, %d cells\n", indx[0], indx[1]);
+		printf("From calling the above received %d points, %d cells\n", read_counts[0], read_counts[1]);
+
+		assert(read_counts[0] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]) &&
+				read_counts[1] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]));
 
 		for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++) {
 			for (int j = 0; j < grid->info[EC_MESH][TOTAL_CELLS]; j++) {
@@ -2068,11 +2085,16 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS]),
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_CELLS]));
 
-		indx = read_coordinates(grid->info, ec_centroids, branch, EC_CENT_MESH,
+		int read_counts[2] = {0, 0};
+		read_coordinates(grid->info, ec_centroids, branch, EC_CENT_MESH,
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS]),
-				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_CELLS]));
+				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_CELLS]),
+				read_counts);
 
-		printf("From calling the above received %d points, %d cells\n", indx[0], indx[1]);
+		printf("From calling the above received %d points, %d cells\n", read_counts[0], read_counts[1]);
+
+		assert(read_counts[0] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS]) &&
+				read_counts[1] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_CELLS]));
 
 		for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++) {
 			for (int j = 0; j < grid->info[EC_CENT_MESH][TOTAL_CELLS]; j++) {
@@ -2129,13 +2151,10 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	return (0);
 }
 
-int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells)
+void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int *read_counts)
 {
 	FILE *fr;
 	char filename_points[64], filename_cells[64];
-	int* indx = (int*) malloc(2 * sizeof(int));
-	indx[0] = 0;
-	indx[1] = 0;
 	if (mesh_type == 0) {
 		if (branch == P) {
 			sprintf(filename_points, "files/parent_points.txt");
@@ -2188,10 +2207,10 @@ int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 		fscanf(fr, "%lf", &mesh->points[i][0]);
 		fscanf(fr, "%lf", &mesh->points[i][1]);
 		fscanf(fr, "%lf", &mesh->points[i][2]);
-		indx[0]++;
+		read_counts[0]++;
 	}
 	fclose(fr);
-	printf("Read %d points from %s\n", indx[0], filename_points);
+	printf("Read %d points from %s\n", read_counts[0], filename_points);
 
 	fr = fopen(filename_cells, "r+");
 	printf("Reading cells from %s, FILE is %s\n", filename_cells, fr == NULL ? "NULL" : "OK");
@@ -2202,19 +2221,17 @@ int* read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 			fscanf(fr, "%d", &mesh->cells[i][2]);
 			fscanf(fr, "%d", &mesh->cells[i][3]);
 			fscanf(fr, "%d", &mesh->cells[i][4]);
-			indx[1]++;
+			read_counts[1]++;
 		}
 	} else if (mesh_type == 3) {
 		for (int i = 0; i < cells; i++) {
 			fscanf(fr, "%d", &mesh->cells[i][0]);
 			fscanf(fr, "%d", &mesh->cells[i][1]);
-			indx[1]++;
+			read_counts[1]++;
 		}
 	}
 	fclose(fr);
-	printf("Read %d cells from %s\n", indx[1], filename_cells);
-
-	return (indx);
+	printf("Read %d cells from %s\n", read_counts[1], filename_cells);
 }
 
 void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc,
