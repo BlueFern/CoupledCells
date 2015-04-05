@@ -1963,11 +1963,16 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 			ec_mesh->cells[i] = (int*) malloc(5 * sizeof(int));
 		}
 
-		printf("Calling read_coordinates(grid->info, ec_mesh, %d, %d\n", branch, EC_MESH);
+		printf("Calling read_coordinates(grid->info, ec_mesh, %d, %d; expecting %d points, %d cells\n",
+				branch, EC_MESH,
+				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]),
+				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]));
 
 		indx = read_coordinates(grid->info, ec_mesh, branch, EC_MESH,
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]),
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]));
+
+		printf("From calling the above received %d points, %d cells\n", indx[0], indx[1]);
 
 		for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++) {
 			for (int j = 0; j < grid->info[EC_MESH][TOTAL_CELLS]; j++) {
@@ -2055,11 +2060,16 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 			ec_centroids->cells[i] = (int*) malloc(2 * sizeof(int));
 		}
 
-		printf("Calling read_coordinates(grid->info, ec_centroids, %d, %d\n", branch, EC_MESH);
+		printf("Calling read_coordinates(grid->info, ec_centroids, %d, %d; expecting %d points, %d cells\n",
+				branch, EC_MESH,
+				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS]),
+				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_CELLS]));
 
 		indx = read_coordinates(grid->info, ec_centroids, branch, EC_CENT_MESH,
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS]),
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_CELLS]));
+
+		printf("From calling the above received %d points, %d cells\n", indx[0], indx[1]);
 
 		for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++) {
 			for (int j = 0; j < grid->info[EC_CENT_MESH][TOTAL_CELLS]; j++) {
