@@ -1683,11 +1683,6 @@ checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle* check, gri
 /// Read coordinates from relevant geometry files for each ec and smc in the computational domain.
 int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell **ec)
 {
-	if(grid->universal_rank == 0)
-	{
-		// printf("%s:%s\n", __FILE__, __FUNCTION__);
-	}
-
 	int buffer[24];
 	int msg_tag_1 = 1, msg_tag_2 = 2, msg_tag_3 = 3, msg_tag_4 = 4;
 	MPI_Status status;
@@ -1710,8 +1705,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 		}
 		fclose(fr);
 	}
-
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
 
 	check_flag(MPI_Bcast(buffer, 24, MPI_INT, 0, grid->universe), "error broadcasting info retrieved from configuration_info.txt");
 
@@ -1741,18 +1734,17 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 		}
 	}
 
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
-
 	int *disp, *send_count, recv_count, root = 0;
 	double *send_points, *recv_points;
 
 	int num_tuple_components = 3, num_tuples = 4;
 	int tuple_offset = num_tuple_components * num_tuples;
 
-	grid->coordinates = (double**)checked_malloc(num_tuples * sizeof(double*), "allocation error in D1 of grid coordinates.");
+	grid->coordinates = (double**)checked_malloc(num_tuples * sizeof(double*), SRC_LOC);
+
 	for(int i = 0; i < num_tuples; i++)
 	{
-		grid->coordinates[i] = (double*)checked_malloc(num_tuple_components * sizeof(double), "allocation error in D2 of grid coordinates.");
+		grid->coordinates[i] = (double*)checked_malloc(num_tuple_components * sizeof(double), SRC_LOC);
 	}
 
 	send_count = (int*)checked_malloc(grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(int), SRC_LOC);
@@ -1760,8 +1752,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	disp = (int*)checked_malloc(grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(int), SRC_LOC);
 
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
-
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
 
 	if (grid->rank == 0)
 	{
@@ -1776,8 +1766,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 		{
 			process_mesh->cells[i] = (int*)checked_malloc(5 * sizeof(int), SRC_LOC);
 		}
-
-		printf("Calling read_coordinates(grid->info, process_mesh, %d, %d\n", branch, PROCESS_MESH);
 
 		int read_counts[2] = {0, 0};
 		read_coordinates(grid->info, process_mesh, branch, PROCESS_MESH,
@@ -1821,8 +1809,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 		free(process_mesh);
 	}
 
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
-
 	recv_points = (double*)checked_malloc(tuple_offset * sizeof(double), SRC_LOC);
 
 	for(int i = 0; i < grid->tasks; i++)
@@ -1846,37 +1832,35 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	free(send_points);
 	free(recv_points);
 
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
-
 	// Reading in SMC mesh and communicating to each branch communicator member.
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[SMC_MESH][TOTAL_CELLS] * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 
 	if(grid->rank == 0)
 	{
 		vtk_info* smc_mesh = (vtk_info*)checked_malloc(sizeof(vtk_info), SRC_LOC);
-		smc_mesh->points = (double**)checked_malloc(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS] * sizeof(double*), SRC_LOC);
 
-		for(int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS]; i++)
+		int num_SMC_points = grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS];
+		int num_SMC_cells = grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS];
+
+		smc_mesh->points = (double**)checked_malloc(num_SMC_points * sizeof(double*), SRC_LOC);
+		for(int i = 0; i < num_SMC_points; i++)
 		{
 			smc_mesh->points[i] = (double*)checked_malloc(3 * sizeof(double), SRC_LOC);
 		}
-		smc_mesh->cells = (int**)checked_malloc(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS] * sizeof(int*), SRC_LOC);
 
-		for(int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS]; i++)
+		smc_mesh->cells = (int**)checked_malloc(num_SMC_cells * sizeof(int*), SRC_LOC);
+		for(int i = 0; i < num_SMC_cells; i++)
 		{
 			smc_mesh->cells[i] = (int*)checked_malloc(5 * sizeof(int), SRC_LOC);
 		}
 
-		printf("Calling read_coordinates(grid->info, smc_mesh, %d, %d\n", branch, SMC_MESH);
-
 		int read_counts[2] = {0, 0};
 		read_coordinates(grid->info, smc_mesh, branch, SMC_MESH,
-				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS]),
-				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS]),
+				(num_SMC_points),
+				(num_SMC_cells),
 				read_counts);
 
-		assert(read_counts[0] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS]) &&
-				read_counts[1] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS]));
+		assert(read_counts[0] == (num_SMC_points) && read_counts[1] == (num_SMC_cells));
 
 		for(int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++)
 		{
@@ -1910,12 +1894,12 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 			}
 		}
 
-		for(int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS]; i++)
+		for(int i = 0; i < num_SMC_points; i++)
 		{
 			free(smc_mesh->points[i]);
 		}
 
-		for(int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_CELLS]; i++)
+		for(int i = 0; i < num_SMC_cells; i++)
 		{
 			free(smc_mesh->cells[i]);
 		}
@@ -1924,8 +1908,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 		free(smc_mesh);
 	}
 
-	printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
-
 	recv_points = (double*)checked_malloc(tuple_offset * grid->info[SMC_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 	for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++) {
 		send_count[i] = tuple_offset * grid->info[SMC_MESH][TOTAL_CELLS];
@@ -1933,12 +1915,8 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	}
 	recv_count = tuple_offset * grid->info[SMC_MESH][TOTAL_CELLS];
 
-	printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
-
 	check_flag(MPI_Scatterv(send_points, send_count, disp, MPI_DOUBLE, recv_points, recv_count, MPI_DOUBLE, root, grid->cart_comm),
 			"error scattering SMC mesh coordinates.");
-
-	printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
 
 	int count = 0;
 	for(int n = 1; n <= grid->num_smc_axially; n++)
@@ -1956,8 +1934,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	}
 	free(send_points);
 	free(recv_points);
-
-	printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
 
 	// Reading in EC mesh and communicating to each branch communicator member.
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[EC_MESH][TOTAL_CELLS] * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
@@ -1977,18 +1953,11 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 			ec_mesh->cells[i] = (int*)checked_malloc(5 * sizeof(int), SRC_LOC);
 		}
 
-		printf("Calling read_coordinates(grid->info, ec_mesh, %d, %d; expecting %d points, %d cells\n",
-				branch, EC_MESH,
-				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]),
-				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]));
-
 		int read_counts[2] = {0, 0};
 		read_coordinates(grid->info, ec_mesh, branch, EC_MESH,
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]),
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]),
 				read_counts);
-
-		printf("From calling the above received %d points, %d cells\n", read_counts[0], read_counts[1]);
 
 		assert(read_counts[0] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS]) &&
 				read_counts[1] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS]));
@@ -2035,8 +2004,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 		free(ec_mesh);
 	}
 
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
-
 	recv_points = (double*)checked_malloc(tuple_offset * grid->info[EC_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 	for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++)
 	{
@@ -2047,6 +2014,7 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 
 	check_flag(MPI_Scatterv(send_points, send_count, disp, MPI_DOUBLE, recv_points, recv_count, MPI_DOUBLE, root, grid->cart_comm),
 			"error scattering EC mesh coordinates.");
+
 	count = 0;
 	for (int n = 1; n <= grid->num_ec_axially; n++) {
 		for (int m = 1; m <= grid->num_ec_circumferentially; m++) {
@@ -2060,8 +2028,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	}
 	free(send_points);
 	free(recv_points);
-
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
 
 	// Reading in EC centroids and communicating to each branch communicator member.
 	num_tuples = 1;
@@ -2080,18 +2046,11 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 			ec_centroids->cells[i] = (int*)checked_malloc(2 * sizeof(int), SRC_LOC);
 		}
 
-		printf("Calling read_coordinates(grid->info, ec_centroids, %d, %d; expecting %d points, %d cells\n",
-				branch, EC_MESH,
-				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS]),
-				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_CELLS]));
-
 		int read_counts[2] = {0, 0};
 		read_coordinates(grid->info, ec_centroids, branch, EC_CENT_MESH,
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS]),
 				(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_CELLS]),
 				read_counts);
-
-		printf("From calling the above received %d points, %d cells\n", read_counts[0], read_counts[1]);
 
 		assert(read_counts[0] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS]) &&
 				read_counts[1] == (grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_CELLS]));
@@ -2117,8 +2076,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 		free(ec_centroids);
 	}
 
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
-
 	recv_points = (double*)checked_malloc(tuple_offset * grid->info[EC_CENT_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 	for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++) {
 		send_count[i] = tuple_offset * grid->info[EC_CENT_MESH][TOTAL_CELLS];
@@ -2142,11 +2099,10 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	free(send_points);
 	free(recv_points);
 
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
+	free(disp);
+	free(send_count);
 
 	MPI_Barrier(grid->universe);
-
-	// printf("%d: %s, %d\n", grid->universal_rank, __FUNCTION__, __LINE__);
 
 	return (0);
 }
@@ -2210,7 +2166,6 @@ void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 		read_counts[0]++;
 	}
 	fclose(fr);
-	printf("Read %d points from %s\n", read_counts[0], filename_points);
 
 	fr = fopen(filename_cells, "r+");
 	printf("Reading cells from %s, FILE is %s\n", filename_cells, fr == NULL ? "NULL" : "OK");
@@ -2231,7 +2186,6 @@ void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 		}
 	}
 	fclose(fr);
-	printf("Read %d cells from %s\n", read_counts[1], filename_cells);
 }
 
 void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc,
