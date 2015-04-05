@@ -16,8 +16,9 @@ void* checked_malloc(size_t bytes, const char* errmsg) {
 	void *pval = malloc(bytes);
 
 	if (pval == NULL) {
-		fprintf(stdout, "%s", errmsg);
-		MPI_Abort(MPI_COMM_WORLD, 100);
+		fprintf(stdout, "************************ MEMORY ALLOCATION ERROR: %s ************************", errmsg);
+		fprintf(stderr, "************************ MEMORY ALLOCATION ERROR: %s ************************", errmsg);
+		MPI_Abort(MPI_COMM_WORLD, 143);
 	}
 
 	return pval;
