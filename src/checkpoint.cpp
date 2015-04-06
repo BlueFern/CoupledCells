@@ -1877,10 +1877,19 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 				int sp_off = (i * grid->info[SMC_MESH][TOTAL_CELLS] * tuple_offset) + (j * tuple_offset);
 				int cell_pos = (i * grid->info[SMC_MESH][TOTAL_CELLS]) + j;
 
+				// Sanity check.
+				assert(cell_pos < num_SMC_cells);
+
 				int pt_id_1 = smc_mesh->cells[cell_pos][1];
 				int pt_id_2 = smc_mesh->cells[cell_pos][2];
 				int pt_id_3 = smc_mesh->cells[cell_pos][3];
 				int pt_id_4 = smc_mesh->cells[cell_pos][4];
+
+				// Sanity check.
+				assert(pt_id_1 < num_SMC_points);
+				assert(pt_id_2 < num_SMC_points);
+				assert(pt_id_3 < num_SMC_points);
+				assert(pt_id_4 < num_SMC_points);
 
 				send_points[sp_off + 0] = smc_mesh->points[pt_id_1][0];
 				send_points[sp_off + 1] = smc_mesh->points[pt_id_1][1];
@@ -1915,7 +1924,8 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	}
 
 	recv_points = (double*)checked_malloc(tuple_offset * grid->info[SMC_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
-	for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++) {
+	for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS]; i++)
+	{
 		send_count[i] = tuple_offset * grid->info[SMC_MESH][TOTAL_CELLS];
 		disp[i] = tuple_offset * grid->info[SMC_MESH][TOTAL_CELLS] * i;
 	}
