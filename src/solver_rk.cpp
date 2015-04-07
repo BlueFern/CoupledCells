@@ -83,6 +83,9 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	{
 		for (int j = 1; j <= grid.num_ec_axially; j++)
 		{
+			// Currently this call depends on the y coordinate of the current centroid cell,
+			// which only makes sense if the bifurcation exists in the Z plane and extends along the Y axis.
+			// Blimey.
 			ec[i][j].JPLC = agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);
 		}
 	}
@@ -109,7 +112,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		// Solver decides step magnitude depending on the stiffness of the problem.
 		do
 		{
-			// tnow needsto be a pointer to have it updated here.
+			// tnow needs to be a pointer to have it updated here?
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
 			if (cflag >= 5)
 			{

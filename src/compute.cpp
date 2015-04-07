@@ -479,7 +479,7 @@ void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
  * Provide a JPLC value for a given position along the axial dimension of the
  * current domain. The value is provided by a sigmoid function.
  *
- * \todo Provide a formula for this equation.
+ * \todo Provide a formula for this calculation.
  *
  * \param t
  * \param grid
@@ -491,22 +491,22 @@ void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
 double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coordinate)
 {
 	double JPLC;
-	if (t > grid.stimulus_onset_time) {
-
+	if (t > grid.stimulus_onset_time)
+	{
 		/*	JPLC =grid.min_jplc+ (grid.max_jplc/
 		 (1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
 		 */
-		JPLC = grid.min_jplc
-				+ (grid.max_jplc / (1.0 + exp(-grid.gradient * axial_coordinate)));
-	} else if (t <= grid.stimulus_onset_time) {
+		JPLC = grid.min_jplc + (grid.max_jplc / (1.0 + exp(-grid.gradient * axial_coordinate)));
+	}
+	else if (t <= grid.stimulus_onset_time)
+	{
 		JPLC = grid.uniform_jplc;
 	}
 	return JPLC;
 }
 
-/**********************************************************************/
+
 EC_cell** ith_ec_z_coordinate(grid_parms grid, EC_cell** ec)
-/**********************************************************************/
 {
 	/*	double array[2 * grid.num_ec_axially];
 

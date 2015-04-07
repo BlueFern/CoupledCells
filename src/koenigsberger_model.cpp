@@ -200,28 +200,33 @@ void koenigsberger_ec(grid_parms grid, EC_cell** ec)
 	} //end for i
 }
 
-/***************************************************************************/
-void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid, EC_cell** ec) {
-	/***************************************************************************/
+void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid, EC_cell** ec)
+{
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
-	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_ec_axially; j++) {
+	for(int i = 1; i <= grid.num_ec_circumferentially; i++)
+	{
+		for(int j = 1; j <= grid.num_ec_axially; j++)
+		{
 			if (i > 1)
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
 				k = offset + 0;
 
+			// Does this need to be called here, because nothing seems to be altering the JPLC value after it has been set once?
 			ec[i][j].JPLC = agonist_profile(t, grid, i, j, ec[i][j].centeroid_point[1]);
 
-			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] = ec[i][j].A[J_IP3] - ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR] - ec[i][j].A[J_Extrusion]
+			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] =
+					ec[i][j].A[J_IP3] - ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR] - ec[i][j].A[J_Extrusion]
 					+ ec[i][j].A[J_Leak] + ec[i][j].A[J_NSC] + ec[i][j].A[J_trivial_Ca] + ec[i][j].B[cpl_Ca] + ec[i][j].C[cpl_Ca];
 
-			f[k + ((j - 1) * grid.neq_ec) + ec_SR] = ec[i][j].A[J_SERCA] - ec[i][j].A[J_CICR] - ec[i][j].A[J_Leak];
+			f[k + ((j - 1) * grid.neq_ec) + ec_SR] =
+					ec[i][j].A[J_SERCA] - ec[i][j].A[J_CICR] - ec[i][j].A[J_Leak];
 
-			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] = ((-1 / Cmj) * (ec[i][j].A[J_Ktot] + ec[i][j].A[J_Residual])) + ec[i][j].B[cpl_Vm]
-					+ ec[i][j].C[cpl_Vm];
+			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
+					((-1 / Cmj) * (ec[i][j].A[J_Ktot] + ec[i][j].A[J_Residual])) + ec[i][j].B[cpl_Vm] + ec[i][j].C[cpl_Vm];
 
-			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] = ec[i][j].JPLC - ec[i][j].A[J_IP3_deg] + ec[i][j].B[cpl_IP3] + ec[i][j].C[cpl_IP3];
+			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
+					ec[i][j].JPLC - ec[i][j].A[J_IP3_deg] + ec[i][j].B[cpl_IP3] + ec[i][j].C[cpl_IP3];
 		}
 	}
 }
