@@ -89,6 +89,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			ec[i][j].JPLC = agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);
 		}
 	}
+
 	// Dump JPLC map on bifurcation into a vtk file.
 	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
 	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
@@ -120,7 +121,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				MPI_Abort(MPI_COMM_WORLD, 300);
 			}
 		}
-		while (tnow < tend);
+		while(tnow < tend);
 
 		/// rksuite.stat() routine calls the to gather statistic on the performance of the solver.
 		/// Amongst other things it also informs about what the next step size should be.

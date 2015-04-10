@@ -7,8 +7,8 @@
 using namespace std;
 
 conductance cpl_cef;
-SMC_cell** smc;
-EC_cell** ec;
+SMC_cell **smc;
+EC_cell **ec;
 double **sendbuf, **recvbuf;
 grid_parms grid;
 time_keeper elps_t;

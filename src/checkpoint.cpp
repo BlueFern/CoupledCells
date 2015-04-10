@@ -2096,6 +2096,50 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	return (0);
 }
 
+void read_init_JPLC(grid_parms *grid, int branch)
+{
+	FILE *fr;
+	char jplc_file_name[64];
+
+	switch(branch)
+	{
+		case P:
+			sprintf(jplc_file_name, "files/parent_jplc.txt");
+			break;
+		case L:
+			sprintf(jplc_file_name, "files/left_daughter_jplc.txt");
+			break;
+		case R:
+			sprintf(jplc_file_name, "files/right_daughter_jplc.txt");
+			break;
+		default:
+			; // Do something sensible here otherwise all hell breaks loose...
+	}
+
+	fr = fopen(jplc_file_name, "r+");
+	printf("Reading JPLC from %s, FILE is %s\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
+
+	int pt_id = 0;
+	double jplc_val = 0;
+	while(fscanf(fr, "%lf", &jplc_val) == 1)
+	{
+		// Calculate i and j based on the grid parameters.
+		int i = 0;
+		int j = 0;
+		// ec[i][j].JPLC = jplc_val;
+	}
+	if(feof(fr))
+	{
+	  // Check the number of values read.
+	}
+	else
+	{
+	  // Some other error interrupted the read. What do we do?
+	}
+	fclose(fr);
+
+}
+
 void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int *read_counts)
 {
 	FILE *fr;

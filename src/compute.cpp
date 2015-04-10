@@ -508,25 +508,7 @@ double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coo
 
 EC_cell** ith_ec_z_coordinate(grid_parms grid, EC_cell** ec)
 {
-	/*	double array[2 * grid.num_ec_axially];
-
-	 for (int i = 0; i <= 2 * grid.num_ec_axially; i++) {
-	 array[i] = grid.my_domain.local_z_end
-	 + (i)
-	 * ((grid.my_domain.local_z_start
-	 - grid.my_domain.local_z_end)
-	 / (2 * grid.num_ec_axially));
-	 }
-
-	 for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-	 int indx = 2 * grid.num_ec_axially - 1;
-	 for (int j = 1; j <= grid.num_ec_axially; j++) {
-	 ec[i][j].z_coord = array[indx];
-	 indx -= 2;
-	 }
-	 }
-	 return (ec);*/
-	double adapted_ec_length = grid.hx_ec;//-(grid.my_domain.local_z_end	- grid.my_domain.local_z_start) / grid.num_ec_axially;
+	double adapted_ec_length = grid.hx_ec;
 	double array[grid.num_ec_axially];
 	for (int i = 0; i < grid.num_ec_axially; i++) {
 		array[i] = grid.my_domain.local_z_end
@@ -541,7 +523,7 @@ EC_cell** ith_ec_z_coordinate(grid_parms grid, EC_cell** ec)
 
 	return (ec);
 }
-/**********************************************************************/
+
 void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_async_comm_calls = 0.0;
 	t_stamp->diff_async_comm_calls_wait = 0.0;
@@ -550,9 +532,8 @@ void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_single_cell_fluxes = 0.0;
 	t_stamp->diff_coupling_fluxes = 0.0;
 }
-/********************************************************************************/
+
 int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
-	/*******************************************************************************/
 	MPI_Offset disp;
 	MPI_Status status;
 	int index;
