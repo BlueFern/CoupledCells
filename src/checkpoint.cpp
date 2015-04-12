@@ -2096,54 +2096,56 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 
 void read_init_JPLC(grid_parms *grid)
 {
-	FILE *fr;
-	char jplc_file_name[64];
-
-	int branch;
-	if (grid->my_domain.internal_info.domain_type == STRSEG)
+	if (grid->rank == 0)
 	{
-		branch = P;
-	}
-	else if (grid->my_domain.internal_info.domain_type == BIF)
-	{
-		branch = grid->branch_tag;
-	}
+		FILE *fr;
+		char jplc_file_name[64];
 
-	switch(branch)
-	{
-		case P:
-			sprintf(jplc_file_name, "files/parent_jplc.txt");
-			break;
-		case L:
-			sprintf(jplc_file_name, "files/left_daughter_jplc.txt");
-			break;
-		case R:
-			sprintf(jplc_file_name, "files/right_daughter_jplc.txt");
-			break;
-		default:
-			; // Do something sensible here otherwise all hell breaks loose...
+		int branch;
+		if (grid->my_domain.internal_info.domain_type == STRSEG)
+		{
+			branch = P;
+		}
+		else if (grid->my_domain.internal_info.domain_type == BIF)
+		{
+			branch = grid->branch_tag;
+		}
+
+		switch(branch)
+		{
+			case P:
+				sprintf(jplc_file_name, "files/parent_jplc.txt");
+				break;
+			case L:
+				sprintf(jplc_file_name, "files/left_daughter_jplc.txt");
+				break;
+			case R:
+				sprintf(jplc_file_name, "files/right_daughter_jplc.txt");
+				break;
+			default:
+				; // Do something sensible here otherwise all hell breaks loose...
+		}
+
+		int jplc_in_size = grid->num_ec_circumferentially * grid->num_ec_axially * grid->tasks;
+		double *jplc_in = (double *)checked_malloc(jplc_in_size, SRC_LOC);
+		printf("jplc_size: %d, grid->sub_universe_numtasks: %d\n", jplc_in_size, grid->tasks);
+
+		fr = fopen(jplc_file_name, "r+");
+		printf("Reading JPLC from %s, FILE is %s\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
+
+		int count_in = 0;
+		while(fscanf(fr, "%lf", jplc_in[count_in]) == 1)
+		{
+			count_in++;
+		}
+		if(feof(fr))
+		{
+			// Check the number of values read.
+			// Perhaps need something better than just an assert, but we'll see in the future, if this is an easy place to err.
+			assert(jplc_in_size == count_in);
+		}
+		fclose(fr);
 	}
-
-	int jplc_in_size = grid->num_ec_circumferentially * grid->num_ec_axially * grid->sub_universe_numtasks;
-	double *jplc_in = (double *)checked_malloc(jplc_in_size, SRC_LOC);
-	printf("jplc_size: %d, grid->sub_universe_numtasks: %d\n", jplc_in_size, grid->sub_universe_numtasks);
-
-	fr = fopen(jplc_file_name, "r+");
-	printf("Reading JPLC from %s, FILE is %s\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
-
-	int count_in = 0;
-	while(fscanf(fr, "%lf", jplc_in[count_in]) == 1)
-	{
-		count_in++;
-	}
-	if(feof(fr))
-	{
-		// Check the number of values read.
-		// Perhaps need something better than just an assert, but we'll see in the future, if this is an easy place to err.
-		assert(jplc_in_size == count_in);
-	}
-	fclose(fr);
-
 }
 
 void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int *read_counts)
