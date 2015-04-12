@@ -101,8 +101,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
 	}
 
-	MPI_Abort(MPI_COMM_WORLD, 200);
-
 	// Profiling.
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
 
