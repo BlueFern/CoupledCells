@@ -2110,6 +2110,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 
 	int jplc_in_size = jplc_per_task_count * grid->tasks;
 
+	// This can be allocated only on the IO nodes.
 	double *send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
 
 	// Only the IO nodes read the input files.
@@ -2161,17 +2162,12 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 	int recv_jplc_count = jplc_per_task_count;
 	double *recv_jplc = (double *)checked_malloc(recv_jplc_count * sizeof(double), SRC_LOC);
 
-	printf("%d, jplc_per_task_count: %d, recv_jplc_count: %d\n", grid->rank, jplc_per_task_count, recv_jplc_count);
-
 	int root = 0;
+
 	// Scatter JPLC values to the nodes in this Cartesian grid.
 	check_flag(MPI_Scatterv(send_jplc, send_jplc_counts, send_jplc_offsets, MPI_DOUBLE,
 			recv_jplc, recv_jplc_count, MPI_DOUBLE, root, grid->cart_comm),
 			SRC_LOC);
-
-	MPI_Barrier(grid->universe);
-
-	printf("After the barrier...\n");
 
 	// Assign received JPLC values to the cells.
 	for(int m = 1; m <= grid->num_ec_circumferentially; m++)
@@ -2179,11 +2175,9 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		for(int n = 1; n <= grid->num_ec_axially; n++)
 		{
 			// Fortran array referencing!
-			printf("%d ", (n - 1) * grid->num_ec_circumferentially + m - 1);
 			ECs[m][n].JPLC = recv_jplc[(n - 1) * grid->num_ec_circumferentially + m - 1];
 		}
 	}
-	printf("\n");
 
 	free(send_jplc);
 	free(send_jplc_counts);
