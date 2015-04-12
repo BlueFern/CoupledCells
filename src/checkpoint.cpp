@@ -2164,6 +2164,8 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 
 	int root = 0;
 
+	printf("%s, grid->cart_comm: %p\n", __FUNCTION__, (void *)grid->cart_comm);
+
 	// Scatter JPLC values to the nodes in this Cartesian grid.
 	check_flag(MPI_Scatterv(send_jplc, send_jplc_counts, send_jplc_offsets, MPI_DOUBLE,
 			recv_jplc, recv_jplc_count, MPI_DOUBLE, root, grid->cart_comm),

@@ -78,20 +78,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		write_process_mesh(check, &grid, my_IO_domain_info, writer_buffer, path);
 	}
 
-#if 0
-	// Set JPLC values for all ECs from the agonist profile function.
-	for (int i = 1; i <= grid.num_ec_circumferentially; i++)
-	{
-		for (int j = 1; j <= grid.num_ec_axially; j++)
-		{
-			// Currently this call depends on the y coordinate of the given centroid cell,
-			// which only makes sense if the bifurcation exists in the Z plane and extends along the Y axis.
-			// Blimey.
-			ec[i][j].JPLC = agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);
-		}
-	}
-#endif
-
 	// Dump JPLC map on bifurcation into a vtk file.
 	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
 	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
@@ -99,6 +85,18 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	{
 		// Initial concentration of JPLC in the EC cells.
 		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
+	}
+
+	printf("%s, grid->cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
+
+	// Reset JPLC to the uniform map.
+	// The input file will have to be read later when the time is right.
+	for (int i = 1; i <= grid.num_ec_circumferentially; i++)
+	{
+		for (int j = 1; j <= grid.num_ec_axially; j++)
+		{
+			ec[i][j].JPLC = grid.uniform_jplc; // agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);
+		}
 	}
 
 	// Profiling.
@@ -115,6 +113,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		// Solver decides step magnitude depending on the stiffness of the problem.
 		do
 		{
+			printf("tnow: %f, stimulus_onset_time: %f, tfinal: %f\n", tnow, grid.stimulus_onset_time, tfinal);
 			// tnow needs to be a pointer to have it updated here?
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
 			if (cflag >= 5)

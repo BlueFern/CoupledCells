@@ -397,6 +397,8 @@ int main(int argc, char* argv[]) {
 		printf("[%d] return from read topology = %d\n", grid.universal_rank, ret);
 	}
 
+	// This is read in here for validation purposes in the output.
+	// the solver will reset JPLC and read later it when the time is right.
 	read_init_JPLC(&grid, ec);
 
 #ifdef CVODE
