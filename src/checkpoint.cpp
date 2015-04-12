@@ -2108,10 +2108,8 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 
 	int jplc_per_task_count = grid->num_ec_circumferentially * grid->num_ec_axially;
 
-	int *send_jplc_counts = 0;
-	int *send_jplc_offsets = 0;
-
 	int jplc_in_size = jplc_per_task_count * grid->tasks;
+
 	double *send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
 
 	// Only the IO nodes read the input files.
@@ -2151,8 +2149,8 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		fclose(fr);
 	}
 
-	send_jplc_offsets = (int *)checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
-	send_jplc_counts = (int *)checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
+	int *send_jplc_counts = (int *)checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
+	int *send_jplc_offsets = (int *)checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
 
 	for(int task = 0; task < grid->tasks; task++)
 	{
@@ -2160,12 +2158,9 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		send_jplc_offsets[task] = task * jplc_per_task_count;
 	}
 
-	if(grid->rank == 0)
+	for(int task = 0; task < grid->tasks; task++)
 	{
-		for(int task = 0; task < grid->tasks; task++)
-		{
-			printf("c: %d, o: %d\n", send_jplc_counts[task], send_jplc_offsets[task]);
-		}
+		printf("c: %d, o: %d\n", send_jplc_counts[task], send_jplc_offsets[task]);
 	}
 
 	int recv_jplc_count = jplc_per_task_count;
