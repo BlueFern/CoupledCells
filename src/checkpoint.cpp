@@ -2168,7 +2168,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 	{
 		for(int task = 0; task < grid->tasks; task++)
 		{
-			printf("%d, %d\n", send_jplc_counts[task], send_jplc_offsets[task]);
+			printf("c: %d, o: %d\n", send_jplc_counts[task], send_jplc_offsets[task]);
 		}
 	}
 
