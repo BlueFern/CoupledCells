@@ -2110,7 +2110,9 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 
 	int *send_jplc_counts = 0;
 	int *send_jplc_offsets = 0;
-	double *send_jplc = 0;
+
+	int jplc_in_size = jplc_per_task_count * grid->tasks;
+	double *send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
 
 	// Only the IO nodes read the input files.
 	if (grid->rank == 0)
@@ -2132,11 +2134,6 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 			default:
 				; // Do something sensible here otherwise all hell breaks loose...
 		}
-
-		int jplc_in_size = jplc_per_task_count * grid->tasks;
-
-		send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
-		printf("jplc_size: %d, grid->sub_universe_numtasks: %d\n", jplc_in_size, grid->tasks);
 
 		fr = fopen(jplc_file_name, "r+");
 		printf("Reading JPLC from %s, FILE is %s\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
@@ -2192,11 +2189,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		}
 	}
 
-	if (grid->rank == 0)
-	{
-		free(send_jplc);
-	}
-
+	free(send_jplc);
 	free(send_jplc_counts);
 	free(send_jplc_offsets);
 	free(recv_jplc);
