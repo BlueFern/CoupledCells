@@ -1494,6 +1494,8 @@ int read_config_file(int rank, char* filename, grid_parms* grid) {
 	err = MPI_File_read_all(data, buffer, chunk, MPI_CHAR, &status);
 	err = MPI_Get_count(&status, MPI_CHAR, &count);
 
+	// TODO: It would be helpful to know in advance how many items we are expecting to read hear so we can check it against the count.
+
 	char *token;
 	char *delimiter = (char *)";,\n";
 	token = strtok(buffer, delimiter);
@@ -1832,11 +1834,6 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 				(num_SMC_points),
 				(num_SMC_cells),
 				read_counts);
-
-		for(int c = 0; c < num_SMC_cells; c++)
-		{
-			printf("\t%d %d %d %d %d\n", smc_mesh->cells[c][0], smc_mesh->cells[c][1], smc_mesh->cells[c][2], smc_mesh->cells[c][3], smc_mesh->cells[c][4]);
-		}
 
 		assert(read_counts[0] == (num_SMC_points) && read_counts[1] == (num_SMC_cells));
 
@@ -2208,9 +2205,6 @@ void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 			fscanf(fr, "%d", &mesh->cells[i][2]);
 			fscanf(fr, "%d", &mesh->cells[i][3]);
 			fscanf(fr, "%d", &mesh->cells[i][4]);
-
-			printf("%d %d %d %d %d\n", mesh->cells[i][0], mesh->cells[i][1], mesh->cells[i][2], mesh->cells[i][3], mesh->cells[i][4]);
-
 			read_counts[1]++;
 		}
 	} else if (mesh_type == 3) {
