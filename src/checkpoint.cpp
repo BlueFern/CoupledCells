@@ -9,6 +9,8 @@
 
 #define CHECK(fn) { int errcode; errcode = (fn); if(errcode != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD,1); }
 
+extern EC_cell** ec;
+
 checkpoint_handle* initialise_checkpoint(grid_parms grid) {
 
 	checkpoint_handle *check = (checkpoint_handle*) malloc(sizeof(checkpoint_handle));
@@ -33,9 +35,7 @@ void open_common_checkpoint(checkpoint_handle* check, grid_parms grid) {
 	CHECK(MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,MPI_INFO_NULL, &check->coords));
 }
 
-/*******************************************************************************************************************************************************/
 void open_koenigsberger_smc_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path, IO_domain_info* my_IO_domain_info)
-/***************************************************************************************************************************************************/
 {
 	int err;
 	char filename[50];
@@ -53,9 +53,7 @@ void open_koenigsberger_smc_checkpoint(checkpoint_handle* check, grid_parms grid
 	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ii));*/
 }
 
-/*************************************************************************/
 void open_koenigsberger_ec_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path, IO_domain_info* my_IO_domain_info) {
-	/*************************************************************************/
 	int err;
 	char filename[50];
 	err = sprintf(filename, "%s/ec_Data_t_%d.vtk", path, write_count);
@@ -70,9 +68,8 @@ void open_koenigsberger_ec_checkpoint(checkpoint_handle* check, grid_parms grid,
 	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ij));*/
 }
 
-/*************************************************************************/
-void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path, IO_domain_info* my_IO_domain_info) {
-	/*************************************************************************/
+void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path, IO_domain_info* my_IO_domain_info)
+{
 	int err;
 	char filename[50];
 	err = sprintf(filename, "%s/smc_cpc_t_%d.vtk", path, write_count);
@@ -94,9 +91,9 @@ void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid, in
 	CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->cpIj));
 
 }
-/***************************************************************************/
-void dump_smc(grid_parms grid, SMC_cell **smc, checkpoint_handle *check, int line_number, int write_count) {
-	/***************************************************************************/
+
+void dump_smc(grid_parms grid, SMC_cell **smc, checkpoint_handle *check, int line_number, int write_count)
+{
 	MPI_Status status[8];
 	MPI_Request req[8];
 
@@ -143,9 +140,9 @@ void dump_smc(grid_parms grid, SMC_cell **smc, checkpoint_handle *check, int lin
 	CHECK(MPI_File_write_at(check->cpVi, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
 	CHECK(MPI_File_write_at(check->cpIi, disp, &b8, write_element_count, MPI_DOUBLE, &status[7]));
 }
-/***********************************************************************/
-void dump_ec(grid_parms grid, EC_cell **ec, checkpoint_handle *check, int line_number, int write_count) {
-	/***********************************************************************/
+
+void dump_ec(grid_parms grid, EC_cell **ec, checkpoint_handle *check, int line_number, int write_count)
+{
 	MPI_Status status[8];
 
 	MPI_Status status_tmp[3];
@@ -1620,6 +1617,7 @@ int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms g
 
 }
 
+#if 0
 void jplc_plot_data(grid_parms grid, checkpoint_handle* check) {
 
 	MPI_Offset disp;
@@ -1640,6 +1638,7 @@ void jplc_plot_data(grid_parms grid, checkpoint_handle* check) {
 	fclose(fh);
 
 }
+#endif
 
 /*********************************************************************************************************/
 checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path,
@@ -1655,7 +1654,7 @@ checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle* check, gri
 }
 
 /// Read coordinates from relevant geometry files for each ec and smc in the computational domain.
-int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell **ec)
+int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell **ec)
 {
 	int buffer[24];
 	int msg_tag_1 = 1, msg_tag_2 = 2, msg_tag_3 = 3, msg_tag_4 = 4;
@@ -1689,9 +1688,12 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	/// The following ints are used as macros below:
 
 	int branch;
-	if (grid->my_domain.internal_info.domain_type == STRSEG) {
+	if (grid->my_domain.internal_info.domain_type == STRSEG)
+	{
 		branch = P;
-	} else if (grid->my_domain.internal_info.domain_type == BIF) {
+	}
+	else if (grid->my_domain.internal_info.domain_type == BIF)
+	{
 		branch = grid->branch_tag;
 	}
 
@@ -2092,10 +2094,20 @@ int retrieve_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_
 	return (0);
 }
 
-void read_init_JPLC(grid_parms *grid, int branch)
+void read_init_JPLC(grid_parms *grid)
 {
 	FILE *fr;
 	char jplc_file_name[64];
+
+	int branch;
+	if (grid->my_domain.internal_info.domain_type == STRSEG)
+	{
+		branch = P;
+	}
+	else if (grid->my_domain.internal_info.domain_type == BIF)
+	{
+		branch = grid->branch_tag;
+	}
 
 	switch(branch)
 	{
@@ -2112,25 +2124,23 @@ void read_init_JPLC(grid_parms *grid, int branch)
 			; // Do something sensible here otherwise all hell breaks loose...
 	}
 
+	int jplc_in_size = grid->num_ec_circumferentially * grid->num_ec_axially * grid->sub_universe_numtasks;
+	double *jplc_in = (double *)checked_malloc(jplc_in_size, SRC_LOC);
+	printf("jplc_size: %d\n", jplc_in_size);
+
 	fr = fopen(jplc_file_name, "r+");
 	printf("Reading JPLC from %s, FILE is %s\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
 
-	int pt_id = 0;
-	double jplc_val = 0;
-	while(fscanf(fr, "%lf", &jplc_val) == 1)
+	int count_in = 0;
+	while(fscanf(fr, "%lf", jplc_in[count_in]) == 1)
 	{
-		// Calculate i and j based on the grid parameters.
-		int i = 0;
-		int j = 0;
-		// ec[i][j].JPLC = jplc_val;
+		count_in++;
 	}
 	if(feof(fr))
 	{
-	  // Check the number of values read.
-	}
-	else
-	{
-	  // Some other error interrupted the read. What do we do?
+		// Check the number of values read.
+		// Perhaps need something better than just an assert, but we'll see in the future, if this is an easy place to err.
+		assert(jplc_in_size == count_in);
 	}
 	fclose(fr);
 
@@ -3171,49 +3181,71 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	free(disp);
 }
 
-void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec) {
+void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec)
+{
+#if 0
+	// Why (- 1) here?
 	int branch;
-	if (grid->my_domain.internal_info.domain_type == STRSEG) {
+	if (grid->my_domain.internal_info.domain_type == STRSEG)
+	{
 		branch = P - 1;
-	} else if (grid->my_domain.internal_info.domain_type == BIF) {
+	}
+	else if (grid->my_domain.internal_info.domain_type == BIF)
+	{
 		branch = grid->branch_tag - 1;
 	}
+	// While in other places it is this?
+	/*
+	int branch;
+	if (grid->my_domain.internal_info.domain_type == STRSEG)
+	{
+		branch = P;
+	}
+	else if (grid->my_domain.internal_info.domain_type == BIF)
+	{
+		branch = grid->branch_tag;
+	}
+	*/
+#endif
 
-	int num_tuple_components = 1, num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
+	int num_tuple_components = 1;
+	int num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 	int root = 0;
-	int *recv_count = (int*) checked_malloc(grid->tasks * sizeof(int),
-			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
-	int *disp = (int*) checked_malloc(grid->tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
+
+	int *recv_count = (int*) checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
+	int *disp = (int*) checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
 
 	/************* JPLC field data *************/
 	int my_branch_ec_offset = 0;
-	num_tuple_components = 1;
-	num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 
-	char* send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
-			"error allocating send_buffer in gather_ecData.");
+	char* send_buffer = (char*)checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char), SRC_LOC);
 
 	int length = 0;
-	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {
-		for (int j = 1; j <= grid->num_ec_axially; j++) {
+	// Put things in the buffer, keep track of the length.
+	for(int i = 1; i <= grid->num_ec_circumferentially; i++)
+	{
+		for(int j = 1; j <= grid->num_ec_axially; j++)
+		{
 			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].JPLC);
 		}
 	}
-	check_flag(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm), "error in MPI_Gather.");
+
+	// Collect the length of buffers on all ranks.
+	check_flag(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm), SRC_LOC);
 
 	writer_buffer->jplc_buffer_length = 0;
 
-	for (int i = 0; i < grid->tasks; i++) {
+	for (int i = 0; i < grid->tasks; i++)
+	{
 		disp[i] = writer_buffer->jplc_buffer_length;
 		writer_buffer->jplc_buffer_length += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
-		writer_buffer->jplc = (char*) checked_malloc(writer_buffer->jplc_buffer_length * sizeof(char),
-				"allocation error for writer_buffer member jplc.");
+	if (grid->rank == 0)
+	{
+		writer_buffer->jplc = (char*)checked_malloc(writer_buffer->jplc_buffer_length * sizeof(char), SRC_LOC);
 	}
-	check_flag(MPI_Gatherv(send_buffer, length, MPI_CHAR, writer_buffer->jplc, recv_count, disp, MPI_CHAR, root, grid->cart_comm),
-			"Error gathering data for jplc.");
+	check_flag(MPI_Gatherv(send_buffer, length, MPI_CHAR, writer_buffer->jplc, recv_count, disp, MPI_CHAR, root, grid->cart_comm), SRC_LOC);
 
 	free(recv_count);
 	free(send_buffer);

@@ -390,12 +390,14 @@ int main(int argc, char* argv[]) {
 	Total_cells_in_computational_domain(grid);
 
 	// Reading all points coordinates.
-	int ret = retrieve_topology_info((char *)"files/configuration_info.txt", &grid, smc, ec);
+	int ret = read_topology_info((char *)"files/configuration_info.txt", &grid, smc, ec);
 
 	if (grid.rank == 0)
 	{
-		printf("[%d] return from retrieve = %d \n", grid.universal_rank, ret);
+		printf("[%d] return from read topology = %d\n", grid.universal_rank, ret);
 	}
+
+	read_init_JPLC(&grid);
 
 #ifdef CVODE
 	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);

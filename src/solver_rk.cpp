@@ -83,7 +83,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	{
 		for (int j = 1; j <= grid.num_ec_axially; j++)
 		{
-			// Currently this call depends on the y coordinate of the current centroid cell,
+			// Currently this call depends on the y coordinate of the given centroid cell,
 			// which only makes sense if the bifurcation exists in the Z plane and extends along the Y axis.
 			// Blimey.
 			ec[i][j].JPLC = agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);

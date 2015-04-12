@@ -436,7 +436,7 @@ void set_file_naming_strings(grid_parms* grid);
 void update_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*,IO_domain_info*);
 int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid);
 
-void jplc_plot_data(grid_parms grid, checkpoint_handle* check);
+//void jplc_plot_data(grid_parms grid, checkpoint_handle* check);
 void Total_cells_in_computational_domain(grid_parms gird);
 
 void Record_timing_data_in_arrays(grid_parms, double, time_stamps, int, double**);
@@ -448,8 +448,8 @@ void average(double* table, int size, double *value);
 void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double *y, double* yp, int total, double TOL, double* thres,
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check);
 
-int retrieve_topology_info(char*, grid_parms*, SMC_cell**, EC_cell**);
-void read_init_JPLC(grid_parms *grid, int branch);
+int read_topology_info(char*, grid_parms*, SMC_cell**, EC_cell**);
+void read_init_JPLC(grid_parms *grid);
 void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int read_counts[2]);
 IO_domain_info* make_io_domains(grid_parms* grid);
 
