@@ -2115,7 +2115,6 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 	// Only the IO nodes read the input files.
 	if (grid->rank == 0)
 	{
-		FILE *fr;
 		char jplc_file_name[64];
 
 		switch(branch)
@@ -2133,7 +2132,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 				; // Do something sensible here otherwise all hell breaks loose...
 		}
 
-		fr = fopen(jplc_file_name, "r+");
+		FILE *fr = fopen(jplc_file_name, "r+");
 		printf("Reading JPLC from %s, FILE is %s...\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
 
 		int count_in = 0;
@@ -2158,20 +2157,15 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		send_jplc_offsets[task] = task * jplc_per_task_count;
 	}
 
-	for(int task = 0; task < grid->tasks; task++)
-	{
-		printf("c: %d, o: %d\n", send_jplc_counts[task], send_jplc_offsets[task]);
-	}
-
 	int recv_jplc_count = jplc_per_task_count;
 	double *recv_jplc = (double *)checked_malloc(recv_jplc_count * sizeof(double), SRC_LOC);
+
+	printf("%d, jplc_per_task_count: %d, recv_jplc_count: %d\n", grid->rank, jplc_per_task_count, recv_jplc_count);
 
 	// Scatter JPLC values to the nodes in this Cartesian grid.
 	check_flag(MPI_Scatterv(send_jplc, send_jplc_counts, send_jplc_offsets, MPI_DOUBLE,
 			recv_jplc, recv_jplc_count, MPI_DOUBLE, 0, grid->cart_comm),
 			SRC_LOC);
-
-	printf("%d, jplc_per_task_count: %d, recv_jplc_count: %d\n", grid->rank, jplc_per_task_count, recv_jplc_count);
 
 	// Assign received JPLC values to the cells.
 	for(int m = 1; m <= grid->num_ec_circumferentially; m++)
