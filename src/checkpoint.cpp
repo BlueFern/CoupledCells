@@ -2135,7 +2135,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 
 		int jplc_in_size = jplc_per_task_count * grid->tasks;
 
-		send_jplc = (double *)checked_malloc(jplc_in_size, SRC_LOC);
+		send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
 		printf("jplc_size: %d, grid->sub_universe_numtasks: %d\n", jplc_in_size, grid->tasks);
 
 		fr = fopen(jplc_file_name, "r+");
@@ -2155,8 +2155,8 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		fclose(fr);
 	}
 
-	send_jplc_offsets = (int *)checked_malloc(grid->tasks, SRC_LOC);
-	send_jplc_counts = (int *)checked_malloc(grid->tasks, SRC_LOC);
+	send_jplc_offsets = (int *)checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
+	send_jplc_counts = (int *)checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
 
 	for(int task = 0; task < grid->tasks; task++)
 	{
@@ -2165,7 +2165,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 	}
 
 	int recv_jplc_count = jplc_per_task_count;
-	double *recv_jplc = (double *)checked_malloc(jplc_per_task_count, SRC_LOC);
+	double *recv_jplc = (double *)checked_malloc(recv_jplc_count * sizeof(double), SRC_LOC);
 
 	// Scatter JPLC values to the nodes in this Cartesian grid.
 	check_flag(MPI_Scatterv(send_jplc, send_jplc_counts, send_jplc_offsets, MPI_DOUBLE,
