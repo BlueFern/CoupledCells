@@ -1477,7 +1477,7 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow, double* 
 int read_config_file(int rank, char* filename, grid_parms* grid) {
 	int err;
 	MPI_File data;
-	MPI_Offset file_size, disp;
+	MPI_Offset file_size;
 	MPI_Status status;
 	int chunk, count;
 	char* buffer;
@@ -1491,7 +1491,6 @@ int read_config_file(int rank, char* filename, grid_parms* grid) {
 
 	p = (int*)checked_malloc(chunk * sizeof(int), SRC_LOC);
 
-	disp = 0;
 	err = MPI_File_read_all(data, buffer, chunk, MPI_CHAR, &status);
 	err = MPI_Get_count(&status, MPI_CHAR, &count);
 
