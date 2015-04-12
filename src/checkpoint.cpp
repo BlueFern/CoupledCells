@@ -2116,7 +2116,6 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 	if (grid->rank == 0)
 	{
 		char jplc_file_name[64];
-
 		switch(branch)
 		{
 			case P:
@@ -2136,8 +2135,10 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		printf("Reading JPLC from %s, FILE is %s...\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
 
 		int count_in = 0;
-		while(fscanf(fr, "%lf", send_jplc[count_in]) == 1)
+		double jplc_val = 0;
+		while(fscanf(fr, "%lf", &jplc_val) == 1)
 		{
+			send_jplc[count_in] = jplc_val;
 			count_in++;
 		}
 		if(feof(fr))
