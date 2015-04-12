@@ -376,7 +376,7 @@ void dump_smc(grid_parms, SMC_cell**, checkpoint_handle*, int, int);
 void dump_ec(grid_parms, EC_cell**, checkpoint_handle*, int, int);
 void dump_smc_async(grid_parms, SMC_cell**, checkpoint_handle*, int);
 void dump_ec_async(grid_parms, EC_cell**, checkpoint_handle*, int);
-void dump_JPLC(grid_parms, EC_cell**, checkpoint_handle*, const char*);
+//void dump_JPLC(grid_parms, EC_cell**, checkpoint_handle*, const char*);
 void write_smc_and_ec_data(checkpoint_handle*, grid_parms*, int, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
 void final_checkpoint(checkpoint_handle*, grid_parms);
 void close_common_checkpoints(checkpoint_handle*);
@@ -449,7 +449,7 @@ void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check);
 
 int read_topology_info(char*, grid_parms*, SMC_cell**, EC_cell**);
-void read_init_JPLC(grid_parms *grid);
+void read_init_JPLC(grid_parms *grid, EC_cell **ECs);
 void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int read_counts[2]);
 IO_domain_info* make_io_domains(grid_parms* grid);
 
@@ -463,7 +463,7 @@ void gather_JPLC_map(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**);
 
 
 void write_process_mesh(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer*, char*);
-void write_agonists_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,char* path);
+void write_JPLC_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,char* path);
 void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer* , SMC_cell**, int);
 void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,int);
 

@@ -9,8 +9,6 @@
 
 #define CHECK(fn) { int errcode; errcode = (fn); if(errcode != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD,1); }
 
-extern EC_cell** ec;
-
 checkpoint_handle* initialise_checkpoint(grid_parms grid) {
 
 	checkpoint_handle *check = (checkpoint_handle*) malloc(sizeof(checkpoint_handle));
@@ -655,7 +653,7 @@ void dump_smc_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* m
 	free(writer_buffer->cpIi);
 }
 
-void write_agonists_map(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec, char* path)
+void write_JPLC_map(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec, char* path)
 {
 	MPI_Status status;
 	MPI_Offset disp;
@@ -1212,6 +1210,7 @@ void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms gr
 	free(disp);
 }
 
+#if 0
 void dump_JPLC(grid_parms grid, EC_cell **ec, checkpoint_handle *check, const char *message) {
 
 	MPI_Status status;
@@ -1231,6 +1230,7 @@ void dump_JPLC(grid_parms grid, EC_cell **ec, checkpoint_handle *check, const ch
 	disp = grid.num_ec_axially * (grid.m - ((grid.rank + 1) / grid.n)) * sizeof(double);
 	CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
 }
+#endif
 
 void dump_coords(grid_parms grid, EC_cell** ec, checkpoint_handle* check, const char* message) {
 
@@ -2094,22 +2094,29 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 	return (0);
 }
 
-void read_init_JPLC(grid_parms *grid)
+void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 {
+	int branch;
+	if (grid->my_domain.internal_info.domain_type == STRSEG)
+	{
+		branch = P;
+	}
+	else if (grid->my_domain.internal_info.domain_type == BIF)
+	{
+		branch = grid->branch_tag;
+	}
+
+	int jplc_per_task_count = grid->num_ec_circumferentially * grid->num_ec_axially;
+
+	int *send_jplc_counts = 0;
+	int *send_jplc_offsets = 0;
+	double *send_jplc = 0;
+
+	// Only the IO nodes read the input files.
 	if (grid->rank == 0)
 	{
 		FILE *fr;
 		char jplc_file_name[64];
-
-		int branch;
-		if (grid->my_domain.internal_info.domain_type == STRSEG)
-		{
-			branch = P;
-		}
-		else if (grid->my_domain.internal_info.domain_type == BIF)
-		{
-			branch = grid->branch_tag;
-		}
 
 		switch(branch)
 		{
@@ -2126,15 +2133,16 @@ void read_init_JPLC(grid_parms *grid)
 				; // Do something sensible here otherwise all hell breaks loose...
 		}
 
-		int jplc_in_size = grid->num_ec_circumferentially * grid->num_ec_axially * grid->tasks;
-		double *jplc_in = (double *)checked_malloc(jplc_in_size, SRC_LOC);
+		int jplc_in_size = jplc_per_task_count * grid->tasks;
+
+		send_jplc = (double *)checked_malloc(jplc_in_size, SRC_LOC);
 		printf("jplc_size: %d, grid->sub_universe_numtasks: %d\n", jplc_in_size, grid->tasks);
 
 		fr = fopen(jplc_file_name, "r+");
 		printf("Reading JPLC from %s, FILE is %s\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
 
 		int count_in = 0;
-		while(fscanf(fr, "%lf", jplc_in[count_in]) == 1)
+		while(fscanf(fr, "%lf", send_jplc[count_in]) == 1)
 		{
 			count_in++;
 		}
@@ -2145,7 +2153,41 @@ void read_init_JPLC(grid_parms *grid)
 			assert(jplc_in_size == count_in);
 		}
 		fclose(fr);
+
+		send_jplc_offsets = (int *)checked_malloc(grid->tasks, SRC_LOC);
+		send_jplc_counts = (int *)checked_malloc(grid->tasks, SRC_LOC);
+		for(int task = 0; task < grid->tasks; task++)
+		{
+			send_jplc_counts[task] = jplc_per_task_count;
+			send_jplc_offsets[task] = task * jplc_per_task_count;
+		}
 	}
+
+	int recv_jplc_count = 0;
+	double *recv_jplc = (double *)checked_malloc(jplc_per_task_count, SRC_LOC);
+
+	// Scatter JPLC values to the nodes in this Cartesian grid.
+	check_flag(MPI_Scatterv(send_jplc, send_jplc_counts, send_jplc_offsets, MPI_DOUBLE,
+			recv_jplc, recv_jplc_count, MPI_DOUBLE, 0, grid->cart_comm),
+			SRC_LOC);
+
+	// Assign received JPLC values to the cells.
+	for(int n = 1; n <= grid->num_ec_axially; n++)
+	{
+		for(int m = 1; m <= grid->num_ec_circumferentially; m++)
+		{
+			ECs[m][n].JPLC = recv_jplc[n * grid->num_ec_axially + n];
+		}
+	}
+
+	if (grid->rank == 0)
+	{
+		free(send_jplc_counts);
+		free(send_jplc_offsets);
+		free(send_jplc);
+	}
+
+	free(recv_jplc);
 }
 
 void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int *read_counts)

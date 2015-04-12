@@ -78,6 +78,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		write_process_mesh(check, &grid, my_IO_domain_info, writer_buffer, path);
 	}
 
+#if 0
 	// Set JPLC values for all ECs from the agonist profile function.
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++)
 	{
@@ -89,6 +90,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			ec[i][j].JPLC = agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);
 		}
 	}
+#endif
 
 	// Dump JPLC map on bifurcation into a vtk file.
 	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
@@ -96,8 +98,10 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	if (grid.rank == 0)
 	{
 		// Initial concentration of JPLC in the EC cells.
-		write_agonists_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
+		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
 	}
+
+	MPI_Abort(MPI_COMM_WORLD, 200);
 
 	// Profiling.
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];

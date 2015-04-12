@@ -397,7 +397,7 @@ int main(int argc, char* argv[]) {
 		printf("[%d] return from read topology = %d\n", grid.universal_rank, ret);
 	}
 
-	read_init_JPLC(&grid);
+	read_init_JPLC(&grid, ec);
 
 #ifdef CVODE
 	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
