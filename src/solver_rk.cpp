@@ -87,7 +87,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
 	}
 
-	printf("%s, grid->cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
+	// printf("%s, grid.cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
 
 	// Reset JPLC to the uniform map.
 	// The input file will have to be read later when the time is right.
