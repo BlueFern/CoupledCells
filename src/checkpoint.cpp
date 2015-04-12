@@ -2153,15 +2153,15 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 			assert(jplc_in_size == count_in);
 		}
 		fclose(fr);
+	}
 
-		send_jplc_offsets = (int *)checked_malloc(grid->tasks, SRC_LOC);
-		send_jplc_counts = (int *)checked_malloc(grid->tasks, SRC_LOC);
+	send_jplc_offsets = (int *)checked_malloc(grid->tasks, SRC_LOC);
+	send_jplc_counts = (int *)checked_malloc(grid->tasks, SRC_LOC);
 
-		for(int task = 0; task < grid->tasks; task++)
-		{
-			send_jplc_counts[task] = jplc_per_task_count;
-			send_jplc_offsets[task] = task * jplc_per_task_count;
-		}
+	for(int task = 0; task < grid->tasks; task++)
+	{
+		send_jplc_counts[task] = jplc_per_task_count;
+		send_jplc_offsets[task] = task * jplc_per_task_count;
 	}
 
 	int recv_jplc_count = jplc_per_task_count;
@@ -2186,11 +2186,11 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 
 	if (grid->rank == 0)
 	{
-		free(send_jplc_counts);
-		free(send_jplc_offsets);
 		free(send_jplc);
 	}
 
+	free(send_jplc_counts);
+	free(send_jplc_offsets);
 	free(recv_jplc);
 }
 
