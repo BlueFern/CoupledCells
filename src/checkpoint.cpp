@@ -2156,6 +2156,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 
 		send_jplc_offsets = (int *)checked_malloc(grid->tasks, SRC_LOC);
 		send_jplc_counts = (int *)checked_malloc(grid->tasks, SRC_LOC);
+
 		for(int task = 0; task < grid->tasks; task++)
 		{
 			send_jplc_counts[task] = jplc_per_task_count;
@@ -2163,7 +2164,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		}
 	}
 
-	int recv_jplc_count = 0;
+	int recv_jplc_count = jplc_per_task_count;
 	double *recv_jplc = (double *)checked_malloc(jplc_per_task_count, SRC_LOC);
 
 	// Scatter JPLC values to the nodes in this Cartesian grid.
@@ -2172,9 +2173,6 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 			SRC_LOC);
 
 	printf("%d, jplc_per_task_count: %d, recv_jplc_count: %d\n", grid->rank, jplc_per_task_count, recv_jplc_count);
-
-	// Sanity check.
-	assert(jplc_per_task_count == recv_jplc_count);
 
 	// Assign received JPLC values to the cells.
 	for(int n = 1; n <= grid->num_ec_axially; n++)
