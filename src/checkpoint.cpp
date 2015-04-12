@@ -2162,9 +2162,10 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 
 	printf("%d, jplc_per_task_count: %d, recv_jplc_count: %d\n", grid->rank, jplc_per_task_count, recv_jplc_count);
 
+	int root = 0;
 	// Scatter JPLC values to the nodes in this Cartesian grid.
 	check_flag(MPI_Scatterv(send_jplc, send_jplc_counts, send_jplc_offsets, MPI_DOUBLE,
-			recv_jplc, recv_jplc_count, MPI_DOUBLE, 0, grid->cart_comm),
+			recv_jplc, recv_jplc_count, MPI_DOUBLE, root, grid->cart_comm),
 			SRC_LOC);
 
 	MPI_Barrier(grid->universe);
