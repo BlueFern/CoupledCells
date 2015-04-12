@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
 	grid.min_jplc = 0.20;
 	grid.max_jplc = 2.5;
 	grid.gradient = 0.288e3;
-	grid.stimulus_onset_time = 99.00;
+	grid.stimulus_onset_time = 10.00;
 
 	/// - Calculate the number of cells per task.
 	grid = set_task_parameters(grid);

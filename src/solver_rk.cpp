@@ -99,6 +99,8 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		}
 	}
 
+	bool jplc_read_in = false;
+
 	// Profiling.
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
 
@@ -113,7 +115,12 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		// Solver decides step magnitude depending on the stiffness of the problem.
 		do
 		{
-			printf("tnow: %f, stimulus_onset_time: %f, tfinal: %f\n", tnow, grid.stimulus_onset_time, tfinal);
+			// Read JPLC in if it is time to do so.
+			if(tnow >= grid.stimulus_onset_time && !jplc_read_in)
+			{
+				read_init_JPLC(&grid, ec);
+				jplc_read_in = true;
+			}
 			// tnow needs to be a pointer to have it updated here?
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
 			if (cflag >= 5)
