@@ -2171,7 +2171,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 			recv_jplc, recv_jplc_count, MPI_DOUBLE, 0, grid->cart_comm),
 			SRC_LOC);
 
-	printf("%d, jplc_per_task_count: %d \n", grid->rank, jplc_per_task_count);
+	printf("%d, jplc_per_task_count: %d, recv_jplc_count: %d\n", grid->rank, jplc_per_task_count, recv_jplc_count);
 
 	// Sanity check.
 	assert(jplc_per_task_count == recv_jplc_count);
