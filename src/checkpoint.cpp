@@ -2164,6 +2164,14 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		send_jplc_offsets[task] = task * jplc_per_task_count;
 	}
 
+	if(grid->rank == 0)
+	{
+		for(int task = 0; task < grid->tasks; task++)
+		{
+			printf("%d, %d\n", send_jplc_counts[task], send_jplc_offsets[task]);
+		}
+	}
+
 	int recv_jplc_count = jplc_per_task_count;
 	double *recv_jplc = (double *)checked_malloc(recv_jplc_count * sizeof(double), SRC_LOC);
 
