@@ -2171,12 +2171,18 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 			recv_jplc, recv_jplc_count, MPI_DOUBLE, 0, grid->cart_comm),
 			SRC_LOC);
 
+	printf("%d, jplc_per_task_count: %d \n", grid->rank, jplc_per_task_count);
+
+	// Sanity check.
+	assert(jplc_per_task_count == recv_jplc_count);
+
 	// Assign received JPLC values to the cells.
 	for(int n = 1; n <= grid->num_ec_axially; n++)
 	{
 		for(int m = 1; m <= grid->num_ec_circumferentially; m++)
 		{
-			ECs[m][n].JPLC = recv_jplc[n * grid->num_ec_axially + n];
+			// Fortran array referencing!
+			ECs[m][n].JPLC = recv_jplc[(n - 1) * grid->num_ec_axially + n - 1];
 		}
 	}
 
