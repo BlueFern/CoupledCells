@@ -1492,7 +1492,7 @@ int read_config_file(int rank, char* filename, grid_parms* grid) {
 	p = (int*)checked_malloc(chunk * sizeof(int), SRC_LOC);
 
 	disp = 0;
-	err = MPI_File_read_at(data, disp, buffer, chunk, MPI_CHAR, &status);
+	err = MPI_File_read_all(data, buffer, chunk, MPI_CHAR, &status);
 	err = MPI_Get_count(&status, MPI_CHAR, &count);
 
 	char *token;
