@@ -2136,7 +2136,7 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		}
 
 		fr = fopen(jplc_file_name, "r+");
-		printf("Reading JPLC from %s, FILE is %s\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
+		printf("Reading JPLC from %s, FILE is %s...\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
 
 		int count_in = 0;
 		while(fscanf(fr, "%lf", send_jplc[count_in]) == 1)
@@ -2146,7 +2146,6 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		if(feof(fr))
 		{
 			// Check the number of values read.
-			// Perhaps need something better than just an assert, but we'll see in the future, if this is an easy place to err.
 			assert(jplc_in_size == count_in);
 		}
 		fclose(fr);
