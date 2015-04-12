@@ -2126,7 +2126,7 @@ void read_init_JPLC(grid_parms *grid)
 
 	int jplc_in_size = grid->num_ec_circumferentially * grid->num_ec_axially * grid->sub_universe_numtasks;
 	double *jplc_in = (double *)checked_malloc(jplc_in_size, SRC_LOC);
-	printf("jplc_size: %d\n", jplc_in_size);
+	printf("jplc_size: %d, grid->sub_universe_numtasks: %d\n", jplc_in_size, grid->sub_universe_numtasks);
 
 	fr = fopen(jplc_file_name, "r+");
 	printf("Reading JPLC from %s, FILE is %s\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
