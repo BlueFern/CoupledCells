@@ -2167,6 +2167,10 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 			recv_jplc, recv_jplc_count, MPI_DOUBLE, 0, grid->cart_comm),
 			SRC_LOC);
 
+	MPI_Barrier(grid->universe);
+
+	printf("After the barrier...\n");
+
 	// Assign received JPLC values to the cells.
 	for(int m = 1; m <= grid->num_ec_circumferentially; m++)
 	{
