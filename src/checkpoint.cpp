@@ -2094,7 +2094,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 	return (0);
 }
 
-void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
+void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG)
@@ -2120,20 +2120,20 @@ void read_init_JPLC(grid_parms *grid, EC_cell **ECs)
 		switch(branch)
 		{
 			case P:
-				sprintf(jplc_file_name, "files/parent_jplc.txt");
+				sprintf(jplc_file_name, "files/parent_atp.txt");
 				break;
 			case L:
-				sprintf(jplc_file_name, "files/left_daughter_jplc.txt");
+				sprintf(jplc_file_name, "files/left_daughter_atp.txt");
 				break;
 			case R:
-				sprintf(jplc_file_name, "files/right_daughter_jplc.txt");
+				sprintf(jplc_file_name, "files/right_daughter_atp.txt");
 				break;
 			default:
 				; // Do something sensible here otherwise all hell breaks loose...
 		}
 
 		FILE *fr = fopen(jplc_file_name, "r+");
-		printf("Reading JPLC from %s, FILE is %s...\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
+		printf("Reading ATP from %s, FILE is %s...\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
 
 		int count_in = 0;
 		double jplc_val = 0;

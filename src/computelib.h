@@ -449,7 +449,7 @@ void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check);
 
 int read_topology_info(char*, grid_parms*, SMC_cell**, EC_cell**);
-void read_init_JPLC(grid_parms *grid, EC_cell **ECs);
+void read_init_ATP(grid_parms *grid, EC_cell **ECs);
 void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int read_counts[2]);
 IO_domain_info* make_io_domains(grid_parms* grid);
 

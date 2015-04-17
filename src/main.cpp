@@ -399,7 +399,7 @@ int main(int argc, char* argv[]) {
 
 	// This is read in here for validation purposes in the output.
 	// the solver will reset JPLC and read later it when the time is right.
-	read_init_JPLC(&grid, ec);
+	read_init_ATP(&grid, ec);
 
 #ifdef CVODE
 	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
