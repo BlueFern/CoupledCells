@@ -1,19 +1,31 @@
-CC=mpixlcxx
-CFLAGS= -g -I./contrib
-OMP=
-LIBS=
-cppfiles = $(shell ls src/*.cpp) $(shell ls contrib/*.cpp)
-hfiles = $(shell ls src/*.h)
-ofiles = $(cppfiles:.cpp=.o)
+SRCS = $(shell ls src/*.cpp)
+OBJS = $(SRCS:.cpp=.o)
 
-all: $(ofiles)
-	$(CC) $(CFLAGS) $(ofiles) $(LIBS) -o coupledCellsModel
+CC = mpixlcxx
+CFLAGS = -g -Wall -Icontrib
+RKS_LIB = librksuite.a
 
-$(ofiles): %.o: %.cpp $(hfiles)
-	$(CC) $(CFLAGS) $(OMP) $(LIBS) -o $@ -c $<
+LIBS =
+EXE = coupledCellsModel
 
+.PHONY: all
+all: $(EXE)
+
+$(EXE): $(OBJS) $(RKS_LIB)
+	$(CC) $(CFLAGS) $(OBJS) $(RKS_LIB) $(LIBS) -o $(EXE)
+
+rksuite: $(RKS_LIB)
+
+$(RKS_LIB): contrib/rksuite.o
+	ar ru $@ $^
+	ranlib $@
+
+%.o: %.cpp
+	$(CC) -c $(CFLAGS) $< -o $@
+
+.PHONY: clean
 clean:
-	rm -f src/*.o
-	rm -f contrib/*.o
-	rm -f coupledCellsModel
-
+	rm -fv $(OBJS)
+	rm -fv contrib/*.o
+	rm -fv $(RKS_LIB)
+	rm -fv $(EXE)
