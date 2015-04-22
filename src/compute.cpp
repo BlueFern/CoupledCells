@@ -9,8 +9,6 @@ time_stamps t_stamp;
  *
  * \param bytes Size of requested memory.
  * \param errmsg Message produced in the event of failed memory allocation.
- *
- * \todo Perhaps the error messages should be printed to stderr?
  */
 void* checked_malloc(size_t bytes, const char* errmsg) {
 	void *pval = malloc(bytes);
