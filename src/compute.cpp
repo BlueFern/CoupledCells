@@ -273,7 +273,6 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 				smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
 				smc[i][j].p[smc_w] = y[k + ((j - 1) * grid.neq_smc) + smc_w];
 				smc[i][j].p[smc_IP3] =y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
-
 			}
 		}
 		break;
