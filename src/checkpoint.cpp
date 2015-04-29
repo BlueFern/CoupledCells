@@ -655,6 +655,8 @@ void dump_smc_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* m
 
 void write_JPLC_map(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec, char* path)
 {
+	printf("[%d] ===>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
+
 	MPI_Status status;
 	MPI_Offset disp;
 	char filename[50];
@@ -805,6 +807,8 @@ void write_JPLC_map(checkpoint_handle* check, grid_parms* grid, IO_domain_info* 
 	free(writer_buffer->jplc);
 
 	MPI_File_close(&check->ec_agonist_file);
+
+	printf("[%d] Leaving %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 }
 
 void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec,
@@ -3224,31 +3228,6 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 
 void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec)
 {
-#if 0
-	// Why (- 1) here?
-	int branch;
-	if (grid->my_domain.internal_info.domain_type == STRSEG)
-	{
-		branch = P - 1;
-	}
-	else if (grid->my_domain.internal_info.domain_type == BIF)
-	{
-		branch = grid->branch_tag - 1;
-	}
-	// While in other places it is this?
-	/*
-	int branch;
-	if (grid->my_domain.internal_info.domain_type == STRSEG)
-	{
-		branch = P;
-	}
-	else if (grid->my_domain.internal_info.domain_type == BIF)
-	{
-		branch = grid->branch_tag;
-	}
-	*/
-#endif
-
 	int num_tuple_components = 1;
 	int num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 	int root = 0;

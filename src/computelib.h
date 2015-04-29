@@ -1,3 +1,6 @@
+#ifndef _COMPUTE_LIB_
+#define _COMPUTE_LIB_
+
 #include <mpi.h>
 #include <iostream>
 #include <fstream>
@@ -482,3 +485,5 @@ void check_flag(int, const char*);
  * \brief Catch failed memory allocation.
  */
 void* checked_malloc(size_t bytes, const char* errmsg);
+
+#endif

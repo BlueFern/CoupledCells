@@ -4,11 +4,18 @@
 #include <fstream>
 #include <cstdlib>
 #include <math.h>
+
 #include "computelib.h"
+#include "writeHDF5.h"
+
 
 extern "C" {
 #include "rksuite.h"
 }
+
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define SRC_LOC __FILE__ ":" TOSTRING(__LINE__)
 
 extern conductance cpl_cef;
 extern SMC_cell** smc;
@@ -81,10 +88,31 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// Dump JPLC map on bifurcation into a vtk file.
 	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
 	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
-	if (grid.rank == 0)
+	if(grid.rank == 0)
 	{
 		// Initial concentration of JPLC in the EC cells.
 		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
+	}
+
+	// Buffer for jplc values for the whole mesh.
+	double *jplc_buffer = 0;
+
+	// Allocate the jplc_buffer.
+	if (grid.universal_rank == 0)
+	{
+		jplc_buffer = (double *)checked_malloc(grid.numtasks * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
+	}
+
+	// Collect all jplc values in a single buffer on root node.
+	gather_JPLC(&grid, jplc_buffer, ec);
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	// Write jplc values to HDF5.
+	if(grid.universal_rank == 0)
+	{
+		write_HDF5_JPLC(&grid, jplc_buffer, path);
+		free(jplc_buffer);
 	}
 
 	// printf("%s, grid.cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
