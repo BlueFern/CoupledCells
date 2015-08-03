@@ -349,9 +349,6 @@ void communication_update_sendbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void determine_source_destination(grid_parms, int*, int*);
 void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, EC_cell**);
-//void communication_update_sendbuf_modified(grid_parms grid, double** sendbuf, SMC_cell** smc, EC_cell** ec);
-//void communication_update_recvbuf_modified(grid_parms, double**, SMC_cell**, EC_cell**);
-//void communication_update_recvbuf_modified2(grid_parms, double**, SMC_cell**, EC_cell**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
 void single_cell(double, double*, grid_parms, SMC_cell**, EC_cell**);
@@ -379,7 +376,6 @@ void dump_smc(grid_parms, SMC_cell**, checkpoint_handle*, int, int);
 void dump_ec(grid_parms, EC_cell**, checkpoint_handle*, int, int);
 void dump_smc_async(grid_parms, SMC_cell**, checkpoint_handle*, int);
 void dump_ec_async(grid_parms, EC_cell**, checkpoint_handle*, int);
-//void dump_JPLC(grid_parms, EC_cell**, checkpoint_handle*, const char*);
 void write_smc_and_ec_data(checkpoint_handle*, grid_parms*, int, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
 void final_checkpoint(checkpoint_handle*, grid_parms);
 void close_common_checkpoints(checkpoint_handle*);
@@ -439,7 +435,6 @@ void set_file_naming_strings(grid_parms* grid);
 void update_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*,IO_domain_info*);
 int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid);
 
-//void jplc_plot_data(grid_parms grid, checkpoint_handle* check);
 void Total_cells_in_computational_domain(grid_parms gird);
 
 void Record_timing_data_in_arrays(grid_parms, double, time_stamps, int, double**);

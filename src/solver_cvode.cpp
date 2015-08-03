@@ -139,16 +139,6 @@ void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int t
 
 		communication_async_send_recv(grid,sendbuf,recvbuf,smc,ec);
 
-		/*if (itteration == 5) {
-		 dump_JPLC(grid, ec, check, "Local agonist before t=100s");
-		 }*/
-		tnow = (double) (t);
-		if ((write_once<=1) && (tnow>=grid.stimulus_onset_time)) {
-			write_once++;
-			if(((grid.rank+1)%grid.n)==0) {
-				dump_JPLC(grid, ec, check, "Local agonist after t=100s");
-			}
-		}
 		/* time stamp this*/
 		t_stamp.write_t1 = MPI_Wtime();
 		if ((itteration % file_write_per_unit_time) == 0) { 
