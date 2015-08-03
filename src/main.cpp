@@ -150,8 +150,6 @@ int main(int argc, char* argv[]) {
 	/// In ghost cells, only the state vector array for each type of cells exists including all other cells.
 	/// The memory is allocated for all the cells except the ghost cells, hence the ranges 1 to grid.num_ec/smc_circumferentially (inclusive).
 
-	// Hmm... But the indexing starts from 0. Something is rotten in the state of Denmark?
-
 	/// SMC domain.
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
 	{

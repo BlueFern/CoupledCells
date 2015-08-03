@@ -1210,28 +1210,6 @@ void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms gr
 	free(disp);
 }
 
-#if 0
-void dump_JPLC(grid_parms grid, EC_cell **ec, checkpoint_handle *check, const char *message) {
-
-	MPI_Status status;
-	MPI_Offset disp;
-	int write_element_count = grid.num_ec_axially;
-	double buffer[write_element_count];
-
-	int k = 0;
-	int i = 1;
-
-
-	for(int j = grid.num_ec_axially; j >= 1; j--)
-	{
-		buffer[k] = ec[i][j].JPLC;
-		k++;
-	}
-	disp = grid.num_ec_axially * (grid.m - ((grid.rank + 1) / grid.n)) * sizeof(double);
-	CHECK(MPI_File_write_at(check->jplc, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
-}
-#endif
-
 void dump_coords(grid_parms grid, EC_cell** ec, checkpoint_handle* check, const char* message) {
 
 	MPI_Status status;
@@ -1616,29 +1594,6 @@ int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms g
 	return (file_offset);
 
 }
-
-#if 0
-void jplc_plot_data(grid_parms grid, checkpoint_handle* check) {
-
-	MPI_Offset disp;
-	MPI_Status status;
-	double z, jplc;
-	FILE *fh;
-	char filename[50];
-	int err = sprintf(filename, "agonist%s.txt", grid.suffix);
-
-	fh = fopen(filename, "w+");
-	for (int i = 0; i < (grid.m * grid.num_ec_axially); i++) {
-		disp = i * sizeof(double);
-		int count = grid.num_ec_axially * grid.m;
-		CHECK(MPI_File_read_at(check->coords, disp, &z, 1, MPI_DOUBLE, &status));
-		CHECK(MPI_File_read_at(check->jplc, disp, &jplc, 1,MPI_DOUBLE, &status));
-		fprintf(fh, "%2.8lf\t%2.8lf\n", z, jplc);
-	}
-	fclose(fh);
-
-}
-#endif
 
 /*********************************************************************************************************/
 checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path,
@@ -3224,31 +3179,6 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 
 void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec)
 {
-#if 0
-	// Why (- 1) here?
-	int branch;
-	if (grid->my_domain.internal_info.domain_type == STRSEG)
-	{
-		branch = P - 1;
-	}
-	else if (grid->my_domain.internal_info.domain_type == BIF)
-	{
-		branch = grid->branch_tag - 1;
-	}
-	// While in other places it is this?
-	/*
-	int branch;
-	if (grid->my_domain.internal_info.domain_type == STRSEG)
-	{
-		branch = P;
-	}
-	else if (grid->my_domain.internal_info.domain_type == BIF)
-	{
-		branch = grid->branch_tag;
-	}
-	*/
-#endif
-
 	int num_tuple_components = 1;
 	int num_tuples = grid->num_ec_axially * grid->num_ec_circumferentially;
 	int root = 0;
@@ -3383,10 +3313,4 @@ void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, 
 	free(buffer);
 	free(disp);
 }
-
-
-
-
-
-
 

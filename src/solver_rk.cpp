@@ -37,7 +37,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	int cflag = 0;
 	int iteration = 0;
 	int write_count = 0;
-	int write_once = 0;
 	int count = 0;
 	initialize_t_stamp(&t_stamp);
 	tend = interval;
@@ -148,18 +147,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		t_stamp.diff_total_comms_cost = t_stamp.total_comms_cost_t2 - t_stamp.total_comms_cost_t1;
 		palce_holder_for_timing_max_min[1][iteration] = t_stamp.diff_total_comms_cost;
 		t_stamp.aggregate_comm += t_stamp.diff_total_comms_cost;
-
-		/*if (iteration == 5) {
-		 dump_JPLC(grid, ec, check, "Local agonist before t=100s\n");
-		 }*/
-
-		if((write_once <= 1) && (tnow >= grid.stimulus_onset_time))
-		{
-			write_once++;
-			if (grid.rank % grid.n == 0) {
-				//dump_JPLC(grid, ec, check, "Local agonist after t=100s");
-			}
-		}
 
 		if((iteration % file_write_per_unit_time) == 0)
 		{
