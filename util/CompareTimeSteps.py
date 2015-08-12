@@ -58,9 +58,10 @@ def keypressCallbackFunction(obj, event):
         
     elif (key == "Left" and time_step > min_time_step):
         time_step -= 1
-        
-    update_mappers(base_files[time_step],test_files[time_step])
-    iren.Render()   
+    
+    if time_step < len(base_files) and time_step < len(test_files):
+        update_mappers(base_files[time_step],test_files[time_step])
+        iren.Render()   
     
 
 def main():

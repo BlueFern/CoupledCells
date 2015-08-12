@@ -368,40 +368,44 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 
 			//Top edge which couples to left/right child branch.
 			if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
+				// TODO: Review values being set. Condense to one statement
+				grid.nbrs[remote][UP] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
+
+
 			} else if ((grid.sub_universe_rank - grid.offset_P) >= (grid.n / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
+				grid.nbrs[remote][UP] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
+
 			}
 		}
 		// For left daughter branch edge.
 		else if ((grid.sub_universe_rank >= grid.offset_L) && (grid.sub_universe_rank < (grid.offset_L + grid.n))) {
 			grid.my_domain.internal_info.boundary_tag = 'I';
+
 			if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2)) {
-				grid.nbrs[remote][DOWN1] = grid.sub_universe_rank - grid.offset_L;
-				grid.nbrs[remote][DOWN2] = grid.sub_universe_rank - grid.offset_L;
+				grid.nbrs[remote][DOWN] = grid.sub_universe_rank - grid.offset_L;
+
 				grid.my_domain.internal_info.half_marker = 1;
+
 			} else if ((grid.sub_universe_rank - grid.offset_L) >= (grid.n / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
-				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
-				grid.flip_array[DOWN1] = 1;
-				grid.flip_array[DOWN2] = 1;
+				grid.nbrs[remote][DOWN] = (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
+
+				grid.flip_array[DOWN] = 1;
+				//grid.flip_array[DOWN2] = 1;
 				grid.my_domain.internal_info.half_marker = 2;
 			}
+
 		}
 		// For Right daughter branch edge.
 		else if ((grid.sub_universe_rank >= grid.offset_R) && (grid.sub_universe_rank < (grid.offset_R + grid.n))) {
 			grid.my_domain.internal_info.boundary_tag = 'I';
 			if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
-				grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
-				grid.flip_array[DOWN1] = 1;
-				grid.flip_array[DOWN2] = 1;
+				grid.nbrs[remote][DOWN] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
+
+				grid.flip_array[DOWN] = 1;
 				grid.my_domain.internal_info.half_marker = 2;
+
 			} else if ((grid.sub_universe_rank - grid.offset_R) >= (grid.n / 2)) {
-				grid.nbrs[remote][DOWN1] = grid.sub_universe_rank - grid.offset_R;
-				grid.nbrs[remote][DOWN2] = grid.sub_universe_rank - grid.offset_R;
+				grid.nbrs[remote][DOWN] = grid.sub_universe_rank - grid.offset_R;
 				grid.my_domain.internal_info.half_marker = 1;
 			}
 		}
@@ -415,14 +419,16 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 		if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n)) {
 			grid.my_domain.internal_info.boundary_tag = 'I';
 			if ((grid.sub_universe_rank - grid.offset_P) < ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
+				grid.nbrs[remote][UP] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
+				grid.nbrs[remote][UP] += grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
+
 			} else if ((grid.sub_universe_rank - grid.offset_P) > ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
+				grid.nbrs[remote][UP] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
+				grid.nbrs[remote][UP] += grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
+
 			} else if ((grid.sub_universe_rank - grid.offset_P) == ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][UP1] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
-				grid.nbrs[remote][UP2] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
+				grid.nbrs[remote][UP] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
+				grid.nbrs[remote][UP] += grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
 			}
 		}
 		//The left daughter artery edge
@@ -430,20 +436,25 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
 			if ((grid.sub_universe_rank - grid.offset_L) < ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.sub_universe_rank - grid.offset_L);
-				grid.nbrs[remote][DOWN2] = (grid.sub_universe_rank - grid.offset_L);
+				grid.nbrs[remote][DOWN] = (grid.sub_universe_rank - grid.offset_L);
+				grid.nbrs[remote][DOWN] += (grid.sub_universe_rank - grid.offset_L);
 				grid.my_domain.internal_info.half_marker = 1;
+
 			} else if ((grid.sub_universe_rank - grid.offset_L) > ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
-				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
-				grid.flip_array[DOWN1] = 1;
-				grid.flip_array[DOWN2] = 1;
+				grid.nbrs[remote][DOWN] = (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
+				grid.nbrs[remote][DOWN] += (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
+				grid.flip_array[DOWN] = 1;
+				//grid.flip_array[DOWN2] = 1;
 				grid.my_domain.internal_info.half_marker = 2;
+
 			} else if ((grid.sub_universe_rank - grid.offset_L) == ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.sub_universe_rank - grid.offset_L);
-				grid.nbrs[remote][DOWN2] = (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
-				grid.flip_array[DOWN1] = 0;
-				grid.flip_array[DOWN2] = 1;
+				grid.nbrs[remote][DOWN] = (grid.sub_universe_rank - grid.offset_L);
+				grid.nbrs[remote][DOWN] += (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
+
+				// TODO: What to do...Does this break things?
+				//grid.flip_array[DOWN1] = 0;
+				//grid.flip_array[DOWN2] = 1;
+				grid.flip_array[DOWN] = 1;
 				grid.my_domain.internal_info.half_marker = 3;
 			}
 		}
@@ -452,20 +463,25 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
 			if ((grid.sub_universe_rank - grid.offset_R) < ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
-				grid.nbrs[remote][DOWN2] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
-				grid.flip_array[DOWN1] = 1;
-				grid.flip_array[DOWN2] = 1;
+				grid.nbrs[remote][DOWN] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
+				grid.nbrs[remote][DOWN] += (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
+				grid.flip_array[DOWN] = 1;
+				//grid.flip_array[DOWN] = 1;
 				grid.my_domain.internal_info.half_marker = 2;
+
 			} else if ((grid.sub_universe_rank - grid.offset_R) > ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = grid.sub_universe_rank - grid.offset_R;
-				grid.nbrs[remote][DOWN2] = grid.sub_universe_rank - grid.offset_R;
+				grid.nbrs[remote][DOWN] = grid.sub_universe_rank - grid.offset_R;
+				grid.nbrs[remote][DOWN] += grid.sub_universe_rank - grid.offset_R;
 				grid.my_domain.internal_info.half_marker = 1;
+
 			} else if ((grid.sub_universe_rank - grid.offset_R) == ((grid.n - 1) / 2)) {
-				grid.nbrs[remote][DOWN1] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
-				grid.nbrs[remote][DOWN2] = grid.sub_universe_rank - grid.offset_R;
-				grid.flip_array[DOWN1] = 1;
-				grid.flip_array[DOWN2] = 0;
+				grid.nbrs[remote][DOWN] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
+				grid.nbrs[remote][DOWN] += grid.sub_universe_rank - grid.offset_R;
+
+				// Here again...
+				//grid.flip_array[DOWN1] = 1;
+				//grid.flip_array[DOWN2] = 0;
+				grid.flip_array[DOWN] = 1;
 				grid.my_domain.internal_info.half_marker = 3;
 			}
 		}
@@ -483,8 +499,8 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 			// if I am a bottom row in my m x n cart grid.
 			if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
 				int stride = grid.rank - ((grid.m - 1) * grid.n);
-				grid.nbrs[remote][DOWN1] = grid.my_domain.parent.domain_start + stride;
-				grid.nbrs[remote][DOWN2] = grid.my_domain.parent.domain_start + stride;
+				grid.nbrs[remote][DOWN] = grid.my_domain.parent.domain_start + stride;
+				//grid.nbrs[remote][DOWN] += grid.my_domain.parent.domain_start + stride;
 			}
 		}
 	}
@@ -498,8 +514,8 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 			if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
 			{
 				int stride = grid.rank;
-				grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start + stride;
-				grid.nbrs[remote][UP2] = grid.my_domain.left_child.domain_start + stride;
+				grid.nbrs[remote][UP] = grid.my_domain.left_child.domain_start + stride;
+				//grid.nbrs[remote][UP] += grid.my_domain.left_child.domain_start + stride;
 			}
 		}
 	}
@@ -513,13 +529,17 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 			if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1)))
 			{
 				int stride = grid.rank;
-				grid.nbrs[remote][UP1] = grid.my_domain.right_child.domain_start + stride;
-				grid.nbrs[remote][UP2] = grid.my_domain.right_child.domain_start + stride;
+				grid.nbrs[remote][UP] = grid.my_domain.right_child.domain_start + stride;
+				//grid.nbrs[remote][UP] += grid.my_domain.right_child.domain_start + stride;
 			}
 		}
 	}
 
 	// Why do we need to return the grid, if it is passed as the argument?
+	//printf("%d %d\n",grid.flip_array[UP],grid.flip_array[DOWN]);
+
+	//printf("%d, looking at: %d %d %d %d\n",grid.sub_universe_rank, grid.nbrs[remote][UP],grid.nbrs[remote][DOWN],grid.nbrs[remote][LEFT],grid.nbrs[remote][RIGHT]);
+
 	return grid;
 }
 
@@ -580,8 +600,8 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid)
 		// If we are in the bottom row in our m x n cart grid.
 		if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
 			int stride = grid.rank - ((grid.m - 1) * grid.n);
-			grid.nbrs[remote][DOWN1] = grid.my_domain.parent.domain_start + stride;
-			grid.nbrs[remote][DOWN2] = grid.my_domain.parent.domain_start + stride;
+			grid.nbrs[remote][DOWN] = grid.my_domain.parent.domain_start + stride;
+			//grid.nbrs[remote][DOWN] += grid.my_domain.parent.domain_start + stride;
 		}
 	}
 
@@ -590,15 +610,15 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid)
 		// If we are in the top row in our m x n cart grid.
 		if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
 			int stride = grid.rank;
-			grid.nbrs[remote][UP1] = grid.my_domain.left_child.domain_start + stride;
-			grid.nbrs[remote][UP2] = grid.my_domain.left_child.domain_start + stride;
+			grid.nbrs[remote][UP] = grid.my_domain.left_child.domain_start + stride;
+			//grid.nbrs[remote][UP] += grid.my_domain.left_child.domain_start + stride;
 		}
 	}
 
 	// Why do we need to return the grid, if it is passed as the argument?
 	return grid;
 }
-
+# if 0
 grid_parms update_global_subdomain_information(grid_parms grid, int num_subdomains, int** domains)
 {
 	grid.global_domain_info.num_subdomains = num_subdomains;
@@ -628,7 +648,7 @@ grid_parms z_coord_exchange(grid_parms grid, double theta)
 	int tag = 101;
 	MPI_Status status;
 	int root;
-	///If  there is no parent to me
+	///If there is no parent to me
 	if (grid.my_domain.parent.domain_index == none) {
 		root = 0;
 		grid = my_z_offset(grid, theta);
@@ -723,7 +743,7 @@ grid_parms z_coord_exchange(grid_parms grid, double theta)
 			+ rem2 * (grid.my_domain.z_offset_end - grid.my_domain.z_offset_start) / ((double) (grid.m));
 	return (grid);
 }
-
+# endif
 /************************************************/
 grid_parms my_z_offset(grid_parms grid, double theta)
 /************************************************/

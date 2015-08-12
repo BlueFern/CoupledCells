@@ -65,23 +65,19 @@ void print_send_buffer(FILE* logptr,grid_parms grid, double** sendbuf){
 
 	fprintf(logptr, "***Up direction***\n");
 	for (int i = 0; i < grid.num_elements_send_up; i++) {
-		fprintf(logptr, "[%d]\t %lf \t %lf\n", i, sendbuf[UP1][i],
-				sendbuf[UP2][i]);
+		fprintf(logptr, "[%d]\t %lf\n", i, sendbuf[UP][i]);
 	}
 	fprintf(logptr, "***Down direction***\n");
 	for (int i = 0; i < grid.num_elements_send_down; i++) {
-		fprintf(logptr, "[%d]\t %lf \t %lf\n", i, sendbuf[DOWN1][i],
-				sendbuf[DOWN2][i]);
+		fprintf(logptr, "[%d]\t %lf\n", i, sendbuf[DOWN][i]);
 	}
 	fprintf(logptr, "***Left direction***\n");
 	for (int i = 0; i < grid.num_elements_send_left; i++) {
-		fprintf(logptr, "[%d]\t %lf \t %lf\n", i, sendbuf[LEFT1][i],
-				sendbuf[LEFT2][i]);
+		fprintf(logptr, "[%d]\t %lf\n", i, sendbuf[LEFT][i]);
 	}
 	fprintf(logptr, "***Right direction***\n");
 	for (int i = 0; i < grid.num_elements_send_right; i++) {
-		fprintf(logptr, "[%d]\t %lf \t %lf\n", i, sendbuf[RIGHT1][i],
-				sendbuf[RIGHT2][i]);
+		fprintf(logptr, "[%d]\t %lf\n", i, sendbuf[RIGHT][i]);
 	}
 }
 
@@ -90,23 +86,19 @@ void print_recv_buffer(FILE* logptr,grid_parms grid, double** recvbuf){
 
 fprintf(logptr, "***Up direction***\n");
 	for (int i = 0; i < grid.num_elements_recv_up; i++) {
-		fprintf(logptr, "[%d]\t %2.8lf \t %2.8lf\n", i, recvbuf[UP1][i],
-				recvbuf[UP2][i]);
+		fprintf(logptr, "[%d]\t %2.8lf\n", i, recvbuf[UP][i]);
 	}
 	fprintf(logptr, "***Down direction***\n");
 	for (int i = 0; i < grid.num_elements_recv_down; i++) {
-		fprintf(logptr, "[%d]\t %2.8lf \t %2.8lf\n", i, recvbuf[DOWN1][i],
-				recvbuf[DOWN2][i]);
+		fprintf(logptr, "[%d]\t %2.8lf\n", i, recvbuf[DOWN][i]);
 	}
 	fprintf(logptr, "***Left direction***\n");
 	for (int i = 0; i < grid.num_elements_recv_left; i++) {
-		fprintf(logptr, "[%d]\t %2.8lf \t %2.8lf\n", i, recvbuf[LEFT1][i],
-				recvbuf[LEFT2][i]);
+		fprintf(logptr, "[%d]\t %2.8lf\n", i, recvbuf[LEFT][i]);
 	}
 	fprintf(logptr, "***Right direction***\n");
 	for (int i = 0; i < grid.num_elements_recv_right; i++) {
-		fprintf(logptr, "[%d]\t %2.8lf \t %2.8lf\n", i, recvbuf[RIGHT1][i],
-				recvbuf[RIGHT2][i]);
+		fprintf(logptr, "[%d]\t %2.8lf\n", i, recvbuf[RIGHT][i]);
 	}
 }
 
