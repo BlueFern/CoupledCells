@@ -128,6 +128,13 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	// Prepare the buffer for exchanging edge cell data with ghost cells.
 	communication_update_sendbuf(grid, sendbuf, smc, ec);
 
+	if (grid.sub_universe_rank == 12){
+			for (int i = 0; i < grid.num_elements_send_up; i++){
+				printf("%f\n", sendbuf[UP][i]);
+			}
+			puts("\n\n");
+		}
+
 	//printf("%d %d %d %d\n", source[UP], source[DOWN], source[LEFT], source[RIGHT]);
 
 	t_stamp.update_sendbuf_t2 = MPI_Wtime();
@@ -617,7 +624,7 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 	for (int i = (int) recvbuf[UP][0]; i <= (int) recvbuf[UP][1]; i++) {
 		int j = 0;
 		smc[i][j].p[smc_Ca] = recvbuf[UP][buf_offset + k + 0];
-		smc[i][j].p[smc_Vm] = buf_offset + k + 1;
+		smc[i][j].p[smc_Vm] = recvbuf[UP][buf_offset + k + 1];
 		smc[i][j].p[smc_IP3] = recvbuf[UP][buf_offset + k + 2];
 		k += grid.num_coupling_species_smc;
 	}
