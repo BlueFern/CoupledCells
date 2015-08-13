@@ -36,6 +36,7 @@ using namespace std;
 #define COMPUTE_ONLY_COLOR 1
 #define COMPUTE_ONLY_KEY 1
 
+/*
 #define UP1 0
 #define UP2 1
 #define DOWN1 2
@@ -44,6 +45,7 @@ using namespace std;
 #define LEFT2 5
 #define RIGHT1 6
 #define RIGHT2 7
+*/
 
 #define UP 0
 #define DOWN 1
@@ -198,7 +200,7 @@ typedef struct {
 			//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 			branch_tag,
 			/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
-			scheme, offset_P, offset_L, offset_R, flip_array[4],
+			scheme, offset_P, offset_L, offset_R, flip_array[2],
 			/// Number of elements being sent and received.
 			num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right, num_elements_recv_up,
 			num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
