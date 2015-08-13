@@ -328,6 +328,7 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 	return (err);
 }
 
+#if 0
 /*******************************************************************************************/
 void map_GhostCells_to_cells(SMC_cell** smc, EC_cell** ec, grid_parms grid)
 /*******************************************************************************************/
@@ -374,6 +375,7 @@ void map_GhostCells_to_cells(SMC_cell** smc, EC_cell** ec, grid_parms grid)
 				"ghost cell in axial direction for smc");
 	}
 }
+#endif
 
 /*******************************************************************************************/
 void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
@@ -459,10 +461,12 @@ void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
 			smc[i][j].C[cpl_IP3] = -cpl_cef.IP3_ht_smc * dummy_smc[cpl_IP3];
 		}
 	}
+
 	i = 0;
 	j = 0;
 	k = 0;
 	l = 0;
+
 	for (i = 1; i <= grid.num_ec_circumferentially; i++) {
 		if ((i - 1) % 5 == 0)
 			k++;
@@ -896,6 +900,8 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 		double t, double* y, double* f) {
 	int err;
 
+	// TODO: Is there a reason this mapping is done before the solver is called?
+	// WARNING: Perhaps this mapping should be done outside of this function.
 	map_solver_output_to_cells(grid, y, smc, ec);
 
 	switch (grid.smc_model)

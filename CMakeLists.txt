@@ -17,6 +17,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	include_directories(/usr/include/malloc/)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
+find_package(HDF5 REQUIRED)
+
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
@@ -40,7 +42,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 
 target_link_libraries(coupledCellsModel ${SUNDIALS_LIBRARIES} ${MPI_LIBRARIES} RKSuite)
-
 
 find_package(Doxygen)
 

@@ -1351,7 +1351,7 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow, double* 
 /// After when the MPI_IO files have been opened, check whether their current instance is first or did they previously existed.
 /// This is checked by retrieving the file size of the file recording line number of the the timefile.
 /// If the file is empty, then it is assumed to be the first instance of simulation (starting from t=0)
-/// otherwise the linenumber indicates where the last complete result was written in the file and is used as
+/// otherwise the line number indicates where the last complete result was written in the file and is used as
 /// an offset to read initial values for the following simulation as well as a displacement for writing/appending new
 /// data into the file.
 
