@@ -219,12 +219,8 @@ int main(int argc, char* argv[]) {
 	sendbuf[DOWN][2] = 1.0; //Start of the 1st segment of EC array in DOWN direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[DOWN][3] = (double) extent_e; ///End of the 1st segment of EC array in DOWN direction (circumferential direction) to be sent to neighbouring processor
 
-
 	extent_s = grid.num_smc_axially;
 	extent_e = grid.num_ec_axially;
-
-	//printf("num_smc_axial: %d\nnum_ec_axial: %d\n\n", extent_s, extent_e);
-
 
 	/// Data to send to the neighbour in LEFT direction.
 	/// Recording the number of elements in Send buffer in Left direction for use in update routine as count of elements.
@@ -248,7 +244,7 @@ int main(int argc, char* argv[]) {
 	sendbuf[RIGHT][3] = (double) extent_e; //END of the 1st segment of EC array in  in RIGHT direction (axial direction) to be sent to neighbouring processor
 
 	/// Call communication to the number of elements to be recieved by neighbours and allocate memory of recvbuf for each direction accordingly.
-	grid = communicate_num_recv_elements_to_nbrs(grid);  //TODO: check this for right size (not halved).
+	grid = communicate_num_recv_elements_to_nbrs(grid);
 	/// memory allocation
 
 	/// data to receive from the neighbour in UP direction
@@ -262,9 +258,6 @@ int main(int argc, char* argv[]) {
 
 	/// data to receive from the neighbour in RIGHT direction
 	recvbuf[RIGHT] = (double*) checked_malloc(grid.num_elements_recv_right * sizeof(double), "recvbuf[RIGHT] dimension 2");
-
-	//printf("%s, %d %d\n", __FUNCTION__, __LINE__, grid.rank);
-	//printf ("%d %d %d %d\n", grid.num_elements_send_up, grid.num_elements_send_down, grid.num_elements_send_left, grid.num_elements_send_right);
 
 	grid.NEQ = grid.neq_smc * (grid.num_smc_axially * grid.num_smc_circumferentially) + grid.neq_ec * (grid.num_ec_axially * grid.num_ec_circumferentially);
 
