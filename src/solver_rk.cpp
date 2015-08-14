@@ -95,7 +95,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	}
 
 	// Start HDF5 Output Prototyping.
-	printf("* %d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank);
+	// printf("* %d\t%d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank, grid.tasks);
 
 	// Buffer for jplc values for the whole mesh.
 	double *jplc_buffer = 0;
@@ -103,7 +103,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// Allocate the jplc_buffer.
 	if (grid.rank == 0)
 	{
-		jplc_buffer = (double *)checked_malloc(grid.numtasks * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
+		jplc_buffer = (double *)checked_malloc(grid.tasks * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
 	}
 
 	// Collect all jplc values in a single buffer on root node.
@@ -118,11 +118,10 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		free(jplc_buffer);
 	}
 
-	MPI_Barrier(MPI_COMM_WORLD);
+	//MPI_Barrier(MPI_COMM_WORLD);
+	//printf("[%d] *** Pulling the plug in %s:%s\n", grid.universal_rank, __FILE__, __FUNCTION__);
+	//MPI_Abort(MPI_COMM_WORLD, 911);
 
-	printf("[%d] *** Pulling the plug in %s:%s\n", grid.universal_rank, __FILE__, __FUNCTION__);
-
-	MPI_Abort(MPI_COMM_WORLD, 200);
 	// End HDf5 Output Prototyping.
 
 	// printf("%s, grid.cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);

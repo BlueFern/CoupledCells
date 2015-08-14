@@ -519,7 +519,7 @@ double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coo
 	return JPLC;
 }
 
-
+#if 0
 EC_cell** ith_ec_z_coordinate(grid_parms grid, EC_cell** ec)
 {
 	double adapted_ec_length = grid.hx_ec;
@@ -537,6 +537,7 @@ EC_cell** ith_ec_z_coordinate(grid_parms grid, EC_cell** ec)
 
 	return (ec);
 }
+#endif
 
 void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_async_comm_calls = 0.0;
@@ -547,6 +548,7 @@ void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_coupling_fluxes = 0.0;
 }
 
+#if 0
 int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
 	MPI_Offset disp;
 	MPI_Status status;
@@ -559,6 +561,9 @@ int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
 			"error reading the line number in recognize_end_of_file_index.");
 	return (index);
 }
+#endif
+
+#if 0
 /********************************************************************************/
 double reinitialize_time(checkpoint_handle* check, int line_index,
 		grid_parms grid) {
@@ -576,6 +581,9 @@ double reinitialize_time(checkpoint_handle* check, int line_index,
 					&status), "error read in the reinit data in reinit_smc.");
 	return (time);
 }
+#endif
+
+#if 0
 /********************************************************************************/
 double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, SMC_cell** smc) {
@@ -637,6 +645,9 @@ double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
 	}
 	return (y);
 }
+#endif
+
+#if 0
 /********************************************************************************/
 double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, SMC_cell** smc) {
@@ -742,6 +753,9 @@ double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 	}
 	return (y);
 }
+#endif
+
+#if 0
 /************************************************************************************/
 double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, EC_cell** ec) {
@@ -800,6 +814,7 @@ double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 	}
 	return (y);
 }
+#endif
 
 /**
  *
@@ -1021,6 +1036,7 @@ void Total_cells_in_computational_domain(grid_parms grid)
 	}
 }
 
+#if 0
 /****************************************************************************/
 void process_time_profiling_data(grid_parms grid, double** time_profiler,
 		int count) {
@@ -1058,6 +1074,8 @@ void process_time_profiling_data(grid_parms grid, double** time_profiler,
 	}
 	MPI_Barrier(grid.universe);
 }
+#endif
+
 /************************************************************/
 void minimum(double* table, int size, double *value, int *index) {
 	///For evaluating minimum of an array.
@@ -1069,6 +1087,7 @@ void minimum(double* table, int size, double *value, int *index) {
 		}
 	}
 }
+
 /************************************************************/
 void maximum(double* table, int size, double *value, int *index) {
 	///For evaluating maximum of an array.

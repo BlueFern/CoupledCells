@@ -61,8 +61,8 @@ void print_domains(FILE* logptr, grid_parms grid, SMC_cell** smc,
 	}*/
 }
 
-void print_send_buffer(FILE* logptr,grid_parms grid, double** sendbuf){
-
+void print_send_buffer(FILE* logptr,grid_parms grid, double** sendbuf)
+{
 	fprintf(logptr, "***Up direction***\n");
 	for (int i = 0; i < grid.num_elements_send_up; i++) {
 		fprintf(logptr, "[%d]\t %lf\n", i, sendbuf[UP][i]);
@@ -82,8 +82,8 @@ void print_send_buffer(FILE* logptr,grid_parms grid, double** sendbuf){
 }
 
 
-void print_recv_buffer(FILE* logptr,grid_parms grid, double** recvbuf){
-
+void print_recv_buffer(FILE* logptr,grid_parms grid, double** recvbuf)
+{
 fprintf(logptr, "***Up direction***\n");
 	for (int i = 0; i < grid.num_elements_recv_up; i++) {
 		fprintf(logptr, "[%d]\t %2.8lf\n", i, recvbuf[UP][i]);
@@ -102,7 +102,8 @@ fprintf(logptr, "***Up direction***\n");
 	}
 }
 
-void print_compare(FILE* logptr, double t, double y[],grid_parms grid, SMC_cell** smc, EC_cell** ec){
+void print_compare(FILE* logptr, double t, double y[], grid_parms grid, SMC_cell** smc, EC_cell** ec)
+{
 	if(grid.rank==0){
 		fprintf(logptr,"*** t = %lf***\n--------------SMC DOMAIN -------------\n",t);
 			int kk, off;
