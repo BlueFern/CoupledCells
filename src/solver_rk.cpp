@@ -87,17 +87,21 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// Dump JPLC map on bifurcation into a vtk file.
 	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
 	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
+
 	if(grid.rank == 0)
 	{
 		// Initial concentration of JPLC in the EC cells.
 		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
 	}
 
+	// Start HDF5 Output Prototyping.
+	printf("* %d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank);
+
 	// Buffer for jplc values for the whole mesh.
 	double *jplc_buffer = 0;
 
 	// Allocate the jplc_buffer.
-	if (grid.universal_rank == 0)
+	if (grid.rank == 0)
 	{
 		jplc_buffer = (double *)checked_malloc(grid.numtasks * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
 	}
@@ -108,11 +112,18 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	// Write jplc values to HDF5.
-	if(grid.universal_rank == 0)
+	if(grid.rank == 0)
 	{
 		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
 	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	printf("[%d] *** Pulling the plug in %s:%s\n", grid.universal_rank, __FILE__, __FUNCTION__);
+
+	MPI_Abort(MPI_COMM_WORLD, 200);
+	// End HDf5 Output Prototyping.
 
 	// printf("%s, grid.cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
 

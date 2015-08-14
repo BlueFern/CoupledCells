@@ -11,7 +11,7 @@
  */
 void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec)
 {
-	printf("[%d] Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
+	//printf("[%d] Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	int root = 0;
 	int local_jplc_buffer_size = grid->num_ec_axially * grid->num_ec_circumferentially;
@@ -53,7 +53,7 @@ void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec)
 	free(recv_count);
 	free(local_jplc_buffer);
 
-	printf("[%d] Leaving %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
+	//printf("[%d] Leaving %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 }
 
 void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
@@ -61,9 +61,15 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 	printf("[%d] >>>>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	char filename[256];
-	int err = sprintf(filename, "%s/jplc.h5", path);
+	int err = sprintf(filename, "%s/jplc_%d.h5", path, grid->branch_tag);
+
+	printf("JPLC file: %s\n", filename);
 
 	hid_t file_id;
+	hid_t space_id;
+	hid_t dset_id;
+
+#if 0
 
 	// Does this number exist somewhere in the grid?
 	int num_branches = (grid->numtasks / (grid->m * grid->n));
@@ -77,13 +83,19 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 	// Create a HDF5 file.
 	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
+	// Create dataspace.
+	space_id = H5Screate_simple(_2D, dims, NULL);
+
+	dset_id = H5Dcreate(file_id, "/jplc", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
 	// Create and write an integer type dataset named "jplc".
-	status = H5LTmake_dataset(file_id,"/jplc", _2D, dims, H5T_NATIVE_DOUBLE, jplc_buffer);
+	//status = H5LTmake_dataset(file_id,"/jplc", _2D, dims, H5T_NATIVE_DOUBLE, jplc_buffer);
 
-	// Close file.
+	status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, jplc_buffer);
+
+	// Close everything.
+	status = H5Dclose(dset_id);
+	status = H5Sclose(space_id);
 	status = H5Fclose(file_id);
-
-	printf("[%d] *** Pulling the plug in %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
-
-	MPI_Abort(MPI_COMM_WORLD, 200);
+#endif
 }

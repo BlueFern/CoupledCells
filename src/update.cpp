@@ -118,12 +118,10 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	// Prepare the buffer for exchanging edge cell data with ghost cells.
 	communication_update_sendbuf(grid, sendbuf, smc, ec);
 
-
 	t_stamp.update_sendbuf_t2 = MPI_Wtime();
 	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2
 			- t_stamp.update_sendbuf_t1;
 	t_stamp.async_comm_calls_t1 = MPI_Wtime();
-
 
 	/// Communication block
 	check_flag(
