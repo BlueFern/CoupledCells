@@ -206,39 +206,50 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 			// HDF5 Start
 			ec_data_buffer *ec_buffer;
+			smc_data_buffer *smc_buffer;
 
-			// TODO: This should be done once and the pointer to the buffer should be stored in the grid.
-			// Allocate buffer.
+			// TODO: Perhaps the buffers should be allocated only once at the start of the simulation?
+			// Allocate the EC and SMC buffers.
 			if(grid.rank == 0)
 			{
 				ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 1);
+				smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 1);
 			}
 			else
 			{
 				ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
+				smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
 			}
 
 			// Collect state variable data on writers.
-			// TODO: Perhaps the matrix of ECs is better stored in the grid?
+			// TODO: Perhaps the ECs matrix is better stored in the grid?
 			gather_EC_data(&grid, ec_buffer, ec);
+			// TODO: Perhaps the SMCs matrix is better stored in the grid?
+			gather_SMC_data(&grid, smc_buffer, smc);
 
 			if(grid.rank == 0)
 			{
 				// Write state variables to HDF5.
 				write_EC_data_HDF5(&grid, ec_buffer, write_count, path);
+				write_SMC_data_HDF5(&grid, smc_buffer, write_count, path);
 			}
 
 			MPI_Barrier(MPI_COMM_WORLD);
 
-			// TODO: Buffer should be freed only once at the end of the simulation.
+			// TODO: Perhaps the buffers should be freed only once at the end of the simulation?
+			// Release the EC and SMC buffers.
 			if(grid.rank == 0)
 			{
-				free_EC_data_buffer(ec_buffer);
+				free_EC_data_buffer(ec_buffer, 1);
+				free_SMC_data_buffer(smc_buffer, 1);
+			}
+			else
+			{
+				free_EC_data_buffer(ec_buffer, 0);
+				free_SMC_data_buffer(smc_buffer, 0);
 			}
 
 			// HDF5 End
-
-
 
 			t_stamp.write_t2 = MPI_Wtime();
 			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;

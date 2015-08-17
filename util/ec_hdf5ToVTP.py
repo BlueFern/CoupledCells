@@ -19,7 +19,8 @@ INPUT_EC_MESH_FILES = ['../vtk/ec_mesh_parent.vtp','../vtk/ec_mesh_left_daughter
 def read_array(h5_file_name, dataset_name):
     fid = h5py.h5f.open(h5_file_name)
     dset = h5py.h5d.open(fid, dataset_name)
-    rdata = numpy.zeros((8, 80), dtype = numpy.float64)
+    shape = dset.shape
+    rdata = numpy.zeros((shape[0], shape[1]), dtype = numpy.float64)
     dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
 
     arr = rdata.ravel()
@@ -51,33 +52,32 @@ def run():
 
         h5_file_parent = H5_FILE_BASE_NAME + str(time_step) + '_b_1.h5'
 
-        ca_array_parent = read_array(h5_file_parent, '/ec_Ca')
-        ca_array_parent.SetName('Ca')
+        ca_array_parent = read_array(h5_file_parent, '/EC_Ca')
+        ca_array_parent.SetName('EC_Ca')
         mesh_parent.GetCellData().AddArray(ca_array_parent)
 
-        ca_cpl_array_parent = read_array(h5_file_parent, '/ec_cpl_Ca')
-        ca_cpl_array_parent.SetName('cpl_Ca')
+        ca_cpl_array_parent = read_array(h5_file_parent, '/EC_Ca_coupling')
+        ca_cpl_array_parent.SetName('EC_Ca_coupling')
         mesh_parent.GetCellData().AddArray(ca_cpl_array_parent)
 
-        ip3_array_parent = read_array(h5_file_parent, '/ec_IP3')
-        ip3_array_parent.SetName('IP3')
+        ip3_array_parent = read_array(h5_file_parent, '/EC_IP3')
+        ip3_array_parent.SetName('EC_IP3')
         mesh_parent.GetCellData().AddArray(ip3_array_parent)
 
-        ip3_cpl_array_parent = read_array(h5_file_parent, '/ec_cpl_IP3')
-        ip3_cpl_array_parent.SetName('cpl_IP3')
+        ip3_cpl_array_parent = read_array(h5_file_parent, '/EC_IP3_coupling')
+        ip3_cpl_array_parent.SetName('EC_IP3_coupling')
         mesh_parent.GetCellData().AddArray(ip3_cpl_array_parent)
 
-        vm_array_parent = read_array(h5_file_parent, '/ec_Vm')
-        vm_array_parent.SetName('Vm')
+        vm_array_parent = read_array(h5_file_parent, '/EC_Vm')
+        vm_array_parent.SetName('EC_Vm')
         mesh_parent.GetCellData().AddArray(vm_array_parent)
 
-        vm_cpl_array_parent = read_array(h5_file_parent, '/ec_cpl_Vm')
-        vm_cpl_array_parent.SetName('cpl_Vm')
+        vm_cpl_array_parent = read_array(h5_file_parent, '/EC_Vm_coupling')
+        vm_cpl_array_parent.SetName('EC_Vm_coupling')
         mesh_parent.GetCellData().AddArray(vm_cpl_array_parent)
 
-
-        sr_array_parent = read_array(h5_file_parent, '/ec_SR')
-        sr_array_parent.SetName('Vm')
+        sr_array_parent = read_array(h5_file_parent, '/EC_SR')
+        sr_array_parent.SetName('EC_SR')
         mesh_parent.GetCellData().AddArray(sr_array_parent)
 
         # LEFT.
@@ -86,33 +86,32 @@ def run():
 
         h5_file_left = H5_FILE_BASE_NAME + str(time_step) + '_b_2.h5'
 
-        ca_array_left = read_array(h5_file_left,'/ec_Ca')
-        ca_array_left.SetName('Ca')
+        ca_array_left = read_array(h5_file_left,'/EC_Ca')
+        ca_array_left.SetName('EC_Ca')
         mesh_left.GetCellData().AddArray(ca_array_left)
 
-        ca_cpl_array_left = read_array(h5_file_left, '/ec_cpl_Ca')
-        ca_cpl_array_left.SetName('cpl_Ca')
+        ca_cpl_array_left = read_array(h5_file_left, '/EC_Ca_coupling')
+        ca_cpl_array_left.SetName('EC_Ca_coupling')
         mesh_left.GetCellData().AddArray(ca_cpl_array_left)
 
-        ip3_array_left = read_array(h5_file_left, '/ec_IP3')
-        ip3_array_left.SetName('IP3')
+        ip3_array_left = read_array(h5_file_left, '/EC_IP3')
+        ip3_array_left.SetName('EC_IP3')
         mesh_left.GetCellData().AddArray(ip3_array_left)
 
-        ip3_cpl_array_left = read_array(h5_file_left, '/ec_cpl_IP3')
-        ip3_cpl_array_left.SetName('cpl_IP3')
+        ip3_cpl_array_left = read_array(h5_file_left, '/EC_IP3_coupling')
+        ip3_cpl_array_left.SetName('EC_IP3_coupling')
         mesh_left.GetCellData().AddArray(ip3_cpl_array_left)
 
-        vm_array_left = read_array(h5_file_left, '/ec_Vm')
-        vm_array_left.SetName('Vm')
+        vm_array_left = read_array(h5_file_left, '/EC_Vm')
+        vm_array_left.SetName('EC_Vm')
         mesh_left.GetCellData().AddArray(vm_array_left)
 
-        vm_cpl_array_left = read_array(h5_file_left, '/ec_cpl_Vm')
-        vm_cpl_array_left.SetName('cpl_Vm')
+        vm_cpl_array_left = read_array(h5_file_left, '/EC_Vm_coupling')
+        vm_cpl_array_left.SetName('EC_Vm_coupling')
         mesh_left.GetCellData().AddArray(vm_cpl_array_left)
 
-
-        sr_array_left = read_array(h5_file_left, '/ec_SR')
-        sr_array_left.SetName('Vm')
+        sr_array_left = read_array(h5_file_left, '/EC_SR')
+        sr_array_left.SetName('EC_SR')
         mesh_left.GetCellData().AddArray(sr_array_left)
 
         # RIGHT.
@@ -121,33 +120,32 @@ def run():
 
         h5_file_right = H5_FILE_BASE_NAME + str(time_step) + '_b_3.h5'
 
-        ca_array_right = read_array(h5_file_right, '/ec_Ca')
-        ca_array_right.SetName('Ca')
+        ca_array_right = read_array(h5_file_right, '/EC_Ca')
+        ca_array_right.SetName('EC_Ca')
         mesh_right.GetCellData().AddArray(ca_array_right)
 
-        ca_cpl_array_right = read_array(h5_file_right, '/ec_cpl_Ca')
-        ca_cpl_array_right.SetName('cpl_Ca')
+        ca_cpl_array_right = read_array(h5_file_right, '/EC_cCa_coupling')
+        ca_cpl_array_right.SetName('EC_Ca_coupling')
         mesh_right.GetCellData().AddArray(ca_cpl_array_right)
 
-        ip3_array_right = read_array(h5_file_right, '/ec_IP3')
-        ip3_array_right.SetName('IP3')
+        ip3_array_right = read_array(h5_file_right, '/EC_IP3')
+        ip3_array_right.SetName('EC_IP3')
         mesh_right.GetCellData().AddArray(ip3_array_right)
 
-        ip3_cpl_array_right = read_array(h5_file_right, '/ec_cpl_IP3')
-        ip3_cpl_array_right.SetName('cpl_IP3')
+        ip3_cpl_array_right = read_array(h5_file_right, '/EC_IP3_coupling')
+        ip3_cpl_array_right.SetName('EC_IP3_coupling')
         mesh_right.GetCellData().AddArray(ip3_cpl_array_right)
 
-        vm_array_right = read_array(h5_file_right, '/ec_Vm')
-        vm_array_right.SetName('Vm')
+        vm_array_right = read_array(h5_file_right, '/EC_Vm')
+        vm_array_right.SetName('EC_Vm')
         mesh_right.GetCellData().AddArray(vm_array_right)
 
-        vm_cpl_array_right = read_array(h5_file_right, '/ec_cpl_Vm')
-        vm_cpl_array_right.SetName('cpl_Vm')
+        vm_cpl_array_right = read_array(h5_file_right, '/EC_Vm_coupling')
+        vm_cpl_array_right.SetName('EC_Vm_coupling')
         mesh_right.GetCellData().AddArray(vm_cpl_array_right)
 
-
-        sr_array_right = read_array(h5_file_right, '/ec_SR')
-        sr_array_right.SetName('Vm')
+        sr_array_right = read_array(h5_file_right, '/EC_SR')
+        sr_array_right.SetName('EC_SR')
         mesh_right.GetCellData().AddArray(sr_array_right)
 
 	# Append parent, left, right.
