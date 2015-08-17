@@ -1,10 +1,6 @@
 #include <assert.h>
 #include "computelib.h"
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-#define SRC_LOC __FILE__ ":" TOSTRING(__LINE__)
-
 #define NUM_CONFIG_ELEMENTS 9
 
 #define CHECK(fn) { int errcode; errcode = (fn); if(errcode != MPI_SUCCESS) MPI_Abort(MPI_COMM_WORLD, 911); }
@@ -2621,7 +2617,8 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 	free(disp);
 }
 
-void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc, int write_count) {
+void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc, int write_count)
+{
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
 		branch = P - 1;
@@ -2937,7 +2934,8 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	free(disp);
 }
 
-void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec, int write_count) {
+void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec, int write_count)
+{
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
 		branch = P - 1;

@@ -1,4 +1,4 @@
-//#include <omp.h>
+
 #include "computelib.h"
 using namespace std;
 time_stamps t_stamp;
@@ -16,7 +16,7 @@ void* checked_malloc(size_t bytes, const char* errmsg) {
 	if (pval == NULL) {
 		fprintf(stdout, "************************ MEMORY ALLOCATION ERROR: %s ************************", errmsg);
 		fprintf(stderr, "************************ MEMORY ALLOCATION ERROR: %s ************************", errmsg);
-		MPI_Abort(MPI_COMM_WORLD, 143);
+		MPI_Abort(MPI_COMM_WORLD, 911);
 	}
 
 	return pval;

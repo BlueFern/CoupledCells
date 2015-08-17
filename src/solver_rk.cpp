@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "computelib.h"
+#include "gather.h"
 #include "writeHDF5.h"
 
 
@@ -202,6 +203,42 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				write_smc_and_ec_data(check, &grid, line_number, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
 				close_time_wise_checkpoints(check);
 			}
+
+			// HDF5 Start
+			ec_data_buffer *ec_buffer;
+
+			// TODO: This should be done once and the pointer to the buffer should be stored in the grid.
+			// Allocate buffer.
+			if(grid.rank == 0)
+			{
+				ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 1);
+			}
+			else
+			{
+				ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
+			}
+
+			// Collect state variable data on writers.
+			// TODO: Perhaps the matrix of ECs is better stored in the grid?
+			gather_EC_data(&grid, ec_buffer, ec);
+
+			if(grid.rank == 0)
+			{
+				// Write state variables to HDF5.
+				write_EC_data_HDF5(&grid, ec_buffer, write_count, path);
+			}
+
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			// TODO: Buffer should be freed only once at the end of the simulation.
+			if(grid.rank == 0)
+			{
+				free_EC_data_buffer(ec_buffer);
+			}
+
+			// HDF5 End
+
+
 
 			t_stamp.write_t2 = MPI_Wtime();
 			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;

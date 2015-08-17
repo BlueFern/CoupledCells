@@ -1,4 +1,8 @@
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define SRC_LOC __FILE__ ":" TOSTRING(__LINE__)
+
 /****** marcos for identifying models ******/
 #define 		KNBGR			0
 #define 		TSK				1
