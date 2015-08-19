@@ -124,7 +124,7 @@ def run():
         ca_array_right.SetName('EC_Ca')
         mesh_right.GetCellData().AddArray(ca_array_right)
 
-        ca_cpl_array_right = read_array(h5_file_right, '/EC_cCa_coupling')
+        ca_cpl_array_right = read_array(h5_file_right, '/EC_Ca_coupling')
         ca_cpl_array_right.SetName('EC_Ca_coupling')
         mesh_right.GetCellData().AddArray(ca_cpl_array_right)
 
@@ -148,23 +148,22 @@ def run():
         sr_array_right.SetName('EC_SR')
         mesh_right.GetCellData().AddArray(sr_array_right)
 
-	# Append parent, left, right.
+        # Append parent, left, right.
         append_filter.AddInput(mesh_parent)
         append_filter.AddInput(mesh_left)
         append_filter.AddInput(mesh_right)
         append_filter.Update()
 
         # Write the result.
-	vtp_file = VTP_FILE_BASE_NAME + str(time_step) + '.vtp'
+        vtp_file = VTP_FILE_BASE_NAME + str(time_step) + '.vtp'
         writer = vtk.vtkXMLPolyDataWriter()
         writer.SetFileName(vtp_file)
         writer.SetInput(append_filter.GetOutput())
         writer.Update()
 
 if __name__ == "__main__":
-    if sys.argc != 2:
+    if len(sys.argv) != 2:
         "The number of time steps to process is to be provided as the only command line argument."
-        return
-
-    run()
+    else:
+        run()
 

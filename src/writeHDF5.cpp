@@ -75,37 +75,37 @@ void write_EC_data_HDF5(grid_parms* grid, ec_data_buffer *ec_buffer, int write_c
 	// printf("[%d] Checkpoint %s:%d\n", grid->universal_rank, __FILE__, __LINE__);
 
 	// Create dataset.
-	ec_Ca_id = H5Dcreate(file_id, "/ec_Ca", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	ec_Ca_id = H5Dcreate(file_id, "/EC_Ca", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	// Write dataset.
 	status = H5Dwrite(ec_Ca_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_Ca);
 
 	// Create dataset.
-	ec_cpl_Ca_id = H5Dcreate(file_id, "/ec_cpl_Ca", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	ec_cpl_Ca_id = H5Dcreate(file_id, "/EC_Ca_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	// Write dataset.
 	status = H5Dwrite(ec_cpl_Ca_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_cpl_Ca);
 
 	// Create dataset.
-	ec_IP3_id = H5Dcreate(file_id, "/ec_IP3", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	ec_IP3_id = H5Dcreate(file_id, "/EC_IP3", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	// Write dataset.
 	status = H5Dwrite(ec_IP3_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_IP3);
 
 	// Create dataset.
-	ec_cpl_IP3_id = H5Dcreate(file_id, "/ec_cpl_IP3", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	ec_cpl_IP3_id = H5Dcreate(file_id, "/EC_IP3_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	// Write dataset.
 	status = H5Dwrite(ec_cpl_IP3_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_cpl_IP3);
 
 	// Create dataset.
-	ec_Vm_id = H5Dcreate(file_id, "/ec_Vm", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	ec_Vm_id = H5Dcreate(file_id, "/EC_Vm", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	// Write dataset.
 	status = H5Dwrite(ec_Vm_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_Vm);
 
 	// Create dataset.
-	ec_cpl_Vm_id = H5Dcreate(file_id, "/ec_cpl_Vm", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	ec_cpl_Vm_id = H5Dcreate(file_id, "/EC_Vm_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	// Write dataset.
 	status = H5Dwrite(ec_cpl_Vm_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_cpl_Vm);
 
 	// Create dataset.
-	ec_SR_id = H5Dcreate(file_id, "/ec_SR", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	ec_SR_id = H5Dcreate(file_id, "/EC_SR", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	// Write dataset.
 	status = H5Dwrite(ec_SR_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_SR);
 
@@ -130,7 +130,7 @@ void write_SMC_data_HDF5(grid_parms* grid, smc_data_buffer *smc_buffer, int writ
 	char filename[256];
 	int err = sprintf(filename, "%s/smc_data_t_%d_b_%d.h5", path, write_count, grid->branch_tag);
 
-	printf("Writing EC data file: %s\n", filename);
+	printf("Writing SMC data file: %s\n", filename);
 
 	hid_t file_id;
 
