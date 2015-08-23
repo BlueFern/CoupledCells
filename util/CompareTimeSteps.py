@@ -22,24 +22,18 @@ max_time_step = 99
 min_time_step = 0
 
 def update_mappers(filename_0, filename_1):
-    ''' Reads in two files and sets global mappers to them.'''
+    """Read in two files and set them as input to the corresponding mappers."""
     
     reader_0.SetFileName(base_files[time_step])
     reader_0.Update()
-    
     output_0 = reader_0.GetOutput()
     output_0.GetCellData().SetActiveScalars(sys.argv[4])
+    mapper_0.SetInput(output_0)
     
-    
-    # Read in file from new time snaps directory.
-    reader_1.SetFileName(test_files[time_step])
-    reader_1.Update() # Needed because of GetScalarRange
-    
+    reader_1.SetFileName(filename_0)
+    reader_1.Update()
     output_1 = reader_1.GetOutput()
     output_1.GetCellData().SetActiveScalars(sys.argv[4])
-    
-    
-    mapper_0.SetInput(output_0)
     mapper_1.SetInput(output_1)
 
 def sortNicely(l): 
@@ -62,17 +56,15 @@ def keypressCallbackFunction(obj, event):
     if time_step < len(base_files) and time_step < len(test_files):
         update_mappers(base_files[time_step],test_files[time_step])
         iren.Render()   
-    
 
 def main():
     global base_files, test_files
     
     if len(sys.argv) != 5:  
-        sys.exit("Requires base data dir, new time-steps dir, ec/smc, attribute")
-       
+        sys.exit("Expected arguments: <base data dir> <new time-steps dir> <ec|smc> <attribute name>")
     
     render_window = vtk.vtkRenderWindow()
-    render_window.SetSize(1000,500)
+    render_window.SetSize(1000, 500)
     
     iren.SetRenderWindow(render_window)
     iren.AddObserver('KeyPressEvent', keypressCallbackFunction)
@@ -91,20 +83,17 @@ def main():
     
     renderer_0.SetViewport(0,0,0.5,1)
     renderer_1.SetViewport(0.5,0,1,1)
-
     
     update_mappers(base_files[time_step], test_files[time_step])
     
     # Create the mappers that correspond to the objects of the vtk files
-    # into graphics elements
+    # into graphics elements.
     
     mapper_0.ScalarVisibilityOn()
     mapper_0.SetScalarModeToUseCellData
-
    
     mapper_1.ScalarVisibilityOn()
     mapper_1.SetScalarModeToUseCellData()
-
 
     # Create the Actors
     actor_0, actor_1 = vtkActor(), vtkActor()
@@ -118,10 +107,5 @@ def main():
     render_window.Render()
     iren.Start()
 
-        
-        
-    
-        
 if __name__ == "__main__":
     main()
-    
