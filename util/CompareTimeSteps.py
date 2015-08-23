@@ -10,6 +10,9 @@ import os
 import re
 import glob
 
+BASE_PATTERN = "_Data_t_*.vtu"
+TEST_PATTERN = "_data_t_*.vtp"
+
 iren = vtk.vtkRenderWindowInteractor()
 mapper_0 = vtkDataSetMapper()
 mapper_1 = vtkDataSetMapper()
@@ -24,16 +27,22 @@ min_time_step = 0
 def update_mappers(filename_0, filename_1):
     """Read in two files and set them as input to the corresponding mappers."""
     
-    reader_0.SetFileName(base_files[time_step])
+    # TODO: Error checking:
+    # Test attribute name is valid and report if necessary.
+
+    active_attrib = sys.argv[4]
+    print active_attrib
+    
+    reader_0.SetFileName(filename_0)
     reader_0.Update()
     output_0 = reader_0.GetOutput()
-    output_0.GetCellData().SetActiveScalars(sys.argv[4])
+    output_0.GetCellData().SetActiveScalars(active_attrib)
     mapper_0.SetInput(output_0)
     
-    reader_1.SetFileName(filename_0)
+    reader_1.SetFileName(filename_1)
     reader_1.Update()
     output_1 = reader_1.GetOutput()
-    output_1.GetCellData().SetActiveScalars(sys.argv[4])
+    output_1.GetCellData().SetActiveScalars(active_attrib)
     mapper_1.SetInput(output_1)
 
 def sortNicely(l): 
@@ -55,10 +64,12 @@ def keypressCallbackFunction(obj, event):
     
     if time_step < len(base_files) and time_step < len(test_files):
         update_mappers(base_files[time_step],test_files[time_step])
-        iren.Render()   
+        iren.Render()
 
 def main():
     global base_files, test_files
+    
+    print os.getcwd()
     
     if len(sys.argv) != 5:  
         sys.exit("Expected arguments: <base data dir> <new time-steps dir> <ec|smc> <attribute name>")
@@ -69,9 +80,14 @@ def main():
     iren.SetRenderWindow(render_window)
     iren.AddObserver('KeyPressEvent', keypressCallbackFunction)
 
-    # Create list of files from both directories.
-    base_files = glob.glob(sys.argv[1] + '/' + sys.argv[3] + "_Data_t_*.vtu")
-    test_files = glob.glob(sys.argv[2] + '/' + sys.argv[3] + "_Data_t_*.vtu")
+    # TODO; Use standard python API for joining paths. 
+
+   # Create list of files from both directories.
+    base_files = glob.glob(sys.argv[1] + '/' + sys.argv[3] + BASE_PATTERN)
+    test_files = glob.glob(sys.argv[2] + '/' + sys.argv[3] + TEST_PATTERN)
+   
+    print base_files
+    print test_files
 
     # Sorts the files numerically given the time-step.
     sortNicely(base_files)
@@ -84,7 +100,7 @@ def main():
     renderer_0.SetViewport(0,0,0.5,1)
     renderer_1.SetViewport(0.5,0,1,1)
     
-    update_mappers(base_files[time_step], test_files[time_step])
+    update_mappers(base_files[0], test_files[0])
     
     # Create the mappers that correspond to the objects of the vtk files
     # into graphics elements.
