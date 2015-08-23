@@ -924,7 +924,7 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 
 	header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
 	header_offset[3] = sprintf(header, "CELL_DATA %d\nFIELD ec_Data %d\n"
-			"ec_Ca %d %d float\n", grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches,
+			"EC_Ca %d %d float\n", grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches,
 			grid->neq_ec + grid->num_coupling_species_ec, 1, grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
 
 	count = header_offset[3];
@@ -953,7 +953,7 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 	/*************** Writing Field 2 : ec SR data ***************/
 
 	header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
-	header_offset[4] = sprintf(header, "ec_SR %d %d float\n", 1, grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
+	header_offset[4] = sprintf(header, "EC_SR %d %d float\n", 1, grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
 
 	count = header_offset[4];
 	disp =
@@ -983,7 +983,7 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 
 	/*************** Writing Field 3 : ec Vm data ***************/
 	header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
-	header_offset[5] = sprintf(header, "ec_Vm %d %d float\n", 1, grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
+	header_offset[5] = sprintf(header, "EC_Vm %d %d float\n", 1, grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
 
 	count = header_offset[5];
 	disp = (header_offset[0] + point_offset + header_offset[1] + cell_offset + header_offset[2] + celltype_offset + header_offset[3] + ecDataOffset[0]
@@ -1011,7 +1011,7 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 	/*************** Writing Field 4 : ec I data ***************/
 
 	header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
-	header_offset[6] = sprintf(header, "ec_IP3 %d %d float\n", 1, grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
+	header_offset[6] = sprintf(header, "EC_IP3 %d %d float\n", 1, grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
 
 	count = header_offset[6];
 	disp = (header_offset[0] + point_offset + header_offset[1] + cell_offset + header_offset[2] + celltype_offset + header_offset[3] + ecDataOffset[0]
@@ -1038,7 +1038,7 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 	free(writer_buffer->Ij);
 	/*************** Writing Field 5 : ec Ca coupling data ***************/
 	header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
-	header_offset[7] = sprintf(header, "ec_Ca_coupling %d %d float\n", 1,
+	header_offset[7] = sprintf(header, "EC_Ca_coupling %d %d float\n", 1,
 			grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
 
 	count = header_offset[7];
@@ -1066,7 +1066,7 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 	free(writer_buffer->cpCj);
 	/*************** Writing Field 6 : ec Vm coupling data ***************/
 	header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
-	header_offset[8] = sprintf(header, "ec_Vm_coupling %d %d float\n", 1,
+	header_offset[8] = sprintf(header, "EC_Vm_coupling %d %d float\n", 1,
 			grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
 
 	count = header_offset[8];
@@ -1095,7 +1095,7 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 	free(writer_buffer->cpVj);
 	/*************** Writing Field 7 : ec IP3 coupling data ***************/
 	header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
-	header_offset[9] = sprintf(header, "ec_IP3_coupling %d %d float\n", 1,
+	header_offset[9] = sprintf(header, "EC_IP3_coupling %d %d float\n", 1,
 			grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_CELLS] * branches);
 
 	count = header_offset[9];

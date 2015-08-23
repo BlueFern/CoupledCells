@@ -11,39 +11,45 @@ import re
 import glob
 
 BASE_PATTERN = "_Data_t_*.vtu"
-TEST_PATTERN = "_data_t_*.vtp"
+TEST_PATTERN = "_data_t_*.vtu"
 
 iren = vtk.vtkRenderWindowInteractor()
-mapper_0 = vtkDataSetMapper()
-mapper_1 = vtkDataSetMapper()
-reader_0 = vtkXMLUnstructuredGridReader()
-reader_1 = vtkXMLUnstructuredGridReader()
+mapper_0 = vtk.vtkDataSetMapper()
+mapper_1 = vtk.vtkDataSetMapper()
+reader_0 = vtk.vtkXMLUnstructuredGridReader()
+reader_1 = vtk.vtkXMLUnstructuredGridReader()
+cornerAnnotation_0 = vtk.vtkCornerAnnotation()
+cornerAnnotation_1 = vtk.vtkCornerAnnotation()
+
 base_files = []
 test_files = []
+
 time_step = 0
+
+# TODO: Remove hard-coded max_time_step value.
 max_time_step = 99
 min_time_step = 0
 
 def update_mappers(filename_0, filename_1):
     """Read in two files and set them as input to the corresponding mappers."""
-    
+
     # TODO: Error checking:
     # Test attribute name is valid and report if necessary.
-
     active_attrib = sys.argv[4]
-    print active_attrib
-    
+  
     reader_0.SetFileName(filename_0)
     reader_0.Update()
     output_0 = reader_0.GetOutput()
     output_0.GetCellData().SetActiveScalars(active_attrib)
     mapper_0.SetInput(output_0)
+    cornerAnnotation_0.SetText(0, filename_0)
     
     reader_1.SetFileName(filename_1)
     reader_1.Update()
     output_1 = reader_1.GetOutput()
     output_1.GetCellData().SetActiveScalars(active_attrib)
     mapper_1.SetInput(output_1)
+    cornerAnnotation_1.SetText(0, filename_1)
 
 def sortNicely(l): 
     """ Sort the given list in the way that humans expect."""
@@ -52,10 +58,10 @@ def sortNicely(l):
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
     l.sort( key=alphanum_key )
 
-
 def keypressCallbackFunction(obj, event):
     global time_step
     key= iren.GetKeySym()
+    
     if (key == "Right" and time_step < max_time_step):
         time_step += 1
         
@@ -65,6 +71,8 @@ def keypressCallbackFunction(obj, event):
     if time_step < len(base_files) and time_step < len(test_files):
         update_mappers(base_files[time_step],test_files[time_step])
         iren.Render()
+    else:
+        print "Time step", time_step, "out of range."
 
 def main():
     global base_files, test_files
@@ -88,8 +96,10 @@ def main():
    
     print base_files
     print test_files
+    
+    # TODO: Set max_time_step value to the lengt of the shorter list.
 
-    # Sorts the files numerically given the time-step.
+    # Sort the files numerically given the time-step.
     sortNicely(base_files)
     sortNicely(test_files)
     
@@ -114,11 +124,14 @@ def main():
     # Create the Actors
     actor_0, actor_1 = vtkActor(), vtkActor()
 
-    actor_0.SetMapper(mapper_0)   
+    actor_0.SetMapper(mapper_0)
     actor_1.SetMapper(mapper_1)
     
     renderer_0.AddActor(actor_0)
     renderer_1.AddActor(actor_1)
+
+    renderer_0.AddViewProp(cornerAnnotation_0) 
+    renderer_1.AddViewProp(cornerAnnotation_1)
  
     render_window.Render()
     iren.Start()
