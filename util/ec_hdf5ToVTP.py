@@ -44,7 +44,7 @@ def run():
         INPUT_EC_MESHES += [reader.GetOutput()]
 
     for time_step in range(int(sys.argv[1])):
-        append_filter = vtk.vtkAppendPolyData()
+        append_filter = vtk.vtkAppendFilter()
 
         # PARENT.
         mesh_parent = vtk.vtkPolyData()
@@ -155,15 +155,15 @@ def run():
         append_filter.Update()
 
         # Write the result.
-        vtp_file = VTP_FILE_BASE_NAME + str(time_step) + '.vtp'
-        writer = vtk.vtkXMLPolyDataWriter()
+        vtp_file = VTP_FILE_BASE_NAME + str(time_step) + '.vtu'
+        writer = vtk.vtkXMLUnstructuredGridWriter()
         writer.SetFileName(vtp_file)
         writer.SetInput(append_filter.GetOutput())
         writer.Update()
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        "The number of time steps to process is to be provided as the only command line argument."
+        print "Expected arguments: the number of time steps to process."
     else:
         run()
 
