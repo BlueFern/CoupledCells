@@ -1,3 +1,6 @@
+#ifndef _COMPUTE_LIB_
+#define _COMPUTE_LIB_
+
 #include <mpi.h>
 #include <iostream>
 #include <fstream>
@@ -340,7 +343,7 @@ typedef struct {
 int couplingParms(int CASE, conductance* cpl_cef);
 void Initialize_koeingsberger_smc(grid_parms, double*, SMC_cell**);
 void Initialize_koeingsberger_ec(grid_parms, double*, EC_cell**);
-void map_GhostCells_to_cells(SMC_cell**, EC_cell**, grid_parms);
+// void map_GhostCells_to_cells(SMC_cell**, EC_cell**, grid_parms);
 int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
 grid_parms communicate_num_recv_elements_to_nbrs(grid_parms);
@@ -479,3 +482,5 @@ void check_flag(int, const char*);
  * \brief Catch failed memory allocation.
  */
 void* checked_malloc(size_t bytes, const char* errmsg);
+
+#endif

@@ -4,11 +4,19 @@
 #include <fstream>
 #include <cstdlib>
 #include <math.h>
+
 #include "computelib.h"
+#include "gather.h"
+#include "writeHDF5.h"
+
 
 extern "C" {
 #include "rksuite.h"
 }
+
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define SRC_LOC __FILE__ ":" TOSTRING(__LINE__)
 
 extern conductance cpl_cef;
 extern SMC_cell** smc;
@@ -80,11 +88,42 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// Dump JPLC map on bifurcation into a vtk file.
 	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
 	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
-	if (grid.rank == 0)
+
+	if(grid.rank == 0)
 	{
 		// Initial concentration of JPLC in the EC cells.
 		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
 	}
+
+	// Start HDF5 Output Prototyping.
+	// printf("* %d\t%d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank, grid.tasks);
+
+	// Buffer for jplc values for the whole mesh.
+	double *jplc_buffer = 0;
+
+	// Allocate the jplc_buffer.
+	if (grid.rank == 0)
+	{
+		jplc_buffer = (double *)checked_malloc(grid.tasks * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
+	}
+
+	// Collect all jplc values in a single buffer on root node.
+	gather_JPLC(&grid, jplc_buffer, ec);
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	// Write jplc values to HDF5.
+	if(grid.rank == 0)
+	{
+		write_HDF5_JPLC(&grid, jplc_buffer, path);
+		free(jplc_buffer);
+	}
+
+	//MPI_Barrier(MPI_COMM_WORLD);
+	//printf("[%d] *** Pulling the plug in %s:%s\n", grid.universal_rank, __FILE__, __FUNCTION__);
+	//MPI_Abort(MPI_COMM_WORLD, 911);
+
+	// End HDf5 Output Prototyping.
 
 	// printf("%s, grid.cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
 
@@ -164,6 +203,53 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				write_smc_and_ec_data(check, &grid, line_number, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
 				close_time_wise_checkpoints(check);
 			}
+
+			// HDF5 Start
+			ec_data_buffer *ec_buffer;
+			smc_data_buffer *smc_buffer;
+
+			// TODO: Perhaps the buffers should be allocated only once at the start of the simulation?
+			// Allocate the EC and SMC buffers.
+			if(grid.rank == 0)
+			{
+				ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 1);
+				smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 1);
+			}
+			else
+			{
+				ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
+				smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
+			}
+
+			// Collect state variable data on writers.
+			// TODO: Perhaps the ECs matrix is better stored in the grid?
+			gather_EC_data(&grid, ec_buffer, ec);
+			// TODO: Perhaps the SMCs matrix is better stored in the grid?
+			gather_SMC_data(&grid, smc_buffer, smc);
+
+			if(grid.rank == 0)
+			{
+				// Write state variables to HDF5.
+				write_EC_data_HDF5(&grid, ec_buffer, write_count, path);
+				write_SMC_data_HDF5(&grid, smc_buffer, write_count, path);
+			}
+
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			// TODO: Perhaps the buffers should be freed only once at the end of the simulation?
+			// Release the EC and SMC buffers.
+			if(grid.rank == 0)
+			{
+				free_EC_data_buffer(ec_buffer, 1);
+				free_SMC_data_buffer(smc_buffer, 1);
+			}
+			else
+			{
+				free_EC_data_buffer(ec_buffer, 0);
+				free_SMC_data_buffer(smc_buffer, 0);
+			}
+
+			// HDF5 End
 
 			t_stamp.write_t2 = MPI_Wtime();
 			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;

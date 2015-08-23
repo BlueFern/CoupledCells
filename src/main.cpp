@@ -314,10 +314,12 @@ int main(int argc, char* argv[]) {
 	// Reading all points coordinates.
 	int ret = read_topology_info((char *)"files/configuration_info.txt", &grid, smc, ec);
 
+#if 0
 	if (grid.rank == 0)
 	{
 		printf("[%d] return from read topology = %d\n", grid.universal_rank, ret);
 	}
+#endif
 
 	// This is read in here for validation purposes in the output.
 	// the solver will reset JPLC and read later it when the time is right.

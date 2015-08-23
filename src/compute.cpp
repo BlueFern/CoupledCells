@@ -1,4 +1,4 @@
-//#include <omp.h>
+
 #include "computelib.h"
 using namespace std;
 time_stamps t_stamp;
@@ -9,8 +9,6 @@ time_stamps t_stamp;
  *
  * \param bytes Size of requested memory.
  * \param errmsg Message produced in the event of failed memory allocation.
- *
- * \todo Perhaps the error messages should be printed to stderr?
  */
 void* checked_malloc(size_t bytes, const char* errmsg) {
 	void *pval = malloc(bytes);
@@ -18,7 +16,7 @@ void* checked_malloc(size_t bytes, const char* errmsg) {
 	if (pval == NULL) {
 		fprintf(stdout, "************************ MEMORY ALLOCATION ERROR: %s ************************", errmsg);
 		fprintf(stderr, "************************ MEMORY ALLOCATION ERROR: %s ************************", errmsg);
-		MPI_Abort(MPI_COMM_WORLD, 143);
+		MPI_Abort(MPI_COMM_WORLD, 911);
 	}
 
 	return pval;
@@ -275,7 +273,6 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 				smc[i][j].p[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
 				smc[i][j].p[smc_w] = y[k + ((j - 1) * grid.neq_smc) + smc_w];
 				smc[i][j].p[smc_IP3] =y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
-
 			}
 		}
 		break;
@@ -331,6 +328,7 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 	return (err);
 }
 
+#if 0
 /*******************************************************************************************/
 void map_GhostCells_to_cells(SMC_cell** smc, EC_cell** ec, grid_parms grid)
 /*******************************************************************************************/
@@ -377,6 +375,7 @@ void map_GhostCells_to_cells(SMC_cell** smc, EC_cell** ec, grid_parms grid)
 				"ghost cell in axial direction for smc");
 	}
 }
+#endif
 
 /*******************************************************************************************/
 void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
@@ -462,10 +461,12 @@ void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
 			smc[i][j].C[cpl_IP3] = -cpl_cef.IP3_ht_smc * dummy_smc[cpl_IP3];
 		}
 	}
+
 	i = 0;
 	j = 0;
 	k = 0;
 	l = 0;
+
 	for (i = 1; i <= grid.num_ec_circumferentially; i++) {
 		if ((i - 1) % 5 == 0)
 			k++;
@@ -518,7 +519,7 @@ double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coo
 	return JPLC;
 }
 
-
+#if 0
 EC_cell** ith_ec_z_coordinate(grid_parms grid, EC_cell** ec)
 {
 	double adapted_ec_length = grid.hx_ec;
@@ -536,6 +537,7 @@ EC_cell** ith_ec_z_coordinate(grid_parms grid, EC_cell** ec)
 
 	return (ec);
 }
+#endif
 
 void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_async_comm_calls = 0.0;
@@ -546,6 +548,7 @@ void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_coupling_fluxes = 0.0;
 }
 
+#if 0
 int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
 	MPI_Offset disp;
 	MPI_Status status;
@@ -558,6 +561,9 @@ int recognize_end_of_file_index(checkpoint_handle* check, grid_parms grid) {
 			"error reading the line number in recognize_end_of_file_index.");
 	return (index);
 }
+#endif
+
+#if 0
 /********************************************************************************/
 double reinitialize_time(checkpoint_handle* check, int line_index,
 		grid_parms grid) {
@@ -575,6 +581,9 @@ double reinitialize_time(checkpoint_handle* check, int line_index,
 					&status), "error read in the reinit data in reinit_smc.");
 	return (time);
 }
+#endif
+
+#if 0
 /********************************************************************************/
 double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, SMC_cell** smc) {
@@ -636,6 +645,9 @@ double* reinitialize_koenigsberger_smc(checkpoint_handle* check, int line_index,
 	}
 	return (y);
 }
+#endif
+
+#if 0
 /********************************************************************************/
 double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, SMC_cell** smc) {
@@ -741,6 +753,9 @@ double* reinitialize_tsoukias_smc(checkpoint_handle* check, int line_index,
 	}
 	return (y);
 }
+#endif
+
+#if 0
 /************************************************************************************/
 double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 		grid_parms grid, double* y, EC_cell** ec) {
@@ -799,6 +814,7 @@ double* reinitialize_koenigsberger_ec(checkpoint_handle* check, int line_index,
 	}
 	return (y);
 }
+#endif
 
 /**
  *
@@ -899,6 +915,8 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 		double t, double* y, double* f) {
 	int err;
 
+	// TODO: Is there a reason this mapping is done before the solver is called?
+	// WARNING: Perhaps this mapping should be done outside of this function.
 	map_solver_output_to_cells(grid, y, smc, ec);
 
 	switch (grid.smc_model)
@@ -1018,6 +1036,7 @@ void Total_cells_in_computational_domain(grid_parms grid)
 	}
 }
 
+#if 0
 /****************************************************************************/
 void process_time_profiling_data(grid_parms grid, double** time_profiler,
 		int count) {
@@ -1055,6 +1074,8 @@ void process_time_profiling_data(grid_parms grid, double** time_profiler,
 	}
 	MPI_Barrier(grid.universe);
 }
+#endif
+
 /************************************************************/
 void minimum(double* table, int size, double *value, int *index) {
 	///For evaluating minimum of an array.
@@ -1066,6 +1087,7 @@ void minimum(double* table, int size, double *value, int *index) {
 		}
 	}
 }
+
 /************************************************************/
 void maximum(double* table, int size, double *value, int *index) {
 	///For evaluating maximum of an array.

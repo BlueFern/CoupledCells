@@ -23,6 +23,9 @@ include_directories(${MPI_CXX_INCLUDE_PATH})
 find_package(SUNDIALS REQUIRED)
 include_directories(${SUNDIALS_INCLUDES})
 
+find_package(HDF5 REQUIRED)
+include_directories(${HDF5_INCLUDE_DIR})
+
 file(GLOB HDRs src/*.h)
 file(GLOB SRCs src/*.cpp)
 
@@ -39,8 +42,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 # set_target_properties(coupledCellsModel PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 
-target_link_libraries(coupledCellsModel ${SUNDIALS_LIBRARIES} ${MPI_LIBRARIES} RKSuite)
-
+target_link_libraries(coupledCellsModel ${SUNDIALS_LIBRARIES} ${HDF5_LIBRARIES} ${MPI_LIBRARIES} RKSuite)
 
 find_package(Doxygen)
 

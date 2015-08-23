@@ -25,9 +25,7 @@ base_files = []
 test_files = []
 
 time_step = 0
-
-# TODO: Remove hard-coded max_time_step value.
-max_time_step = 99
+max_time_step = 0
 min_time_step = 0
 
 def update_mappers(filename_0, filename_1):
@@ -75,7 +73,9 @@ def keypressCallbackFunction(obj, event):
         print "Time step", time_step, "out of range."
 
 def main():
-    global base_files, test_files
+    global base_files, test_files, max_time_step
+    
+    print os.getcwd()
     
     print os.getcwd()
     
@@ -88,16 +88,17 @@ def main():
     iren.SetRenderWindow(render_window)
     iren.AddObserver('KeyPressEvent', keypressCallbackFunction)
 
-    # TODO; Use standard python API for joining paths. 
+    # TODO; Use standard python API for joining paths.
 
-   # Create list of files from both directories.
+    # Create list of files from both directories.
     base_files = glob.glob(sys.argv[1] + '/' + sys.argv[3] + BASE_PATTERN)
     test_files = glob.glob(sys.argv[2] + '/' + sys.argv[3] + TEST_PATTERN)
    
-    print base_files
-    print test_files
+    print "Found", len(base_files), "files matching the", sys.argv[1] + '/' + sys.argv[3] + BASE_PATTERN, "pattern."
+    print "Found", len(test_files), "files matching the", sys.argv[2] + '/' + sys.argv[3] + TEST_PATTERN, "pattern."
     
-    # TODO: Set max_time_step value to the lengt of the shorter list.
+    max_time_step = min(len(base_files), len(test_files)) - 1
+    print "Setting MAX time step to", max_time_step, "."
 
     # Sort the files numerically given the time-step.
     sortNicely(base_files)
@@ -112,16 +113,12 @@ def main():
     
     update_mappers(base_files[0], test_files[0])
     
-    # Create the mappers that correspond to the objects of the vtk files
-    # into graphics elements.
-    
     mapper_0.ScalarVisibilityOn()
-    mapper_0.SetScalarModeToUseCellData
+    mapper_0.SetScalarModeToUseCellData()
    
     mapper_1.ScalarVisibilityOn()
     mapper_1.SetScalarModeToUseCellData()
 
-    # Create the Actors
     actor_0, actor_1 = vtkActor(), vtkActor()
 
     actor_0.SetMapper(mapper_0)

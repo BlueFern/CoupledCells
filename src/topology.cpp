@@ -16,6 +16,9 @@
  */
 grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, int** domains)
 {
+
+	// TODO: There seems to be a lot of redundant code and splitting here.
+
 	int **subdomain_extents;
 
 	// TODO: Define a function for allocating 2D arrays.
@@ -213,6 +216,8 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 		free(subdomain_extents[i]);
 	}
 	free(subdomain_extents);
+
+	// TODO: The sub_universe communicator is the same as the split_comm?
 
 	// Do the domain splitting to make subdomains.
 	check_flag(MPI_Comm_split(grid.universe, grid.my_domain_color, grid.my_domain_key, &grid.sub_universe), "Communicator split failed at subdomain level.");
@@ -744,6 +749,8 @@ grid_parms z_coord_exchange(grid_parms grid, double theta)
 	return (grid);
 }
 # endif
+
+#if 0
 /************************************************/
 grid_parms my_z_offset(grid_parms grid, double theta)
 /************************************************/
@@ -759,6 +766,7 @@ grid_parms my_z_offset(grid_parms grid, double theta)
 	}
 	return (grid);
 }
+#endif
 
 /**
  * Allocate MPI tasks/cores to IO.
@@ -810,5 +818,4 @@ IO_domain_info* make_io_domains(grid_parms* grid)
 
 	return (my_IO_domain_info);
 }
-
 

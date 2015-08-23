@@ -1,2 +1,2 @@
-add_library(RKSuite rksuite.h rksuite.cpp)
+add_library(RKSuite SHARED rksuite.h rksuite.cpp)
 
