@@ -9,6 +9,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <math.h>
+#include "macros.h"
 #include "computelib.h"
 
 /**
@@ -220,11 +221,11 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 	// TODO: The sub_universe communicator is the same as the split_comm?
 
 	// Do the domain splitting to make subdomains.
-	check_flag(MPI_Comm_split(grid.universe, grid.my_domain_color, grid.my_domain_key, &grid.sub_universe), "Communicator split failed at subdomain level.");
+	CHECK_MPI_ERROR(MPI_Comm_split(grid.universe, grid.my_domain_color, grid.my_domain_key, &grid.sub_universe));
 
 	// Reveal information of myself and size of grid.sub_universe.
-	check_flag(MPI_Comm_rank(grid.sub_universe, &grid.sub_universe_rank), "Retrieving subdomain rank.");
-	check_flag(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks), "Retrieving subdomain size.");
+	CHECK_MPI_ERROR(MPI_Comm_rank(grid.sub_universe, &grid.sub_universe_rank));
+	CHECK_MPI_ERROR(MPI_Comm_size(grid.sub_universe, &grid.sub_universe_numtasks));
 
 	return grid;
 }
@@ -238,7 +239,7 @@ grid_parms set_task_parameters(grid_parms grid)
 	// This is the minimum required to simulate a relevant coupled topology.
 
 	{
-		// TODO: These should be set in the struct definition, ast all these members are constants.
+		// TODO: These should be set in the struct definition, as all these members are constants.
 		grid.num_smc_fundblk_circumferentially = 1;
 		grid.num_ec_fundblk_circumferentially = 5;
 		grid.num_smc_fundblk_axially = 13;
@@ -293,7 +294,7 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 	grid.color = int(grid.sub_universe_rank / (grid.m * grid.n));
 	grid.key = 0;
 
-	check_flag(MPI_Comm_split(grid.sub_universe, grid.color, grid.key, &grid.split_comm), "Comm-split failed.");
+	CHECK_MPI_ERROR(MPI_Comm_split(grid.sub_universe, grid.color, grid.key, &grid.split_comm));
 
 	/// Parameters for cart create call.
 	int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
@@ -304,15 +305,15 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 	periodic[1] = 1;
 	reorder = 0;
 
-	check_flag(MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder, &grid.cart_comm), "Failed at cart create.");
-	check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), "Failed at cart comm rank.");
-	check_flag(MPI_Comm_size(grid.cart_comm, &grid.tasks), "Failed at cart comm tasks.");
+	CHECK_MPI_ERROR(MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder, &grid.cart_comm));
+	CHECK_MPI_ERROR(MPI_Comm_rank(grid.cart_comm, &grid.rank));
+	CHECK_MPI_ERROR(MPI_Comm_size(grid.cart_comm, &grid.tasks));
 
 	// The inverse mapping, rank-to-coordinates translation.
-	check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords), "Failed at cart coords.");
+	CHECK_MPI_ERROR(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords));
 
-	check_flag(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]), "Failed at cart shift up down.");
-	check_flag(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]), "Failed at cart left right.");
+	CHECK_MPI_ERROR(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]));
+	CHECK_MPI_ERROR(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]));
 
 	// Identifying remote neighbours.
 	grid.offset_P = 0;
@@ -557,7 +558,7 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid)
 	grid.color = 0;
 	grid.key = 0;
 
-	check_flag(MPI_Comm_split(grid.sub_universe, grid.color, grid.key, &grid.split_comm), "Comm-split failed");
+	CHECK_MPI_ERROR(MPI_Comm_split(grid.sub_universe, grid.color, grid.key, &grid.split_comm));
 
 	// Global variables that are to be read by each processor.
 	int ndims, nbrs[4], dims[2], periodic[2], reorder = 0, coords[2];
@@ -568,17 +569,17 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid)
 	periodic[1] = 1;
 	reorder = 0;
 
-	check_flag(MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder, &grid.cart_comm), "Failed at cart create.");
-	check_flag(MPI_Comm_rank(grid.cart_comm, &grid.rank), "Failed at comm rank.");
-	check_flag(MPI_Comm_size(grid.cart_comm, &grid.tasks), "Failed at cart comm tasks.");
+	CHECK_MPI_ERROR(MPI_Cart_create(grid.split_comm, ndims, dims, periodic, reorder, &grid.cart_comm));
+	CHECK_MPI_ERROR(MPI_Comm_rank(grid.cart_comm, &grid.rank));
+	CHECK_MPI_ERROR(MPI_Comm_size(grid.cart_comm, &grid.tasks));
 
 	// The inverse mapping, rank-to-coordinates translation.
-	check_flag(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords), "Failed at cart coords.");
+	CHECK_MPI_ERROR(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords));
 
 	// TODO: Is this right? Source is assigned to the up side, destination is the down side?
-	check_flag(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]), "Failed at cart shift up down.");
+	CHECK_MPI_ERROR(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]));
 	// TODO: Is this right? Our Cartesian grids are periodic, hence we don't need to know our LEFT and RIGHT neighbours.
-	check_flag(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]), "Failed at cart shift left right.");
+	CHECK_MPI_ERROR(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]));
 
 	// Label the ranks on the subdomain edges of a STRAIGHT SEGMENT as top (T) or bottom boundary (B) or none (N).
 	for (int i = 0; i < (grid.m * grid.n); i++)
@@ -790,16 +791,14 @@ IO_domain_info* make_io_domains(grid_parms* grid)
 	MPI_Comm tmp_comm;
 
 	// Splitting MPI_COMM_WORLD into communicators aggregating writers (i.e. all bridge processes located near IO nodes) and non-writers.
-	check_flag(MPI_Comm_split(grid->universe, my_IO_domain_info->my_IO_domain_color, my_IO_domain_info->my_IO_domain_key, &tmp_comm),
-			"Error constructing IO_comm for writer nodes.");
+	CHECK_MPI_ERROR(MPI_Comm_split(grid->universe, my_IO_domain_info->my_IO_domain_color, my_IO_domain_info->my_IO_domain_key, &tmp_comm));
 
 	if(my_IO_domain_info->my_IO_domain_color == WRITER_COLOR)
 	{
-		check_flag(MPI_Comm_dup(tmp_comm, &my_IO_domain_info->writer_comm),
-				"Comm_duplicate failed while processing the name change of the IO-handlers communicator.");
+		CHECK_MPI_ERROR(MPI_Comm_dup(tmp_comm, &my_IO_domain_info->writer_comm));
 	}
 
-	check_flag(MPI_Comm_free(&tmp_comm), "Error freeing MPI_Comm tmp_comm created from MPI_COMM_WORLD.");
+	CHECK_MPI_ERROR(MPI_Comm_free(&tmp_comm));
 
 	// Reveal and record rank information of writer domain members.
 	for (int i = 0; i < grid->numtasks; i++)
@@ -810,10 +809,8 @@ IO_domain_info* make_io_domains(grid_parms* grid)
 
 	if (my_IO_domain_info->my_IO_domain_color == WRITER_COLOR)
 	{
-		check_flag(MPI_Comm_rank(my_IO_domain_info->writer_comm, &my_IO_domain_info->writer_rank),
-				"Error revealing the rank of writer-domain members.");
-		check_flag(MPI_Comm_size(my_IO_domain_info->writer_comm, &my_IO_domain_info->writer_tasks),
-				"Error revealing the size of writer-domain members.");
+		CHECK_MPI_ERROR(MPI_Comm_rank(my_IO_domain_info->writer_comm, &my_IO_domain_info->writer_rank));
+		CHECK_MPI_ERROR(MPI_Comm_size(my_IO_domain_info->writer_comm, &my_IO_domain_info->writer_tasks));
 	}
 
 	return (my_IO_domain_info);

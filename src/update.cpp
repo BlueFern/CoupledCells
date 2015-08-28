@@ -3,17 +3,11 @@
 #include <fstream>
 #include <cstdlib>
 #include <math.h>
+#include "macros.h"
 #include "computelib.h"
 
 using namespace std;
 extern time_stamps t_stamp;
-
-void check_flag(int err, const char* errmsg) {
-	if (err != MPI_SUCCESS) {
-		fprintf(stdout, "%s", errmsg);
-		MPI_Abort(MPI_COMM_WORLD, 200);
-	}
-}
 
 void determine_source_destination(grid_parms grid, int source[], int dest[]) {
 	if (grid.nbrs[local][UP] >= 0) {
@@ -62,30 +56,14 @@ grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
 
 	tag = 0;
 	int tmp[4];
-	check_flag(
-			MPI_Irecv(&grid.num_elements_recv_up, 1, MPI_INT, source[UP], tag,
-					grid.cart_comm, &reqs[4 + UP]), "Irecv");
-	check_flag(
-			MPI_Isend(&grid.num_elements_send_up, 1, MPI_INT, dest[UP], tag,
-					grid.cart_comm, &reqs[UP]), "Isend");
-	check_flag(
-			MPI_Irecv(&grid.num_elements_recv_down, 1, MPI_INT, source[DOWN],
-					tag, grid.cart_comm, &reqs[4 + DOWN]), "Irecv");
-	check_flag(
-			MPI_Isend(&grid.num_elements_send_down, 1, MPI_INT, dest[DOWN], tag,
-					grid.cart_comm, &reqs[DOWN]), "Isend");
-	check_flag(
-			MPI_Irecv(&grid.num_elements_recv_left, 1, MPI_INT, source[LEFT],
-					tag, grid.cart_comm, &reqs[4 + LEFT]), "Irecv");
-	check_flag(
-			MPI_Isend(&grid.num_elements_send_left, 1, MPI_INT, dest[LEFT], tag,
-					grid.cart_comm, &reqs[LEFT]), "Isend");
-	check_flag(
-			MPI_Irecv(&grid.num_elements_recv_right, 1, MPI_INT, source[RIGHT],
-					tag, grid.cart_comm, &reqs[4 + RIGHT]), "Irecv");
-	check_flag(
-			MPI_Isend(&grid.num_elements_send_right, 1, MPI_INT, dest[RIGHT],
-					tag, grid.cart_comm, &reqs[RIGHT]), "Isend");
+	CHECK_MPI_ERROR(MPI_Irecv(&grid.num_elements_recv_up, 1, MPI_INT, source[UP], tag, grid.cart_comm, &reqs[4 + UP]));
+	CHECK_MPI_ERROR(MPI_Isend(&grid.num_elements_send_up, 1, MPI_INT, dest[UP], tag, grid.cart_comm, &reqs[UP]));
+	CHECK_MPI_ERROR(MPI_Irecv(&grid.num_elements_recv_down, 1, MPI_INT, source[DOWN], tag, grid.cart_comm, &reqs[4 + DOWN]));
+	CHECK_MPI_ERROR(MPI_Isend(&grid.num_elements_send_down, 1, MPI_INT, dest[DOWN], tag, grid.cart_comm, &reqs[DOWN]));
+	CHECK_MPI_ERROR(MPI_Irecv(&grid.num_elements_recv_left, 1, MPI_INT, source[LEFT], tag, grid.cart_comm, &reqs[4 + LEFT]));
+	CHECK_MPI_ERROR(MPI_Isend(&grid.num_elements_send_left, 1, MPI_INT, dest[LEFT], tag, grid.cart_comm, &reqs[LEFT]));
+	CHECK_MPI_ERROR(MPI_Irecv(&grid.num_elements_recv_right, 1, MPI_INT, source[RIGHT], tag, grid.cart_comm, &reqs[4 + RIGHT]));
+	CHECK_MPI_ERROR(MPI_Isend(&grid.num_elements_send_right, 1, MPI_INT, dest[RIGHT], tag, grid.cart_comm, &reqs[RIGHT]));
 
 	MPI_Waitall(8, reqs, stats);
 
@@ -124,45 +102,21 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	t_stamp.async_comm_calls_t1 = MPI_Wtime();
 
 	/// Communication block
-	check_flag(
-			MPI_Irecv(&recvbuf[UP][0], grid.num_elements_recv_up, MPI_DOUBLE,
-					source[UP], tag_1, grid.cart_comm, &reqs[4 + UP]),
-			"Receive message operation for UP");
+	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[UP][0], grid.num_elements_recv_up, MPI_DOUBLE, source[UP], tag_1, grid.cart_comm, &reqs[4 + UP]));
 
-	check_flag(
-			MPI_Irecv(&recvbuf[DOWN][0], grid.num_elements_recv_down,
-					MPI_DOUBLE, source[DOWN], tag_1, grid.cart_comm,
-					&reqs[4 + DOWN]), "Receive message operation for DOWN");
+	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[DOWN][0], grid.num_elements_recv_down, MPI_DOUBLE, source[DOWN], tag_1, grid.cart_comm, &reqs[4 + DOWN]));
 
-	check_flag(
-			MPI_Irecv(&recvbuf[LEFT][0], grid.num_elements_recv_left,
-					MPI_DOUBLE, source[LEFT], tag_1, grid.cart_comm,
-					&reqs[4 + LEFT]), "Receive message operation for LEFT");
+	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[LEFT][0], grid.num_elements_recv_left, MPI_DOUBLE, source[LEFT], tag_1, grid.cart_comm, &reqs[4 + LEFT]));
 
-	check_flag(
-			MPI_Irecv(&recvbuf[RIGHT][0], grid.num_elements_recv_right,
-					MPI_DOUBLE, source[RIGHT], tag_1, grid.cart_comm,
-					&reqs[4 + RIGHT]), "Receive message operation for RIGHT");
+	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[RIGHT][0], grid.num_elements_recv_right, MPI_DOUBLE, source[RIGHT], tag_1, grid.cart_comm, &reqs[4 + RIGHT]));
 
-	check_flag(
-			MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE,
-					dest[UP], tag_1, grid.cart_comm, &reqs[UP]),
-			"Send message operation for UP");
+	CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, dest[UP], tag_1, grid.cart_comm, &reqs[UP]));
 
-	check_flag(
-			MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE,
-					dest[DOWN], tag_1, grid.cart_comm, &reqs[DOWN]),
-			"Send message operation for DOWN");
+	CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, dest[DOWN], tag_1, grid.cart_comm, &reqs[DOWN]));
 
-	check_flag(
-			MPI_Isend(sendbuf[LEFT], grid.num_elements_send_left, MPI_DOUBLE,
-					dest[LEFT], tag_1, grid.cart_comm, &reqs[LEFT]),
-			"Send message operation for LEFT");
+	CHECK_MPI_ERROR(MPI_Isend(sendbuf[LEFT], grid.num_elements_send_left, MPI_DOUBLE, dest[LEFT], tag_1, grid.cart_comm, &reqs[LEFT]));
 
-	check_flag(
-			MPI_Isend(sendbuf[RIGHT], grid.num_elements_send_right, MPI_DOUBLE,
-					dest[RIGHT], tag_1, grid.cart_comm, &reqs[RIGHT]),
-			"Send message operation for RIGHT");
+	CHECK_MPI_ERROR(MPI_Isend(sendbuf[RIGHT], grid.num_elements_send_right, MPI_DOUBLE, dest[RIGHT], tag_1, grid.cart_comm, &reqs[RIGHT]));
 
 
 	t_stamp.async_comm_calls_t2 = MPI_Wtime();
@@ -189,30 +143,21 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 			remote_dest[i] = grid.nbrs[remote][i];
 		}
 
-		check_flag(
-				MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE,
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE,
 						remote_source[UP], tag_remote_1, grid.sub_universe,
-						&remote_req[2 + UP]),
-				"Receive message operation for remote UP");
+						&remote_req[2 + UP]));
 
-
-		check_flag(
-				MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down,
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down,
 						MPI_DOUBLE, remote_source[DOWN], tag_remote_1,
-						grid.sub_universe, &remote_req[2 + DOWN]),
-				"Receive message operation for remote DOWN");
+						grid.sub_universe, &remote_req[2 + DOWN]));
 
-		check_flag(
-				MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE,
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE,
 						remote_dest[UP], tag_remote_1, grid.sub_universe,
-						&remote_req[UP]),
-				"Send message operation for remote UP");
+						&remote_req[UP]));
 
-		check_flag(
-				MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down,
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down,
 						MPI_DOUBLE, remote_dest[DOWN], tag_remote_1,
-						grid.sub_universe, &remote_req[DOWN]),
-				"Send message operation for remote DOWN");
+						grid.sub_universe, &remote_req[DOWN]));
 
 
 		t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
@@ -236,30 +181,21 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 			remote_dest[i] = grid.nbrs[remote][i];
 		}
 
-		check_flag(
-				MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE,
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE,
 						remote_source[UP], tag_remote_1, grid.universe,
-						&remote_req[2 + UP]),
-				"Receive message operation for remote UP");
+						&remote_req[2 + UP]));
 
-		check_flag(
-				MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down,
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down,
 						MPI_DOUBLE, remote_source[DOWN], tag_remote_1,
-						grid.universe, &remote_req[2 + DOWN]),
-				"Receive message operation for remote DOWN");
+						grid.universe, &remote_req[2 + DOWN]));
 
-		check_flag(
-				MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE,
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE,
 						remote_dest[UP], tag_remote_1, grid.universe,
-						&remote_req[UP]),
-				"Send message operation for remote UP");
+						&remote_req[UP]));
 
-		check_flag(
-				MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down,
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down,
 						MPI_DOUBLE, remote_dest[DOWN], tag_remote_1,
-						grid.universe, &remote_req[DOWN]),
-				"Send message operation for remote DOWN");
-
+						grid.universe, &remote_req[DOWN]));
 
 		t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
 		MPI_Waitall(4, remote_req, remote_status);

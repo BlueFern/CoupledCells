@@ -78,7 +78,7 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 			send_buffer[p] = ec[j + 1][i + 1].q[ec_Ca];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_Ca, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_Ca, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* ec_cpl_Ca field data *************/
 	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
@@ -88,7 +88,7 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 			send_buffer[p] = ec[j + 1][i + 1].B[cpl_Ca];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_cpl_Ca, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_cpl_Ca, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* ec_IP3 field data *************/
 	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
@@ -98,7 +98,7 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 			send_buffer[p] = ec[j + 1][i + 1].q[ec_IP3];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_IP3, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_IP3, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* ec_cpl_IP3 field data *************/
 	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
@@ -108,7 +108,7 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 			send_buffer[p] = ec[j + 1][i + 1].B[cpl_IP3];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_cpl_IP3, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_cpl_IP3, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* ec_SR field data *************/
 	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
@@ -118,7 +118,7 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 			send_buffer[p] = ec[j + 1][i + 1].q[ec_SR];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_SR, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_SR, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* ec_Vm field data *************/
 	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
@@ -128,7 +128,7 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 			send_buffer[p] = ec[j + 1][i + 1].q[ec_Vm];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_Vm, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_Vm, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* ec_cpl_Vm field data *************/
 	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
@@ -138,7 +138,7 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 			send_buffer[p] = ec[j + 1][i + 1].B[cpl_Vm];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_cpl_Vm, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_cpl_Vm, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	free(disp);
 	free(recv_count);
@@ -229,7 +229,7 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 			send_buffer[p] = smc[j + 1][i + 1].p[smc_Ca];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_Ca, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_Ca, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* smc_cpl_Ca field data *************/
 	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
@@ -239,7 +239,7 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 			send_buffer[p] = smc[j + 1][i + 1].B[cpl_Ca];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_cpl_Ca, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_cpl_Ca, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* smc_IP3 field data *************/
 	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
@@ -249,7 +249,7 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 			send_buffer[p] = smc[j + 1][i + 1].p[smc_IP3];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_IP3, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_IP3, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* smc_cpl_IP3 field data *************/
 	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
@@ -259,7 +259,7 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 			send_buffer[p] = smc[j + 1][i + 1].B[cpl_IP3];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_cpl_IP3, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_cpl_IP3, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* smc_Vm field data *************/
 	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
@@ -269,7 +269,7 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 			send_buffer[p] = smc[j + 1][i + 1].p[smc_Vm];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_Vm, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_Vm, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* smc_cpl_Vm field data *************/
 	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
@@ -279,7 +279,7 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 			send_buffer[p] = smc[j + 1][i + 1].B[cpl_Vm];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_cpl_Vm, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_cpl_Vm, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* smc_SR field data *************/
 	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
@@ -289,7 +289,7 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 			send_buffer[p] = smc[j + 1][i + 1].p[smc_SR];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_SR, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_SR, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	/************* smc_w field data *************/
 	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
@@ -299,7 +299,7 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 			send_buffer[p] = smc[j + 1][i + 1].p[smc_w];
 		}
 	}
-	check_flag(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_W, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_W, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 }
 
 /*
@@ -342,7 +342,7 @@ void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec)
 	}
 
 	// Gather all local jplc buffers into the output jplc buffer.
-	check_flag(MPI_Gatherv(local_jplc_buffer, local_jplc_buffer_size, MPI_DOUBLE, jplc_buffer, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm), SRC_LOC);
+	CHECK_MPI_ERROR(MPI_Gatherv(local_jplc_buffer, local_jplc_buffer_size, MPI_DOUBLE, jplc_buffer, recv_count, disp, MPI_DOUBLE, grid->rank / grid->tasks, grid->split_comm));
 
 	free(disp);
 	free(recv_count);

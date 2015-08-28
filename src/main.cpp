@@ -36,8 +36,8 @@ int main(int argc, char* argv[]) {
 	grid.universe = MPI_COMM_WORLD;
 
 	/// - Reveal information of myself and size of MPI_COMM_WORLD
-	check_flag(MPI_Comm_rank(grid.universe, &grid.universal_rank), "error Comm_rank");
-	check_flag(MPI_Comm_size(grid.universe, &grid.numtasks), "error Comm_size");
+	CHECK_MPI_ERROR(MPI_Comm_rank(grid.universe, &grid.universal_rank));
+	CHECK_MPI_ERROR(MPI_Comm_size(grid.universe, &grid.numtasks));
 
 	char filename[50];
 	int error;
