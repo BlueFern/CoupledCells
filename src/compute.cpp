@@ -1016,9 +1016,7 @@ void Total_cells_in_computational_domain(grid_parms grid)
 	sendarray[0] = grid.num_ec_axially * grid.num_ec_circumferentially;
 	sendarray[1] = grid.num_smc_axially * grid.num_smc_circumferentially;
 
-	check_flag(
-			MPI_Gather(sendarray, sendcount, MPI_INT, recvarray, recvcount,
-					MPI_INT, root, grid.universe), "error MPI_Gather");
+	CHECK_MPI_ERROR(MPI_Gather(sendarray, sendcount, MPI_INT, recvarray, recvcount, MPI_INT, root, grid.universe));
 
 	if(grid.universal_rank == 0)
 	{

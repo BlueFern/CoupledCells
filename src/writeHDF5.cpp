@@ -193,7 +193,7 @@ void write_SMC_data_HDF5(grid_parms* grid, smc_data_buffer *smc_buffer, int writ
 	status = H5Dwrite(smc_SR_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_SR);
 
 	// Create dataset.
-	smc_SR_id = H5Dcreate(file_id, "/SMC_w", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	smc_W_id = H5Dcreate(file_id, "/SMC_w", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	// Write dataset.
 	status = H5Dwrite(smc_W_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_W);
 
