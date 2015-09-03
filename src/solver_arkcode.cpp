@@ -56,7 +56,7 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 
 
 // line_number: redundant parameter.
-void arkode_solver_CT(double tnow, double tfinal, double interval, double *yInitial, double* yp, int total, double TOL, double* thres,
+void arkode_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp, int total, double TOL, double* thres,
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check, char* path, IO_domain_info* my_IO_domain_info)
 {
 
@@ -67,7 +67,7 @@ void arkode_solver_CT(double tnow, double tfinal, double interval, double *yInit
 	long int NEQ = total;
 
 	realtype reltol = TOL;       /* tolerances */
-	realtype *threshold = (realtype *) thres; // Do we need to actually cast this, and will this work?
+	realtype *threshold = (realtype *) thres; // Do we need to actually cast this?
 	N_Vector atols = NULL;
 	atols = N_VMake_Serial(NEQ, threshold);
 
