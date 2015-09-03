@@ -25,6 +25,53 @@ extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
 extern time_stamps t_stamp;
 
+char RK_suite_error[] = "[%d] RK Solver Error at tnow = %f: %d = \"%s\".\n";
+
+void report_RK_suite_error(int cflag, double tnow, int rank)
+{
+	switch(cflag)
+	{
+	// 1 - success.
+	case 1:
+		break;
+	// 2 - inefficient usage.
+	case 2:
+		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "inefficient usage");
+		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "inefficient usage");
+		break;
+	// 3 - work intensive.
+	case 3:
+		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "work intensive");
+		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "work intensive");
+		break;
+	// 4 - problem probably stiff.
+	case 4:
+		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "problem probably stiff");
+		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "problem probably stiff");
+		break;
+	// 5 - too much accuracy requested.
+	case 5:
+		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "too much accuracy requested");
+		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "too much accuracy requested");
+		break;
+	// 6 - global error assessment unreliable beyond this point.
+	case 6:
+		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "global error assessment unreliable beyond this point");
+		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "global error assessment unreliable beyond this point");
+		break;
+	// 911 - catastrophic failure reported on stdout.
+	case 911:
+		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "catastrophic failure");
+		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "catastrophic failure");
+		MPI_Abort(MPI_COMM_WORLD, 911);
+		break;
+	default:
+		fprintf(stdout, "[%d] Unexpected RK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
+		fprintf(stderr, "[%d] Unexpected RK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
+		MPI_Abort(MPI_COMM_WORLD, 911);
+	}
+}
+
 void computeDerivatives(double t, double y[], double f[])
 {
 	// compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
@@ -34,8 +81,8 @@ void computeDerivatives(double t, double y[], double f[])
 }
 
 // line_number: redundant parameter.
-void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp, int total, double TOL, double* thres,
-		int file_write_per_unit_time, int line_number, checkpoint_handle *check, char* path, IO_domain_info* my_IO_domain_info)
+void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp, int neq, double TOL, double* thres,
+		int file_write_per_unit_time, checkpoint_handle *check, char* path, IO_domain_info *my_IO_domain_info)
 {
 	RKSUITE rksuite;
 
@@ -49,7 +96,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	initialize_t_stamp(&t_stamp);
 	tend = interval;
 	char CTstr[] = "CT";
-	rksuite.setup(total, tnow, y, tend, TOL, thres, method, CTstr, false, 0.0, false);
+	rksuite.setup(neq, tnow, y, tend, TOL, thres, method, CTstr, false, 0.0, false);
 
 	// Exchange SMC and EC variables in the ghost cells.
 	// Essential for restarts when data is loaded from a checkpoint.
@@ -66,16 +113,12 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	int err;
 
 	// Aggregation of data for the writer.
-	data_buffer* writer_buffer = (data_buffer*) checked_malloc(sizeof(data_buffer), "allocation failed for data_buffer");
-	writer_buffer->buffer_length = (int*) checked_malloc(12 * sizeof(int), "allocation failed for buffer_length array in data_buffer structure.");
-	writer_buffer->smc_stat_var_buffer_length = (int*) checked_malloc((grid.neq_smc) * sizeof(int),
-			"allocation failed for smc_buffer_length array in data_buffer structure.");
-	writer_buffer->ec_stat_var_buffer_length = (int*) checked_malloc((grid.neq_ec) * sizeof(int),
-			"allocation failed for ec_buffer_length array in data_buffer structure.");
-	writer_buffer->smc_cpl = (int*) checked_malloc((grid.num_coupling_species_smc) * sizeof(int),
-			"allocation failed for smc_cpl_buffer_length array in data_buffer structure.");
-	writer_buffer->ec_cpl = (int*) checked_malloc((grid.num_coupling_species_ec) * sizeof(int),
-			"allocation failed for ec_cpl_buffer_length array in data_buffer structure.");
+	data_buffer* writer_buffer = (data_buffer*) checked_malloc(sizeof(data_buffer), SRC_LOC);
+	writer_buffer->buffer_length = (int*) checked_malloc(12 * sizeof(int), SRC_LOC);
+	writer_buffer->smc_stat_var_buffer_length = (int*) checked_malloc((grid.neq_smc) * sizeof(int), SRC_LOC);
+	writer_buffer->ec_stat_var_buffer_length = (int*) checked_malloc((grid.neq_ec) * sizeof(int), SRC_LOC);
+	writer_buffer->smc_cpl = (int*) checked_malloc((grid.num_coupling_species_smc) * sizeof(int), SRC_LOC);
+	writer_buffer->ec_cpl = (int*) checked_malloc((grid.num_coupling_species_ec) * sizeof(int), SRC_LOC);
 
 	// Dump MPI task mesh representation into vtk file to manifest task map.
 	gather_tasks_mesh_point_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc, ec);
@@ -142,15 +185,30 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// Profiling.
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
 
+	// Data buffers for collecting and writing HDF5 output.
+	ec_data_buffer *ec_buffer;
+	smc_data_buffer *smc_buffer;
+
+	// Allocate the EC and SMC buffers.
+	if(grid.rank == 0)
+	{
+		ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 1);
+		smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 1);
+	}
+	else
+	{
+		ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
+		smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
+	}
+
 	// ITERATION loop to go from INITIAL time to FINAL time.
 	// TODO: Perhaps tnow needs to be a pointer to have the rksuite.ct call alter it.
 	while(tnow <= tfinal)
 	{
-		// the ct() function does not guarantee to advance all the
-		// way to the stop time. Keep stepping until it does.
 		t_stamp.solver_t1 = MPI_Wtime();
 
-		// Solver decides step magnitude depending on the stiffness of the problem.
+		// The ct() function does not guarantee to advance all the way to the stop time. Keep stepping until it does.
+		// The solver decides step magnitude depending on the stiffness of the problem.
 		do
 		{
 			// Read JPLC in if it is time to do so.
@@ -159,21 +217,24 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				read_init_ATP(&grid, ec);
 				jplc_read_in = true;
 			}
-			// tnow needs to be a pointer to have it updated here?
+
+			// This is a riddle: the RKSUITE::ct expects tnow as a pointer to be able to write to it,
+			// but passing it as a pointer produces compilation errors. And yet tnow gets updated.
+
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
-			if (cflag >= 5)
-			{
-				fprintf(stdout, "[%d] \t RKSUITE failed with error flag %d at t=%lf.\n\n", grid.rank, cflag, tnow);
-				MPI_Abort(MPI_COMM_WORLD, 300);
-			}
+
+			report_RK_suite_error(cflag, tnow, grid.universal_rank);
+
 		}
 		while(tnow < tend);
 
-		/// rksuite.stat() routine calls the to gather statistic on the performance of the solver.
+		/// rksuite.stat() routine gathers the statistics on the performance of the solver.
 		/// Amongst other things it also informs about what the next step size should be.
 		rksuite.stat(totf, stpcst, waste, stpsok, hnext);
+
 		t_stamp.solver_t2 = MPI_Wtime();
 		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
+
 		palce_holder_for_timing_max_min[0][iteration] = t_stamp.diff_solver;
 		t_stamp.aggregate_compute += t_stamp.diff_solver;
 
@@ -191,40 +252,30 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		{
 			t_stamp.write_t1 = MPI_Wtime();
 
-			// Geometry.
+			// Geometry to be written.
 			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc);
 			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
+
 			// State variables to be written as attributes.
 			gather_smcData(&grid, my_IO_domain_info, writer_buffer, smc, write_count);
 			gather_ecData(&grid, my_IO_domain_info, writer_buffer, ec, write_count);
 
-			if (grid.rank == 0) {
+			if (grid.rank == 0)
+			{
+				// Write out the meshes with attributes.
 				initialise_time_wise_checkpoint(check, grid, write_count, path, my_IO_domain_info);
-				write_smc_and_ec_data(check, &grid, line_number, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
+				write_smc_and_ec_data(check, &grid, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
 				close_time_wise_checkpoints(check);
 			}
 
 			// HDF5 Start
-			ec_data_buffer *ec_buffer;
-			smc_data_buffer *smc_buffer;
-
-			// TODO: Perhaps the buffers should be allocated only once at the start of the simulation?
-			// Allocate the EC and SMC buffers.
-			if(grid.rank == 0)
-			{
-				ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 1);
-				smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 1);
-			}
-			else
-			{
-				ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
-				smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
-			}
+			// HDF5 Start
+			// HDF5 Start
 
 			// Collect state variable data on writers.
-			// TODO: Perhaps the ECs matrix is better stored in the grid?
+			// TODO: Perhaps the ECs matrix is better stored as pointers in the grid?
 			gather_EC_data(&grid, ec_buffer, ec);
-			// TODO: Perhaps the SMCs matrix is better stored in the grid?
+			// TODO: Perhaps the SMCs matrix is better stored as pointers in the grid?
 			gather_SMC_data(&grid, smc_buffer, smc);
 
 			if(grid.rank == 0)
@@ -234,21 +285,8 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				write_SMC_data_HDF5(&grid, smc_buffer, write_count, path);
 			}
 
-			MPI_Barrier(MPI_COMM_WORLD);
-
-			// TODO: Perhaps the buffers should be freed only once at the end of the simulation?
-			// Release the EC and SMC buffers.
-			if(grid.rank == 0)
-			{
-				free_EC_data_buffer(ec_buffer, 1);
-				free_SMC_data_buffer(smc_buffer, 1);
-			}
-			else
-			{
-				free_EC_data_buffer(ec_buffer, 0);
-				free_SMC_data_buffer(smc_buffer, 0);
-			}
-
+			// HDF5 End
+			// HDF5 End
 			// HDF5 End
 
 			t_stamp.write_t2 = MPI_Wtime();
@@ -256,9 +294,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			palce_holder_for_timing_max_min[2][write_count] = t_stamp.diff_write;
 			t_stamp.aggregate_write += t_stamp.diff_write;
 			write_count++;
-
-			// if (my_IO_domain_info->writer_rank == 0)
-			// cout << "tnow = " << tnow << endl;
 		}
 
 		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
@@ -267,6 +302,18 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		iteration++;
 		tend += interval;
 		rksuite.reset(tend);
+	}
+
+	// Release the EC and SMC buffers used for writing to HDF5.
+	if(grid.rank == 0)
+	{
+		free_EC_data_buffer(ec_buffer, 1);
+		free_SMC_data_buffer(smc_buffer, 1);
+	}
+	else
+	{
+		free_EC_data_buffer(ec_buffer, 0);
+		free_SMC_data_buffer(smc_buffer, 0);
 	}
 
 	//t_stamp.aggregate_compute = t_stamp.aggregate_compute / iteration;

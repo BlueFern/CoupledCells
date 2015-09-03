@@ -56,11 +56,11 @@ int main(int argc, char* argv[]) {
 			if (argv[i][0] == '-') {
 				if (argv[i][1] == 'f') {
 					sprintf(grid.config_file, "%s", argv[i + 1]);
-				}else if (argv[i][1] == 'S') {
+				} else if (argv[i][1] == 'S') {
 					sprintf(grid.solution_dir, "%s", argv[i + 1]);
-				}else if (argv[i][1] == 'T') {
+				} else if (argv[i][1] == 'T') {
 					sprintf(grid.time_profiling_dir, "%s", argv[i + 1]);
-				}else if (argv[i][1] == 't') {
+				} else if (argv[i][1] == 't') {
 					tfinal = atof(argv[i + 1]);
 				} else if (argv[i][1] == 'w') {
 					data_writing_frequency = atof(argv[i + 1]);
@@ -287,8 +287,8 @@ int main(int argc, char* argv[]) {
 	// Internal work space.
 	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double), "Workspace array y for RKSUITE");
 
-	/// Initialise different state variables and coupling data values.
-	int line_number = 0;
+	/// Initialise state variables and coupling data values.
+
 	// checkpoint(check, grid, &tnow, y, smc, ec);
 	Initialize_koeingsberger_smc(grid, y, smc);
 	Initialize_koeingsberger_ec(grid, y, ec);
@@ -328,15 +328,16 @@ int main(int argc, char* argv[]) {
 #ifdef CVODE
 	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
 #endif
-#ifndef CVODE
 
-	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, line_number, check, grid.solution_dir, my_IO_domain_info);
-	// rksuite_solver_UT(tnow, tfinal, interval, y, yp, grid.NEQ,TOL,thres, file_write_per_unit_time,line_number,check);
+#ifndef CVODE
+	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
 #endif
 
-	// final_checkpoint(check, grid);
+	// Final_checkpoint(check, grid);
 	update_elapsed_time(check, grid, &elps_t, my_IO_domain_info);
+
 	// fclose(grid.logptr);
+
 	MPI_Finalize();
 	return (0);
 }

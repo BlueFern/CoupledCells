@@ -795,7 +795,7 @@ void RKSUITE::ut(void (*f)(double, double*, double*), double twant, double& tgot
 //C
       goback = rkcom1.dir*(rkcom2.t-twant) >= zero;
       if (goback) {
-         intrp(twant,"Both solution and derivative",rkcom1.neqn,ygot,
+         intrp(twant, (char *)"Both solution and derivative",rkcom1.neqn,ygot,
             ypgot,f,work,&work[rkcom3.printp],rkcom3.lnintp);
          chkfl(ask,baderr);
          if (baderr) goto label100;
