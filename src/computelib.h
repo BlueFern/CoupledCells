@@ -102,7 +102,7 @@ using namespace std;
 /** @} */
 
 /**
- * Conductance... What do we say about it?
+ * Conductance / coupling coefficients.
  */
 struct conductance {
 	double Vm_hm_smc,	///< Homocellular membrane potential coupling between SMCs.
@@ -296,19 +296,40 @@ typedef struct {
 
 typedef struct {
 	double
-	///Communication profilers
-	async_comm_calls_t1, async_comm_calls_t2, async_comm_calls_wait_t1, async_comm_calls_wait_t2, remote_async_comm_calls_t1,
-			remote_async_comm_calls_t2, remote_async_comm_calls_wait_t1, remote_async_comm_calls_wait_t2, update_sendbuf_t1, update_sendbuf_t2,
-			update_recvbuf_t1, update_recvbuf_t2, barrier_in_solver_before_comm_t1, barrier_in_solver_before_comm_t2, total_comms_cost_t1,
-			total_comms_cost_t2, diff_update_sendbuf, diff_update_recvbuf, diff_async_comm_calls, diff_async_comm_calls_wait,
-			diff_remote_async_comm_calls, diff_remote_async_comm_calls_wait, diff_barrier_in_solver_before_comm, diff_total_comms_cost,
-			///Solver profilers
-			map_function_t1, map_function_t2, single_cell_fluxes_t1, single_cell_fluxes_t2, coupling_fluxes_t1, coupling_fluxes_t2, solver_t1,
-			solver_t2, write_t1, write_t2, diff_map_function, diff_single_cell_fluxes, diff_coupling_fluxes, diff_solver, diff_write;
+
+	/// Communication timings.
+	async_comm_calls_t1, async_comm_calls_t2,
+	async_comm_calls_wait_t1, async_comm_calls_wait_t2,
+	remote_async_comm_calls_t1, remote_async_comm_calls_t2,
+	remote_async_comm_calls_wait_t1, remote_async_comm_calls_wait_t2,
+	update_sendbuf_t1, update_sendbuf_t2,
+	update_recvbuf_t1, update_recvbuf_t2,
+	barrier_in_solver_before_comm_t1, barrier_in_solver_before_comm_t2,
+	total_comms_cost_t1, total_comms_cost_t2,
+	diff_update_sendbuf,
+	diff_update_recvbuf,
+	diff_async_comm_calls,
+	diff_async_comm_calls_wait,
+	diff_remote_async_comm_calls,
+	diff_remote_async_comm_calls_wait,
+	diff_barrier_in_solver_before_comm,
+	diff_total_comms_cost,
+
+	///Solver timings.
+	map_function_t1, map_function_t2,
+	single_cell_fluxes_t1, single_cell_fluxes_t2,
+	coupling_fluxes_t1, coupling_fluxes_t2,
+	solver_t1, solver_t2,
+	write_t1, write_t2,
+	diff_map_function,
+	diff_single_cell_fluxes,
+	diff_coupling_fluxes,
+	diff_solver,
+	diff_write;
 	int computeDerivatives_call_counter;
-	double aggregate_write,aggregate_compute,aggregate_comm;
-	double max_compute,max_comm,max_write, min_compute,min_comm,min_write;
-	int max_compute_index,max_comm_index,max_write_index, min_compute_index,min_comm_index,min_write_index;
+	double aggregate_write, aggregate_compute, aggregate_comm;
+	double max_compute, max_comm, max_write, min_compute, min_comm, min_write;
+	int max_compute_index, max_comm_index, max_write_index, min_compute_index, min_comm_index, min_write_index;
 } time_stamps;
 
 typedef struct {
@@ -378,7 +399,7 @@ void dump_smc(grid_parms, SMC_cell**, checkpoint_handle*, int, int);
 void dump_ec(grid_parms, EC_cell**, checkpoint_handle*, int, int);
 void dump_smc_async(grid_parms, SMC_cell**, checkpoint_handle*, int);
 void dump_ec_async(grid_parms, EC_cell**, checkpoint_handle*, int);
-void write_smc_and_ec_data(checkpoint_handle*, grid_parms*, int, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
+void write_smc_and_ec_data(checkpoint_handle*, grid_parms*, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
 void final_checkpoint(checkpoint_handle*, grid_parms);
 void close_common_checkpoints(checkpoint_handle*);
 void close_time_wise_checkpoints(checkpoint_handle*);
@@ -397,8 +418,7 @@ int checkpoint(checkpoint_handle*, grid_parms, double*, double*, SMC_cell**, EC_
 
 //Solver related funtions
 void computeDerivatives(double, double*, double*);
-void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, int, checkpoint_handle*, char*, IO_domain_info*);
-void rksuite_solver_UT(double, double, double, double *, double*, int, double, double*, int, int, checkpoint_handle*);
+void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, checkpoint_handle*, char*, IO_domain_info*);
 
 #ifdef CVODE
 static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
@@ -469,9 +489,9 @@ void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*
 
 void memory_diagnostics(FILE*);
 
-void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
+void write_timing(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
 void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info);
-void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
+void write_min_max_timing(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
 
 /**
  * \brief Catch failure in an MPI call.

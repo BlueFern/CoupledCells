@@ -184,7 +184,7 @@ void dump_ec(grid_parms grid, EC_cell **ec, checkpoint_handle *check, int line_n
 }
 #endif
 
-void write_smc_and_ec_data(checkpoint_handle* check, grid_parms* grid, int line_number, double tnow, SMC_cell** smc, EC_cell** ec, int write_count,
+void write_smc_and_ec_data(checkpoint_handle* check, grid_parms* grid, double tnow, SMC_cell** smc, EC_cell** ec, int write_count,
 		IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer) {
 
 	dump_smc_data(check, grid, my_IO_domain_info, writer_buffer, smc, write_count);
@@ -222,7 +222,8 @@ void write_process_mesh(checkpoint_handle* check, grid_parms* grid, IO_domain_in
 	header_offset[0] = strlen(header);
 	count = header_offset[0];
 	disp = 0;
-	if (my_IO_domain_info->writer_rank == 0) {
+	if (my_IO_domain_info->writer_rank == 0)
+	{
 		CHECK_MPI_ERROR(MPI_File_write_at(check->task_mesh, disp, header, count, MPI_CHAR, &status));
 	}
 
@@ -306,19 +307,20 @@ void dump_smc_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* m
 	printf("[%d] ------>>>>>> Entering %s:%s to write %d\n", grid->universal_rank, __FILE__, __FUNCTION__, check->smc_data_file);
 
 	int write_element_count = 1, *header_offset, point_offset = 0, cell_offset = 0, celltype_offset = 0, *smcDataOffset;
-	header_offset = (int*) checked_malloc((3 + grid->neq_smc + grid->num_coupling_species_smc) * sizeof(int),
-			"allocation failed for header_offset array in dump_smc_data.");
-	smcDataOffset = (int*) checked_malloc((grid->neq_smc + grid->num_coupling_species_smc) * sizeof(int),
-			"allocation failed for smcDataOffset array in dump_smc_data.");
-	for (int i = 0; i < (3 + grid->neq_smc + grid->num_coupling_species_smc); i++) {
+	header_offset = (int*) checked_malloc((3 + grid->neq_smc + grid->num_coupling_species_smc) * sizeof(int), SRC_LOC);
+	smcDataOffset = (int*) checked_malloc((grid->neq_smc + grid->num_coupling_species_smc) * sizeof(int), SRC_LOC);
+
+	for (int i = 0; i < (3 + grid->neq_smc + grid->num_coupling_species_smc); i++)
+	{
 		header_offset[i] = 0;
 	}
-	for (int i = 0; i < (grid->neq_smc + grid->num_coupling_species_smc); i++) {
+	for (int i = 0; i < (grid->neq_smc + grid->num_coupling_species_smc); i++)
+	{
 		smcDataOffset[i] = 0;
 	}
 
 	int count = 0;
-	char* header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
+	char* header = (char*) checked_malloc(1024 * sizeof(char), SRC_LOC);
 	int branches;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
 		branches = 1;
@@ -3178,16 +3180,16 @@ void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_b
 
 void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info) {
 
-	push_coarse_timing_data_to_file("aggregated_compute_time", grid, t_stamp->aggregate_compute, my_IO_domain_info);
-	push_coarse_timing_data_to_file("aggregated_comm_time", grid, t_stamp->aggregate_comm, my_IO_domain_info);
-	push_coarse_timing_data_to_file("aggregated_write_time", grid, t_stamp->aggregate_write, my_IO_domain_info);
+	write_timing((char *)"aggregated_compute_time", grid, t_stamp->aggregate_compute, my_IO_domain_info);
+	write_timing((char *)"aggregated_comm_time", grid, t_stamp->aggregate_comm, my_IO_domain_info);
+	write_timing((char *)"aggregated_write_time", grid, t_stamp->aggregate_write, my_IO_domain_info);
 
-	push_task_wise_min_max_of_time_profile("min_max_of_aggregate_compute" , grid, t_stamp->aggregate_compute, my_IO_domain_info);
-	push_task_wise_min_max_of_time_profile("min_max_of_aggregate_comm" , grid, t_stamp->aggregate_comm, my_IO_domain_info);
-	push_task_wise_min_max_of_time_profile("min_max_of_aggregate_write" , grid, t_stamp->aggregate_write, my_IO_domain_info);
+	write_min_max_timing((char *)"min_max_of_aggregate_compute" , grid, t_stamp->aggregate_compute, my_IO_domain_info);
+	write_min_max_timing((char *)"min_max_of_aggregate_comm" , grid, t_stamp->aggregate_comm, my_IO_domain_info);
+	write_min_max_timing((char *)"min_max_of_aggregate_write" , grid, t_stamp->aggregate_write, my_IO_domain_info);
 }
 
-void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info) {
+void write_timing(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info) {
 	MPI_Status status;
 	MPI_Offset displacement = 0;
 	MPI_File fw;
@@ -3228,12 +3230,12 @@ void push_coarse_timing_data_to_file(char* file_prefix, grid_parms grid, double 
 	free(disp);
 }
 
-void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info)
+void write_min_max_timing(char *file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info)
 {
 	MPI_Status status;
 	MPI_Offset displacement = 0;
 	MPI_File fw;
-	char* buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), "allocation for logfile segment space\n");
+	char* buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), SRC_LOC);
 	char* write_buffer;
 	int root = 0;
 	char filename[50];
@@ -3241,23 +3243,29 @@ void push_task_wise_min_max_of_time_profile(char* file_prefix, grid_parms grid, 
 	double max, min;
 	int max_ind, min_ind;
 	double array[grid.tasks];
-	int *recv_count = (int*) checked_malloc(grid.tasks * sizeof(int),
-			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
-	int *disp = (int*) checked_malloc(grid.tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
+
+	int *recv_count = (int*) checked_malloc(grid.tasks * sizeof(int), SRC_LOC);
+	int *disp = (int*) checked_malloc(grid.tasks * sizeof(int), SRC_LOC);
 
 	CHECK_MPI_ERROR(MPI_Gather(&field, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, root, grid.cart_comm));
-	if (grid.rank == 0) {
+
+	if (grid.rank == 0)
+	{
 		maximum(array, grid.tasks, &max, &max_ind);
 		minimum(array, grid.tasks, &min, &min_ind);
-		write_buffer = (char*) checked_malloc(1024 * sizeof(char), "error allocating write_buffer for pushing max min values for time profiling.\n");
+		write_buffer = (char*) checked_malloc(1024 * sizeof(char), SRC_LOC);
 		sprintf(filename, "%s/%s_%s.txt", grid.time_profiling_dir, file_prefix, grid.suffix);
+
 		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fw));
 
 		length = sprintf(write_buffer, "Maximum = %lf\t by Rank = %d\nMinimum = %lf\t by Rank = %d\n", max, max_ind, min, min_ind);
+
 		CHECK_MPI_ERROR(MPI_File_write_at(fw, 0, write_buffer, length, MPI_CHAR, &status));
+
 		MPI_File_close(&fw);
 		free(write_buffer);
 	}
+
 	free(recv_count);
 	free(buffer);
 	free(disp);
