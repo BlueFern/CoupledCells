@@ -12,9 +12,9 @@
 #include <math.h>
 #include "macros.h"
 
-#ifdef CVODE
 #include <nvector/nvector_serial.h>
-#endif
+
+
 
 using namespace std;
 
@@ -419,6 +419,8 @@ int checkpoint(checkpoint_handle*, grid_parms, double*, double*, SMC_cell**, EC_
 //Solver related funtions
 void computeDerivatives(double, double*, double*);
 void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, checkpoint_handle*, char*, IO_domain_info*);
+void arkode_solver(double, double, double, double*, int, double, double*, int, checkpoint_handle*, char*, IO_domain_info*);
+static int f(realtype, N_Vector, N_Vector, void*);
 
 #ifdef CVODE
 static int check_cvode_flag(void *flagvalue, char *funcname, int opt);

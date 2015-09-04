@@ -5,7 +5,7 @@ CC = mpixlcxx
 CFLAGS = -g -Wall -Icontrib
 RKS_LIB = librksuite.a
 
-LIBS = -lhdf5 -lhdf5_hl
+LIBS = -lhdf5 -lhdf5_hl -lsundials_arkode -lsundials_nvecserial
 EXE = coupledCellsModel
 
 .PHONY: all

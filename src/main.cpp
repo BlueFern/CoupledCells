@@ -1,8 +1,5 @@
 #include "computelib.h"
-
-#ifdef CVODE
-#include <nvector/nvector_serial.h>
-#endif
+#define ARKODE 1
 
 using namespace std;
 
@@ -325,11 +322,15 @@ int main(int argc, char* argv[]) {
 	// the solver will reset JPLC and read later it when the time is right.
 	read_init_ATP(&grid, ec);
 
-#ifdef CVODE
-	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
+#ifdef ARKODE
+	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, thres, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
 #endif
 
-#ifndef CVODE
+#ifdef CVODE
+	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check,&elps_t);
+#endif
+
+#ifdef RK_SUITE
 	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
 #endif
 

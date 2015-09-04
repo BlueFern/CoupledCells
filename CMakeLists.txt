@@ -23,6 +23,10 @@ include_directories(${MPI_CXX_INCLUDE_PATH})
 find_package(SUNDIALS REQUIRED)
 include_directories(${SUNDIALS_INCLUDES})
 
+foreach(sunlib ${SUNDIALS_LIBRARIES})
+	message(STATUS ${sunlib})
+endforeach(sunlib)
+
 find_package(HDF5 REQUIRED)
 include_directories(${HDF5_INCLUDE_DIR})
 
