@@ -269,8 +269,9 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	tout = tnow + interval;
 
 	// ITERATION loop to go from INITIAL time to FINAL time.
-	while(t <= tfinal)
+	while(tfinal - t > 1.0e-15)
 	{
+		printf("%d, %f, %f\n", grid.universal_rank, t, tfinal);
 		t_stamp.solver_t1 = MPI_Wtime();
 
 		// Read JPLC in if it is time to do so.
@@ -283,10 +284,8 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		flag = ARKode(arkode_mem, tout, y, &t, ARK_NORMAL);  // Call integrator.
 		ark_check_flag(flag, (char *)"ARKode", grid.universal_rank, tnow);
 
-
 		tout += interval;
-		tout = (tout > tfinal) ? tfinal : tout;
-
+		//tout = (tout > tfinal) ? tfinal : tout;
 
 		t_stamp.solver_t2 = MPI_Wtime();
 		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
@@ -306,6 +305,8 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 
 		if((iteration % file_write_per_unit_time) == 0)
 		{
+			//printf("*** %d, %d, %d***\n", grid.universal_rank, iteration, file_write_per_unit_time);
+
 			t_stamp.write_t1 = MPI_Wtime();
 
 			// Geometry to be written.
