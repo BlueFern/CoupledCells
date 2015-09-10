@@ -1,29 +1,31 @@
-# - Try to find SUNDIALS
-#
+# Find SUNDIALS libraries.
 
-find_path (SUNDIALS_DIR include/sundials/sundials_config.h HINTS ENV SUNDIALS_DIR PATHS $ENV{HOME}/sundials DOC "Sundials Directory")
+# Search hints for SUNDIALS installation in the home directory.
+find_path(SUNDIALS_DIR include/sundials/sundials_config.h HINTS ENV SUNDIALS_DIR PATHS $ENV{HOME}/sundials DOC "Sundials Directory")
+
+set(SUNDIALS_LIB_NAMES sundials_arkode sundials_nvecserial sundials_cvode sundials_cvodes sundials_ida sundials_idas sundials_kinsol sundials_nvecparallel)
+
+set(SUNDIALS_LIBRARIES)
 
 IF(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
-  SET(SUNDIALS_FOUND YES)
-  SET(SUNDIALS_INCLUDES ${SUNDIALS_DIR})
-  find_path (SUNDIALS_INCLUDE_DIR sundials_config.h HINTS "${SUNDIALS_DIR}" PATH_SUFFIXES include/sundials NO_DEFAULT_PATH)
-  list(APPEND SUNDIALS_INCLUDES ${SUNDIALS_INCLUDE_DIR})
-  find_library(SUNDIALS_LIBRARIES NAMES
-	sundials_cvodes
-	sundials_fcvode
-	sundials_fida
-	sundials_fkinsol
-	sundials_fnvecparallel
-	sundials_fnvecserial
-	sundials_ida
-	sundials_idas
-	sundials_kinsol
-	sundials_nvecparallel
-	sundials_nvecserial
- 	HINTS "${SUNDIALS_DIR}/lib")
+	SET(SUNDIALS_FOUND YES)
+	SET(SUNDIALS_INCLUDES ${SUNDIALS_DIR})
+	find_path (SUNDIALS_INCLUDE_DIR sundials_config.h HINTS "${SUNDIALS_DIR}" PATH_SUFFIXES include/sundials NO_DEFAULT_PATH)
+	list(APPEND SUNDIALS_INCLUDES ${SUNDIALS_INCLUDE_DIR})
+
+	foreach(SUNDIALS_LIB ${SUNDIALS_LIB_NAMES})
+		find_library(${SUNDIALS_LIB}_LIB ${SUNDIALS_LIB} "${SUNDIALS_DIR}/lib")
+		if(${SUNDIALS_LIB}_LIB)
+			message(STATUS "Found  ${SUNDIALS_LIB}: ${${SUNDIALS_LIB}_LIB}")
+			set(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARIES} ${${SUNDIALS_LIB}_LIB})
+		else(${SUNDIALS_LIB}_LIB)
+			message(STATUS "NOTFOUND: ${SUNDIALS_LIB}")
+		endif(${SUNDIALS_LIB}_LIB)
+	endforeach(SUNDIALS_LIB)
+	
 ELSE(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
-  SET(SUNDIALS_FOUND NO)
-  message(FATAL_ERROR "Cannot find SUNDIALS!")
+	SET(SUNDIALS_FOUND NO)
+	message(FATAL_ERROR "Cannot find SUNDIALS!")
 ENDIF(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 
 include(FindPackageHandleStandardArgs)
