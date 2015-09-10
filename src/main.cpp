@@ -16,7 +16,13 @@ int CASE = 1;
  * The following steps in the ::main function are necessary for setting up
  * the simulation.
  */
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
+
+#ifdef RK_SUITE
+	printf("RK_SUITE defined %d\n", RK_SUITE);
+	return 0;
+#endif
 
 	/// - Global declaration of request and status update place-holders.
 	/// Request and status handles for nonblocking send and receive operations,
