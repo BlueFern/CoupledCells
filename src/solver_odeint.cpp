@@ -3,13 +3,15 @@
 #include <fstream>
 #include <cstdlib>
 #include <math.h>
-#include <arkode/arkode.h>            /* prototypes for ARKode fcts., consts. */
-#include <nvector/nvector_serial.h>   /* serial N_Vector types, fcts., macros */
-#include <sundials/sundials_types.h>  /* def. of type 'realtype' */
+#include <boost/numeric/odeint.hpp>
+#include <boost/numeric/odeint/stepper/stepper_categories.hpp>
+#include <boost/array.hpp>
 
 #include "computelib.h"
 #include "gather.h"
 #include "writeHDF5.h"
+
+using namespace boost::numeric::odeint;
 
 extern conductance cpl_cef;
 extern SMC_cell** smc;
@@ -18,134 +20,38 @@ extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
 extern time_stamps t_stamp;
 
-static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)
+typedef std::vector< double > state_type;
+typedef runge_kutta_cash_karp54< state_type > error_stepper_type;
+typedef controlled_runge_kutta< error_stepper_type > controlled_stepper_type;
+
+void report_odeint_error(int cflag, double tnow, int rank)
 {
-	N_VectorContent_Serial yContent = (N_VectorContent_Serial) y->content;
-	N_VectorContent_Serial yDotContent = (N_VectorContent_Serial) ydot->content;
-
-	compute(grid, smc, ec, cpl_cef, t, yContent->data, yDotContent->data);
-	t_stamp.computeDerivatives_call_counter += 1;
-
-	return 0;  // Success.
-}
-
-void ark_check_flag(int cflag, char *funcname, int rank, double tnow)
-{
-	switch (cflag)
+	switch(cflag)
 	{
-	case ARK_SUCCESS:
-		break;
-
-	case ARK_ROOT_RETURN:
-		break;
-
-	case ARK_TSTOP_RETURN:
-		break;
-
-	case ARK_MEM_NULL:
-		fprintf(stdout, "[%d] in %s. arkode_mem is NULL at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. arkode_mem is NULL at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	case ARK_MEM_FAIL:
-		fprintf(stdout, "[%d] in %s. Memory allocation failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Memory allocation failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	case ARK_NO_MALLOC:
-		fprintf(stdout, "[%d] in %s. arkode_mem was not allocated at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. arkode_mem was not allocated at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	case ARK_ILL_INPUT:
-		fprintf(stdout, "[%d] in %s. Illegal input/s at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Illegal input/s at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	case ARK_TOO_MUCH_WORK:
-		fprintf(stdout, "[%d] in %s. Too much work at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Too much work at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		break;
-
-	case ARK_TOO_MUCH_ACC:
-		fprintf(stdout, "[%d] in %s. Required accuracy too high at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Required accuracy too high at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		break;
-
-	case ARK_ERR_FAILURE:
-		fprintf(stdout, "[%d] in %s. Error test failures at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Error test failures at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		break;
-
-	case ARK_CONV_FAILURE:
-		fprintf(stdout, "[%d] in %s. Convergence test failures at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Convergence test failures at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		break;
-
-	case ARK_LINIT_FAIL:
-		fprintf(stdout, "[%d] in %s. Linear solver’s initialization function failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Linear solver’s initialization function failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	case ARK_LSETUP_FAIL:
-		fprintf(stdout, "[%d] in %s. Linear solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Linear solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	case ARK_LSOLVE_FAIL:
-		fprintf(stdout, "[%d] in %s. Linear solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Linear solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	case ARK_MASSINIT_FAIL:
-		fprintf(stdout, "[%d] in %s. Mass matrix solver’s initialization function failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Mass matrix solver’s initialization function failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	case ARK_MASSSETUP_FAIL:
-		fprintf(stdout, "[%d] in %s. Mass matrix solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Mass matrix solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	case ARK_MASSSOLVE_FAIL:
-		fprintf(stdout, "[%d] in %s. Mass matrix solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		fprintf(stderr, "[%d] in %s. Mass matrix solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-
-	default:
-		fprintf(stdout, "[%d] Unexpected ARK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
-		fprintf(stderr, "[%d] Unexpected ARK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
-		MPI_Abort(MPI_COMM_WORLD, 911);
 	}
 }
 
-void arkode_solver(double tnow, double tfinal, double interval, double *yInitial, int neq, double relTOL, double absTOL,
-		int file_write_per_unit_time, checkpoint_handle *check, char* path, IO_domain_info* my_IO_domain_info)
+void f(const state_type &y, state_type &f, const double t)
+{
+	//printf("%f\n",(const_cast<double*> (&y[0]))[0]);
+	// compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
+	compute(grid, smc, ec, cpl_cef, t, const_cast<double*> (&y[0]), &f[0]);
+
+	t_stamp.computeDerivatives_call_counter += 1;
+}
+
+void odeint_solver(double tnow, double tfinal, double interval, double *yInitial, int neq, double relTol, double absTol,
+		int file_write_per_unit_time, checkpoint_handle *check, char* path, IO_domain_info *my_IO_domain_info)
 {
 
+	double tend = interval;
+	int cflag = 0;
 	int iteration = 0;
 	int write_count = 0;
 	int count = 0;
 	initialize_t_stamp(&t_stamp);
 
-	/* general problem variables */
-	int flag;                       /* reusable error-checking flag */
-	N_Vector y = NULL;              /* empty vector for storing solution */
-	void *arkode_mem = NULL;        /* empty ARKode memory structure */
-	FILE *UFID;
-	realtype t, tout;
-	long int nst, nst_a, nfe, nfi, nsetups, nje, nfeLS, nni, ncfn, netf;
-
-	y = N_VMake_Serial(neq, yInitial);
-
-	arkode_mem = ARKodeCreate();
-
-	flag = ARKodeInit(arkode_mem, f, NULL, tnow, y);
-	ark_check_flag(flag, (char *)"ARKodeInit", grid.universal_rank, 0);
-
-	flag = ARKodeSStolerances(arkode_mem, relTOL, absTOL);
-	ark_check_flag(flag, (char *)"ARKodeSVtolerances", grid.universal_rank, 0);
-
+	state_type y(yInitial, yInitial + neq); // Convert (copy) double* yinitial to std::vector y.
 
 	// Exchange SMC and EC variables in the ghost cells.
 	// Essential for restarts when data is loaded from a checkpoint.
@@ -199,7 +105,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		jplc_buffer = (double *)checked_malloc(grid.tasks * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
 	}
 
-#if 0
 	// Collect all jplc values in a single buffer on root node.
 	gather_JPLC(&grid, jplc_buffer, ec);
 
@@ -211,7 +116,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
 	}
-#endif
 
 	//MPI_Barrier(MPI_COMM_WORLD);
 	//printf("[%d] *** Pulling the plug in %s:%s\n", grid.universal_rank, __FILE__, __FUNCTION__);
@@ -252,27 +156,20 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
 	}
 
-
-	t = tnow;
-	tout = tnow + interval;
-
-	// ITERATION loop to go from INITIAL time to FINAL time.
-	while (tfinal - t > 1.0e-15)
+	//printf("%f, %f, %f\n",y[0],y[1],y[2]);
+	while(tnow <= tfinal)
 	{
 		t_stamp.solver_t1 = MPI_Wtime();
 
 		// Read JPLC in if it is time to do so.
-		if(t >= grid.stimulus_onset_time && !jplc_read_in)
+		if(tnow >= grid.stimulus_onset_time && !jplc_read_in)
 		{
 			read_init_ATP(&grid, ec);
 			jplc_read_in = true;
 		}
 
-		flag = ARKode(arkode_mem, tout, y, &t, ARK_NORMAL);  // Call integrator.
-		ark_check_flag(flag, (char *)"ARKode", grid.universal_rank, tnow);
-
-		tout += interval;
-		//tout = (tout > tfinal) ? tfinal : tout;
+		integrate_adaptive(make_controlled<error_stepper_type>( absTol , relTol), f , y , tnow , tend , interval);
+		//integrate_const(stepper, f, y , tnow , tend , interval);
 
 		t_stamp.solver_t2 = MPI_Wtime();
 		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
@@ -292,8 +189,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 
 		if((iteration % file_write_per_unit_time) == 0)
 		{
-			//printf("*** %d, %d, %d***\n", grid.universal_rank, iteration, file_write_per_unit_time);
-
 			t_stamp.write_t1 = MPI_Wtime();
 
 			// Geometry to be written.
@@ -311,7 +206,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 				write_smc_and_ec_data(check, &grid, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
 				close_time_wise_checkpoints(check);
 			}
-#if 0
+
 			// HDF5 Start
 			// HDF5 Start
 			// HDF5 Start
@@ -332,7 +227,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			// HDF5 End
 			// HDF5 End
 			// HDF5 End
-#endif
+
 			t_stamp.write_t2 = MPI_Wtime();
 			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;
 			palce_holder_for_timing_max_min[2][write_count] = t_stamp.diff_write;
@@ -342,9 +237,11 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 
 		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
 		initialize_t_stamp(&t_stamp);
-
 		/// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
 		iteration++;
+		tnow = tend;
+		tend += interval;
+
 	}
 
 	// Release the EC and SMC buffers used for writing to HDF5.

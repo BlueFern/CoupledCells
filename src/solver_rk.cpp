@@ -1,4 +1,3 @@
-#ifndef ARKODE
 #include <mpi.h>
 #include <iostream>
 #include <fstream>
@@ -223,7 +222,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
 
-			report_RK_suite_error(cflag, tnow, grid.universal_rank);
+			//report_RK_suite_error(cflag, tnow, grid.universal_rank);
 
 		}
 		while(tnow < tend);
@@ -339,4 +338,3 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// Time profiling data gets lost in the event of a crash.
 	checkpoint_coarse_time_profiling_data(grid, &t_stamp, my_IO_domain_info);
 }
-#endif

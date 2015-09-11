@@ -1,5 +1,4 @@
 #include "computelib.h"
-#define ARKODE 1
 
 using namespace std;
 
@@ -18,12 +17,6 @@ int CASE = 1;
  */
 int main(int argc, char* argv[])
 {
-
-#ifdef RK_SUITE
-	printf("RK_SUITE defined %d\n", RK_SUITE);
-	return 0;
-#endif
-
 	/// - Global declaration of request and status update place-holders.
 	/// Request and status handles for nonblocking send and receive operations,
 	/// for communicating with each of the four neighbours.
@@ -278,15 +271,9 @@ int main(int argc, char* argv[])
 		thres[i] = absTOL;
 	}
 
-	// Variables holding new and old values.
-#ifdef CVODE
-	N_Vector ny;
-	ny = N_VNew_Serial(grid.NEQ);
-	double *y = NV_DATA_S(ny);
-#else
 	// State variables.
 	double* y = (double*) checked_malloc(grid.NEQ * sizeof(double), "Solver array y for RKSUITE");
-#endif
+
 	// Internal work space.
 	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double), "Workspace array y for RKSUITE");
 
@@ -317,23 +304,16 @@ int main(int argc, char* argv[])
 	// Reading all points coordinates.
 	int ret = read_topology_info((char *)"files/configuration_info.txt", &grid, smc, ec);
 
-#if 0
-	if (grid.rank == 0)
-	{
-		printf("[%d] return from read topology = %d\n", grid.universal_rank, ret);
-	}
-#endif
-
 	// This is read in here for validation purposes in the output.
 	// the solver will reset JPLC and read later it when the time is right.
 	read_init_ATP(&grid, ec);
 
-#ifdef ARKODE
-	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, thres, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
+#ifdef BOOST_ODEINT
+	odeint_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
 #endif
 
-#ifdef CVODE
-	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,check,&elps_t);
+#ifdef ARK_ODE
+	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
 #endif
 
 #ifdef RK_SUITE
