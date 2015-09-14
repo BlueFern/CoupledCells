@@ -4,14 +4,16 @@
 #include <cstdlib>
 #include <math.h>
 #include <boost/numeric/odeint.hpp>
-#include <boost/numeric/odeint/stepper/stepper_categories.hpp>
-#include <boost/array.hpp>
+//#include <boost/numeric/odeint/stepper/stepper_categories.hpp>
+#include <boost/range.hpp>
+#include <list>
 
 #include "computelib.h"
 #include "gather.h"
 #include "writeHDF5.h"
 
 using namespace boost::numeric::odeint;
+using namespace boost;
 
 extern conductance cpl_cef;
 extern SMC_cell** smc;
@@ -23,6 +25,12 @@ extern time_stamps t_stamp;
 typedef std::vector< double > state_type;
 typedef runge_kutta_cash_karp54< state_type > error_stepper_type;
 typedef controlled_runge_kutta< error_stepper_type > controlled_stepper_type;
+
+bool jplc_read_in = false;
+
+
+typedef iterator_range<vector<double>::iterator> time_range;
+
 
 void report_odeint_error(int cflag, double tnow, int rank)
 {
@@ -40,9 +48,122 @@ void f(const state_type &y, state_type &f, const double t)
 	t_stamp.computeDerivatives_call_counter += 1;
 }
 
+void write_lorenz( const state_type &x , const double t )
+{
+	if (grid.universal_rank == 0) printf("%f ** %f\n", x.back(), t);
+}
+
+
+struct observer
+{
+    int* iteration_;
+    int* file_write_per_unit_time_;
+    IO_domain_info *my_IO_domain_info_;
+    double* palce_holder_for_timing_max_min_;
+    data_buffer *writer_buffer_;
+    int* write_count_;
+    int sizee_;
+    checkpoint_handle *check_;
+    ec_data_buffer *ec_buffer_;
+	smc_data_buffer *smc_buffer_;
+	char* path_;
+
+
+    observer(double* palce_holder_for_timing_max_min, int* iteration, int* file_write_per_unit_time, IO_domain_info *my_IO_domain_info,
+    		data_buffer* writer_buffer, int* write_count, checkpoint_handle *check, ec_data_buffer *ec_buffer, smc_data_buffer *smc_buffer, char* path, int sizee) :
+			palce_holder_for_timing_max_min_( palce_holder_for_timing_max_min ) , iteration_( iteration ),
+			file_write_per_unit_time_(file_write_per_unit_time), my_IO_domain_info_ (my_IO_domain_info), writer_buffer_ (writer_buffer), write_count_ (write_count),
+			check_(check), ec_buffer_(ec_buffer), smc_buffer_ (smc_buffer), path_(path), sizee_ (sizee)
+    { }
+    void operator()( const state_type &y , const double tnow )
+    {
+
+    	//printf("%d ** %d\n",*iteration_, *file_write_per_unit_time_);
+
+    	// Read JPLC in if it is time to do so.
+		if(tnow >= grid.stimulus_onset_time && !jplc_read_in)
+		{
+			read_init_ATP(&grid, ec);
+			jplc_read_in = true;
+		}
+
+    	t_stamp.solver_t2 = MPI_Wtime();
+		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
+
+		palce_holder_for_timing_max_min_[0 * sizee_ + *iteration_] = t_stamp.diff_solver;
+		t_stamp.aggregate_compute += t_stamp.diff_solver;
+
+		/// Call for interprocessor communication.
+		t_stamp.total_comms_cost_t1 = MPI_Wtime();
+
+		communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
+
+		t_stamp.total_comms_cost_t2 = MPI_Wtime();
+		t_stamp.diff_total_comms_cost = t_stamp.total_comms_cost_t2 - t_stamp.total_comms_cost_t1;
+		palce_holder_for_timing_max_min_[1 * sizee_ + *iteration_] = t_stamp.diff_total_comms_cost;
+		t_stamp.aggregate_comm += t_stamp.diff_total_comms_cost;
+
+		if(((*iteration_) % (*file_write_per_unit_time_)) == 0)
+		{
+
+			t_stamp.write_t1 = MPI_Wtime();
+
+			// Geometry to be written.
+			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info_, writer_buffer_, smc);
+			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info_, writer_buffer_, ec);
+
+			// State variables to be written as attributes.
+			gather_smcData(&grid, my_IO_domain_info_, writer_buffer_, smc, *write_count_);
+			gather_ecData(&grid, my_IO_domain_info_, writer_buffer_, ec, *write_count_);
+
+			if (grid.rank == 0)
+			{
+				// Write out the meshes with attributes.
+				initialise_time_wise_checkpoint(check_, grid, *write_count_, path_, my_IO_domain_info_);
+				write_smc_and_ec_data(check_, &grid, tnow, smc, ec, *write_count_, my_IO_domain_info_, writer_buffer_);
+				close_time_wise_checkpoints(check_);
+			}
+
+			// HDF5 Start
+			// HDF5 Start
+			// HDF5 Start
+
+			// Collect state variable data on writers.
+			// TODO: Perhaps the ECs matrix is better stored as pointers in the grid?
+			gather_EC_data(&grid, ec_buffer_, ec);
+			// TODO: Perhaps the SMCs matrix is better stored as pointers in the grid?
+			gather_SMC_data(&grid, smc_buffer_, smc);
+
+			if(grid.rank == 0)
+			{
+				// Write state variables to HDF5.
+				write_EC_data_HDF5(&grid, ec_buffer_, *write_count_, path_);
+				write_SMC_data_HDF5(&grid, smc_buffer_, *write_count_, path_);
+			}
+
+			// HDF5 End
+			// HDF5 End
+			// HDF5 End
+
+			t_stamp.write_t2 = MPI_Wtime();
+			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;
+			palce_holder_for_timing_max_min_[2 * sizee_ + *write_count_] = t_stamp.diff_write;
+			t_stamp.aggregate_write += t_stamp.diff_write;
+			(*write_count_)++;
+		}
+
+		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
+		initialize_t_stamp(&t_stamp);
+		/// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
+		(*iteration_)++;
+    }
+
+};
+
 void odeint_solver(double tnow, double tfinal, double interval, double *yInitial, int neq, double relTol, double absTol,
 		int file_write_per_unit_time, checkpoint_handle *check, char* path, IO_domain_info *my_IO_domain_info)
 {
+
 
 	double tend = interval;
 	int cflag = 0;
@@ -135,8 +256,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		}
 	}
 
-	bool jplc_read_in = false;
-
 	// Profiling.
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
 
@@ -156,93 +275,23 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
 	}
 
-	//printf("%f, %f, %f\n",y[0],y[1],y[2]);
-	while(tnow <= tfinal)
+
+	int steps = (int) (((tfinal - tnow) / interval) + 1);
+
+	std::vector<double> time_range;
+	for (int i = 0; i < steps; i ++)
 	{
-		t_stamp.solver_t1 = MPI_Wtime();
-
-		// Read JPLC in if it is time to do so.
-		if(tnow >= grid.stimulus_onset_time && !jplc_read_in)
-		{
-			read_init_ATP(&grid, ec);
-			jplc_read_in = true;
-		}
-
-		integrate_adaptive(make_controlled<error_stepper_type>( absTol , relTol), f , y , tnow , tend , interval);
-		//integrate_const(stepper, f, y , tnow , tend , interval);
-
-		t_stamp.solver_t2 = MPI_Wtime();
-		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
-
-		palce_holder_for_timing_max_min[0][iteration] = t_stamp.diff_solver;
-		t_stamp.aggregate_compute += t_stamp.diff_solver;
-
-		/// Call for interprocessor communication.
-		t_stamp.total_comms_cost_t1 = MPI_Wtime();
-
-		communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
-
-		t_stamp.total_comms_cost_t2 = MPI_Wtime();
-		t_stamp.diff_total_comms_cost = t_stamp.total_comms_cost_t2 - t_stamp.total_comms_cost_t1;
-		palce_holder_for_timing_max_min[1][iteration] = t_stamp.diff_total_comms_cost;
-		t_stamp.aggregate_comm += t_stamp.diff_total_comms_cost;
-
-		if((iteration % file_write_per_unit_time) == 0)
-		{
-			t_stamp.write_t1 = MPI_Wtime();
-
-			// Geometry to be written.
-			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc);
-			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
-
-			// State variables to be written as attributes.
-			gather_smcData(&grid, my_IO_domain_info, writer_buffer, smc, write_count);
-			gather_ecData(&grid, my_IO_domain_info, writer_buffer, ec, write_count);
-
-			if (grid.rank == 0)
-			{
-				// Write out the meshes with attributes.
-				initialise_time_wise_checkpoint(check, grid, write_count, path, my_IO_domain_info);
-				write_smc_and_ec_data(check, &grid, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
-				close_time_wise_checkpoints(check);
-			}
-
-			// HDF5 Start
-			// HDF5 Start
-			// HDF5 Start
-
-			// Collect state variable data on writers.
-			// TODO: Perhaps the ECs matrix is better stored as pointers in the grid?
-			gather_EC_data(&grid, ec_buffer, ec);
-			// TODO: Perhaps the SMCs matrix is better stored as pointers in the grid?
-			gather_SMC_data(&grid, smc_buffer, smc);
-
-			if(grid.rank == 0)
-			{
-				// Write state variables to HDF5.
-				write_EC_data_HDF5(&grid, ec_buffer, write_count, path);
-				write_SMC_data_HDF5(&grid, smc_buffer, write_count, path);
-			}
-
-			// HDF5 End
-			// HDF5 End
-			// HDF5 End
-
-			t_stamp.write_t2 = MPI_Wtime();
-			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;
-			palce_holder_for_timing_max_min[2][write_count] = t_stamp.diff_write;
-			t_stamp.aggregate_write += t_stamp.diff_write;
-			write_count++;
-		}
-
-		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
-		initialize_t_stamp(&t_stamp);
-		/// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
-		iteration++;
-		tnow = tend;
-		tend += interval;
-
+		time_range.push_back((double) i * interval);
 	}
+
+	//integrate_times(make_controlled< error_stepper_type >( absTol , relTol),f , y , &tnow , &tfinal, interval,
+	runge_kutta4< state_type > stepper;
+	//integrate_const(stepper,f , y , tnow , tfinal, interval, write_lorenz);
+
+	integrate_times(make_controlled< error_stepper_type >( absTol , relTol), f , y , time_range.begin() ,time_range.end(), interval,
+			observer(&palce_holder_for_timing_max_min[0][0], &iteration, &file_write_per_unit_time, my_IO_domain_info,
+			writer_buffer, &write_count, check, ec_buffer, smc_buffer, path, int(tfinal / interval)));
+
 
 	// Release the EC and SMC buffers used for writing to HDF5.
 	if(grid.rank == 0)
