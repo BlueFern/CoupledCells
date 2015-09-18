@@ -1,9 +1,5 @@
 #include "computelib.h"
 
-#ifdef CVODE
-#include <nvector/nvector_serial.h>
-#endif
-
 using namespace std;
 
 conductance cpl_cef;
@@ -275,15 +271,9 @@ int main(int argc, char* argv[])
 		thres[i] = absTOL;
 	}
 
-	// Variables holding new and old values.
-#ifdef CVODE
-	N_Vector ny;
-	ny = N_VNew_Serial(grid.NEQ);
-	double *y = NV_DATA_S(ny);
-#else
 	// State variables.
 	double* y = (double*) checked_malloc(grid.NEQ * sizeof(double), "Solver array y for RKSUITE");
-#endif
+
 	// Internal work space.
 	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double), "Workspace array y for RKSUITE");
 
@@ -318,8 +308,12 @@ int main(int argc, char* argv[])
 	// the solver will reset JPLC and read later it when the time is right.
 	read_init_ATP(&grid, ec);
 
-#ifdef CVODE
-	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
+#ifdef BOOST_ODEINT
+	odeint_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
+#endif
+
+#ifdef ARK_ODE
+	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
 #endif
 
 #ifdef RK_SUITE

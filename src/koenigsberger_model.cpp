@@ -87,7 +87,7 @@ void Initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 void koenigsberger_smc(grid_parms grid, SMC_cell** smc)
 /*******************************************************************************************/
 {
-	// Evaluate single cell fluexs.
+	// Evaluate single cell fluxes.
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
 
@@ -156,7 +156,7 @@ void koenigsberger_smc_derivatives(double* f, grid_parms grid, SMC_cell** smc) {
 void koenigsberger_ec(grid_parms grid, EC_cell** ec)
 /************************************************************/
 {
-	// Evaluate single cell fluexs.
+	// Evaluate single cell fluxes.
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
 			//JIP3

@@ -11,7 +11,7 @@ import re
 import glob
 
 BASE_PATTERN = "_Data_t_*.vtu"
-TEST_PATTERN = "_data_t_*.vtu"
+TEST_PATTERN = "_Data_t_*.vtu"
 
 iren = vtk.vtkRenderWindowInteractor()
 mapper_0 = vtk.vtkDataSetMapper()

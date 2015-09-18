@@ -12,9 +12,9 @@
 #include <math.h>
 #include "macros.h"
 
-#ifdef CVODE
 #include <nvector/nvector_serial.h>
-#endif
+
+
 
 using namespace std;
 
@@ -416,15 +416,18 @@ double* reinitialize_koenigsberger_smc(checkpoint_handle*, int, grid_parms, doub
 double* reinitialize_koenigsberger_ec(checkpoint_handle*, int, grid_parms, double*, EC_cell**);
 int checkpoint(checkpoint_handle*, grid_parms, double*, double*, SMC_cell**, EC_cell**);
 
-//Solver related funtions
-void computeDerivatives(double, double*, double*);
+// Solver related functions.
+#ifdef RK_SUITE
 void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, checkpoint_handle*, char*, IO_domain_info*);
+#endif
 
-#ifdef CVODE
-static int check_cvode_flag(void *flagvalue, char *funcname, int opt);
-void cvode_solver(double tnow, double tfinal, double interval, N_Vector y, int total, double TOL, double absTOL,
-		int file_write_per_unit_time,int, checkpoint_handle *check, time_keeper* elps_t);
-#endif /* CVODE */
+#ifdef ARK_ODE
+void arkode_solver(double, double, double, double*, int, double, double, int, checkpoint_handle*, char*, IO_domain_info*);
+#endif
+
+#ifdef BOOST_ODEINT
+void odeint_solver(double, double, double, double*, int, double, double, int, checkpoint_handle*, char*, IO_domain_info*);
+#endif
 
 int compute_with_time_profiling(time_stamps*, grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 int compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);

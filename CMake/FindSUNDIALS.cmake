@@ -8,6 +8,7 @@ set(SUNDIALS_LIB_NAMES sundials_arkode sundials_nvecserial sundials_cvode sundia
 set(SUNDIALS_LIBRARIES)
 
 IF(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
+
 	SET(SUNDIALS_FOUND YES)
 	SET(SUNDIALS_INCLUDES ${SUNDIALS_DIR})
 	find_path (SUNDIALS_INCLUDE_DIR sundials_config.h HINTS "${SUNDIALS_DIR}" PATH_SUFFIXES include/sundials NO_DEFAULT_PATH)
@@ -22,7 +23,7 @@ IF(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 			message(STATUS "NOTFOUND: ${SUNDIALS_LIB}")
 		endif(lib${SUNDIALS_LIB})
 	endforeach(SUNDIALS_LIB)
-	
+
 ELSE(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 	SET(SUNDIALS_FOUND NO)
 	message(FATAL_ERROR "Can not find SUNDIALS!")
