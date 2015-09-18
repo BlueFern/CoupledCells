@@ -1,4 +1,3 @@
-#ifndef CVODE
 #include <mpi.h>
 #include <iostream>
 #include <fstream>
@@ -25,7 +24,7 @@ extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
 extern time_stamps t_stamp;
 
-char RK_suite_error[] = "[%d] RK Solver Error at tnow = %f: %d = \"%s\".\n";
+char RK_suite_error[] = "[%d] RK solver return value at tnow = %f: %d = \"%s\".\n";
 
 void report_RK_suite_error(int cflag, double tnow, int rank)
 {
@@ -339,4 +338,4 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// Time profiling data gets lost in the event of a crash.
 	checkpoint_coarse_time_profiling_data(grid, &t_stamp, my_IO_domain_info);
 }
-#endif
+

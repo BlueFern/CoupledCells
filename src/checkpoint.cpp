@@ -246,8 +246,9 @@ void write_process_mesh(checkpoint_handle* check, grid_parms* grid, IO_domain_in
 	free(writer_buffer->process_mesh_points);
 	/*************** Writing cell data **************/
 	header = (char*) checked_malloc(1024 * sizeof(char), "allocation memory for writing header failed at MPI_COMM_WORLD Rank 0");
-	header_offset[1] = sprintf(header, "CELLS %d %d\n", branches * grid->info[PROCESS_MESH][TOTAL_CELLS],
-			5 * 3 * grid->info[PROCESS_MESH][TOTAL_CELLS]);
+	header_offset[1] = sprintf(header, "CELLS %d %d\n",
+			branches * grid->info[PROCESS_MESH][TOTAL_CELLS],
+			5 * branches * grid->info[PROCESS_MESH][TOTAL_CELLS]);
 
 	count = header_offset[1];
 	disp = (header_offset[0] + point_offset) * sizeof(char);

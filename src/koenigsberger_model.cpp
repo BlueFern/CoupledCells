@@ -7,6 +7,8 @@
 #include "computelib.h"
 #include "koenigsberger_constants.h"
 
+// TODO: Check smc[i][j].p[smc_w] is ever updated in calculations.
+
 /*******************************************************************************************/
 void Initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 /*******************************************************************************************/

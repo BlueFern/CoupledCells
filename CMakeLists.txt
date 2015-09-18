@@ -52,7 +52,7 @@ if(${ODE_SOLVER} STREQUAL "RK_suite")
 	add_subdirectory(contrib)
 	
 	# Remember the library for the ODE solver implementation to link in to the executable.
-	set(ODE_SOVLER_LIBS RKSuite)
+	set(ODE_SOLVER_LIBS RKSuite)
 
 # In this case we want to find the system SUNDIALS libraries, including ARKODE.
 elseif(${ODE_SOLVER} STREQUAL "SUNDIALS_arkode")
@@ -178,7 +178,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 target_link_libraries(coupledCellsModel 
 	${MPI_LIBRARIES}
 	${HDF5_LIBRARIES}
-	${ODE_SOVLER_LIBS})
+	${ODE_SOLVER_LIBS})
 
 find_package(Doxygen)
 

@@ -322,7 +322,7 @@ int main(int argc, char* argv[])
 	cvode_solver(tnow, tfinal, interval, ny, grid.NEQ, TOL, absTOL,file_write_per_unit_time,line_number,check,&elps_t);
 #endif
 
-#ifndef CVODE
+#ifdef RK_SUITE
 	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
 #endif
 

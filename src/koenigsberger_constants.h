@@ -1,16 +1,15 @@
-/*
- * koenigsberger_constants.h
- *
- *  Created on: 24/05/2013
- *      Author: mohsinshaikh
- */
-
 #ifndef KOENIGSBERGER_CONSTANTS_H_
 #define KOENIGSBERGER_CONSTANTS_H_
 
+/*
+ * koenigsberger_constants.h
+ *
+ * FIXED MODEL PARAMETERS FOR THE KOENIGSBERGER MODEL
+ *
+ */
 
-    // FIXED MODEL PARAMETERS FOR KOENIGSBERGER MODEL
 double
+	/* Constants for homogenically coupled SMCs. */
       Fi = 0.23,  Kri = 1.00,  GCai = 0.00129,  vCa1 = 100.00,
 	  vCa2 = -24.00,  RCai = 8.50,  GNaCai = 0.00316,  cNaCai = 0.5,
 	  vNaCai = -30.00,  Bi = 2.025,  cbi = 1.0,  CICRi = 55.00,
@@ -20,7 +19,7 @@ double
 	  GKi = 0.0046,  vKi = -94.00,  lambda = 45.00,
 	  cwi = 0.0,  beta = 0.13,  vCa3 = -27.0,
 	  RKi = 12.0,  ki = 0.1,
-	/* ants for homogenically coupled ECs*/
+	/* Constants for homogenically coupled ECs. */
 	  Fj = 0.23,  Krj = 1.00,  Bj = 0.5,
 	  cbj = 1.0,  CICRj = 5.0,  scj = 2.0,
 	  ccj = 0.9,  Dj = 0.24,  Lj = 0.025,
@@ -33,4 +32,5 @@ double
 	  m4s = 0.389,   GRj = 955, vrestj = -31.10,
 	/*Intracellular calcium buffering*/
 	  k6 = 100.00,  k7 = 300.00,  BT = 120.00;
+
 #endif /* KOENIGSBERGER_CONSTANTS_H_ */
