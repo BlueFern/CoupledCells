@@ -122,7 +122,6 @@ void ark_check_flag(int cflag, char *funcname, int rank, double tnow)
 void arkode_solver(double tnow, double tfinal, double interval, double *yInitial, int neq, double relTOL, double absTOL,
 		int file_write_per_unit_time, checkpoint_handle *check, char* path, IO_domain_info* my_IO_domain_info)
 {
-
 	int iteration = 0;
 	int write_count = 0;
 	int count = 0;
@@ -252,12 +251,11 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
 	}
 
-
 	t = tnow;
 	tout = tnow + interval;
 
 	// ITERATION loop to go from INITIAL time to FINAL time.
-	while (tfinal - t > 1.0e-15)
+	while ((tfinal + interval) - t > 1.0e-15)
 	{
 		t_stamp.solver_t1 = MPI_Wtime();
 
@@ -272,7 +270,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		ark_check_flag(flag, (char *)"ARKode", grid.universal_rank, tnow);
 
 		tout += interval;
-		//tout = (tout > tfinal) ? tfinal : tout;
 
 		t_stamp.solver_t2 = MPI_Wtime();
 		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
@@ -292,7 +289,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 
 		if((iteration % file_write_per_unit_time) == 0)
 		{
-			//printf("*** %d, %d, %d***\n", grid.universal_rank, iteration, file_write_per_unit_time);
 
 			t_stamp.write_t1 = MPI_Wtime();
 
