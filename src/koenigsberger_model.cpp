@@ -8,24 +8,25 @@
 #include "koenigsberger_constants.h"
 
 /*******************************************************************************************/
-void Initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
+void Initialize_koeingsberger_smc(grid_parms grid, double *y, SMC_cell** smc)
 /*******************************************************************************************/
 {
+#if 1
 	int k = 0, offset;
-
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
 			if (i > 1)
 				k = ((i - 1) * grid.neq_smc_axially);
 			else if (i == 1)
 				k = 0;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 1e-2;
-			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 1e-2;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 1e-2;
-			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 1e-3;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 2e-6;
+			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 7e-6;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = -14e-4;
+			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.00;
 			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.00;
 		}
 	}
+#endif
 
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++) {
 		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells); j++) {
@@ -47,23 +48,25 @@ void Initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 }
 
 /*******************************************************************************************/
-void Initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
+void Initialize_koeingsberger_ec(grid_parms grid, double *y, EC_cell** ec)
 /*******************************************************************************************/
 {
+#if 1
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
-
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
 			if (i > 1)
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
 				k = offset + 0;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 1e-2;
-			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 1e-2;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 1e-2;
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.0;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.00;
+			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.00;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.12;
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.00;
 		}
 	}
+#endif
+
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++) {
 		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++) {
 			ec[i][j].q[ec_Ca] = 0.0;
@@ -217,6 +220,148 @@ void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid, EC_cell*
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
 					ec[i][j].JPLC - ec[i][j].A[J_IP3_deg] + ec[i][j].B[cpl_IP3] + ec[i][j].C[cpl_IP3];
+		}
+	}
+}
+
+// Varieties of functions to also write out various species for plotting.
+/***************************************************************************/
+void koenigsberger_smc_derivatives_to_write(double* f, grid_parms grid, SMC_cell** smc, double* buffer) {
+/***************************************************************************/
+
+	int buffer_offset = 0;
+
+	int k;
+	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+		for (int j = 1; j <= grid.num_smc_axially; j++) {
+			if (i > 1)
+				k = ((i - 1) * grid.neq_smc_axially);
+			else if (i == 1)
+				k = 0;
+			f[k + ((j - 1) * grid.neq_smc) + smc_Ca] = smc[i][j].A[J_IP3] - smc[i][j].A[J_SERCA] + smc[i][j].A[J_CICR] - smc[i][j].A[J_Extrusion]
+					+ smc[i][j].A[J_Leak] - smc[i][j].A[J_VOCC] + smc[i][j].A[J_Na_Ca] + smc[i][j].B[cpl_Ca] + smc[i][j].C[cpl_Ca];
+
+			f[k + ((j - 1) * grid.neq_smc) + smc_SR] = smc[i][j].A[J_SERCA] - smc[i][j].A[J_CICR] - smc[i][j].A[J_Leak];
+
+			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = gama
+					* (-smc[i][j].A[J_Na_K] - smc[i][j].A[J_Cl] - (2 * smc[i][j].A[J_VOCC]) - smc[i][j].A[J_Na_Ca] - smc[i][j].A[J_K])
+					+ smc[i][j].B[cpl_Vm] + smc[i][j].C[cpl_Vm];
+
+			f[k + ((j - 1) * grid.neq_smc) + smc_w] = lambda * (smc[i][j].A[K_activation] - smc[i][j].p[smc_w]);
+
+			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = -smc[i][j].A[J_IP3_deg] + smc[i][j].B[cpl_IP3] + smc[i][j].C[cpl_IP3];
+
+			if (i == SMC_COL && j == SMC_ROW)
+			{
+
+
+				// Fluxes
+				for (int k = 0; k < grid.num_fluxes_smc; k++)
+				{
+					buffer[buffer_offset++] = smc[i][j].A[k];
+				}
+
+				// Homogeneous coupling_species
+				for (int k = 0; k < grid.num_coupling_species_smc; k++)
+				{
+					buffer[buffer_offset++] = smc[i][j].B[k];
+
+				}
+
+				// Heterogeneous coupling_species
+				for (int k = 0; k < grid.num_coupling_species_smc; k++)
+				{
+
+					buffer[buffer_offset++] = smc[i][j].C[k];
+				}
+
+				// Derivatives
+				buffer[buffer_offset++] = smc[i][j].A[J_IP3] - smc[i][j].A[J_SERCA] + smc[i][j].A[J_CICR] - smc[i][j].A[J_Extrusion]
+						+ smc[i][j].A[J_Leak] - smc[i][j].A[J_VOCC] + smc[i][j].A[J_Na_Ca] + smc[i][j].B[cpl_Ca] + smc[i][j].C[cpl_Ca];
+				buffer[buffer_offset++] = smc[i][j].A[J_SERCA] - smc[i][j].A[J_CICR] - smc[i][j].A[J_Leak];
+				buffer[buffer_offset++] = gama * (-smc[i][j].A[J_Na_K] - smc[i][j].A[J_Cl] - (2 * smc[i][j].A[J_VOCC]) - smc[i][j].A[J_Na_Ca] - smc[i][j].A[J_K])
+						+ smc[i][j].B[cpl_Vm] + smc[i][j].C[cpl_Vm];
+				buffer[buffer_offset++] = lambda * (smc[i][j].A[K_activation] - smc[i][j].p[smc_w]);
+				buffer[buffer_offset++] = -smc[i][j].A[J_IP3_deg] + smc[i][j].B[cpl_IP3] + smc[i][j].C[cpl_IP3];
+
+
+				// Concentrations
+				buffer[buffer_offset++] = smc[i][j].p[smc_Ca];
+				buffer[buffer_offset++] = smc[i][j].p[smc_SR];
+				buffer[buffer_offset++] = smc[i][j].p[smc_Vm];
+				buffer[buffer_offset++] = smc[i][j].p[smc_w];
+				buffer[buffer_offset] = smc[i][j].p[smc_IP3];
+
+			}
+		}
+	}
+}
+
+void koenigsberger_ec_derivatives_to_write(double t, double* f, grid_parms grid, EC_cell** ec, double* buffer)
+{
+	int buffer_offset = grid.num_coupling_species_smc * 2 + grid.num_fluxes_smc + 5 + 5;
+
+	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
+	for(int i = 1; i <= grid.num_ec_circumferentially; i++)
+	{
+		for(int j = 1; j <= grid.num_ec_axially; j++)
+		{
+			if (i > 1)
+				k = offset + ((i - 1) * grid.neq_ec_axially);
+			else if (i == 1)
+				k = offset + 0;
+
+			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] =
+					ec[i][j].A[J_IP3] - ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR] - ec[i][j].A[J_Extrusion]
+					+ ec[i][j].A[J_Leak] + ec[i][j].A[J_NSC] + ec[i][j].A[J_trivial_Ca] + ec[i][j].B[cpl_Ca] + ec[i][j].C[cpl_Ca];
+
+			f[k + ((j - 1) * grid.neq_ec) + ec_SR] =
+					ec[i][j].A[J_SERCA] - ec[i][j].A[J_CICR] - ec[i][j].A[J_Leak];
+
+			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
+					((-1 / Cmj) * (ec[i][j].A[J_Ktot] + ec[i][j].A[J_Residual])) + ec[i][j].B[cpl_Vm] + ec[i][j].C[cpl_Vm];
+
+			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
+					ec[i][j].JPLC - ec[i][j].A[J_IP3_deg] + ec[i][j].B[cpl_IP3] + ec[i][j].C[cpl_IP3];
+
+			if (i == EC_COL && j == EC_ROW)
+			{
+
+				// Fluxes
+				for (int k = 0; k < grid.num_fluxes_ec; k++)
+				{
+					buffer[buffer_offset++] = ec[i][j].A[k];
+				}
+
+				// Homogeneous coupling_species
+				for (int k = 0; k < grid.num_coupling_species_ec; k++)
+				{
+					buffer[buffer_offset++] = ec[i][j].B[k];
+
+				}
+
+				// Heterogeneous coupling_species
+				for (int k = 0; k < grid.num_coupling_species_ec; k++)
+				{
+
+					buffer[buffer_offset++] = ec[i][j].C[k];
+				}
+
+				// Derivatives
+				buffer[buffer_offset++] = ec[i][j].A[J_IP3] - ec[i][j].A[J_SERCA] + ec[i][j].A[J_CICR] - ec[i][j].A[J_Extrusion]
+									+ ec[i][j].A[J_Leak] + ec[i][j].A[J_NSC] + ec[i][j].A[J_trivial_Ca] + ec[i][j].B[cpl_Ca] + ec[i][j].C[cpl_Ca];
+				buffer[buffer_offset++] = ec[i][j].A[J_SERCA] - ec[i][j].A[J_CICR] - ec[i][j].A[J_Leak];
+
+				buffer[buffer_offset++] = ((-1 / Cmj) * (ec[i][j].A[J_Ktot] + ec[i][j].A[J_Residual])) + ec[i][j].B[cpl_Vm] + ec[i][j].C[cpl_Vm];
+				buffer[buffer_offset++] = ec[i][j].JPLC - ec[i][j].A[J_IP3_deg] + ec[i][j].B[cpl_IP3] + ec[i][j].C[cpl_IP3];
+
+				// Concentrations
+				buffer[buffer_offset++] = ec[i][j].q[ec_Ca];
+				buffer[buffer_offset++] = ec[i][j].q[ec_SR];
+				buffer[buffer_offset++] = ec[i][j].q[ec_Vm];
+				buffer[buffer_offset++] = ec[i][j].q[ec_IP3];
+
+			}
 		}
 	}
 }

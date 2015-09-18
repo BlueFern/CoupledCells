@@ -3,6 +3,7 @@
 using namespace std;
 time_stamps t_stamp;
 
+
 /**
  * Wrapper around malloc to catch failed memory allocation. If allocation fails
  * MPI_Abort is called.
@@ -914,9 +915,8 @@ int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 		double t, double* y, double* f) {
 	int err;
+	static double buf[OUTPUT_PLOTTING_SIZE];
 
-	// TODO: Is there a reason this mapping is done before the solver is called?
-	// WARNING: Perhaps this mapping should be done outside of this function.
 	map_solver_output_to_cells(grid, y, smc, ec);
 
 	switch (grid.smc_model)
@@ -968,7 +968,14 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 		}
 		case (KNBGR):
 		{
-			koenigsberger_smc_derivatives(f, grid, smc);
+			if (grid.universal_rank == RANK)
+			{
+				koenigsberger_smc_derivatives_to_write(f, grid, smc, buf);
+			}
+			else
+			{
+				koenigsberger_smc_derivatives(f, grid, smc);
+			}
 			break;
 		}
 		default:
@@ -982,12 +989,26 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 	{
 		case (TSK):
 		{
-			koenigsberger_ec_derivatives(t, f, grid, ec);
+			if (grid.universal_rank == RANK)
+			{
+				koenigsberger_ec_derivatives_to_write(t, f, grid, ec, buf);
+			}
+			else
+			{
+				koenigsberger_ec_derivatives(t, f, grid, ec);
+			}
 			break;
 		}
 		case (KNBGR):
 			{
-			koenigsberger_ec_derivatives(t, f, grid, ec);
+			if (grid.universal_rank == RANK)
+			{
+				koenigsberger_ec_derivatives_to_write(t, f, grid, ec, buf);
+			}
+			else
+			{
+				koenigsberger_ec_derivatives(t, f, grid, ec);
+			}
 			break;
 		}
 		default:
@@ -996,6 +1017,17 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 			break;
 		}
 	}
+
+	if (grid.universal_rank == RANK)
+	{
+		for (int i = 0; i < OUTPUT_PLOTTING_SIZE; i++)
+		{
+			fprintf(var_file, "%f,", buf[i]);
+		}
+		fprintf(var_file, "%f\n", t);
+	}
+
+
 	return (err);
 }
 

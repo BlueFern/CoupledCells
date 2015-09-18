@@ -9,6 +9,8 @@ double **sendbuf, **recvbuf;
 grid_parms grid;
 time_keeper elps_t;
 
+FILE* var_file;
+
 int CASE = 1;
 
 /**
@@ -34,6 +36,12 @@ int main(int argc, char* argv[])
 	/// - Reveal information of myself and size of MPI_COMM_WORLD
 	CHECK_MPI_ERROR(MPI_Comm_rank(grid.universe, &grid.universal_rank));
 	CHECK_MPI_ERROR(MPI_Comm_size(grid.universe, &grid.numtasks));
+
+
+	if (grid.universal_rank == RANK)
+	{
+		var_file = fopen(FILENAME, "a");
+	}
 
 	char filename[50];
 	int error;
@@ -88,7 +96,7 @@ int main(int argc, char* argv[])
 	grid.min_jplc = 0.20;
 	grid.max_jplc = 2.5;
 	grid.gradient = 0.288e3;
-	grid.stimulus_onset_time = 10.00;
+	grid.stimulus_onset_time = 2000.00;
 
 	/// - Calculate the number of cells per task.
 	grid = set_task_parameters(grid);
@@ -305,7 +313,7 @@ int main(int argc, char* argv[])
 	int ret = read_topology_info((char *)"files/configuration_info.txt", &grid, smc, ec);
 
 	// This is read in here for validation purposes in the output.
-	// the solver will reset JPLC and read later it when the time is right.
+	// the solver will reset JPLC and read later it when the time is right; it's a gut feeling kinda thing.
 	read_init_ATP(&grid, ec);
 
 #ifdef BOOST_ODEINT
@@ -325,6 +333,10 @@ int main(int argc, char* argv[])
 
 	// fclose(grid.logptr);
 
+	if (grid.universal_rank == RANK)
+	{
+		fclose(var_file);
+	}
 	MPI_Finalize();
 	return (0);
 }

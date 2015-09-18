@@ -14,7 +14,15 @@
 
 #include <nvector/nvector_serial.h>
 
+#define OUTPUT_PLOTTING_SIZE 54
+#define RANK 15
+#define EC_COL 3 // one more as it's 1 indexed in Koenigsberger, same for below.
+#define EC_ROW 3
+#define SMC_COL 1
+#define SMC_ROW 33
+extern FILE* var_file;
 
+#define FILENAME "everything_no_atp_200s.csv"
 
 using namespace std;
 
@@ -362,8 +370,8 @@ typedef struct {
 } data_buffer;
 
 int couplingParms(int CASE, conductance* cpl_cef);
-void Initialize_koeingsberger_smc(grid_parms, double*, SMC_cell**);
-void Initialize_koeingsberger_ec(grid_parms, double*, EC_cell**);
+void Initialize_koeingsberger_smc(grid_parms, double *, SMC_cell**);
+void Initialize_koeingsberger_ec(grid_parms, double *, EC_cell**);
 // void map_GhostCells_to_cells(SMC_cell**, EC_cell**, grid_parms);
 int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
@@ -382,6 +390,9 @@ void tsoukias_smc_derivatives(double*, grid_parms, SMC_cell**);
 void koenigsberger_smc_derivatives(double*, grid_parms, SMC_cell**);
 void koenigsberger_ec(grid_parms, EC_cell**);
 void koenigsberger_ec_derivatives(double, double*, grid_parms, EC_cell**);
+
+void koenigsberger_smc_derivatives_to_write(double*, grid_parms, SMC_cell**, double*);
+void koenigsberger_ec_derivatives_to_write(double, double*, grid_parms, EC_cell**, double*);
 
 ///Checkpoint functions.
 checkpoint_handle* initialise_checkpoint(grid_parms);

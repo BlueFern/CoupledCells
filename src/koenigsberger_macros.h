@@ -2,7 +2,7 @@
 #define     smc_Ca              0
 #define     smc_SR              1
 #define     smc_Vm              2
-#define		 smc_w				 3
+#define		smc_w				3
 #define     smc_IP3             4
 //EC state variables
 #define     ec_Ca               0

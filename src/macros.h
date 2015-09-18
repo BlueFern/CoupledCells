@@ -17,14 +17,15 @@
 #define 		KNBGR			0
 #define 		TSK				1
 
-
+// WARNING, THESE MACROS WERE/ARE INCONSISTENT WITH KOENIGSBERGER_MACROS.H
+// TODO: Remove duplicate macros and put the rest in tsoukias.
 /*******Koenigsberger model*******/
 //SMC state variables
 #define     smc_Ca              0
 #define     smc_SR              1
 #define     smc_Vm              2
-#define     smc_IP3             3
-#define		 smc_w				 4
+#define		smc_w				3
+#define     smc_IP3             4
 //EC state variables
 #define     ec_Ca               0
 #define     ec_SR               1
