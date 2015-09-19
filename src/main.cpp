@@ -129,17 +129,17 @@ int main(int argc, char* argv[])
 */
 
 	// TODO: Write a flippin' macro for allocating 2D arrays.
-	smc = (SMC_cell**) checked_malloc((grid.num_smc_circumferentially + grid.num_ghost_cells) * sizeof(SMC_cell*), "SMC.");
+	smc = (SMC_cell**) checked_malloc((grid.num_smc_circumferentially + grid.num_ghost_cells) * sizeof(SMC_cell*), SRC_LOC);
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
 	{
-		smc[i] = (SMC_cell*) checked_malloc((grid.num_smc_axially + grid.num_ghost_cells) * sizeof(SMC_cell), "SMC column (row?) dimension.");
+		smc[i] = (SMC_cell*) checked_malloc((grid.num_smc_axially + grid.num_ghost_cells) * sizeof(SMC_cell), SRC_LOC);
 	}
 
 	// TODO: Write a flippin' macro for allocating 2D arrays.
-	ec = (EC_cell**) checked_malloc((grid.num_ec_circumferentially + grid.num_ghost_cells) * sizeof(EC_cell*), "EC.");
+	ec = (EC_cell**) checked_malloc((grid.num_ec_circumferentially + grid.num_ghost_cells) * sizeof(EC_cell*), SRC_LOC);
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++)
 	{
-		ec[i] = (EC_cell*) checked_malloc((grid.num_ec_axially + grid.num_ghost_cells) * sizeof(EC_cell), "EC column (row?) dimension.");
+		ec[i] = (EC_cell*) checked_malloc((grid.num_ec_axially + grid.num_ghost_cells) * sizeof(EC_cell), SRC_LOC);
 	}
 
 	/// Memory allocation for state vector, the single cell evaluation placeholders (the RHS of the ODEs for each cell) and coupling fluxes is implemented in this section.
@@ -151,10 +151,10 @@ int main(int argc, char* argv[])
 	{
 		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells); j++)
 		{
-			smc[i][j].p = (double*) checked_malloc(grid.neq_smc * sizeof(double), "Allocation of array for state variables failed.");
-			smc[i][j].A = (double*) checked_malloc(grid.num_fluxes_smc * sizeof(double), "Matrix A in smc.");
-			smc[i][j].B = (double*) checked_malloc(grid.num_coupling_species_smc * sizeof(double), "Matrix B in smc.");
-			smc[i][j].C = (double*) checked_malloc(grid.num_coupling_species_smc * sizeof(double), "Matrix C in smc.");
+			smc[i][j].vars = (double*) checked_malloc(grid.neq_smc * sizeof(double), SRC_LOC);
+			smc[i][j].fluxes = (double*) checked_malloc(grid.num_fluxes_smc * sizeof(double), SRC_LOC);
+			smc[i][j].homo_fluxes = (double*) checked_malloc(grid.num_coupling_species_smc * sizeof(double), SRC_LOC);
+			smc[i][j].hetero_fluxes = (double*) checked_malloc(grid.num_coupling_species_smc * sizeof(double), SRC_LOC);
 		}
 	}
 
@@ -163,10 +163,10 @@ int main(int argc, char* argv[])
 	{
 		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++)
 		{
-			ec[i][j].q = (double*) checked_malloc(grid.neq_ec * sizeof(double), "Allocation of array for state variables failed.");
-			ec[i][j].A = (double*) checked_malloc(grid.num_fluxes_ec * sizeof(double), "Matrix A in ec.");
-			ec[i][j].B = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), "Matrix B in ec.");
-			ec[i][j].C = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), "Matrix C in ec.");
+			ec[i][j].vars = (double*) checked_malloc(grid.neq_ec * sizeof(double), "Allocation of array for state variables failed.");
+			ec[i][j].fluxes = (double*) checked_malloc(grid.num_fluxes_ec * sizeof(double), "Matrix A in ec.");
+			ec[i][j].homo_fluxes = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), "Matrix B in ec.");
+			ec[i][j].hetero_fluxes = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), "Matrix C in ec.");
 		}
 	}
 

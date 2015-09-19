@@ -2462,7 +2462,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	int length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_smc_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].p[smc_Ca]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].vars[smc_Ca]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2500,7 +2500,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_smc_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].p[smc_SR]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].vars[smc_SR]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2538,7 +2538,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_smc_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].p[smc_Vm]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].vars[smc_Vm]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2576,7 +2576,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_smc_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].p[smc_w]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].vars[smc_w]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2614,7 +2614,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_smc_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].p[smc_IP3]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].vars[smc_IP3]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2650,7 +2650,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_smc_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].B[cpl_Ca]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].homo_fluxes[cpl_Ca]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2686,7 +2686,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_smc_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].B[cpl_Vm]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].homo_fluxes[cpl_Vm]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2722,7 +2722,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	length = 0;
 	for (int i = 1; i <= grid->num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_smc_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].B[cpl_IP3]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", smc[i][j].homo_fluxes[cpl_IP3]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2771,7 +2771,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	int length = 0;
 	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_ec_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].q[ec_Ca]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].vars[ec_Ca]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2807,7 +2807,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	length = 0;
 	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_ec_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].q[ec_SR]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].vars[ec_SR]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2843,7 +2843,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	length = 0;
 	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_ec_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].q[ec_Vm]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].vars[ec_Vm]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2879,7 +2879,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	length = 0;
 	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_ec_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].q[ec_IP3]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].vars[ec_IP3]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2915,7 +2915,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	length = 0;
 	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_ec_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].B[cpl_Ca]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].homo_fluxes[cpl_Ca]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2951,7 +2951,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	length = 0;
 	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_ec_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].B[cpl_Vm]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].homo_fluxes[cpl_Vm]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
@@ -2987,7 +2987,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	length = 0;
 	for (int i = 1; i <= grid->num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid->num_ec_axially; j++) {
-			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].B[cpl_IP3]);
+			length += sprintf(send_buffer + length, "%2.12lf\n", ec[i][j].homo_fluxes[cpl_IP3]);
 		}
 	}
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));

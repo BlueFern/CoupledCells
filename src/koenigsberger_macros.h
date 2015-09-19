@@ -21,7 +21,7 @@
 #define     J_VOCC              6
 #define     J_Na_Ca             7
 #define     J_Na_K              8
-#define     J_Cl	             9
+#define     J_Cl	            9
 #define     J_K                 10
 #define     K_activation        11
 //EC specific currents
@@ -32,8 +32,6 @@
 #define     J_Residual          10
 #define     J_trivial_Ca        11
 
-
-
-#define	    cpl_Ca		         0
-#define	    cpl_Vm		         1
-#define	    cpl_IP3		         2
+#define	    cpl_Ca		        0
+#define	    cpl_Vm		        1
+#define	    cpl_IP3		        2

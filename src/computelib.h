@@ -225,25 +225,25 @@ typedef struct {
 } nbrs_data;
 
 typedef struct {
-	double *p;		///storage for the state variables corresponding to an SMC.
+	double *vars;		///storage for the state variables corresponding to an SMC.
 	double NO, NE, I_stim;		///specific to Tsoukias model
 	int node_row, node_col;	///stores coordinates of the node on which I am located.
 	int my_row, my_col;		///stores my location on the node.
-	double* A;			    ///stores single cell fluxes
-	double* B;			    ///stores homogeneous coupling fluxes
-	double* C;			    ///stores heterogeneous coupling fluxes
+	double* fluxes;			    ///stores single cell fluxes
+	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
+	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
 	double x_coordinate[4], y_coordinate[4], z_coordinate[4];
 	int cell_index[4];
 	conductance cpl_cef;
 } SMC_cell;
 
 typedef struct {
-	double *q;		///storage for the state variables corresponding to an SMC.
+	double *vars;		///storage for the state variables corresponding to an SMC.
 	int node_row, node_col;	///stores coordinates of the node on which I am located.
 	int my_row, my_col;		///stores my location on the node.
-	double* A;			    ///stores single cell fluxes
-	double* B;			    ///stores homogeneous coupling fluxes
-	double* C;			    ///stores heterogeneous coupling fluxes
+	double* fluxes;			    ///stores single cell fluxes
+	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
+	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
 	double z_coord;
 	double x_coordinate[4], y_coordinate[4], z_coordinate[4];
 	int cell_indx[4];
