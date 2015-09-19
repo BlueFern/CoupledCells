@@ -21,13 +21,13 @@ extern double **sendbuf, **recvbuf;
 extern grid_parms grid;
 extern time_stamps t_stamp;
 
-typedef std::vector< double > state_type;
-typedef runge_kutta_cash_karp54< state_type > error_stepper_type;
-typedef controlled_runge_kutta< error_stepper_type > controlled_stepper_type;
+typedef std::vector<double> state_type;
+typedef runge_kutta_cash_karp54<state_type> error_stepper_type;
+typedef controlled_runge_kutta<error_stepper_type> controlled_stepper_type;
 
 bool jplc_read_in = false;
 
-typedef iterator_range<vector<double>::iterator> time_range;
+typedef iterator_range<std::vector<double>::iterator> time_range;
 
 void f(const state_type &y, state_type &f, const double t)
 {
@@ -50,11 +50,14 @@ struct observer
 	char* path_;
 
     observer(double* palce_holder_for_timing_max_min, int* iteration, int* file_write_per_unit_time, IO_domain_info *my_IO_domain_info,
-    		data_buffer* writer_buffer, int* write_count, checkpoint_handle *check, ec_data_buffer *ec_buffer, smc_data_buffer *smc_buffer, char* path, int sizee) :
-			palce_holder_for_timing_max_min_( palce_holder_for_timing_max_min ) , iteration_( iteration ),
-			file_write_per_unit_time_(file_write_per_unit_time), my_IO_domain_info_ (my_IO_domain_info), writer_buffer_ (writer_buffer), write_count_ (write_count),
-			check_(check), ec_buffer_(ec_buffer), smc_buffer_ (smc_buffer), path_(path), sizee_ (sizee)
+    		data_buffer* writer_buffer, int* write_count, checkpoint_handle *check, ec_data_buffer *ec_buffer, smc_data_buffer *smc_buffer,
+			char* path, int sizee) :
+			palce_holder_for_timing_max_min_(palce_holder_for_timing_max_min) , iteration_(iteration),
+			file_write_per_unit_time_(file_write_per_unit_time), my_IO_domain_info_ (my_IO_domain_info),
+			writer_buffer_ (writer_buffer), write_count_ (write_count), check_(check), ec_buffer_(ec_buffer),
+			smc_buffer_ (smc_buffer), path_(path), sizee_ (sizee)
     { }
+
     void operator()( const state_type &y , const double tnow )
     {
 

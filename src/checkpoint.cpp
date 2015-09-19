@@ -86,110 +86,13 @@ void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid, in
 }
 #endif
 
-#if 0
-void dump_smc(grid_parms grid, SMC_cell **smc, checkpoint_handle *check, int line_number, int write_count)
-{
-	MPI_Status status[8];
-	MPI_Request req[8];
-
-	MPI_Status status_tmp[3];
-	MPI_Request req_tmp[3];
-
-	MPI_Offset disp;
-	int write_element_count, time_offset_in_file, file_offset;
-
-	write_element_count = grid.num_smc_axially * grid.num_smc_circumferentially;
-	time_offset_in_file = write_count * write_element_count * grid.tasks * sizeof(double);
-	file_offset = (line_number * grid.tasks * write_element_count * sizeof(double));
-
-	double b1[grid.num_smc_circumferentially * grid.num_smc_axially], b2[grid.num_smc_circumferentially * grid.num_smc_axially],
-			b3[grid.num_smc_circumferentially * grid.num_smc_axially], b4[grid.num_smc_circumferentially * grid.num_smc_axially],
-			b5[grid.num_smc_circumferentially * grid.num_smc_axially], b6[grid.num_smc_circumferentially * grid.num_smc_axially],
-			b7[grid.num_smc_circumferentially * grid.num_smc_axially], b8[grid.num_smc_circumferentially * grid.num_smc_axially];
-	int k;
-
-	k = 0;
-	// An amendment in the orientation of data written, so that it is aligned with the vtk geomerty
-	for (int j = 1; j <= grid.num_smc_axially; j++) {
-		for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-			b1[k] = smc[i][j].p[smc_Ca];
-			b2[k] = smc[i][j].p[smc_SR];
-			b3[k] = smc[i][j].p[smc_Vm];
-			b4[k] = smc[i][j].p[smc_w];
-			b5[k] = smc[i][j].p[smc_IP3];
-			b6[k] = smc[i][j].B[cpl_Ca];
-			b7[k] = smc[i][j].B[cpl_Vm];
-			b8[k] = smc[i][j].B[cpl_IP3];
-			k++;
-		}
-	}
-	disp = /*file_offset + time_offset_in_file + */(grid.rank * write_element_count * sizeof(double));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->ci, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->vi, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->Ii, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->si, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
-
-	CHECK_MPI_ERROR(MPI_File_write_at(check->wi, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
-
-	CHECK_MPI_ERROR(MPI_File_write_at(check->cpCi, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->cpVi, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->cpIi, disp, &b8, write_element_count, MPI_DOUBLE, &status[7]));
-}
-
-void dump_ec(grid_parms grid, EC_cell **ec, checkpoint_handle *check, int line_number, int write_count)
-{
-	MPI_Status status[8];
-
-	MPI_Status status_tmp[3];
-	MPI_Request req_tmp[3];
-
-	MPI_Offset disp;
-	int write_element_count, time_offset_in_file, file_offset;
-
-	write_element_count = grid.num_ec_axially * grid.num_ec_circumferentially;
-	time_offset_in_file = write_count * write_element_count * grid.tasks * sizeof(double);
-	file_offset = (line_number * grid.tasks * write_element_count * sizeof(double));
-
-	double b1[grid.num_ec_circumferentially * grid.num_ec_axially], b2[grid.num_ec_circumferentially * grid.num_ec_axially],
-			b3[grid.num_ec_circumferentially * grid.num_ec_axially], b4[grid.num_ec_circumferentially * grid.num_ec_axially],
-			b5[grid.num_ec_circumferentially * grid.num_ec_axially], b6[grid.num_ec_circumferentially * grid.num_ec_axially],
-			b7[grid.num_ec_circumferentially * grid.num_ec_axially];
-	int k;
-
-	k = 0;
-// An amendment in the orientation of data written, so that it is aligned with the vtk geomerty
-	/*for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-	 for (int j = 1; j <= grid.num_ec_axially; j++) {*/
-	for (int j = 1; j <= grid.num_ec_axially; j++) {
-		for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
-			b1[k] = ec[i][j].q[ec_Ca];
-			b2[k] = ec[i][j].q[ec_SR];
-			b3[k] = ec[i][j].q[ec_Vm];
-			b4[k] = ec[i][j].q[ec_IP3];
-			b5[k] = ec[i][j].B[cpl_Ca];
-			b6[k] = ec[i][j].B[cpl_Vm];
-			b7[k] = ec[i][j].B[cpl_IP3];
-			k++;
-		}
-	}
-	disp = /*file_offset + time_offset_in_file + */(grid.rank * write_element_count * sizeof(double));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->cj, disp, &b1, write_element_count, MPI_DOUBLE, &status[0]));
-
-	CHECK_MPI_ERROR(MPI_File_write_at(check->vj, disp, &b3, write_element_count, MPI_DOUBLE, &status[2]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->Ij, disp, &b4, write_element_count, MPI_DOUBLE, &status[3]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->sj, disp, &b2, write_element_count, MPI_DOUBLE, &status[1]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->cpCj, disp, &b5, write_element_count, MPI_DOUBLE, &status[4]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->cpVj, disp, &b6, write_element_count, MPI_DOUBLE, &status[5]));
-	CHECK_MPI_ERROR(MPI_File_write_at(check->cpIj, disp, &b7, write_element_count, MPI_DOUBLE, &status[6]));
-}
-#endif
-
 void write_smc_and_ec_data(checkpoint_handle* check, grid_parms* grid, double tnow, SMC_cell** smc, EC_cell** ec, int write_count,
 		IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer) {
 
 	dump_smc_data(check, grid, my_IO_domain_info, writer_buffer, smc, write_count);
 	dump_ec_data(check, grid, my_IO_domain_info, writer_buffer, ec, write_count);
 }
+
 /*********************************************************************************************************************************/
 void write_process_mesh(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, char* path)
 /*********************************************************************************************************************************/
@@ -1167,30 +1070,6 @@ void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms gr
 	free(disp);
 }
 
-#if 0
-void dump_coords(grid_parms grid, EC_cell** ec, checkpoint_handle* check, const char* message) {
-
-	MPI_Status status;
-	MPI_Offset disp;
-	int write_element_count = grid.num_ec_axially;
-	double buffer[write_element_count];
-
-	int k = 0;
-	int i = 1;
-	for (int j = grid.num_ec_axially; j >= 1; j--) {
-		buffer[k] = ec[i][j].z_coord;
-		k++;
-	}
-
-	int offset;
-
-//offset = grid.rank / grid.n;
-//disp = (offset * write_element_count * sizeof(double));
-
-	disp = grid.num_ec_axially * (grid.m - ((grid.rank + 1) / grid.n)) * sizeof(double);
-	CHECK_MPI_ERROR(MPI_File_write_at(check->coords, disp, &buffer, write_element_count, MPI_DOUBLE, &status));
-}
-#endif
 
 #if 0
 void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tnow, time_stamps t_stamp, int itteration, int append_point) {

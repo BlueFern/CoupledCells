@@ -8,10 +8,9 @@
 #include "gather.h"
 #include "writeHDF5.h"
 
-
-extern "C" {
+//extern "C" {
 #include "rksuite.h"
-}
+//}
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
