@@ -114,16 +114,16 @@ struct node {
 	    domain_start, ///< Universal ranks from MPI_COMM_WORLD.
 	    domain_end, ///< Universal ranks from MPI_COMM_WORLD.
 		parent_branch_case_bifurcation,	///< If my parent is a bifurcation which branch am I a child of?
-			m, n; ///< Row and columns in my MPI_sub_world.
+		m, n; ///< Row and columns in my MPI_sub_world.
 	char boundary_tag; ///< An identifier showing whether I am a rank from top or bottom edge of a subdomain.
 	int half_marker; ///< A marker for demarcating the bottom edge of the Left/Right daughter artery.
-											///exists which couples not to the parent artery but the other daughter segment. This can have following values:
-											/// 1. half coupling to parent
-											/// 2. half coupling to other daughter
-											/// 3. half splitting in the middle with left portion coupling to parent, and right portion of data coupling
-											///    to other daughter segment.
+					///exists which couples not to the parent artery but the other daughter segment. This can have following values:
+					/// 1. half coupling to parent
+					/// 2. half coupling to other daughter
+					/// 3. half splitting in the middle with left portion coupling to parent, and right portion of data coupling
+					///    to other daughter segment.
 
-	double d, l; ///< Diameter and length scales.
+	//double d, l; ///< Diameter and length scales.
 
 };
 // TODO: Pretty sure this can be chucked out.
@@ -131,9 +131,7 @@ struct my_tree {
 	node internal_info;
 	node left_child, right_child, parent;
 	double z_offset_start, z_offset_end;				/// These are domain offsets start and end points to demacated distance in
-														/// z direction spanned by a processor's own sub-domain that it belongs to.
-	double local_z_start, local_z_end;
-
+	double local_z_start, local_z_end;					/// z direction spanned by a processor's own sub-domain that it belongs to.
 };
 #endif
 
@@ -152,52 +150,60 @@ struct glb_domn_inf {
 ///type is BIF
 
 typedef struct {
-	double tfinal;
+	// double tfinal;
+
 	///General information on cell geometry and the geometric primitive constructed.
-	double hx_smc, hx_ec, hy_smc, hy_ec, requested_length, requested_diameter, corrected_length, corrected_diameter, new_circ;
+	// double hx_smc, hx_ec, hy_smc, hy_ec, requested_length, requested_diameter, corrected_length, corrected_diameter, new_circ;
+
+	const static int num_smc_fundblk_circumferentially = 1;
+	const static int num_ec_fundblk_circumferentially = 5;
+	const static int num_smc_fundblk_axially = 13;
+	const static int num_ec_fundblk_axially = 1;
+
+	const static int num_ghost_cells = 2;
+
+	const static int num_fluxes_smc = 12; // Number of SMC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
+	const static int num_fluxes_ec = 12; // Number of EC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
+
+	const static int num_coupling_species_smc = 3; // Number of SMC coupling species homogenic/heterogenic.
+	const static int num_coupling_species_ec = 3; // Number of SMC coupling species homogenic/heterogenic.
+
+	const static int neq_smc = 5; // Number of SMC ODEs for a single cell.
+	const static int neq_ec = 4; // Number of EC ODEs for a single cell.
+
 	int
 	///Global domain information storage
 	num_domains, **domains,
-	/// This is a node local information.
+	///total grid points axially
+	m,
+	///total grid points circumferentially
+	n,
+	///placeholder to retrieve information from topology files
+	// **info,
+	/// My coordinates
+	coords[2],
+	///Coordinates for neighbour tasks
+	nbrs[2][4],
+	///Node payload information(number of cells laid out on a node)
+	num_ec_axially, num_ec_circumferentially, num_smc_axially, num_smc_circumferentially, neq_ec_axially, neq_smc_axially,
+	///Total number of state variables in the computational domain
+	NEQ,
+	///Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task
+	added_info_in_send_buf,
+	///This is global and local MPI information
+	numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank, rank,
+	tasks, 				/// numtasks = total CPUs in MPI_COMM_WORLD,
+						/// tasks = total CPUs in my-subdomain's comm
+	my_domain_color, my_domain_key, color, key,
 
-	/// Topology information (fundamental unit or block of cells).
-	num_smc_fundblk_circumferentially, num_ec_fundblk_circumferentially, num_smc_fundblk_axially, num_ec_fundblk_axially,
-
-			/// Total number of ghost cells to be added in the computational in each dimension (circumferentail and axial).
-			num_ghost_cells,
-			///total grid points axially
-			m,
-			///total grid points circumferentially
-			n,
-			///placeholder to retrieve information from topology files
-			**info,
-			/// My coordinates
-			coords[2],
-			///Coordinates for neighbour tasks
-			nbrs[2][4],
-			///Node payload information(number of cells laid out on a node)
-			num_ec_axially, num_ec_circumferentially, num_smc_axially, num_smc_circumferentially, neq_ec_axially, neq_smc_axially,
-			///Model related parameters
-			///number of equations modelling an EC or SMC
-			neq_smc, neq_ec,
-			///Total number of state variables in the computational domain
-			NEQ, num_fluxes_smc, num_fluxes_ec, num_coupling_species_smc, num_coupling_species_ec,
-			///Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task
-			added_info_in_send_buf,
-			///this is global and local MPI information
-			numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank, rank,
-			tasks, 				/// numtasks = total CPUs in MPI_COMM_WORLD,
-								/// tasks = total CPUs in my-subdomain's comm
-			my_domain_color, my_domain_key, color, key,
-
-			//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
-			//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
-			branch_tag,
-			/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
-			scheme, offset_P, offset_L, offset_R, flip_array[2],
-			/// Number of elements being sent and received.
-			num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right, num_elements_recv_up,
-			num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
+	//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
+	//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
+	branch_tag,
+	/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
+	scheme, offset_P, offset_L, offset_R, flip_array[2],
+	/// Number of elements being sent and received.
+	num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right,
+	num_elements_recv_up, num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
 
 	// double **coordinates;
 
@@ -215,24 +221,26 @@ typedef struct {
 	int smc_model, ec_model;	// These are placeholders for the selection of model to be simulated in each cell.
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
 
-	char suffix[16];	// this is for use in the naming convention of the IO files to recognize and record
+	char suffix[16];	// this is for use in the naming convention of the IO files to recognise and record
 						// which files are associated with a given task/processor.
 
 						///Temporary array for use in time profiling checkpointing
 	double **time_profile;
 	FILE* logptr;
 
-	int num_parameters;			///Number of parameters e.g. JPLC, ATP, WSS etc those are to be used to stimulate the discrete cell models.
+	// int num_parameters;			///Number of parameters e.g. JPLC, ATP, WSS etc those are to be used to stimulate the discrete cell models.
 
 	int logfile_displacements;
 	char *logfile_write_buffer;
 	char solution_dir[1024], time_profiling_dir[1024], config_file[1024];
 } grid_parms;
 
+#if 0
 ///Structure to store coupling data received from the neighbouring task.
 typedef struct {
 	double c, v, I;
 } nbrs_data;
+#endif
 
 typedef struct {
 	double *vars;		///storage for the state variables corresponding to an SMC.
@@ -263,32 +271,20 @@ typedef struct {
 	conductance cpl_cef;
 } EC_cell;
 
-// WARNING: Most members of this struct are never used in the rest of the code.
 typedef struct {
 	MPI_File
 	/* common handlers */
-	logptr, Time, elapsed_time, jplc, coords,
-
-///time profiling file handles.
-			time_profiling, async_calls, async_wait, barrier_before_comm, map_function, single_cell_fluxes, coupling_fluxes, solver, writer_func,
-			derivative_calls, itter_count, line_number, remote_async_calls, remote_async_wait, send_buf_update, recv_buf_update, total_comms_cost,
-//handlers specific for Tsoukias-SMC model variables
-			tsk_Ca, tsk_V, tsk_IP3, tsk_q_1, tsk_q_2, tsk_d_L, tsk_f_L, tsk_p_f, tsk_p_s, tsk_p_K, tsk_h_IP3, tsk_Ca_u, tsk_Ca_r, tsk_R_10, tsk_R_11,
-			tsk_R_01, tsk_V_cGMP, tsk_cGMP, tsk_Na, tsk_K, tsk_Cl, tsk_DAG, tsk_PIP2, tsk_R_S_G, tsk_R_S_P_G, tsk_G,
-//handlers specific for Koenigsberger-SMC model variables
-			ci, si, vi, wi, Ii,
-//handlers specific for Koenigsberger-EC model variables
-			cj, sj, vj, Ij,
-//common handlers to record coupling data
-			cpCi, cpVi, cpIi, cpCj, cpVj, cpIj,
-//Task topology file
-			task_mesh,
-//SMC Data file
-			smc_data_file,
-//EC Data file
-			ec_data_file,
-//Agonist records
-			ec_agonist_file;
+	logptr,
+	jplc,
+	coords,
+	elapsed_time,
+	itter_count,
+	//Task topology file
+	task_mesh,
+	//SMC Data file
+	smc_data_file,
+	//EC Data file
+	ec_data_file;
 } checkpoint_handle;
 
 typedef struct {

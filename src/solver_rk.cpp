@@ -139,7 +139,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 #endif
 
 	// Start HDF5 Output Prototyping.
-	// printf("* %d\t%d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank, grid.tasks);
 
 	// Buffer for jplc values for the whole mesh.
 	double *jplc_buffer = 0;
@@ -162,13 +161,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		free(jplc_buffer);
 	}
 
-	//MPI_Barrier(MPI_COMM_WORLD);
-	//printf("[%d] *** Pulling the plug in %s:%s\n", grid.universal_rank, __FILE__, __FUNCTION__);
-	//MPI_Abort(MPI_COMM_WORLD, 911);
-
 	// End HDf5 Output Prototyping.
-
-	// printf("%s, grid.cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
 
 	// Reset JPLC to the uniform map.
 	// The input file will have to be read later when the time is right.
@@ -176,7 +169,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	{
 		for (int j = 1; j <= grid.num_ec_axially; j++)
 		{
-			ec[i][j].JPLC = grid.uniform_jplc; // agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);
+			ec[i][j].JPLC = grid.uniform_jplc;
 		}
 	}
 
@@ -202,7 +195,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	}
 
 	// ITERATION loop to go from INITIAL time to FINAL time.
-	// TODO: Perhaps tnow needs to be a pointer to have the rksuite.ct call alter it.
 	while(tnow <= tfinal)
 	{
 		t_stamp.solver_t1 = MPI_Wtime();
@@ -217,9 +209,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				read_init_ATP(&grid, ec);
 				jplc_read_in = true;
 			}
-
-			// This is a riddle: the RKSUITE::ct expects tnow as a pointer to be able to write to it,
-			// but passing it as a pointer produces compilation errors. And yet tnow gets updated.
 
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
 

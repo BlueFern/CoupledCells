@@ -189,7 +189,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 #endif
 
 	// Start HDF5 Output Prototyping.
-	// printf("* %d\t%d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank, grid.tasks);
 
 	// Buffer for jplc values for the whole mesh.
 	double *jplc_buffer = 0;
@@ -200,7 +199,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		jplc_buffer = (double *)checked_malloc(grid.tasks * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
 	}
 
-#if 0
 	// Collect all jplc values in a single buffer on root node.
 	gather_JPLC(&grid, jplc_buffer, ec);
 
@@ -212,15 +210,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
 	}
-#endif
-
-	//MPI_Barrier(MPI_COMM_WORLD);
-	//printf("[%d] *** Pulling the plug in %s:%s\n", grid.universal_rank, __FILE__, __FUNCTION__);
-	//MPI_Abort(MPI_COMM_WORLD, 911);
-
 	// End HDf5 Output Prototyping.
-
-	// printf("%s, grid.cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
 
 	// Reset JPLC to the uniform map.
 	// The input file will have to be read later when the time is right.
@@ -228,7 +218,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	{
 		for (int j = 1; j <= grid.num_ec_axially; j++)
 		{
-			ec[i][j].JPLC = grid.uniform_jplc; // agonist_profile((grid.stimulus_onset_time + 1), grid, i, j, ec[i][j].centeroid_point[1]);
+			ec[i][j].JPLC = grid.uniform_jplc;
 		}
 	}
 
@@ -312,7 +302,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			}
 #endif
 
-#if 0
 			// HDF5 Start
 			// HDF5 Start
 			// HDF5 Start
@@ -333,7 +322,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			// HDF5 End
 			// HDF5 End
 			// HDF5 End
-#endif
+
 			t_stamp.write_t2 = MPI_Wtime();
 			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;
 			palce_holder_for_timing_max_min[2][write_count] = t_stamp.diff_write;

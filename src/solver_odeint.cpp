@@ -200,7 +200,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 #endif
 
 	// Start HDF5 Output Prototyping.
-	// printf("* %d\t%d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank, grid.tasks);
 
 	// Buffer for jplc values for the whole mesh.
 	double *jplc_buffer = 0;
@@ -223,13 +222,7 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		free(jplc_buffer);
 	}
 
-	//MPI_Barrier(MPI_COMM_WORLD);
-	//printf("[%d] *** Pulling the plug in %s:%s\n", grid.universal_rank, __FILE__, __FUNCTION__);
-	//MPI_Abort(MPI_COMM_WORLD, 911);
-
 	// End HDf5 Output Prototyping.
-
-	// printf("%s, grid.cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
 
 	// Reset JPLC to the uniform map.
 	// The input file will have to be read later when the time is right.
@@ -271,9 +264,7 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 
 	integrate_times(make_controlled< error_stepper_type >( absTol , relTol), f , y , time_range.begin() ,time_range.end(), interval,
 			observer(&palce_holder_for_timing_max_min[0][0], &iteration, &file_write_per_unit_time, my_IO_domain_info,
-			// writer_buffer,
 			&write_count, check, ec_buffer, smc_buffer, path, int(tfinal / interval)));
-
 
 	// Release the EC and SMC buffers used for writing to HDF5.
 	if(grid.rank == 0)

@@ -22,11 +22,11 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 
 	int **subdomain_extents;
 
-	// TODO: Define a function for allocating 2D arrays.
-	subdomain_extents = (int**) checked_malloc(num_subdomains * sizeof(int*), "Subdomain information allocation.");
+	// Just one subdomain in the case of a bifurcation or a straight segment.
+	subdomain_extents = (int**) checked_malloc(num_subdomains * sizeof(int*), SRC_LOC);
 
 	for (int i = 0; i < num_subdomains; i++) {
-		subdomain_extents[i] = (int*) checked_malloc(3 * sizeof(int), "Subdomains array elements allocation.");
+		subdomain_extents[i] = (int*) checked_malloc(3 * sizeof(int), SRC_LOC);
 	}
 
 	// Element 1: offset, Element 2: Start universal_rank, Element 3: End universal_rank.
@@ -36,22 +36,18 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 		subdomain_extents[i][2] = 0;
 	}
 
-	int a;
+	int num_tasks;
 	for(int i = 0; i < num_subdomains; i++)
 	{
-		// If the subdomain type is straight segment.
-
-		// This looks like BS. What is the meaning of the 0, 1 and 3 in those positions?
-		// if ((domains[i][1] == 0) || (domains[i][1] == 2) || (domains[i][3] == 3))
-		// Changing to this:
+		// If the subdomain type is a straight segment.
 		if(domains[i][1] == STRSEG)
 		{
-			a = domains[i][2] * domains[i][3]; // Total number of tasks mapping to the straight segment are m x n.
+			num_tasks = domains[i][2] * domains[i][3]; // Total number of tasks mapping to the straight segment are m x n.
 		}
 		// If the subdomain is a part of a bifurcation.
 		else if(domains[i][1] == BIF)
 		{
-			a = 3 * domains[i][2] * domains[i][3]; // Total number of tasks mapping to the bifurcation are 3 x m x n.
+			num_tasks = 3 * domains[i][2] * domains[i][3]; // Total number of tasks mapping to the bifurcation are 3 x m x n.
 		}
 
 		// Setting up the offset bit.
@@ -62,10 +58,7 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 		}
 		else
 		{
-			// Again, this looks like BS. What is the meaning of the 0, 1 and 3 in those positions?
-			// If the previous domain is a straight segment?
-			// if((domains[i - 1][1] == 0) || (domains[i - 1][1] == 2) || (domains[i - 1][3] == 3))
-			// Changing to this:
+			// WARNING: This code has never been verified to work because we always have only one domain.
 			if((domains[i - 1][1] == STRSEG))
 			{
 				// The offset for the current domain is the offset of the previous domain plus the size of the previous domain.
@@ -80,21 +73,21 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 		}
 
 		subdomain_extents[i][1] = subdomain_extents[i][0]; // Start universal_rank in MPI_COMM_WORLD.
-		subdomain_extents[i][2] = subdomain_extents[i][0] + a - 1; // End universal_rank in MPI_COMM_WORLD.
+		subdomain_extents[i][2] = subdomain_extents[i][0] + num_tasks - 1; // End universal_rank in MPI_COMM_WORLD.
 	}
 
 	/* Now all processors have the information where each domain starts and ends. Using this information, each processor can identify which domain
 	 * it belongs and can mark a colour (0 to num_domains - 1). This colour can now be used to split the MPI_COMM_WORLD into sub_domains.
+	 *
 	 * Identify the new reordered ranks in grid.sub_universe_ranks in these new communicators recorded in grid.sub_universe and update the size of this sub_domain in
 	 * grid.sub_universe_numtasks.
+	 *
 	 * Since each processor has the information of its parent and child domains in domain[][] array, use this to update the my_tree structure.
 	 * Update remote nearest neighbour locations accordingly.
 	 */
 
 	for(int i = 0; i < num_subdomains; i++)
 	{
-		// Where is grid.universal_rank written to in the first place?
-		// Now, this grid.universal_rank is the universal rank of what?
 		if((grid.universal_rank >= subdomain_extents[i][1]) && (grid.universal_rank <= subdomain_extents[i][2]))
 		{
 			grid.my_domain_color = i;
@@ -102,6 +95,7 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 
 			grid.m = domains[i][2];
 			grid.n = domains[i][3];
+
 
 			grid.my_domain.internal_info.domain_index = domains[i][0];
 			grid.my_domain.internal_info.domain_type = domains[i][1];
@@ -111,6 +105,7 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 
 			grid.my_domain.parent.domain_index = domains[i][4];
 
+#if 0
 			// If I have a parent domain.
 			if(grid.my_domain.parent.domain_index >= 0)
 			{
@@ -161,13 +156,15 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 			// No parent domain.
 			else
 			{
+#endif
 				grid.my_domain.parent.domain_type = -1;
 				grid.my_domain.parent.domain_start = -1;
 				grid.my_domain.parent.domain_end = -1;
+#if 0
 			}
-
+#endif
 			grid.my_domain.left_child.domain_index = domains[i][5];
-
+#if 0
 			// If we have a left child domain.
 			if(grid.my_domain.left_child.domain_index >= 0)
 			{
@@ -183,13 +180,15 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 			// No child domain.
 			else
 			{
+#endif
 				grid.my_domain.left_child.domain_type = -1;
 				grid.my_domain.left_child.domain_start = -1;
 				grid.my_domain.left_child.domain_end = -1;
+#if 0
 			}
-
+#endif
 			grid.my_domain.right_child.domain_index = domains[i][6];
-
+#if 0
 			// If we have a right child domain.
 			if(grid.my_domain.right_child.domain_index >= 0)
 			{
@@ -204,21 +203,20 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 			}
 			else
 			{
+#endif
 				grid.my_domain.right_child.domain_type = -1;
 				grid.my_domain.right_child.domain_start = -1;
 				grid.my_domain.right_child.domain_end = -1;
+#if 0
 			}
+#endif
 		}
 	}
 
-	// TODO: Define a function for releasing 2D arrays.
-	// Memory was not deallocated here.
 	for (int i = 0; i < num_subdomains; i++) {
 		free(subdomain_extents[i]);
 	}
 	free(subdomain_extents);
-
-	// TODO: The sub_universe communicator is the same as the split_comm?
 
 	// Do the domain splitting to make subdomains.
 	CHECK_MPI_ERROR(MPI_Comm_split(grid.universe, grid.my_domain_color, grid.my_domain_key, &grid.sub_universe));
@@ -233,40 +231,16 @@ grid_parms configure_subdomains_topology(grid_parms grid, int num_subdomains, in
 grid_parms set_task_parameters(grid_parms grid)
 {
 	// Each tasks now calculates the number of ECs per node.
-
-	// Each tasks now calculates the number of ECs per node.
+	// Each tasks now calculates the number of SMCs per node.
 	// Topological information of a functional block of coupled cells.
 	// This is the minimum required to simulate a relevant coupled topology.
 
-	{
-		// TODO: These should be set in the struct definition, as all these members are constants.
-		grid.num_smc_fundblk_circumferentially = 1;
-		grid.num_ec_fundblk_circumferentially = 5;
-		grid.num_smc_fundblk_axially = 13;
-		grid.num_ec_fundblk_axially = 1;
-
-		grid.num_ghost_cells = 2;
-
-		grid.num_fluxes_smc = 12; // Number of SMC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
-		grid.num_fluxes_ec = 12; // Number of EC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
-
-		grid.num_coupling_species_smc = 3; // Number of SMC coupling species homogenic/heterogenic.
-		grid.num_coupling_species_ec = 3; // Number of SMC coupling species homogenic/heterogenic.
-
-		grid.neq_smc = 5; // Number of SMC ODEs for a single cell.
-		grid.neq_ec = 4; // Number of EC ODEs for a single cell.
-	}
-
 	for(int i = 0; i < grid.num_domains; i++)
 	{
-		// Perhaps this block does not need to be executed 9 times?
-		// for(int j = 0; j < 9; j++)
-		{
-			grid.num_ec_axially = grid.domains[i][7] * grid.num_ec_fundblk_axially;
-			grid.num_smc_axially = grid.num_ec_axially * grid.num_smc_fundblk_axially;
-			grid.num_smc_circumferentially = grid.domains[i][8] * grid.num_smc_fundblk_circumferentially;
-			grid.num_ec_circumferentially = grid.num_smc_circumferentially * grid.num_ec_fundblk_circumferentially;
-		}
+		grid.num_ec_axially = grid.domains[i][7] * grid.num_ec_fundblk_axially;
+		grid.num_smc_axially = grid.num_ec_axially * grid.num_smc_fundblk_axially;
+		grid.num_smc_circumferentially = grid.domains[i][8] * grid.num_smc_fundblk_circumferentially;
+		grid.num_ec_circumferentially = grid.num_smc_circumferentially * grid.num_ec_fundblk_circumferentially;
 	}
 
 	grid.neq_ec_axially = grid.num_ec_axially * grid.neq_ec;
@@ -280,7 +254,7 @@ grid_parms set_task_parameters(grid_parms grid)
 		grid.flip_array[i] = 0;
 	}
 
-	grid.num_parameters = 2;
+	// grid.num_parameters = 2;
 	return grid;
 }
 
@@ -363,138 +337,141 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 	// Check whether number of processors in circumferential direction are EVEN or ODD.
 	grid.scheme = grid.n % 2;
 
-	// TODO: Did we not try to get the neighbours information with the cart shift call? Why is this UP1, UP2, DOWN1, DOWN2?
-
 	// If number of processors in circumferential dimension is EVEN.
-	if (grid.scheme == 0) {
+	if (grid.scheme == 0)
+	{
 		// For parent branch edge.
 		if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
 		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
 
 			//Top edge which couples to left/right child branch.
-			if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2)) {
-				// TODO: Review values being set. Condense to one statement
+			if ((grid.sub_universe_rank - grid.offset_P) < (grid.n / 2))
+			{
 				grid.nbrs[remote][UP] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
-
-
-			} else if ((grid.sub_universe_rank - grid.offset_P) >= (grid.n / 2)) {
+			}
+			else if ((grid.sub_universe_rank - grid.offset_P) >= (grid.n / 2))
+			{
 				grid.nbrs[remote][UP] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
 
 			}
 		}
 		// For left daughter branch edge.
-		else if ((grid.sub_universe_rank >= grid.offset_L) && (grid.sub_universe_rank < (grid.offset_L + grid.n))) {
+		else if ((grid.sub_universe_rank >= grid.offset_L) && (grid.sub_universe_rank < (grid.offset_L + grid.n)))
+		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
 
-			if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2)) {
+			if ((grid.sub_universe_rank - grid.offset_L) < (grid.n / 2))
+			{
 				grid.nbrs[remote][DOWN] = grid.sub_universe_rank - grid.offset_L;
-
 				grid.my_domain.internal_info.half_marker = 1;
 
 			} else if ((grid.sub_universe_rank - grid.offset_L) >= (grid.n / 2)) {
 				grid.nbrs[remote][DOWN] = (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
 
 				grid.flip_array[DOWN] = 1;
-				//grid.flip_array[DOWN2] = 1;
 				grid.my_domain.internal_info.half_marker = 2;
 			}
-
 		}
 		// For Right daughter branch edge.
-		else if ((grid.sub_universe_rank >= grid.offset_R) && (grid.sub_universe_rank < (grid.offset_R + grid.n))) {
+		else if ((grid.sub_universe_rank >= grid.offset_R) && (grid.sub_universe_rank < (grid.offset_R + grid.n)))
+		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
-			if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2)) {
+			if ((grid.sub_universe_rank - grid.offset_R) < (grid.n / 2))
+			{
 				grid.nbrs[remote][DOWN] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
-
 				grid.flip_array[DOWN] = 1;
 				grid.my_domain.internal_info.half_marker = 2;
 
-			} else if ((grid.sub_universe_rank - grid.offset_R) >= (grid.n / 2)) {
+			}
+			else if ((grid.sub_universe_rank - grid.offset_R) >= (grid.n / 2))
+			{
 				grid.nbrs[remote][DOWN] = grid.sub_universe_rank - grid.offset_R;
 				grid.my_domain.internal_info.half_marker = 1;
 			}
 		}
 	}
 
-	// TODO: Did we not try to get the neighbours information with the cart shift call?  Why is this UP1, UP2, DOWN1, DOWN2?
-
 	// If number of processors in circumferential dimension are ODD.
-	if (grid.scheme != 0) {
-		// The parent artery edge.
-		if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n)) {
+	if (grid.scheme != 0)
+	{
+		// The parent edge.
+		if ((grid.sub_universe_rank >= 0) && (grid.sub_universe_rank < grid.n))
+		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
-			if ((grid.sub_universe_rank - grid.offset_P) < ((grid.n - 1) / 2)) {
+			if ((grid.sub_universe_rank - grid.offset_P) < ((grid.n - 1) / 2))
+			{
 				grid.nbrs[remote][UP] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
 				grid.nbrs[remote][UP] += grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
 
-			} else if ((grid.sub_universe_rank - grid.offset_P) > ((grid.n - 1) / 2)) {
+			}
+			else if ((grid.sub_universe_rank - grid.offset_P) > ((grid.n - 1) / 2))
+			{
 				grid.nbrs[remote][UP] = grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
 				grid.nbrs[remote][UP] += grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
 
-			} else if ((grid.sub_universe_rank - grid.offset_P) == ((grid.n - 1) / 2)) {
+			}
+			else if ((grid.sub_universe_rank - grid.offset_P) == ((grid.n - 1) / 2))
+			{
 				grid.nbrs[remote][UP] = grid.offset_L + (grid.sub_universe_rank - grid.offset_P);
 				grid.nbrs[remote][UP] += grid.offset_R + (grid.sub_universe_rank - grid.offset_P);
 			}
 		}
-		//The left daughter artery edge
+		//The left daughter edge
 		else if ((grid.sub_universe_rank >= grid.offset_L) && (grid.sub_universe_rank < grid.offset_L + grid.n))
 		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
-			if ((grid.sub_universe_rank - grid.offset_L) < ((grid.n - 1) / 2)) {
+			if ((grid.sub_universe_rank - grid.offset_L) < ((grid.n - 1) / 2))
+			{
 				grid.nbrs[remote][DOWN] = (grid.sub_universe_rank - grid.offset_L);
 				grid.nbrs[remote][DOWN] += (grid.sub_universe_rank - grid.offset_L);
 				grid.my_domain.internal_info.half_marker = 1;
 
-			} else if ((grid.sub_universe_rank - grid.offset_L) > ((grid.n - 1) / 2)) {
+			}
+			else if ((grid.sub_universe_rank - grid.offset_L) > ((grid.n - 1) / 2))
+			{
 				grid.nbrs[remote][DOWN] = (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
 				grid.nbrs[remote][DOWN] += (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
 				grid.flip_array[DOWN] = 1;
-				//grid.flip_array[DOWN2] = 1;
 				grid.my_domain.internal_info.half_marker = 2;
 
-			} else if ((grid.sub_universe_rank - grid.offset_L) == ((grid.n - 1) / 2)) {
+			}
+			else if ((grid.sub_universe_rank - grid.offset_L) == ((grid.n - 1) / 2))
+			{
 				grid.nbrs[remote][DOWN] = (grid.sub_universe_rank - grid.offset_L);
 				grid.nbrs[remote][DOWN] += (grid.offset_R + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_L);
-
-				// TODO: What to do...Does this break things?
-				//grid.flip_array[DOWN1] = 0;
-				//grid.flip_array[DOWN2] = 1;
 				grid.flip_array[DOWN] = 1;
 				grid.my_domain.internal_info.half_marker = 3;
 			}
 		}
-		// The right daughter artery edge.
+		// The right daughter edge.
 		else if ((grid.sub_universe_rank >= grid.offset_R) && (grid.sub_universe_rank < grid.offset_R + grid.n))
 		{
 			grid.my_domain.internal_info.boundary_tag = 'I';
-			if ((grid.sub_universe_rank - grid.offset_R) < ((grid.n - 1) / 2)) {
+			if ((grid.sub_universe_rank - grid.offset_R) < ((grid.n - 1) / 2))
+			{
 				grid.nbrs[remote][DOWN] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
 				grid.nbrs[remote][DOWN] += (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
 				grid.flip_array[DOWN] = 1;
-				//grid.flip_array[DOWN] = 1;
 				grid.my_domain.internal_info.half_marker = 2;
 
-			} else if ((grid.sub_universe_rank - grid.offset_R) > ((grid.n - 1) / 2)) {
+			}
+			else if ((grid.sub_universe_rank - grid.offset_R) > ((grid.n - 1) / 2))
+			{
 				grid.nbrs[remote][DOWN] = grid.sub_universe_rank - grid.offset_R;
 				grid.nbrs[remote][DOWN] += grid.sub_universe_rank - grid.offset_R;
 				grid.my_domain.internal_info.half_marker = 1;
 
-			} else if ((grid.sub_universe_rank - grid.offset_R) == ((grid.n - 1) / 2)) {
+			}
+			else if ((grid.sub_universe_rank - grid.offset_R) == ((grid.n - 1) / 2))
+			{
 				grid.nbrs[remote][DOWN] = (grid.offset_L + (grid.n - 1)) - (grid.sub_universe_rank - grid.offset_R);
 				grid.nbrs[remote][DOWN] += grid.sub_universe_rank - grid.offset_R;
-
-				// Here again...
-				//grid.flip_array[DOWN1] = 1;
-				//grid.flip_array[DOWN2] = 0;
 				grid.flip_array[DOWN] = 1;
 				grid.my_domain.internal_info.half_marker = 3;
 			}
 		}
 	}
-
-	// OMG! FTLOP! FFS! For the millionth time, everyone can read a simple clause in a conditional statement,
-	// but what the hell is happening in the body of the statement? What is the action? What is it for?
 
 	// If I am a parent branch in my domain.
 	if (grid.branch_tag == P)
@@ -506,7 +483,6 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 			if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
 				int stride = grid.rank - ((grid.m - 1) * grid.n);
 				grid.nbrs[remote][DOWN] = grid.my_domain.parent.domain_start + stride;
-				//grid.nbrs[remote][DOWN] += grid.my_domain.parent.domain_start + stride;
 			}
 		}
 	}
@@ -521,7 +497,6 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 			{
 				int stride = grid.rank;
 				grid.nbrs[remote][UP] = grid.my_domain.left_child.domain_start + stride;
-				//grid.nbrs[remote][UP] += grid.my_domain.left_child.domain_start + stride;
 			}
 		}
 	}
@@ -536,15 +511,9 @@ grid_parms make_bifucation_cart_grids(grid_parms grid)
 			{
 				int stride = grid.rank;
 				grid.nbrs[remote][UP] = grid.my_domain.right_child.domain_start + stride;
-				//grid.nbrs[remote][UP] += grid.my_domain.right_child.domain_start + stride;
 			}
 		}
 	}
-
-	// Why do we need to return the grid, if it is passed as the argument?
-	//printf("%d %d\n",grid.flip_array[UP],grid.flip_array[DOWN]);
-
-	//printf("%d, looking at: %d %d %d %d\n",grid.sub_universe_rank, grid.nbrs[remote][UP],grid.nbrs[remote][DOWN],grid.nbrs[remote][LEFT],grid.nbrs[remote][RIGHT]);
 
 	return grid;
 }
@@ -576,9 +545,8 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid)
 	// The inverse mapping, rank-to-coordinates translation.
 	CHECK_MPI_ERROR(MPI_Cart_coords(grid.cart_comm, grid.rank, ndims, grid.coords));
 
-	// TODO: Is this right? Source is assigned to the up side, destination is the down side?
 	CHECK_MPI_ERROR(MPI_Cart_shift(grid.cart_comm, 0, 1, &grid.nbrs[local][UP], &grid.nbrs[local][DOWN]));
-	// TODO: Is this right? Our Cartesian grids are periodic, hence we don't need to know our LEFT and RIGHT neighbours.
+
 	CHECK_MPI_ERROR(MPI_Cart_shift(grid.cart_comm, 1, 1, &grid.nbrs[local][LEFT], &grid.nbrs[local][RIGHT]));
 
 	// Label the ranks on the subdomain edges of a STRAIGHT SEGMENT as top (T) or bottom boundary (B) or none (N).
@@ -607,7 +575,6 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid)
 		if ((grid.rank >= ((grid.m - 1) * grid.n)) && (grid.rank <= (grid.m * grid.n - 1))) {
 			int stride = grid.rank - ((grid.m - 1) * grid.n);
 			grid.nbrs[remote][DOWN] = grid.my_domain.parent.domain_start + stride;
-			//grid.nbrs[remote][DOWN] += grid.my_domain.parent.domain_start + stride;
 		}
 	}
 
@@ -617,7 +584,6 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid)
 		if ((grid.rank >= 0) && (grid.rank <= (grid.n - 1))) {
 			int stride = grid.rank;
 			grid.nbrs[remote][UP] = grid.my_domain.left_child.domain_start + stride;
-			//grid.nbrs[remote][UP] += grid.my_domain.left_child.domain_start + stride;
 		}
 	}
 

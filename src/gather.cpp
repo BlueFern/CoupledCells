@@ -47,7 +47,7 @@ void free_EC_data_buffer(ec_data_buffer *ec_buffer, int deep)
 
 void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 {
-	printf("[%d] Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
+	// printf("[%d] Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	// Allocate displacements for MPI comms.
 	int *disp = (int*)checked_malloc((int)(grid->tasks * sizeof(int)), SRC_LOC);
@@ -198,7 +198,7 @@ void free_SMC_data_buffer(smc_data_buffer *smc_buffer, int deep)
 /* Collect state variables from the SMC cells in one branch. */
 void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **smc)
 {
-	printf("[%d] Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
+	// printf("[%d] Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	// Allocate displacements for MPI comms.
 	int *disp = (int*)checked_malloc((int)(grid->tasks * sizeof(int)), SRC_LOC);
