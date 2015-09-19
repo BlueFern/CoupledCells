@@ -41,7 +41,7 @@ struct observer
     int* file_write_per_unit_time_;
     IO_domain_info *my_IO_domain_info_;
     double* palce_holder_for_timing_max_min_;
-    data_buffer *writer_buffer_;
+    // data_buffer *writer_buffer_;
     int* write_count_;
     int sizee_;
     checkpoint_handle *check_;
@@ -50,11 +50,13 @@ struct observer
 	char* path_;
 
     observer(double* palce_holder_for_timing_max_min, int* iteration, int* file_write_per_unit_time, IO_domain_info *my_IO_domain_info,
-    		data_buffer* writer_buffer, int* write_count, checkpoint_handle *check, ec_data_buffer *ec_buffer, smc_data_buffer *smc_buffer,
+    		// data_buffer* writer_buffer,
+			int* write_count, checkpoint_handle *check, ec_data_buffer *ec_buffer, smc_data_buffer *smc_buffer,
 			char* path, int sizee) :
 			palce_holder_for_timing_max_min_(palce_holder_for_timing_max_min) , iteration_(iteration),
 			file_write_per_unit_time_(file_write_per_unit_time), my_IO_domain_info_ (my_IO_domain_info),
-			writer_buffer_ (writer_buffer), write_count_ (write_count), check_(check), ec_buffer_(ec_buffer),
+			// writer_buffer_ (writer_buffer),
+			write_count_ (write_count), check_(check), ec_buffer_(ec_buffer),
 			smc_buffer_ (smc_buffer), path_(path), sizee_ (sizee)
     { }
 
@@ -89,6 +91,7 @@ struct observer
 
 			t_stamp.write_t1 = MPI_Wtime();
 
+#if 0
 			// Geometry to be written.
 			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info_, writer_buffer_, smc);
 			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info_, writer_buffer_, ec);
@@ -104,7 +107,7 @@ struct observer
 				write_smc_and_ec_data(check_, &grid, tnow, smc, ec, *write_count_, my_IO_domain_info_, writer_buffer_);
 				close_time_wise_checkpoints(check_);
 			}
-
+#endif
 			// HDF5 Start
 			// HDF5 Start
 			// HDF5 Start
@@ -168,6 +171,7 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 	double waste, hnext;
 	int err;
 
+#if 0
 	// Aggregation of data for the writer.
 	data_buffer* writer_buffer = (data_buffer*) checked_malloc(sizeof(data_buffer), SRC_LOC);
 	writer_buffer->buffer_length = (int*) checked_malloc(12 * sizeof(int), SRC_LOC);
@@ -193,6 +197,7 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		// Initial concentration of JPLC in the EC cells.
 		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
 	}
+#endif
 
 	// Start HDF5 Output Prototyping.
 	// printf("* %d\t%d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank, grid.tasks);
@@ -266,7 +271,8 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 
 	integrate_times(make_controlled< error_stepper_type >( absTol , relTol), f , y , time_range.begin() ,time_range.end(), interval,
 			observer(&palce_holder_for_timing_max_min[0][0], &iteration, &file_write_per_unit_time, my_IO_domain_info,
-			writer_buffer, &write_count, check, ec_buffer, smc_buffer, path, int(tfinal / interval)));
+			// writer_buffer,
+			&write_count, check, ec_buffer, smc_buffer, path, int(tfinal / interval)));
 
 
 	// Release the EC and SMC buffers used for writing to HDF5.

@@ -6,13 +6,9 @@ import numpy
 """
 Blend JPLC data from HDF5 dataset with the EC geometry from a VTK dataset.
 
-WARNING: The ordering of the cells is to be corrected.
+The idea here is to load the parent and daughter ATP datasets and simply
+replace the ATP values with what we have in the HDF5 file.
 """
-
-# The idea here is to load the parent and daughter ATP datasets and simply
-# replace the ATP values with what we have in the HDF5 file.
-
-# TODO: Sort the correct ordering of the cells.
 
 INPUT_FILES = [
 ["vtk/ec_mesh_parent.vtp", 'solution/jplc_1.h5'],
@@ -20,7 +16,7 @@ INPUT_FILES = [
 ["vtk/ec_mesh_right_daughter.vtp", 'solution/jplc_3.h5']
 ]
 
-ecAppend = vtk.vtkAppendPolyData()
+ecAppend = vtk.vtkAppendFilter()
 
 for files in INPUT_FILES:
     ecVTKFileReader = vtk.vtkXMLPolyDataReader()
@@ -53,8 +49,8 @@ for files in INPUT_FILES:
 ecAppend.Update()
 outputDataset = ecAppend.GetOutput()
 
-jplcWriter = vtk.vtkXMLPolyDataWriter()
-jplcWriter.SetFileName('solution/jplc_input.vtp')
+jplcWriter = vtk.vtkXMLUnstructuredGridWriter()
+jplcWriter.SetFileName('solution/jplc_input.vtu')
 jplcWriter.SetInput(outputDataset)
 jplcWriter.Update()
 

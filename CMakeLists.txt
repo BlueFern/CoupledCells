@@ -5,9 +5,8 @@ project(CoupledCells)
 set(PROJECT_NAME "Coupled Arterial Cells")
 set(PROJECT_COPYRIGHT "UC HPC, University of Canterbury, NZ")
 
-# TODO: Update version numbers.
-set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 9)
+set(PROJECT_VERSION_MAJOR 1)
+set(PROJECT_VERSION_MINOR 0)
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 set(PROJECT_DESCRIPTION "Large-scale simulation of chemical species transport in coupled arterial cells.")
 
@@ -97,7 +96,7 @@ set (SRCs
 	src/tsoukias_smc_multicell.cpp
 	src/update.cpp
 	src/compute.cpp
-	src/main.cpp 
+	src/simulation_main.cpp 
 	src/writeHDF5.cpp
 	src/debug_file.cpp 
 	src/topology.cpp

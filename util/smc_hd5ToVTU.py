@@ -1,20 +1,26 @@
-# This script is a very rough prototype, hence there's a lot of code repetition.
-
-# Read SMC cell data from HDF files and combine them with geometry.
-
-# For each time step there are three HDF5 files, one file per branch.
-
-# The number of time steps to proces is to be specified as a command line argument.
-
 import sys
 import h5py
 import numpy
 import vtk
 
-H5_FILE_BASE_NAME = 'smc_data_t_'
-VTP_FILE_BASE_NAME = 'smc_data_t_'
+"""
+This script is a very rough prototype, hence there's a lot of code repetition.
 
-INPUT_SMC_MESH_FILES = ['../vtk/smc_mesh_parent.vtp','../vtk/smc_mesh_left_daughter.vtp', '../vtk/smc_mesh_right_daughter.vtp']
+Read SMC cell data from HDF files and combine them with geometry.
+
+For each time step there are three HDF5 files, one file per branch.
+
+The number of time steps to proces is to be specified as a command line argument.
+"""
+
+H5_FILE_BASE_NAME = 'solution/smc_data_t_'
+VTP_FILE_BASE_NAME = 'solution/smc_data_t_'
+
+INPUT_SMC_MESH_FILES = [
+'vtk/smc_mesh_parent.vtp',
+'vtk/smc_mesh_left_daughter.vtp',
+'vtk/smc_mesh_right_daughter.vtp'
+]
 
 def read_array(h5_file_name, dataset_name):
     fid = h5py.h5f.open(h5_file_name)

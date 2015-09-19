@@ -339,6 +339,7 @@ typedef struct {
 	MPI_Comm IO_COMM, writer_comm;
 } IO_domain_info;
 
+#if 0
 typedef struct {
 	char *process_mesh_points, *smc_mesh_points, *ec_mesh_points, *ec_centroid_points;
 	char *process_mesh_cells, *smc_mesh_cells, *ec_mesh_cells, *ec_centroid_cells;
@@ -347,6 +348,7 @@ typedef struct {
 	char *jplc,*atp,*wss;
 	int	 *buffer_length,*smc_stat_var_buffer_length,*ec_stat_var_buffer_length, *smc_cpl, *ec_cpl,jplc_buffer_length,atp_buffer_length,wss_buffer_length;
 } data_buffer;
+#endif
 
 int couplingParms(int CASE, conductance* cpl_cef);
 void Initialize_koeingsberger_smc(grid_parms, double*, SMC_cell**);
@@ -381,9 +383,9 @@ void open_tsoukias_ec_checkpoint(checkpoint_handle*, grid_parms, char*);
 void open_koenigsberger_ec_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
 void open_coupling_data_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
 
-void dump_smc_async(grid_parms, SMC_cell**, checkpoint_handle*, int);
-void dump_ec_async(grid_parms, EC_cell**, checkpoint_handle*, int);
-void write_smc_and_ec_data(checkpoint_handle*, grid_parms*, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
+//void dump_smc_async(grid_parms, SMC_cell**, checkpoint_handle*, int);
+//void dump_ec_async(grid_parms, EC_cell**, checkpoint_handle*, int);
+//void write_smc_and_ec_data(checkpoint_handle*, grid_parms*, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
 void final_checkpoint(checkpoint_handle*, grid_parms);
 void close_common_checkpoints(checkpoint_handle*);
 void close_time_wise_checkpoints(checkpoint_handle*);
@@ -446,18 +448,18 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs);
 void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int read_counts[2]);
 IO_domain_info* make_io_domains(grid_parms* grid);
 
-void gather_tasks_mesh_point_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, SMC_cell**, EC_cell**);
-void gather_smc_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, SMC_cell**);
-void gather_ec_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**);
+//void gather_tasks_mesh_point_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, SMC_cell**, EC_cell**);
+//void gather_smc_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, SMC_cell**);
+//void gather_ec_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**);
 
-void gather_smcData(grid_parms* , IO_domain_info* , data_buffer* , SMC_cell**, int );
-void gather_ecData(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**, int);
-void gather_JPLC_map(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**);
+//void gather_smcData(grid_parms* , IO_domain_info* , data_buffer* , SMC_cell**, int );
+//void gather_ecData(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**, int);
+//void gather_JPLC_map(grid_parms*, IO_domain_info*, data_buffer*, EC_cell**);
 
-void write_process_mesh(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer*, char*);
-void write_JPLC_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,char* path);
-void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer* , SMC_cell**, int);
-void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,int);
+//void write_process_mesh(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer*, char*);
+//void write_JPLC_map(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,char* path);
+//void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer* , SMC_cell**, int);
+//void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,int);
 
 void memory_diagnostics(FILE*);
 

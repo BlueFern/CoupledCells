@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
 	Total_cells_in_computational_domain(grid);
 
 	// Reading all points coordinates.
-	int ret = read_topology_info((char *)"files/configuration_info.txt", &grid, smc, ec);
+	// int ret = read_topology_info((char *)"files/configuration_info.txt", &grid, smc, ec);
 
 	// This is read in here for validation purposes in the output.
 	// the solver will reset JPLC and read later it when the time is right.

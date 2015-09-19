@@ -86,13 +86,16 @@ void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid, in
 }
 #endif
 
+#if 0
 void write_smc_and_ec_data(checkpoint_handle* check, grid_parms* grid, double tnow, SMC_cell** smc, EC_cell** ec, int write_count,
 		IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer) {
 
 	dump_smc_data(check, grid, my_IO_domain_info, writer_buffer, smc, write_count);
 	dump_ec_data(check, grid, my_IO_domain_info, writer_buffer, ec, write_count);
 }
+#endif
 
+#if 0
 /*********************************************************************************************************************************/
 void write_process_mesh(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, char* path)
 /*********************************************************************************************************************************/
@@ -201,7 +204,9 @@ void write_process_mesh(checkpoint_handle* check, grid_parms* grid, IO_domain_in
 
 	MPI_File_close(&check->task_mesh);
 }
+#endif
 
+#if 0
 /**************************************************************************************/
 void dump_smc_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc,
 		int write_count) {
@@ -536,7 +541,9 @@ void dump_smc_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* m
 
 	printf("[%d] ------>>>>>> Leaving %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 }
+#endif
 
+#if 0
 void write_JPLC_map(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec, char* path)
 {
 	MPI_Status status;
@@ -682,7 +689,9 @@ void write_JPLC_map(checkpoint_handle* check, grid_parms* grid, IO_domain_info* 
 
 	// printf("[%d] Leaving %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 }
+#endif
 
+#if 0
 void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec,
 		int write_count) {
 	MPI_Status status;
@@ -986,6 +995,7 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 
 	printf("[%d] ++++++>>>>>> Leaving %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 }
+#endif
 
 /**
  * Dump info/debug output to a log file.
@@ -1497,6 +1507,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 		fclose(fr);
 	}
 
+	// Does this ever get received anywhere?
 	CHECK_MPI_ERROR(MPI_Bcast(buffer, 24, MPI_INT, 0, grid->universe));
 
 	/// These kinds of meshes are to be read. For each mesh type the points and cells are to be read
@@ -1547,6 +1558,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 
+	// Read TASK meshes and post the coordinates to all grids.
 	if (grid->rank == 0)
 	{
 		vtk_info* process_mesh = (vtk_info*)checked_malloc(sizeof(vtk_info), SRC_LOC);
@@ -1628,6 +1640,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 	// Reading in SMC mesh and communicating to each branch communicator member.
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[SMC_MESH][TOTAL_CELLS] * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 
+	// Read SMC meshes, and post the coordinates to all cells.
 	if(grid->rank == 0)
 	{
 
@@ -1741,6 +1754,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 	// Reading in EC mesh and communicating to each branch communicator member.
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[EC_MESH][TOTAL_CELLS] * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 
+	// Read EC meshes, and post the coordinates to all cells.
 	if (grid->rank == 0) {
 		vtk_info* ec_mesh = (vtk_info*)checked_malloc(sizeof(vtk_info), SRC_LOC);
 
@@ -1837,6 +1851,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[EC_CENT_MESH][TOTAL_CELLS] * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 
+	// Read EC centroids, post them to all cells.
 	if (grid->rank == 0) {
 		vtk_info* ec_centroids = (vtk_info*)checked_malloc(sizeof(vtk_info), SRC_LOC);
 		ec_centroids->points = (double**)checked_malloc(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS] * sizeof(double*), SRC_LOC);
@@ -1887,6 +1902,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 	recv_count = tuple_offset * grid->info[EC_CENT_MESH][TOTAL_CELLS];
 	CHECK_MPI_ERROR(MPI_Scatterv(send_points, send_count, disp, MPI_DOUBLE, recv_points, recv_count, MPI_DOUBLE, root, grid->cart_comm));
 
+	// Each EC knows its centroid, although it is not used anywhere.
 	count = 0;
 	for (int n = 1; n <= grid->num_ec_axially; n++) {
 		for (int m = 1; m <= grid->num_ec_circumferentially; m++) {
@@ -2080,6 +2096,7 @@ void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 	fclose(fr);
 }
 
+#if 0
 void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc,
 		EC_cell** ec)
 {
@@ -2181,7 +2198,9 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 	free(send_buffer);
 	free(disp);
 }
+#endif
 
+#if 0
 void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -2308,7 +2327,9 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 	free(send_buffer);
 	free(disp);
 }
+#endif
 
+#if 0
 void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec) {
 	int branch;
 	if (grid->my_domain.internal_info.domain_type == STRSEG) {
@@ -2435,7 +2456,9 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 	free(send_buffer);
 	free(disp);
 }
+#endif
 
+#if 0
 void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc, int write_count)
 {
 	int branch;
@@ -2744,7 +2767,9 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 	free(send_buffer);
 	free(disp);
 }
+#endif
 
+#if 0
 void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec, int write_count)
 {
 	int branch;
@@ -3009,7 +3034,9 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 	free(send_buffer);
 	free(disp);
 }
+#endif
 
+#if 0
 void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, EC_cell** ec)
 {
 	printf("[%d] ===>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
@@ -3057,6 +3084,7 @@ void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_b
 	free(send_buffer);
 	free(disp);
 }
+#endif
 
 void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info) {
 

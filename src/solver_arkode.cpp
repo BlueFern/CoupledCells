@@ -160,6 +160,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	double waste, hnext;
 	int err;
 
+#if 0
 	// Aggregation of data for the writer.
 	data_buffer* writer_buffer = (data_buffer*) checked_malloc(sizeof(data_buffer), SRC_LOC);
 	writer_buffer->buffer_length = (int*) checked_malloc(12 * sizeof(int), SRC_LOC);
@@ -185,6 +186,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		// Initial concentration of JPLC in the EC cells.
 		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
 	}
+#endif
 
 	// Start HDF5 Output Prototyping.
 	// printf("* %d\t%d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank, grid.tasks);
@@ -292,6 +294,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 
 			t_stamp.write_t1 = MPI_Wtime();
 
+#if 0
 			// Geometry to be written.
 			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc);
 			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
@@ -307,6 +310,8 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 				write_smc_and_ec_data(check, &grid, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
 				close_time_wise_checkpoints(check);
 			}
+#endif
+
 #if 0
 			// HDF5 Start
 			// HDF5 Start
