@@ -308,16 +308,14 @@ int main(int argc, char* argv[])
 	// the solver will reset JPLC and read later it when the time is right.
 	read_init_ATP(&grid, ec);
 
-#ifdef BOOST_ODEINT
-	odeint_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
-#endif
-
-#ifdef ARK_ODE
-	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
-#endif
-
 #ifdef RK_SUITE
 	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
+#elif defined ARK_ODE
+	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
+#elif defined BOOST_ODEINT
+	odeint_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
+#else
+#error ODE solver not selected. Use -DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT during compilation.
 #endif
 
 	// Final_checkpoint(check, grid);

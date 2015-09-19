@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <math.h>
 #include <boost/numeric/odeint.hpp>
-//#include <boost/numeric/odeint/stepper/stepper_categories.hpp>
 #include <boost/range.hpp>
 #include <list>
 

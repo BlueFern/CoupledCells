@@ -40,16 +40,16 @@ set(ODE_SOLVER_CHOICES "RK_suite;SUNDIALS_arkode;BOOST_odeint" CACHE INTERNAL
 # The appropriate choice will have to be typed in when using CLI.  
 set_property(CACHE ODE_SOLVER PROPERTY STRINGS ${ODE_SOLVER_CHOICES})
 
-# In this case we want to compile RK Suite in the contrib directory.
+# In this case we want to compile RK Suite in the ext/rksuite-1.0 directory.
 if(${ODE_SOLVER} STREQUAL "RK_suite")
 	message(STATUS "Selected ODE solver: Local RK Suite")
 	
 	# Pass preprocessor macro definition to the compiler.
 	add_definitions(-DRK_SUITE)
 	
-	# Add RK Suite code from contrib.
-	include_directories(${PROJECT_SOURCE_DIR}/contrib)
-	add_subdirectory(contrib)
+	# Add RK Suite library.
+	include_directories(${PROJECT_SOURCE_DIR}/ext/rksuite-1.0)
+	add_subdirectory(${PROJECT_SOURCE_DIR}/ext/rksuite-1.0)
 	
 	# Remember the library for the ODE solver implementation to link in to the executable.
 	set(ODE_SOLVER_LIBS RKSuite)

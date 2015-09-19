@@ -332,18 +332,7 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 }
 
 /*
-
-
-\----------------------------------\
- \                                  \
-  \                                  \        __
-   \     Unpacking received data      \       | \
-    >       into ghost cells.          >------|  \       ______
-   /                                  /       --- \_____/**|_|_\____  |
-  /                                  /          \_______ --------- __>-}
- /----------------------------------/              /  \_____|_____/   |
-                                                  *         |
-                                                           {O}
+ Unpack received data into ghost cells.
 */
 void communication_update_recvbuf(grid_parms grid, double** recvbuf,
 		SMC_cell** smc, EC_cell** ec)
