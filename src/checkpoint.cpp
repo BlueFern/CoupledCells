@@ -1481,6 +1481,7 @@ checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle* check, gri
 	return (check);
 }
 
+#if 0
 /// Read coordinates from relevant geometry files for each ec and smc in the computational domain.
 int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell **ec)
 {
@@ -1923,6 +1924,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 
 	return (0);
 }
+#endif
 
 void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 {
@@ -2015,6 +2017,7 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 	free(recv_jplc);
 }
 
+#if 0
 void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int *read_counts)
 {
 	FILE *fr;
@@ -2095,6 +2098,7 @@ void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int
 	}
 	fclose(fr);
 }
+#endif
 
 #if 0
 void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buffer* writer_buffer, SMC_cell** smc,

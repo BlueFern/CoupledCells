@@ -12,7 +12,7 @@
 #include <math.h>
 #include "macros.h"
 
-#include <nvector/nvector_serial.h>
+// #include <nvector/nvector_serial.h>
 
 // using namespace std;
 
@@ -61,7 +61,7 @@
  * @{ */
 #define     PROCESS_MESH 		0
 #define 	SMC_MESH 			1
-#define		EC_MESH 				2
+#define		EC_MESH 			2
 #define		EC_CENT_MESH 		3
 
 #define 	ProcessCell			4
@@ -106,6 +106,8 @@ struct conductance {
 			IP3_ht_ec;	///< Heterocellular IP3 coupling between ECs.
 };
 
+#if 1
+// TODO: Pretty sure this can be chucked out.
 struct node {
 	int domain_type, ///< Bifurcation or a straight segment.
 	    domain_index,
@@ -124,7 +126,7 @@ struct node {
 	double d, l; ///< Diameter and length scales.
 
 };
-
+// TODO: Pretty sure this can be chucked out.
 struct my_tree {
 	node internal_info;
 	node left_child, right_child, parent;
@@ -133,6 +135,9 @@ struct my_tree {
 	double local_z_start, local_z_end;
 
 };
+#endif
+
+#if 0
 struct glb_domn_inf {
 	int num_subdomains,							///number of total subdomains
 			*m, *n,	///number of grid points axially, number of grid points circumferentially
@@ -140,6 +145,8 @@ struct glb_domn_inf {
 			*list_num_ec_axially_per_domain;	///list of number of ECs axially in each subdomain in sequence of increasing z_coordinate of distance.
 	double **list_domain_z_coord_index;	///stores the start and end of each subdomain in axial direction. This will be used to estimate the agonist
 };
+#endif
+
 ///on that particular z coordinate. First two elements store the coords for any STRSEG or Left/Right child of
 ///bifurcation where as the last two elements store coords for the parent segment of a bifurcation, if the domain
 ///type is BIF
@@ -162,7 +169,7 @@ typedef struct {
 			m,
 			///total grid points circumferentially
 			n,
-			///place holder to retrieve information from topology files
+			///placeholder to retrieve information from topology files
 			**info,
 			/// My coordinates
 			coords[2],
@@ -191,12 +198,15 @@ typedef struct {
 			/// Number of elements being sent and received.
 			num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right, num_elements_recv_up,
 			num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
-	double **coordinates;
+
+	// double **coordinates;
+
 	///Information for spatial variation in agonist
 	double min_jplc, max_jplc, gradient, uniform_jplc, stimulus_onset_time;	/// the time when spatially varying agonist kicks in
 
 	my_tree my_domain;
-	glb_domn_inf global_domain_info;
+
+	// glb_domn_inf global_domain_info;
 
 	// Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
 	// operation on MPI_COMM_WORLD and the other a Cartesian communicator arising from Cart_create operation.
@@ -215,8 +225,8 @@ typedef struct {
 	int num_parameters;			///Number of parameters e.g. JPLC, ATP, WSS etc those are to be used to stimulate the discrete cell models.
 
 	int logfile_displacements;
-	char* logfile_write_buffer;
-	char solution_dir[50],time_profiling_dir[50],config_file[50];
+	char *logfile_write_buffer;
+	char solution_dir[1024], time_profiling_dir[1024], config_file[1024];
 } grid_parms;
 
 ///Structure to store coupling data received from the neighbouring task.
@@ -232,7 +242,7 @@ typedef struct {
 	double* fluxes;			    ///stores single cell fluxes
 	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
 	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
-	double x_coordinate[4], y_coordinate[4], z_coordinate[4];
+	// double x_coordinate[4], y_coordinate[4], z_coordinate[4];
 	int cell_index[4];
 	conductance cpl_cef;
 } SMC_cell;
@@ -244,10 +254,10 @@ typedef struct {
 	double* fluxes;			    ///stores single cell fluxes
 	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
 	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
-	double z_coord;
-	double x_coordinate[4], y_coordinate[4], z_coordinate[4];
+	// double z_coord;
+	// double x_coordinate[4], y_coordinate[4], z_coordinate[4];
 	int cell_indx[4];
-	double centeroid_point[3];
+	// double centeroid_point[3];
 	int centeroid_cell;
 	double JPLC;			    ///local agonsit concentration  on my GPCR receptor (an ith EC)
 	conductance cpl_cef;
@@ -323,10 +333,12 @@ typedef struct {
 	double t_new, t_old, elapsed_time;
 } time_keeper;
 
+#if 0
 typedef struct {
 	double** points;
 	int** cells;
 } vtk_info;
+#endif
 
 typedef struct {
 	///IO_domain related members
@@ -445,7 +457,7 @@ void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double
 
 int read_topology_info(char*, grid_parms*, SMC_cell**, EC_cell**);
 void read_init_ATP(grid_parms *grid, EC_cell **ECs);
-void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int read_counts[2]);
+//void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int read_counts[2]);
 IO_domain_info* make_io_domains(grid_parms* grid);
 
 //void gather_tasks_mesh_point_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, SMC_cell**, EC_cell**);

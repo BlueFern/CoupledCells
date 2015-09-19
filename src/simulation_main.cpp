@@ -99,9 +99,6 @@ int main(int argc, char* argv[])
 		grid = make_bifucation_cart_grids(grid);
 	}
 
-	// WARNING: It appears that the grid struct members updated in the following call are not used anywhere else in the code.
-	// grid = update_global_subdomain_information(grid, grid.num_domains, grid.domains);
-
 	/// Set prefixes for output files.
 	set_file_naming_strings(&grid);
 
