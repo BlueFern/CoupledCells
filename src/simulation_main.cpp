@@ -90,6 +90,18 @@ int main(int argc, char* argv[])
 	grid.gradient = 0.288e3;
 	grid.stimulus_onset_time = 10.00;
 
+	grid.num_smc_fundblk_circumferentially = 1;
+	grid.num_ec_fundblk_circumferentially = 5;
+	grid.num_smc_fundblk_axially = 13;
+	grid.num_ec_fundblk_axially = 1;
+	grid.num_ghost_cells = 2;
+	grid.num_fluxes_smc = 12;
+	grid.num_fluxes_ec = 12;
+	grid.num_coupling_species_smc = 3;
+	grid.num_coupling_species_ec = 3;
+	grid.neq_smc = 5;
+	grid.neq_ec = 4;
+
 	/// - Calculate the number of cells per task.
 	grid = set_task_parameters(grid);
 
@@ -312,7 +324,7 @@ int main(int argc, char* argv[])
 #elif defined BOOST_ODEINT
 	odeint_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
 #else
-#error ODE solver not selected. Use -DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT during compilation.
+#error ODE solver not selected. Use -DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT during compilation
 #endif
 
 	// Final_checkpoint(check, grid);

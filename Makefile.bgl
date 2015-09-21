@@ -1,0 +1,37 @@
+# Set ODEOPTION on command line to (-DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT).
+
+CC = mpixlcxx
+
+CFLAGS = $(ODEOPTION) -g $(WALL) -Iext/rksuite-1.0 -I/hpc/projects/packages/local.bgl/pkg/hdf5/version/include -L/hpc/projects/packages/local.bgl/pkg/hdf5/version/lib
+$(info CFLAGS is set to "${CFLAGS}")
+
+LIBRKSUITE = librksuite.a
+
+LIBS = -lm -lhdf5 -lhdf5_hl
+EXE = coupledCellsModel
+
+# SRCS = $(shell ls src/*.cpp)
+SRCS = src/checkpoint.cpp src/debug_file.cpp src/koenigsberger_model.cpp src/topology.cpp src/update.cpp src/compute.cpp src/gather.cpp src/simulation_main.cpp src/solver_rk.cpp src/tsoukias_smc_multicell.cpp  src/writeHDF5.cpp
+OBJS = $(SRCS:.cpp=.o)
+
+.PHONY: all
+all: $(EXE)
+
+$(EXE): $(OBJS) $(LIBRKSUITE)
+	$(CC) $(CFLAGS) $(OBJS) lib/$(LIBRKSUITE) $(LIBS) -o $(EXE)
+
+rksuite: $(LIBRKSUITE)
+
+$(LIBRKSUITE): ext/rksuite-1.0/rksuite.o
+	ar ru lib/$@ $^
+	ranlib lib/$@
+
+%.o: %.cpp
+	$(CC) -c $(CFLAGS) $< -o $@
+
+.PHONY: clean
+clean:
+	rm -fv $(OBJS)
+	rm -fv ext/rksuite-1.0/*.o
+	rm -fv lib/$(LIBRKSUITE)
+	rm -fv $(EXE)

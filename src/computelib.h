@@ -155,21 +155,17 @@ typedef struct {
 	///General information on cell geometry and the geometric primitive constructed.
 	// double hx_smc, hx_ec, hy_smc, hy_ec, requested_length, requested_diameter, corrected_length, corrected_diameter, new_circ;
 
-	const static int num_smc_fundblk_circumferentially = 1;
-	const static int num_ec_fundblk_circumferentially = 5;
-	const static int num_smc_fundblk_axially = 13;
-	const static int num_ec_fundblk_axially = 1;
-
-	const static int num_ghost_cells = 2;
-
-	const static int num_fluxes_smc = 12; // Number of SMC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
-	const static int num_fluxes_ec = 12; // Number of EC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
-
-	const static int num_coupling_species_smc = 3; // Number of SMC coupling species homogenic/heterogenic.
-	const static int num_coupling_species_ec = 3; // Number of SMC coupling species homogenic/heterogenic.
-
-	const static int neq_smc = 5; // Number of SMC ODEs for a single cell.
-	const static int neq_ec = 4; // Number of EC ODEs for a single cell.
+	int num_smc_fundblk_circumferentially;
+	int num_ec_fundblk_circumferentially;
+	int num_smc_fundblk_axially;
+	int num_ec_fundblk_axially;
+	int num_ghost_cells;
+	int num_fluxes_smc; // Number of SMC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
+	int num_fluxes_ec; // Number of EC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
+	int num_coupling_species_smc; // Number of SMC coupling species homogenic/heterogenic.
+	int num_coupling_species_ec; // Number of SMC coupling species homogenic/heterogenic.
+	int neq_smc; // Number of SMC ODEs for a single cell.
+	int neq_ec; // Number of EC ODEs for a single cell.
 
 	int
 	///Global domain information storage

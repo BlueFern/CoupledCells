@@ -57,6 +57,7 @@ def run():
         mesh_parent.DeepCopy(INPUT_EC_MESHES[0])
 
         h5_file_parent = H5_FILE_BASE_NAME + str(time_step) + '_b_1.h5'
+        print "Processing file", h5_file_parent
 
         ca_array_parent = read_array(h5_file_parent, '/EC_Ca')
         ca_array_parent.SetName('EC_Ca')
@@ -91,6 +92,7 @@ def run():
         mesh_left.DeepCopy(INPUT_EC_MESHES[1])
 
         h5_file_left = H5_FILE_BASE_NAME + str(time_step) + '_b_2.h5'
+        print "Processing file", h5_file_left
 
         ca_array_left = read_array(h5_file_left,'/EC_Ca')
         ca_array_left.SetName('EC_Ca')
@@ -125,6 +127,7 @@ def run():
         mesh_right.DeepCopy(INPUT_EC_MESHES[2])
 
         h5_file_right = H5_FILE_BASE_NAME + str(time_step) + '_b_3.h5'
+        print "Processing file", h5_file_right
 
         ca_array_right = read_array(h5_file_right, '/EC_Ca')
         ca_array_right.SetName('EC_Ca')

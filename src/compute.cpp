@@ -14,7 +14,6 @@ void* checked_malloc(size_t bytes, const char* errmsg) {
 	void *pval = malloc(bytes);
 
 	if (pval == NULL) {
-		fprintf(stdout, "************************ MEMORY ALLOCATION ERROR: %s ************************\n", errmsg);
 		fprintf(stderr, "************************ MEMORY ALLOCATION ERROR: %s ************************\n", errmsg);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 	}
@@ -667,11 +666,6 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 /// which evaluates the total number of ECs and SMCs constituting the global computational domain.
 void Total_cells_in_computational_domain(grid_parms grid)
 {
-	if(grid.universal_rank == 0)
-	{
-		printf("%s:%s\n", __FILE__, __FUNCTION__);
-	}
-
 	int sendcount = 2, recvcount = 2;
 	int root = 0;
 	int sendarray[2], recvarray[sendcount * grid.numtasks];

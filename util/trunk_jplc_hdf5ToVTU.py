@@ -11,9 +11,7 @@ replace the ATP values with what we have in the HDF5 file.
 """
 
 INPUT_FILES = [
-["vtk/ec_mesh_parent.vtp", 'solution/jplc_1.h5'],
-["vtk/ec_mesh_left_daughter.vtp", 'solution/jplc_2.h5'],
-["vtk/ec_mesh_right_daughter.vtp", 'solution/jplc_3.h5']
+["vtk/ec_mesh_parent.vtp", 'solution/jplc_0.h5']
 ]
 
 ecAppend = vtk.vtkAppendFilter()
@@ -28,6 +26,8 @@ for files in INPUT_FILES:
         print "Error code", ecVTKFileReader.GetErrorCode()
         print ecVTKFileReader
         sys.exit()
+        
+    print "Processing file", files[1]        
 
     fid = h5py.h5f.open(files[1])
     dset = h5py.h5d.open(fid, '/jplc')
@@ -53,4 +53,3 @@ jplcWriter = vtk.vtkXMLUnstructuredGridWriter()
 jplcWriter.SetFileName('solution/jplc_input.vtu')
 jplcWriter.SetInput(outputDataset)
 jplcWriter.Update()
-

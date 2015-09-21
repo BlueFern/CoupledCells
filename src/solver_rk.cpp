@@ -34,37 +34,37 @@ void report_RK_suite_error(int cflag, double tnow, int rank)
 		break;
 	// 2 - inefficient usage.
 	case 2:
-		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "inefficient usage");
+		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "inefficient usage");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "inefficient usage");
 		break;
 	// 3 - work intensive.
 	case 3:
-		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "work intensive");
+		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "work intensive");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "work intensive");
 		break;
 	// 4 - problem probably stiff.
 	case 4:
-		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "problem probably stiff");
+		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "problem probably stiff");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "problem probably stiff");
 		break;
 	// 5 - too much accuracy requested.
 	case 5:
-		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "too much accuracy requested");
+		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "too much accuracy requested");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "too much accuracy requested");
 		break;
 	// 6 - global error assessment unreliable beyond this point.
 	case 6:
-		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "global error assessment unreliable beyond this point");
+		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "global error assessment unreliable beyond this point");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "global error assessment unreliable beyond this point");
 		break;
 	// 911 - catastrophic failure reported on stdout.
 	case 911:
-		fprintf(stdout, RK_suite_error, rank, tnow, cflag, "catastrophic failure");
+		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "catastrophic failure");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "catastrophic failure");
 		MPI_Abort(MPI_COMM_WORLD, 911);
 		break;
 	default:
-		fprintf(stdout, "[%d] Unexpected RK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
+		//fprintf(stdout, "[%d] Unexpected RK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
 		fprintf(stderr, "[%d] Unexpected RK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 	}
@@ -199,6 +199,8 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	{
 		t_stamp.solver_t1 = MPI_Wtime();
 
+		// printf("[%d] line: %d, tnow: %f, %f, %f\n", grid.universal_rank, __LINE__, tnow, tend, tfinal);
+
 		// The ct() function does not guarantee to advance all the way to the stop time. Keep stepping until it does.
 		// The solver decides step magnitude depending on the stiffness of the problem.
 		do
@@ -212,7 +214,9 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
 
-			report_RK_suite_error(cflag, tnow, grid.universal_rank);
+			// report_RK_suite_error(cflag, tnow, grid.universal_rank);
+
+			// printf("\t[%d] line: %d, tnow: %f, %f, %f\n", grid.universal_rank, __LINE__, tnow, tend, tfinal);
 
 		}
 		while(tnow < tend);
