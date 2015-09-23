@@ -85,9 +85,9 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 
 void write_EC_data_HDF5(grid_parms* grid, ec_data_buffer *ec_buffer, int write_count, char* path)
 {
-	// printf("[%d] >>>>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
-
 	double ts = MPI_Wtime();
+
+	// printf("[%d] >>>>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	char filename[256];
 	int err = sprintf(filename, "%s/ec_data_t_%d_b_%d.h5", path, write_count, grid->branch_tag);
@@ -202,6 +202,8 @@ void write_EC_data_HDF5(grid_parms* grid, ec_data_buffer *ec_buffer, int write_c
 
 void write_SMC_data_HDF5(grid_parms* grid, smc_data_buffer *smc_buffer, int write_count, char* path)
 {
+	double ts = MPI_Wtime();
+
 	// printf("[%d] >>>>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	char filename[256];
@@ -323,4 +325,6 @@ void write_SMC_data_HDF5(grid_parms* grid, smc_data_buffer *smc_buffer, int writ
 
 	status = H5Sclose(space_id); CHECK(status, FAIL, __FUNCTION__);
 	status = H5Fclose(file_id); CHECK(status, FAIL, __FUNCTION__);
+
+	printf("[%d] <<<<<< time spent in %s is %f\n", grid->universal_rank, __FUNCTION__, MPI_Wtime() - ts);
 }

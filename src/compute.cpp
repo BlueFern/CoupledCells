@@ -207,54 +207,31 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 				else if (i == 1)
 					k = 0;
 				smc[i][j].vars[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
-				smc[i][j].vars[smc_d_L] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_d_L];
-				smc[i][j].vars[smc_f_L] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_f_L];
-				smc[i][j].vars[smc_p_f] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_p_f];
-				smc[i][j].vars[smc_p_s] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_p_s];
-				smc[i][j].vars[smc_q_1] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_q_1];
-				smc[i][j].vars[smc_q_2] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_q_2];
-				smc[i][j].vars[smc_p_K] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_p_K];
-				smc[i][j].vars[smc_Ca_u] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_Ca_u];
-				smc[i][j].vars[smc_Ca_r] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_Ca_r];
-				smc[i][j].vars[smc_R_10] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_10];
-				smc[i][j].vars[smc_R_11] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_11];
-				smc[i][j].vars[smc_R_01] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_01];
-				smc[i][j].vars[smc_h_IP3] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_h_IP3];
-				smc[i][j].vars[smc_R_S_G] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_S_G];
-				smc[i][j].vars[smc_R_S_P_G] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_R_S_P_G];
+				smc[i][j].vars[smc_d_L] = y[k + ((j - 1) * grid.neq_smc) + smc_d_L];
+				smc[i][j].vars[smc_f_L] = y[k + ((j - 1) * grid.neq_smc) + smc_f_L];
+				smc[i][j].vars[smc_p_f] = y[k + ((j - 1) * grid.neq_smc) + smc_p_f];
+				smc[i][j].vars[smc_p_s] = y[k + ((j - 1) * grid.neq_smc) + smc_p_s];
+				smc[i][j].vars[smc_q_1] = y[k + ((j - 1) * grid.neq_smc) + smc_q_1];
+				smc[i][j].vars[smc_q_2] = y[k + ((j - 1) * grid.neq_smc) + smc_q_2];
+				smc[i][j].vars[smc_p_K] = y[k + ((j - 1) * grid.neq_smc) + smc_p_K];
+				smc[i][j].vars[smc_Ca_u] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca_u];
+				smc[i][j].vars[smc_Ca_r] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca_r];
+				smc[i][j].vars[smc_R_10] = y[k + ((j - 1) * grid.neq_smc) + smc_R_10];
+				smc[i][j].vars[smc_R_11] = y[k + ((j - 1) * grid.neq_smc) + smc_R_11];
+				smc[i][j].vars[smc_R_01] = y[k + ((j - 1) * grid.neq_smc) + smc_R_01];
+				smc[i][j].vars[smc_h_IP3] = y[k + ((j - 1) * grid.neq_smc) + smc_h_IP3];
+				smc[i][j].vars[smc_R_S_G] = y[k + ((j - 1) * grid.neq_smc) + smc_R_S_G];
+				smc[i][j].vars[smc_R_S_P_G] = y[k + ((j - 1) * grid.neq_smc) + smc_R_S_P_G];
 				smc[i][j].vars[smc_G] = y[k + ((j - 1) * grid.neq_smc) + smc_G];
-				smc[i][j].vars[smc_IP3] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
-				smc[i][j].vars[smc_PIP2] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_PIP2];
-				smc[i][j].vars[smc_V_cGMP] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_V_cGMP];
-				smc[i][j].vars[smc_cGMP_i] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_cGMP_i];
+				smc[i][j].vars[smc_IP3] = y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
+				smc[i][j].vars[smc_PIP2] = y[k + ((j - 1) * grid.neq_smc) + smc_PIP2];
+				smc[i][j].vars[smc_V_cGMP] = y[k + ((j - 1) * grid.neq_smc) + smc_V_cGMP];
+				smc[i][j].vars[smc_cGMP_i] = y[k + ((j - 1) * grid.neq_smc) + smc_cGMP_i];
 				smc[i][j].vars[smc_Ca] = y[k + ((j - 1) * grid.neq_smc) + smc_Ca];
-				smc[i][j].vars[smc_Na_i] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_Na_i];
-				smc[i][j].vars[smc_K_i] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_K_i];
-				smc[i][j].vars[smc_Cl_i] = y[k + ((j - 1) * grid.neq_smc)
-						+ smc_Cl_i];
-				smc[i][j].vars[smc_DAG] =
-						y[k + ((j - 1) * grid.neq_smc) + smc_DAG];
+				smc[i][j].vars[smc_Na_i] = y[k + ((j - 1) * grid.neq_smc) + smc_Na_i];
+				smc[i][j].vars[smc_K_i] = y[k + ((j - 1) * grid.neq_smc) + smc_K_i];
+				smc[i][j].vars[smc_Cl_i] = y[k + ((j - 1) * grid.neq_smc) + smc_Cl_i];
+				smc[i][j].vars[smc_DAG] = y[k + ((j - 1) * grid.neq_smc) + smc_DAG];
 			}
 		}
 		break;
