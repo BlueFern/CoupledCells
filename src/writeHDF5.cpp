@@ -4,6 +4,13 @@
 #define TOSTRING(x) STRINGIFY(x)
 #define SRC_LOC __FILE__ ":" TOSTRING(__LINE__)
 
+/*
+ * There are APIs to determine if datasets and groups are left open.
+ * H5Fget_obj_count will get the number of open objects in the file, and
+ * H5Fget_obj_ids will return a list of the open object identifiers.
+ */
+
+
 #define _2D 2
 
 // TODO: This function can be made general enough to write any buffer to a file with a given name.
@@ -21,6 +28,29 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 	hid_t dset_id;
 
 	herr_t status;
+
+#if 0
+	hid_t fapl_id;
+	hid_t plist_id;
+
+	MPI_Info info;
+
+	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+	H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, info);
+
+	MPI_Info_create(&info);
+	MPI_Info_set(info,"IBM_largeblock_io", "true");
+	MPI_Info_set(info,"stripping_unit","4194304", error)
+	MPI_INFO_SET(info,"H5F_ACS_CORE_WRITE_TRACKING_PAGE_SIZE_DEF","524288",error)
+	MPI_INFO_SET(info,"ind_rd_buffer_size","41943040", error)
+	MPI_INFO_SET(info,"ind_wr_buffer_size","5242880", error)
+	MPI_INFO_SET(info,"romio_ds_read","disable", error)
+	MPI_INFO_SET(info,"romio_ds_write","disable", error)
+	MPI_INFO_SET(info,"romio_cb_write","enable", error)
+	MPI_INFO_SET(info,"cb_buffer_size","4194304", error)
+	// Remember this:
+	MPI_Info_free(&info);
+#endif
 
 	// Create a HDF5 file.
 	// hid_t H5Fcreate( const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id )
@@ -56,6 +86,8 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 void write_EC_data_HDF5(grid_parms* grid, ec_data_buffer *ec_buffer, int write_count, char* path)
 {
 	// printf("[%d] >>>>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
+
+	double ts = MPI_Wtime();
 
 	char filename[256];
 	int err = sprintf(filename, "%s/ec_data_t_%d_b_%d.h5", path, write_count, grid->branch_tag);
@@ -164,6 +196,8 @@ void write_EC_data_HDF5(grid_parms* grid, ec_data_buffer *ec_buffer, int write_c
 
 	status = H5Sclose(space_id); CHECK(status, FAIL, __FUNCTION__);
 	status = H5Fclose(file_id); CHECK(status, FAIL, __FUNCTION__);
+
+	printf("[%d] <<<<<< time spent in %s is %f\n", grid->universal_rank, __FUNCTION__, MPI_Wtime() - ts);
 }
 
 void write_SMC_data_HDF5(grid_parms* grid, smc_data_buffer *smc_buffer, int write_count, char* path)
