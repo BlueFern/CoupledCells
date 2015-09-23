@@ -257,7 +257,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	tout = tnow + interval;
 
 	// ITERATION loop to go from INITIAL time to FINAL time.
-	while (tfinal - t > 1.0e-15)
+	while ((tfinal + interval) - t > 1.0e-15)
 	{
 		t_stamp.solver_t1 = MPI_Wtime();
 

@@ -1027,7 +1027,6 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 		fprintf(var_file, "%f\n", t);
 	}
 
-
 	return (err);
 }
 
