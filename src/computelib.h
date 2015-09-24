@@ -22,7 +22,7 @@
 #define SMC_ROW 33
 extern FILE* var_file;
 
-#define FILENAME "everything_150s_atp_50s_IC.csv"
+#define FILENAME "rk_suite_everything_150s_atp_50s.csv"
 
 using namespace std;
 

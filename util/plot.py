@@ -30,7 +30,7 @@ columns = [
 'smc_ec_cpl_IP3',
 
 # Equations
-'smc_dcdt', # 
+'smc_dcdt', 
 'smc_dsdt',
 'smc_dvdt',
 'smc_dwdt',
@@ -86,19 +86,18 @@ columns = [
 't'
 ]
 
-PATH = 'no_atp_no_IC/'
+# For saving plots
+PATH = 'plots/rk_suite/'
 
-data = np.genfromtxt('t2.csv', delimiter=',', skip_header=0,
+data = np.genfromtxt('t55.csv', delimiter=',', skip_header=0,
                      skip_footer=0, names=columns)
               
 
-# TODO: write out files of sections (eg smc_fluxes.txt, smc_equations.txt etc)
-fig = plt.figure()         
-#plt.ioff()
-
+# 3 x 3 subplots of equations
+fig1 = plt.figure() 
 val = 0
 for i in range(18, 23):
-    tmp = fig.add_subplot(3,3,val)
+    tmp = fig1.add_subplot(3,3,val)
     val += 1
     tmp.set_xlabel('Time (s)')
     tmp.set_ylabel(columns[i] + ' value')
@@ -106,7 +105,7 @@ for i in range(18, 23):
     tmp.plot(data[columns[-1]], data[columns[i]], c=np.random.rand(3,))
     
 for i in range(46, 50):
-    tmp = fig.add_subplot(3,3,val)
+    tmp = fig1.add_subplot(3,3,val)
     val += 1
     
     tmp.set_xlabel('Time (s)')
@@ -114,11 +113,29 @@ for i in range(46, 50):
     tmp.set_title(columns[i], y=0.7)
     tmp.plot(data[columns[-1]], data[columns[i]], c=np.random.rand(3,))
 
+# 3 x 3 subplots of concentrations
+fig2 = plt.figure() 
+val = 0
+for i in range(23, 28):
+    tmp = fig2.add_subplot(3,3,val)
+    val += 1
+    tmp.set_xlabel('Time (s)')
+    tmp.set_ylabel(columns[i] + ' value')
+    tmp.set_title(columns[i], y=0.7)
+    tmp.plot(data[columns[-1]], data[columns[i]], c=np.random.rand(3,))
+    
+for i in range(50, 54):
+    tmp = fig2.add_subplot(3,3,val)
+    val += 1
+    
+    tmp.set_xlabel('Time (s)')
+    tmp.set_ylabel(columns[i] + ' value')
+    tmp.set_title(columns[i], y=0.7)
+    tmp.plot(data[columns[-1]], data[columns[i]], c=np.random.rand(3,))
 
-#plt.savefig('plots/' + PATH + 'equations.pdf', bbox_inches='tight')
-#plt.savefig('plots/' + PATH + 'equations.svg', bbox_inches='tight')
+plt.ioff()
 
-'''
+# All plots into sub directories
 for i in range(0, 54):
 
     fig = plt.figure()
@@ -127,14 +144,5 @@ for i in range(0, 54):
     tmp.set_ylabel(columns[i] + ' value')
     tmp.set_title(columns[i], y=0.7)
     tmp.plot(data[columns[-1]], data[columns[i]], c=np.random.rand(3,))
-    fig.savefig('plots/' + PATH + 'pdf/' + columns[i] + '_plot.pdf', bbox_inches='tight')
-    fig.savefig('plots/' + PATH + 'svg/' + columns[i] + '_plot.svg', bbox_inches='tight')
-'''
-#    max_x = max(data[filenames[i]])
-#    min_x = min(data[filenames[i]])
-#    plt.plot([(x - min_x) / (max_x - min_x) for x in data[filenames[i]]])
-    
-
-#plt.legend(legend)
-#plt.show()
-
+    fig.savefig(PATH + 'pdf/' + columns[i] + '_plot.pdf', bbox_inches='tight')
+    fig.savefig(PATH + 'svg/' + columns[i] + '_plot.svg', bbox_inches='tight')
