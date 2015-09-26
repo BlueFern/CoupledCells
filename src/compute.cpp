@@ -668,46 +668,6 @@ void Total_cells_in_computational_domain(grid_parms grid)
 	}
 }
 
-#if 0
-/****************************************************************************/
-void process_time_profiling_data(grid_parms grid, double** time_profiler,
-		int count) {
-///This function is suppose to evaluate min, max, average of the stored time profiling data
-// for every processor.
-	double processed_data[11][3]; ///This will hold min max average of each of the 11 arrays.
-	int index, root = 0, sendcount = 3, recvcount = grid.numtasks * sendcount;
-	for (int n = 0; n < 11; n++) {
-		minimum(time_profiler[n], count, &processed_data[n][0], &index);
-		maximum(time_profiler[n], count, &processed_data[n][1], &index);
-		average(time_profiler[n], count, &processed_data[n][2]);
-	}
-
-	/*printf("[%d] %2.15lf\t%2.15lf\t%2.15lf\n", grid.universal_rank,
-	 processed_data[3][0], processed_data[3][1],
-	 processed_data[3][2]);*/
-
-	double *sendarray = (double*) malloc(sendcount * sizeof(double));
-	double *recvarray = (double*) malloc(recvcount * sizeof(double));
-	sendarray[0] = processed_data[3][0];
-	sendarray[1] = processed_data[3][1];
-	sendarray[2] = processed_data[3][2];
-	check_flag(
-			MPI_Gather(sendarray, sendcount, MPI_DOUBLE, recvarray, recvcount,
-					MPI_DOUBLE, root, grid.universe), "error MPI_Gather");
-
-	if (grid.universal_rank == 0) {
-		FILE* fw;
-		fw = fopen("time_profile_data.txt", "w+");
-		for (int i = 0; i < grid.numtasks; i++) {
-			fprintf(fw, "%d %lf %lf %lf\n", i, recvarray[i * sendcount],
-					recvarray[i * sendcount + 1], recvarray[i * sendcount + 2]);
-		}
-		fclose(fw);
-	}
-	MPI_Barrier(grid.universe);
-}
-#endif
-
 /************************************************************/
 void minimum(double* table, int size, double *value, int *index) {
 	///For evaluating minimum of an array.

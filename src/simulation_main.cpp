@@ -113,12 +113,6 @@ int main(int argc, char* argv[])
 	/// Set prefixes for output files.
 	set_file_naming_strings(&grid);
 
-	/// Initialise checkpoint routine which opens files.
-	//checkpoint_handle *check = initialise_checkpoint(grid);
-
-	/// Initialising IO_domain for creating writers.
-	//IO_domain_info* my_IO_domain_info = make_io_domains(&grid);
-
 	/// Now allocate memory for the structures representing the cells and the various members of those structures.
 	/// Each of the two cell grids have two additional rows and two additional columns as ghost cells.
 	/// Following is an example of a 5x7 grid with added ghost cells on all four sides. the '0's are the actual
@@ -285,7 +279,6 @@ int main(int argc, char* argv[])
 
 	/// Initialise state variables and coupling data values.
 
-	// checkpoint(check, grid, &tnow, y, smc, ec);
 	Initialize_koeingsberger_smc(grid, y, smc);
 	Initialize_koeingsberger_ec(grid, y, ec);
 
@@ -307,9 +300,6 @@ int main(int argc, char* argv[])
 	// Debug/validation/reporting.
 	Total_cells_in_computational_domain(grid);
 
-	// Reading all points coordinates.
-	// int ret = read_topology_info((char *)"files/configuration_info.txt", &grid, smc, ec);
-
 	// This is read in here for validation purposes in the output.
 	// the solver will reset JPLC and read later it when the time is right.
 	read_init_ATP(&grid, ec);
@@ -327,10 +317,7 @@ int main(int argc, char* argv[])
 #error ODE solver not selected. Use -DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT during compilation
 #endif
 
-	// Final_checkpoint(check, grid);
 	write_elapsed_time(grid, &elps_t); //, my_IO_domain_info);
-
-	// fclose(grid.logptr);
 
 	MPI_Finalize();
 	return (0);

@@ -83,6 +83,7 @@ void Initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 		}
 	}
 }
+
 /*******************************************************************************************/
 void koenigsberger_smc(grid_parms grid, SMC_cell** smc)
 /*******************************************************************************************/
@@ -125,6 +126,7 @@ void koenigsberger_smc(grid_parms grid, SMC_cell** smc)
 		} //end for j
 	} //end for i
 }
+
 /***************************************************************************/
 void koenigsberger_smc_derivatives(double* f, grid_parms grid, SMC_cell** smc) {
 /***************************************************************************/
