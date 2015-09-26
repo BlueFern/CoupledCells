@@ -10,7 +10,6 @@
  * H5Fget_obj_ids will return a list of the open object identifiers.
  */
 
-
 #define _2D 2
 
 // TODO: This function can be made general enough to write any buffer to a file with a given name.
@@ -34,13 +33,18 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 	hid_t plist_id;
 
 	MPI_Info info;
-
-	plist_id = H5Pcreate(H5P_FILE_ACCESS);
-	H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, info);
+	// This code is only good for a single writer when we have a single trunk, not a bifurcation.
+	MPI_Group world_group, writer_group;
+	MPI_Comm writer_comm;
+	int ranks[1] = {0};
 
 	MPI_Info_create(&info);
-	MPI_Info_set(info,"IBM_largeblock_io", "true");
-	MPI_Info_set(info,"stripping_unit","4194304", error)
+	MPI_Info_set(info, "IBM_largeblock_io", "true");
+	MPI_Info_set(info, "stripping_unit", "4194304");
+
+#if 0
+	// http://lists.hdfgroup.org/pipermail/hdf-forum_lists.hdfgroup.org/2014-November/008210.html
+	// http://www-01.ibm.com/support/knowledgecenter/SSFK3V_1.3.0/com.ibm.cluster.pe.v1r3.pe500.doc/am107_ifopen.htm?lang=en
 	MPI_INFO_SET(info,"H5F_ACS_CORE_WRITE_TRACKING_PAGE_SIZE_DEF","524288",error)
 	MPI_INFO_SET(info,"ind_rd_buffer_size","41943040", error)
 	MPI_INFO_SET(info,"ind_wr_buffer_size","5242880", error)
@@ -48,12 +52,26 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 	MPI_INFO_SET(info,"romio_ds_write","disable", error)
 	MPI_INFO_SET(info,"romio_cb_write","enable", error)
 	MPI_INFO_SET(info,"cb_buffer_size","4194304", error)
-	// Remember this:
-	MPI_Info_free(&info);
 #endif
+
+	MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+	MPI_Group_excl(world_group, 1, ranks, &writer_group);
+	MPI_Comm_create(MPI_COMM_WORLD, writer_group, &writer_comm);
+
+	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+	H5Pset_fapl_mpio(plist_id, writer_comm, info);
+
+	// Remember this at the end of this function:
+	MPI_Info_free(&info);
+	MPI_Group_free(&world_group);
+	MPI_Group_free(&writer_group);
+	MPI_Comm_free(&writer_comm);
 
 	// Create a HDF5 file.
 	// hid_t H5Fcreate( const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id )
+	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+#endif
+
 	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
 	hsize_t dims[_2D] = {grid->num_ec_axially * grid->m, grid->num_ec_circumferentially * grid->n};

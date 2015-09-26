@@ -33,10 +33,10 @@ int main(int argc, char* argv[])
 
 	/// - Reveal information of myself and size of MPI_COMM_WORLD
 	CHECK_MPI_ERROR(MPI_Comm_rank(grid.universe, &grid.universal_rank));
-	CHECK_MPI_ERROR(MPI_Comm_size(grid.universe, &grid.numtasks));
+	CHECK_MPI_ERROR(MPI_Comm_size(grid.universe, &grid.num_ranks));
 
 	char filename[50];
-	int error;
+	// int error;
 
 	/// Time variables
 	double tfinal = 1e-2;
@@ -67,17 +67,6 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	/// - Read domain configuration from input config file (domain_info.txt).
-	/// Why does this function need three parameters? They all come from the same struct.
-	error = read_config_file(grid.universal_rank, grid.config_file, &grid);
-
-	/// - Make subdomains according to the information read from the config file (domain_info.txt).
-
-	// WARNING: Why does this function need three parameters? They all come from the same struct.
-	// WARNING: In this case and many other cases the structs are passed by value. That's why
-	// they all return copies of structs overwriting the initial structs.
-	grid = configure_subdomains_topology(grid, grid.num_domains, grid.domains);
-
 	// File written every 1 second.
 	int file_write_per_unit_time = (int) (data_writing_frequency * int(1 / interval));
 	grid.NO_path = 0;
@@ -102,12 +91,22 @@ int main(int argc, char* argv[])
 	grid.neq_smc = 5;
 	grid.neq_ec = 4;
 
-	/// - Calculate the number of cells per task.
-	grid = set_task_parameters(grid);
+	/// - Read domain configuration from input config file (domain_info.txt).
+	/// Why does this function need three parameters? They all come from the same struct.
+	read_config_file(grid.universal_rank, grid.config_file, &grid);
 
-	if (grid.my_domain.internal_info.domain_type == STRSEG) {
+	/// - Calculate the number of cells per task.
+	set_task_parameters(&grid);
+
+	/// - Make subdomains according to the information read from the config file (domain_info.txt).
+	configure_subdomains_topology(&grid);
+
+	if (grid.my_domain.internal_info.domain_type == STRSEG)
+	{
 		grid = make_straight_segment_cart_grids(grid);
-	} else if (grid.my_domain.internal_info.domain_type == BIF) {
+	}
+	else if (grid.my_domain.internal_info.domain_type == BIF)
+	{
 		grid = make_bifucation_cart_grids(grid);
 	}
 
@@ -264,8 +263,6 @@ int main(int argc, char* argv[])
 	/// data to receive from the neighbour in RIGHT direction
 	recvbuf[RIGHT] = (double*) checked_malloc(grid.num_elements_recv_right * sizeof(double), "recvbuf[RIGHT] dimension 2");
 
-	grid.NEQ = grid.neq_smc * (grid.num_smc_axially * grid.num_smc_circumferentially) + grid.neq_ec * (grid.num_ec_axially * grid.num_ec_circumferentially);
-
 	/// Setup output streams to write data in files. Each node opens an independent set of files and write various state variables into it.
 	///	checkpoint_handle *check = initialise_checkpoint(myRank);
 
@@ -316,6 +313,9 @@ int main(int argc, char* argv[])
 	// This is read in here for validation purposes in the output.
 	// the solver will reset JPLC and read later it when the time is right.
 	read_init_ATP(&grid, ec);
+
+	//MPI_Barrier(MPI_COMM_WORLD);
+	//printf("[%d] %s:%d\n", grid.universal_rank, __FILE__, __LINE__);
 
 #ifdef RK_SUITE
 	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);

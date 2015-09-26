@@ -9,37 +9,50 @@
 using namespace std;
 extern time_stamps t_stamp;
 
-void determine_source_destination(grid_parms grid, int source[], int dest[]) {
-	if (grid.nbrs[local][UP] >= 0) {
+void determine_source_destination(grid_parms grid, int source[], int dest[])
+{
+	if (grid.nbrs[local][UP] >= 0)
+	{
 		dest[UP] = grid.nbrs[local][UP];
 		source[UP] = grid.nbrs[local][UP];
-	} else if (grid.nbrs[local][UP] < 0) {
-		dest[UP] = grid.rank; //MPI_PROC_NULL;
-		source[UP] = grid.rank; //MPI_PROC_NULL;
+	}
+	else if (grid.nbrs[local][UP] < 0)
+	{
+		dest[UP] = grid.rank_branch; //MPI_PROC_NULL;
+		source[UP] = grid.rank_branch; //MPI_PROC_NULL;
 	}
 
-	if (grid.nbrs[local][DOWN] >= 0) {
+	if (grid.nbrs[local][DOWN] >= 0)
+	{
 		dest[DOWN] = grid.nbrs[local][DOWN];
 		source[DOWN] = grid.nbrs[local][DOWN];
-	} else if (grid.nbrs[local][DOWN] < 0) {
-		dest[DOWN] = grid.rank; //MPI_PROC_NULL;
-		source[DOWN] = grid.rank; //MPI_PROC_NULL;
+	}
+	else if (grid.nbrs[local][DOWN] < 0)
+	{
+		dest[DOWN] = grid.rank_branch; //MPI_PROC_NULL;
+		source[DOWN] = grid.rank_branch; //MPI_PROC_NULL;
 	}
 
-	if (grid.nbrs[local][LEFT] >= 0) {
+	if (grid.nbrs[local][LEFT] >= 0)
+	{
 		dest[LEFT] = grid.nbrs[local][LEFT];
 		source[LEFT] = grid.nbrs[local][LEFT];
-	} else if (grid.nbrs[local][LEFT] < 0) {
-		dest[LEFT] = grid.rank; //MPI_PROC_NULL;
-		source[LEFT] = grid.rank; //MPI_PROC_NULL;
+	}
+	else if (grid.nbrs[local][LEFT] < 0)
+	{
+		dest[LEFT] = grid.rank_branch; //MPI_PROC_NULL;
+		source[LEFT] = grid.rank_branch; //MPI_PROC_NULL;
 	}
 
-	if (grid.nbrs[local][RIGHT] >= 0) {
+	if (grid.nbrs[local][RIGHT] >= 0)
+	{
 		dest[RIGHT] = grid.nbrs[local][RIGHT];
 		source[RIGHT] = grid.nbrs[local][RIGHT];
-	} else if (grid.nbrs[local][RIGHT] < 0) {
-		dest[RIGHT] = grid.rank; //MPI_PROC_NULL;
-		source[RIGHT] = grid.rank; // MPI_PROC_NULL;
+	}
+	else if (grid.nbrs[local][RIGHT] < 0)
+	{
+		dest[RIGHT] = grid.rank_branch; //MPI_PROC_NULL;
+		source[RIGHT] = grid.rank_branch; // MPI_PROC_NULL;
 	}
 }
 
@@ -68,145 +81,123 @@ grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
 	MPI_Waitall(8, reqs, stats);
 
 	return (grid);
-
 }
 
 // Carry out asynchronous communication send and receive of edge cell data.
-void communication_async_send_recv(grid_parms grid, double** sendbuf,
-		double** recvbuf, SMC_cell** smc, EC_cell** ec)
-
-	{
-
-	/// 8 MPI variables of types Request and Status are declared. 4 of each are for sending information to 4 neighbours and the other 4 are to retrive the receive operation status.
+void communication_async_send_recv(grid_parms grid, double** sendbuf, double** recvbuf, SMC_cell** smc, EC_cell** ec)
+{
+	/// 8 MPI variables of types Request and Status are declared.
+	/// 4 of each are for sending information to 4 neighbours and the other 4 are to retrive the receive operation status.
 	MPI_Request reqs[8];
 	MPI_Status stats[8];
 
-	/// Two array, source and dest, hold the ranks for the communicating tasks.
+	/// Two arrays, source and dest, hold the ranks for the communicating tasks.
 	/// dest has ranks to which my task will send a message to.
 	/// source contains tasks from which I expect a message.
 	int source[4], dest[4];
 
-	/// Message tag 1 and 2 representing segment 1 and 2 send or received by processor. Unnecessary now?
-	int tag_1 = 1, tag_2 = 2;
-
 	// Get nearest neighbours indices.
 	determine_source_destination(grid, source, dest);
+
 	t_stamp.update_sendbuf_t1 = MPI_Wtime();
 
 	// Prepare the buffer for exchanging edge cell data with ghost cells.
 	communication_update_sendbuf(grid, sendbuf, smc, ec);
 
 	t_stamp.update_sendbuf_t2 = MPI_Wtime();
-	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2
-			- t_stamp.update_sendbuf_t1;
+	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2 - t_stamp.update_sendbuf_t1;
+
 	t_stamp.async_comm_calls_t1 = MPI_Wtime();
 
 	/// Communication block
-	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[UP][0], grid.num_elements_recv_up, MPI_DOUBLE, source[UP], tag_1, grid.cart_comm, &reqs[4 + UP]));
+	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[UP][0], grid.num_elements_recv_up, MPI_DOUBLE, source[UP], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + UP]));
 
-	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[DOWN][0], grid.num_elements_recv_down, MPI_DOUBLE, source[DOWN], tag_1, grid.cart_comm, &reqs[4 + DOWN]));
+	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[DOWN][0], grid.num_elements_recv_down, MPI_DOUBLE, source[DOWN], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + DOWN]));
 
-	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[LEFT][0], grid.num_elements_recv_left, MPI_DOUBLE, source[LEFT], tag_1, grid.cart_comm, &reqs[4 + LEFT]));
+	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[LEFT][0], grid.num_elements_recv_left, MPI_DOUBLE, source[LEFT], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + LEFT]));
 
-	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[RIGHT][0], grid.num_elements_recv_right, MPI_DOUBLE, source[RIGHT], tag_1, grid.cart_comm, &reqs[4 + RIGHT]));
+	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[RIGHT][0], grid.num_elements_recv_right, MPI_DOUBLE, source[RIGHT], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + RIGHT]));
 
-	CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, dest[UP], tag_1, grid.cart_comm, &reqs[UP]));
+	CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, dest[UP], 0, grid.cart_comm, &reqs[UP]));
 
-	CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, dest[DOWN], tag_1, grid.cart_comm, &reqs[DOWN]));
+	CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, dest[DOWN], 0, grid.cart_comm, &reqs[DOWN]));
 
-	CHECK_MPI_ERROR(MPI_Isend(sendbuf[LEFT], grid.num_elements_send_left, MPI_DOUBLE, dest[LEFT], tag_1, grid.cart_comm, &reqs[LEFT]));
+	CHECK_MPI_ERROR(MPI_Isend(sendbuf[LEFT], grid.num_elements_send_left, MPI_DOUBLE, dest[LEFT], 0, grid.cart_comm, &reqs[LEFT]));
 
-	CHECK_MPI_ERROR(MPI_Isend(sendbuf[RIGHT], grid.num_elements_send_right, MPI_DOUBLE, dest[RIGHT], tag_1, grid.cart_comm, &reqs[RIGHT]));
-
+	CHECK_MPI_ERROR(MPI_Isend(sendbuf[RIGHT], grid.num_elements_send_right, MPI_DOUBLE, dest[RIGHT], 0, grid.cart_comm, &reqs[RIGHT]));
 
 	t_stamp.async_comm_calls_t2 = MPI_Wtime();
+	t_stamp.diff_async_comm_calls = t_stamp.async_comm_calls_t2 - t_stamp.async_comm_calls_t1;
 
 	t_stamp.async_comm_calls_wait_t1 = MPI_Wtime();
 	MPI_Waitall(8, reqs, stats);
 	t_stamp.async_comm_calls_wait_t2 = MPI_Wtime();
-
-	t_stamp.diff_async_comm_calls = t_stamp.async_comm_calls_t2
-			- t_stamp.async_comm_calls_t1;
-	t_stamp.diff_async_comm_calls_wait = t_stamp.async_comm_calls_wait_t2
-			- t_stamp.async_comm_calls_wait_t1;
-
+	t_stamp.diff_async_comm_calls_wait = t_stamp.async_comm_calls_wait_t2 - t_stamp.async_comm_calls_wait_t1;
 
 	int remote_source[2], remote_dest[2];
 	MPI_Request remote_req[4];
 	MPI_Status remote_status[4];
 	int tag_remote_1 = 3, tag_remote_2 = 4;
 
-	if (grid.my_domain.internal_info.boundary_tag == 'I') {
-		t_stamp.remote_async_comm_calls_t1 = MPI_Wtime();
+	if (grid.my_domain.internal_info.boundary_tag == 'I')
+	{
 		for (int i = 0; i < 2; i++) {
 			remote_source[i] = grid.nbrs[remote][i];
 			remote_dest[i] = grid.nbrs[remote][i];
 		}
 
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE,
-						remote_source[UP], tag_remote_1, grid.sub_universe,
-						&remote_req[2 + UP]));
+		t_stamp.remote_async_comm_calls_t1 = MPI_Wtime();
 
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down,
-						MPI_DOUBLE, remote_source[DOWN], tag_remote_1,
-						grid.sub_universe, &remote_req[2 + DOWN]));
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE, remote_source[UP], tag_remote_1, grid.universe,
+				&remote_req[2 + UP]));
 
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE,
-						remote_dest[UP], tag_remote_1, grid.sub_universe,
-						&remote_req[UP]));
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down, MPI_DOUBLE, remote_source[DOWN], tag_remote_1, grid.universe,
+				&remote_req[2 + DOWN]));
 
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down,
-						MPI_DOUBLE, remote_dest[DOWN], tag_remote_1,
-						grid.sub_universe, &remote_req[DOWN]));
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, remote_dest[UP], tag_remote_1, grid.universe,
+				&remote_req[UP]));
 
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, remote_dest[DOWN], tag_remote_1, grid.universe,
+				&remote_req[DOWN]));
+
+		t_stamp.remote_async_comm_calls_t2 = MPI_Wtime();
+		t_stamp.diff_remote_async_comm_calls = t_stamp.remote_async_comm_calls_t2 - t_stamp.remote_async_comm_calls_t1;
 
 		t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
 		MPI_Waitall(4, remote_req, remote_status);
 		t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
-		t_stamp.diff_remote_async_comm_calls_wait =
-				t_stamp.remote_async_comm_calls_wait_t2
-						- t_stamp.remote_async_comm_calls_wait_t1;
+		t_stamp.diff_remote_async_comm_calls_wait = t_stamp.remote_async_comm_calls_wait_t2 - t_stamp.remote_async_comm_calls_wait_t1;
 
-		t_stamp.remote_async_comm_calls_t2 = MPI_Wtime();
-		t_stamp.diff_remote_async_comm_calls =
-				t_stamp.remote_async_comm_calls_t2
-						- t_stamp.remote_async_comm_calls_t1;
-
-
-	} else if ((grid.my_domain.internal_info.boundary_tag == 'T')
-			|| (grid.my_domain.internal_info.boundary_tag == 'B')) {
-		t_stamp.remote_async_comm_calls_t1 = MPI_Wtime();
+	}
+	else if ((grid.my_domain.internal_info.boundary_tag == 'T') || (grid.my_domain.internal_info.boundary_tag == 'B'))
+	{
 		for (int i = 0; i < 2; i++) {
 			remote_source[i] = grid.nbrs[remote][i];
 			remote_dest[i] = grid.nbrs[remote][i];
 		}
 
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE,
-						remote_source[UP], tag_remote_1, grid.universe,
+		t_stamp.remote_async_comm_calls_t1 = MPI_Wtime();
+
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE, remote_source[UP], tag_remote_1, grid.universe,
 						&remote_req[2 + UP]));
 
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down,
-						MPI_DOUBLE, remote_source[DOWN], tag_remote_1,
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down, MPI_DOUBLE, remote_source[DOWN], tag_remote_1,
 						grid.universe, &remote_req[2 + DOWN]));
 
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE,
-						remote_dest[UP], tag_remote_1, grid.universe,
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, remote_dest[UP], tag_remote_1, grid.universe,
 						&remote_req[UP]));
 
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down,
-						MPI_DOUBLE, remote_dest[DOWN], tag_remote_1,
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, remote_dest[DOWN], tag_remote_1,
 						grid.universe, &remote_req[DOWN]));
+
+		t_stamp.remote_async_comm_calls_t2 = MPI_Wtime();
+		t_stamp.diff_remote_async_comm_calls = t_stamp.remote_async_comm_calls_t2 - t_stamp.remote_async_comm_calls_t1;
 
 		t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
 		MPI_Waitall(4, remote_req, remote_status);
-		t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
-		t_stamp.diff_remote_async_comm_calls_wait =
-				t_stamp.remote_async_comm_calls_wait_t2
-						- t_stamp.remote_async_comm_calls_wait_t1;
 
-		t_stamp.remote_async_comm_calls_t2 = MPI_Wtime();
-			t_stamp.diff_remote_async_comm_calls = t_stamp.remote_async_comm_calls_t2
-					- t_stamp.remote_async_comm_calls_t1;
+		t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
+		t_stamp.diff_remote_async_comm_calls_wait = t_stamp.remote_async_comm_calls_wait_t2 - t_stamp.remote_async_comm_calls_wait_t1;
 	}
 
 	t_stamp.update_recvbuf_t1 = MPI_Wtime();
@@ -215,16 +206,13 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf,
 	communication_update_recvbuf(grid, recvbuf, smc, ec);
 
 	t_stamp.update_recvbuf_t2 = MPI_Wtime();
-	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2
-			- t_stamp.update_recvbuf_t1;
-
+	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2 - t_stamp.update_recvbuf_t1;
 }
 
 // Prepare the sendbuf pub putting ECs's and SMCs's edge data to be sent to the neighbours's ghost cells.
-void communication_update_sendbuf(grid_parms grid, double** sendbuf,
-		SMC_cell** smc, EC_cell** ec)
-
-		{
+// Specific to KNBGR.
+void communication_update_sendbuf(grid_parms grid, double** sendbuf, SMC_cell** smc, EC_cell** ec)
+{
 	int k, buf_offset;
 
 ///UP direction
@@ -328,16 +316,14 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf,
 		sendbuf[RIGHT][buf_offset + k + 2] = ec[i][j].vars[ec_IP3];
 		k += grid.num_coupling_species_ec;
 	}
-
 }
 
 /*
  Unpack received data into ghost cells.
+ Specific to KNBGR.
 */
-void communication_update_recvbuf(grid_parms grid, double** recvbuf,
-		SMC_cell** smc, EC_cell** ec)
-
-		{
+void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** smc, EC_cell** ec)
+{
 	int k, buf_offset;
 
 /// UP direction

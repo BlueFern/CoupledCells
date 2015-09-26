@@ -645,7 +645,7 @@ void Total_cells_in_computational_domain(grid_parms grid)
 {
 	int sendcount = 2, recvcount = 2;
 	int root = 0;
-	int sendarray[2], recvarray[sendcount * grid.numtasks];
+	int sendarray[2], recvarray[sendcount * grid.num_ranks];
 	int sumEC = 0, sumSMC = 0;
 	sendarray[0] = grid.num_ec_axially * grid.num_ec_circumferentially;
 	sendarray[1] = grid.num_smc_axially * grid.num_smc_circumferentially;
@@ -654,11 +654,11 @@ void Total_cells_in_computational_domain(grid_parms grid)
 
 	if(grid.universal_rank == 0)
 	{
-		for(int i = 0; i < grid.numtasks * recvcount; i += 2)
+		for(int i = 0; i < grid.num_ranks * recvcount; i += 2)
 		{
 			sumEC += recvarray[i];
 		}
-		for(int i = 1; i < grid.numtasks * recvcount; i += 2)
+		for(int i = 1; i < grid.num_ranks * recvcount; i += 2)
 		{
 			sumSMC += recvarray[i];
 		}

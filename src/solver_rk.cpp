@@ -8,9 +8,7 @@
 #include "gather.h"
 #include "writeHDF5.h"
 
-//extern "C" {
 #include "rksuite.h"
-//}
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -34,37 +32,30 @@ void report_RK_suite_error(int cflag, double tnow, int rank)
 		break;
 	// 2 - inefficient usage.
 	case 2:
-		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "inefficient usage");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "inefficient usage");
 		break;
 	// 3 - work intensive.
 	case 3:
-		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "work intensive");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "work intensive");
 		break;
 	// 4 - problem probably stiff.
 	case 4:
-		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "problem probably stiff");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "problem probably stiff");
 		break;
 	// 5 - too much accuracy requested.
 	case 5:
-		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "too much accuracy requested");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "too much accuracy requested");
 		break;
 	// 6 - global error assessment unreliable beyond this point.
 	case 6:
-		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "global error assessment unreliable beyond this point");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "global error assessment unreliable beyond this point");
 		break;
 	// 911 - catastrophic failure reported on stdout.
 	case 911:
-		//fprintf(stdout, RK_suite_error, rank, tnow, cflag, "catastrophic failure");
 		fprintf(stderr, RK_suite_error, rank, tnow, cflag, "catastrophic failure");
 		MPI_Abort(MPI_COMM_WORLD, 911);
 		break;
 	default:
-		//fprintf(stdout, "[%d] Unexpected RK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
 		fprintf(stderr, "[%d] Unexpected RK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 	}
@@ -108,60 +99,29 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// int file_offset_for_timing_data = determine_file_offset_for_timing_data(check, grid);
 	int totf, stpcst, stpsok;
 	double waste, hnext;
-	int err;
 
-#if 0
-	// Aggregation of data for the writer.
-	data_buffer* writer_buffer = (data_buffer*) checked_malloc(sizeof(data_buffer), SRC_LOC);
-	writer_buffer->buffer_length = (int*) checked_malloc(12 * sizeof(int), SRC_LOC);
-	writer_buffer->smc_stat_var_buffer_length = (int*) checked_malloc((grid.neq_smc) * sizeof(int), SRC_LOC);
-	writer_buffer->ec_stat_var_buffer_length = (int*) checked_malloc((grid.neq_ec) * sizeof(int), SRC_LOC);
-	writer_buffer->smc_cpl = (int*) checked_malloc((grid.num_coupling_species_smc) * sizeof(int), SRC_LOC);
-	writer_buffer->ec_cpl = (int*) checked_malloc((grid.num_coupling_species_ec) * sizeof(int), SRC_LOC);
-
-	// Dump MPI task mesh representation into vtk file to manifest task map.
-	gather_tasks_mesh_point_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc, ec);
-	if (grid.rank == 0)
-	{
-		// Validation, debugging.
-		write_process_mesh(check, &grid, my_IO_domain_info, writer_buffer, path);
-	}
-
-	// Dump JPLC map on bifurcation into a vtk file.
-	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
-	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
-
-	if(grid.rank == 0)
-	{
-		// Initial concentration of JPLC in the EC cells.
-		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
-	}
-#endif
-
-	// Start HDF5 Output Prototyping.
-
-	// Buffer for jplc values for the whole mesh.
+	// Start HDF5 Output.
+	// Buffer for the JPLC values for the current branch.
 	double *jplc_buffer = 0;
 
 	// Allocate the jplc_buffer.
-	if (grid.rank == 0)
+	if (grid.rank_branch == 0)
 	{
-		jplc_buffer = (double *)checked_malloc(grid.tasks * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
+		jplc_buffer = (double *)checked_malloc(grid.num_ranks_branch * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
 	}
 
-	// Collect all jplc values in a single buffer on root node.
+	// Collect all JPLC values in a single buffer on root node.
 	gather_JPLC(&grid, jplc_buffer, ec);
 
-	MPI_Barrier(MPI_COMM_WORLD);
+	// MPI_Barrier(MPI_COMM_WORLD);
 
 	// Write jplc values to HDF5.
-	if(grid.rank == 0)
+	if(grid.rank_branch == 0)
 	{
 		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
 	}
-
-	// End HDf5 Output Prototyping.
+	// End HDf5 Output.
 
 	// Reset JPLC to the uniform map.
 	// The input file will have to be read later when the time is right.
@@ -176,22 +136,22 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	bool jplc_read_in = false;
 
 	// Profiling.
-	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
+	double timing_values[3][int(tfinal / interval)];
 
 	// Data buffers for collecting and writing HDF5 output.
 	ec_data_buffer *ec_buffer;
 	smc_data_buffer *smc_buffer;
 
 	// Allocate the EC and SMC buffers.
-	if(grid.rank == 0)
+	if(grid.rank_branch == 0)
 	{
-		ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 1);
-		smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 1);
+		ec_buffer = allocate_EC_data_buffer(grid.num_ranks_branch, grid.num_ec_axially * grid.num_ec_circumferentially, 1);
+		smc_buffer = allocate_SMC_data_buffer(grid.num_ranks_branch, grid.num_smc_axially * grid.num_smc_circumferentially, 1);
 	}
 	else
 	{
-		ec_buffer = allocate_EC_data_buffer(grid.tasks, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
-		smc_buffer = allocate_SMC_data_buffer(grid.tasks, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
+		ec_buffer = allocate_EC_data_buffer(grid.num_ranks_branch, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
+		smc_buffer = allocate_SMC_data_buffer(grid.num_ranks_branch, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
 	}
 
 	// ITERATION loop to go from INITIAL time to FINAL time.
@@ -228,7 +188,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		t_stamp.solver_t2 = MPI_Wtime();
 		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
 
-		palce_holder_for_timing_max_min[0][iteration] = t_stamp.diff_solver;
+		timing_values[0][iteration] = t_stamp.diff_solver;
 		t_stamp.aggregate_compute += t_stamp.diff_solver;
 
 		/// Call for interprocessor communication.
@@ -238,30 +198,13 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 		t_stamp.total_comms_cost_t2 = MPI_Wtime();
 		t_stamp.diff_total_comms_cost = t_stamp.total_comms_cost_t2 - t_stamp.total_comms_cost_t1;
-		palce_holder_for_timing_max_min[1][iteration] = t_stamp.diff_total_comms_cost;
+		timing_values[1][iteration] = t_stamp.diff_total_comms_cost;
 		t_stamp.aggregate_comm += t_stamp.diff_total_comms_cost;
 
 		if((iteration % file_write_per_unit_time) == 0)
 		{
 			t_stamp.write_t1 = MPI_Wtime();
 
-#if 0
-			// Geometry to be written.
-			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc);
-			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
-
-			// State variables to be written as attributes.
-			gather_smcData(&grid, my_IO_domain_info, writer_buffer, smc, write_count);
-			gather_ecData(&grid, my_IO_domain_info, writer_buffer, ec, write_count);
-
-			if (grid.rank == 0)
-			{
-				// Write out the meshes with attributes.
-				initialise_time_wise_checkpoint(check, grid, write_count, path, my_IO_domain_info);
-				write_smc_and_ec_data(check, &grid, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
-				close_time_wise_checkpoints(check);
-			}
-#endif
 			// HDF5 Start
 			// HDF5 Start
 			// HDF5 Start
@@ -272,7 +215,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			// TODO: Perhaps the SMCs matrix is better stored as pointers in the grid?
 			gather_SMC_data(&grid, smc_buffer, smc);
 
-			if(grid.rank == 0)
+			if(grid.rank_branch == 0)
 			{
 				// Write state variables to HDF5.
 				write_EC_data_HDF5(&grid, ec_buffer, write_count, path);
@@ -285,13 +228,15 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 			t_stamp.write_t2 = MPI_Wtime();
 			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;
-			palce_holder_for_timing_max_min[2][write_count] = t_stamp.diff_write;
+			timing_values[2][write_count] = t_stamp.diff_write;
 			t_stamp.aggregate_write += t_stamp.diff_write;
+
 			write_count++;
 		}
 
 		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
 		initialize_t_stamp(&t_stamp);
+
 		/// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
 		iteration++;
 		tend += interval;
@@ -299,7 +244,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	}
 
 	// Release the EC and SMC buffers used for writing to HDF5.
-	if(grid.rank == 0)
+	if(grid.rank_branch == 0)
 	{
 		free_EC_data_buffer(ec_buffer, 1);
 		free_SMC_data_buffer(smc_buffer, 1);
@@ -310,26 +255,22 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		free_SMC_data_buffer(smc_buffer, 0);
 	}
 
-	//t_stamp.aggregate_compute = t_stamp.aggregate_compute / iteration;
-	//t_stamp.aggregate_comm = t_stamp.aggregate_comm / iteration;
-	//t_stamp.aggregate_write = t_stamp.aggregate_write / write_count;
-
 	// Prepare time profiling data.
 	double tmp_array[write_count];
 
 	for(int i = 0; i < write_count; i++)
 	{
-		tmp_array[i] = palce_holder_for_timing_max_min[2][i];
+		tmp_array[i] = timing_values[2][i];
 	}
-	maximum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.max_compute, &t_stamp.max_compute_index);
-	maximum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.max_comm, &t_stamp.max_comm_index);
+	maximum(timing_values[0], iteration, &t_stamp.max_compute, &t_stamp.max_compute_index);
+	maximum(timing_values[1], iteration, &t_stamp.max_comm, &t_stamp.max_comm_index);
 	maximum(tmp_array, write_count, &t_stamp.max_write, &t_stamp.max_write_index);
 
-	minimum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.min_compute, &t_stamp.min_compute_index);
-	minimum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.min_comm, &t_stamp.min_comm_index);
+	minimum(timing_values[0], iteration, &t_stamp.min_compute, &t_stamp.min_compute_index);
+	minimum(timing_values[1], iteration, &t_stamp.min_comm, &t_stamp.min_comm_index);
 	minimum(tmp_array, write_count, &t_stamp.min_write, &t_stamp.min_write_index);
 
 	// Write time profiling data.
-	// Time profiling data gets lost in the event of a crash.
+	// Time profiling data is lost in the event of a crash.
 	checkpoint_coarse_time_profiling_data(grid, &t_stamp, my_IO_domain_info);
 }

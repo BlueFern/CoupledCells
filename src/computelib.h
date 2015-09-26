@@ -12,10 +12,6 @@
 #include <math.h>
 #include "macros.h"
 
-// #include <nvector/nvector_serial.h>
-
-// using namespace std;
-
 #define success 0
 #define	none -1
 
@@ -130,8 +126,8 @@ struct node {
 struct my_tree {
 	node internal_info;
 	node left_child, right_child, parent;
-	double z_offset_start, z_offset_end;				/// These are domain offsets start and end points to demacated distance in
-	double local_z_start, local_z_end;					/// z direction spanned by a processor's own sub-domain that it belongs to.
+	//double z_offset_start, z_offset_end;				/// These are domain offsets start and end points to demacated distance in
+	//double local_z_start, local_z_end;					/// z direction spanned by a processor's own sub-domain that it belongs to.
 };
 #endif
 
@@ -148,6 +144,17 @@ struct glb_domn_inf {
 ///on that particular z coordinate. First two elements store the coords for any STRSEG or Left/Right child of
 ///bifurcation where as the last two elements store coords for the parent segment of a bifurcation, if the domain
 ///type is BIF
+
+#define DOMAIN_NUM 0
+#define DOMAIN_TYPE 1
+#define AX_QUADS 2
+#define CR_QUADS 3
+#define PARENT_DOMAIN_NUM 4
+#define LEFT_DOMAIN_NUM 5
+#define RIGHT_DOMAIN_NUM 6
+#define AX_ECS 7
+#define CR_SMCS 8
+#define NUM_CONFIG_ELEMENTS 9
 
 typedef struct {
 	// double tfinal;
@@ -168,8 +175,9 @@ typedef struct {
 	int neq_ec; // Number of EC ODEs for a single cell.
 
 	int
-	///Global domain information storage
-	num_domains, **domains,
+	/// Global domain information storage with these elements:
+	// [DOMAIN_NUM, DOMIN_TYPE, AX_QUADS, CR_QUADS, PARENT_DOMAIN_NUM, LEFT_DOMAIN_NUM, RIGHT_DOMAIN_NUM, AX_ECS, CR_SMCS].
+	num_domains, **domain_params,
 	///total grid points axially
 	m,
 	///total grid points circumferentially
@@ -187,16 +195,15 @@ typedef struct {
 	///Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task
 	added_info_in_send_buf,
 	///This is global and local MPI information
-	numtasks, universal_rank, sub_universe_numtasks, sub_universe_rank, rank,
-	tasks, 				/// numtasks = total CPUs in MPI_COMM_WORLD,
-						/// tasks = total CPUs in my-subdomain's comm
-	my_domain_color, my_domain_key, color, key,
+	num_ranks, universal_rank, /// numtasks = total CPUs in MPI_COMM_WORLD,
+	num_ranks_branch, rank_branch, /// tasks = total CPUs in my-subdomain's comm (branch)
+	color, key,
 
-	//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right brach = 3.
+	//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right branch = 3.
 	//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 	branch_tag,
 	/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
-	scheme, offset_P, offset_L, offset_R, flip_array[2],
+	scheme, offset_P, offset_L, offset_R, flip_array[4],
 	/// Number of elements being sent and received.
 	num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right,
 	num_elements_recv_up, num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
@@ -212,7 +219,11 @@ typedef struct {
 
 	// Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
 	// operation on MPI_COMM_WORLD and the other a Cartesian communicator arising from Cart_create operation.
-	MPI_Comm universe, sub_universe, split_comm, cart_comm;
+	MPI_Comm universe, cart_comm;
+
+	//MPI_Comm sub_universe;
+	//int sub_universe_numtasks, sub_universe_rank;
+	//int my_domain_color, my_domain_key;
 
 	int smc_model, ec_model;	// These are placeholders for the selection of model to be simulated in each cell.
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
@@ -221,9 +232,8 @@ typedef struct {
 						// which files are associated with a given task/processor.
 
 						///Temporary array for use in time profiling checkpointing
-	double **time_profile;
-	FILE* logptr;
-
+	// double **time_profile;
+	// FILE* logptr;
 	// int num_parameters;			///Number of parameters e.g. JPLC, ATP, WSS etc those are to be used to stimulate the discrete cell models.
 
 	int logfile_displacements;
@@ -267,6 +277,9 @@ typedef struct {
 	conductance cpl_cef;
 } EC_cell;
 
+
+#if 1
+// TODO: This is to be thrown away along with all related functions. They do nothing.
 typedef struct {
 	MPI_File
 	/* common handlers */
@@ -282,6 +295,7 @@ typedef struct {
 	//EC Data file
 	ec_data_file;
 } checkpoint_handle;
+#endif
 
 typedef struct {
 	double
@@ -423,15 +437,15 @@ void print_compare(double, double*, grid_parms, SMC_cell**, EC_cell**);
 //Topology related functions
 grid_parms make_bifucation_cart_grids(grid_parms);
 grid_parms make_straight_segment_cart_grids(grid_parms);
-grid_parms set_task_parameters(grid_parms);
-grid_parms configure_subdomains_topology(grid_parms, int, int**);
+void set_task_parameters(grid_parms *);
+void configure_subdomains_topology(grid_parms *);
 
 void checkpoint_timing_data(grid_parms, checkpoint_handle*, double, time_stamps, int, int);
 double agonist_profile(double, grid_parms, int, int, double);
 void initialize_t_stamp(time_stamps*);
 
 void Initialize_tsoukias_smc(grid_parms grid, double y[], SMC_cell** smc);
-int read_config_file(int, char*, grid_parms*);
+void read_config_file(int, char*, grid_parms*);
 void set_file_naming_strings(grid_parms* grid);
 void update_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*,IO_domain_info*);
 int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid);

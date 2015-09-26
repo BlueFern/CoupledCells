@@ -1,8 +1,6 @@
 #include <assert.h>
 #include "computelib.h"
 
-#define NUM_CONFIG_ELEMENTS 9
-
 checkpoint_handle* initialise_checkpoint(grid_parms grid)
 {
 	checkpoint_handle *check = (checkpoint_handle*) malloc(sizeof(checkpoint_handle));
@@ -1004,70 +1002,67 @@ void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms gr
 {
 	MPI_Status status;
 	MPI_Offset displacement = 0;
-	char* buffer = (char*) checked_malloc(2 * 1024 * sizeof(char), "allocation for logfile segment space\n");
+	char* buffer = (char*) checked_malloc(2 * 1024 * sizeof(char), SRC_LOC);
 	int root = 0;
 	char filename[50];
 	int length =
 			sprintf(buffer,
 					"BRANCH_TAG	= %d\n[Universal_Rank, Cart_Rank= (%d,%d)] \tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d)\t "
-							"remote: (up,down)=(%d %d)\n\n flip_array: (%d,%d,%d,%d)\n\n"
-							"Boundary_tag = %c\n(T = Top\t B= Bottom\t I=Interior edges of the bifurcation segments, parent or children\t N=Interior of the subdomain)\n"
-							"COUPLING COEFFICIENTS\n"
-							"Vm_hm_smc=%2.5lf\nVm_hm_ec=%2.5lf\nCa_hm_smc=%2.5lf\nCa_hm_ec=%2.5lf\nIP3_hm_smc=%2.5lf\n"
-							"IP3_hm_ec=%2.5lf\nVm_ht_smc=%2.5lf\nVm_ht_ec=%2.5lf\nCa_ht_smc=%2.5lf\nCa_ht_ec=%2.5lf\n"
-							"IP3_ht_smc=%2.5lf\nIP3_ht_ec=%2.5lf\n\n"
-							"Spatial Gradient info:\nUniform JPLC\t=%2.5lf\nMinimum JPLC\t=%2.5lf\nMaximum JPLC\t=%2.5lf\nGradient\t=%2.5lf\n"
-							"Total Tasks=%d\n"
-							"Number of grid points in axial direction =%d\n"
-							"Number of grid points in circumferential direction =%d\n"
-							"Number of ECs per node (axially) =%d\n"
-							"Number of SMCs per node (circumferentially) =%d\n"
-							"Total ECs on this node =%d\n"
-							"Total SMCs on this node =%d\n"
-							"Total number of cells on this node =%d\n"
-							"\nTotal ECs in the full computational domain =%d\n"
-							"Total SMCs in the full computational domain =%d\n"
-							"Total number of cells in the full computational domain =%d\n"
-							"Total number of equations in the full computational domain =%d\n "
-							"z_coordinates:       start = %lf     end = %lf\n local_z_start = %lf  local_z_end = %lf\n"
-							"------------------------------------------------------------------",
-					grid.branch_tag, grid.universal_rank, grid.rank, grid.coords[0], grid.coords[1], grid.nbrs[local][UP], grid.nbrs[local][DOWN],
+					"remote: (up,down)=(%d %d)\nflip_array: (%d,%d,%d,%d)\n"
+					"Boundary_tag = %c\n(T = Top\t B= Bottom\t I=Interior edges of the bifurcation segments, parent or children\t N=Interior of the subdomain)\n"
+					"COUPLING COEFFICIENTS\n"
+					"Vm_hm_smc=%2.5lf\nVm_hm_ec=%2.5lf\nCa_hm_smc=%2.5lf\nCa_hm_ec=%2.5lf\nIP3_hm_smc=%2.5lf\n"
+					"IP3_hm_ec=%2.5lf\nVm_ht_smc=%2.5lf\nVm_ht_ec=%2.5lf\nCa_ht_smc=%2.5lf\nCa_ht_ec=%2.5lf\n"
+					"IP3_ht_smc=%2.5lf\nIP3_ht_ec=%2.5lf\n\n"
+					"Spatial Gradient info:\nUniform JPLC\t=%2.5lf\nMinimum JPLC\t=%2.5lf\nMaximum JPLC\t=%2.5lf\nGradient\t=%2.5lf\n"
+					"Total Tasks=%d\n"
+					"Number of grid points in axial direction =%d\n"
+					"Number of grid points in circumferential direction =%d\n"
+					"Number of ECs per node (axially) =%d\n"
+					"Number of SMCs per node (circumferentially) =%d\n"
+					"Total ECs on this node =%d\n"
+					"Total SMCs on this node =%d\n"
+					"Total number of cells on this node =%d\n"
+					"\nTotal ECs in the full computational domain =%d\n"
+					"Total SMCs in the full computational domain =%d\n"
+					"Total number of cells in the full computational domain =%d\n"
+					"Total number of equations in the full computational domain =%d\n"
+					"------------------------------------------------------------------\n\n",
+					grid.branch_tag, grid.universal_rank, grid.rank_branch, grid.coords[0], grid.coords[1], grid.nbrs[local][UP], grid.nbrs[local][DOWN],
 					grid.nbrs[local][LEFT], grid.nbrs[local][RIGHT], grid.nbrs[remote][UP], grid.nbrs[remote][DOWN],
 					grid.flip_array[0], grid.flip_array[1], grid.flip_array[2], grid.flip_array[3],
 					grid.my_domain.internal_info.boundary_tag, cpl_cef.Vm_hm_smc, cpl_cef.Vm_hm_ec, cpl_cef.Ca_hm_smc, cpl_cef.Ca_hm_ec,
 					cpl_cef.IP3_hm_smc, cpl_cef.IP3_hm_ec, cpl_cef.Vm_ht_smc, cpl_cef.Vm_ht_ec, cpl_cef.Ca_ht_smc, cpl_cef.Ca_ht_ec,
-					cpl_cef.IP3_ht_smc, cpl_cef.IP3_ht_ec, grid.uniform_jplc, grid.min_jplc, grid.max_jplc, grid.gradient, grid.numtasks, grid.m,
+					cpl_cef.IP3_ht_smc, cpl_cef.IP3_ht_ec, grid.uniform_jplc, grid.min_jplc, grid.max_jplc, grid.gradient, grid.num_ranks, grid.m,
 					grid.n, grid.num_ec_axially, grid.num_smc_circumferentially, grid.num_ec_axially * grid.num_ec_circumferentially,
 					grid.num_smc_axially * grid.num_smc_circumferentially,
 					(grid.num_ec_axially * grid.num_ec_circumferentially) + (grid.num_smc_axially * grid.num_smc_circumferentially),
-					(grid.num_ec_circumferentially * grid.num_ec_axially * grid.numtasks),
-					(grid.num_smc_circumferentially * grid.num_smc_axially * grid.numtasks),
-					((grid.num_ec_axially * grid.num_ec_circumferentially) + (grid.num_smc_axially * grid.num_smc_circumferentially)) * grid.numtasks,
-					grid.NEQ * grid.numtasks, grid.my_domain.z_offset_start, grid.my_domain.z_offset_end, grid.my_domain.local_z_start,
-					grid.my_domain.local_z_end);
+					(grid.num_ec_circumferentially * grid.num_ec_axially * grid.num_ranks),
+					(grid.num_smc_circumferentially * grid.num_smc_axially * grid.num_ranks),
+					((grid.num_ec_axially * grid.num_ec_circumferentially) + (grid.num_smc_axially * grid.num_smc_circumferentially)) * grid.num_ranks,
+					grid.NEQ * grid.num_ranks);
 
-	int *recv_count = (int*) checked_malloc(grid.tasks * sizeof(int),
-			"Allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers.");
-	int *disp = (int*) checked_malloc(grid.tasks * sizeof(int), "Allocation failed for disp array in gather_tasks_mesh_point_data_on_writers.");
+	int *recv_count = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
+	int *disp = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
 
 	// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid.cart_comm));
 
 	grid.logfile_displacements = 0;
-	for (int i = 0; i < grid.tasks; i++)
+	for (int i = 0; i < grid.num_ranks_branch; i++)
 	{
 		disp[i] = grid.logfile_displacements;
 		grid.logfile_displacements += recv_count[i];
 	}
 
-	if (grid.rank == 0)
+	if (grid.rank_branch == 0)
 	{
 		grid.logfile_write_buffer = (char*) checked_malloc(grid.logfile_displacements * sizeof(char),
 				"Allocation error for writer_buffer for log file.");
 	}
 	CHECK_MPI_ERROR(MPI_Gatherv(buffer, length, MPI_CHAR, grid.logfile_write_buffer, recv_count, disp, MPI_CHAR, root, grid.cart_comm));
 
-	if (grid.rank == 0)
+	if (grid.rank_branch == 0)
 	{
 		sprintf(filename, "Logfile_%s.txt", grid.suffix);
 		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &check->logptr));
@@ -1113,8 +1108,8 @@ void checkpoint_timing_data(grid_parms grid, checkpoint_handle* check, double tn
 	write_element_count = 1;
 	time_offset_in_file = itteration * write_element_count * grid.tasks * sizeof(double);
 
-	disp_write = time_offset_in_file + file_offset + (grid.rank * write_element_count * sizeof(double));
-	disp_itteration = (grid.rank * write_element_count * sizeof(int));
+	disp_write = time_offset_in_file + file_offset + (grid.rank_branch * write_element_count * sizeof(double));
+	disp_itteration = (grid.rank_branch * write_element_count * sizeof(int));
 
 	CHECK_MPI_ERROR(MPI_File_write_at_all(check->time_profiling, disp_write, &buffer[0], 1, MPI_DOUBLE, &status));
 	CHECK_MPI_ERROR(MPI_File_write_at_all(check->async_calls, disp_write, &buffer[1], 1, MPI_DOUBLE, &status));
@@ -1310,7 +1305,7 @@ int checkpoint(checkpoint_handle* check, grid_parms grid, double* tnow, double* 
 /// left child is positive or zero, and right child is negative. ???
 /// If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative. ???
 
-int read_config_file(int rank, char* filename, grid_parms* grid) {
+void read_config_file(int rank, char* filename, grid_parms* grid) {
 	int err;
 	MPI_File input_file;
 	MPI_Offset file_size;
@@ -1366,17 +1361,17 @@ int read_config_file(int rank, char* filename, grid_parms* grid) {
 	// TODO: Define a function for releasing 2D arrays.
 
 	// Allocate first dimension array.
-	grid->domains = (int**) checked_malloc(grid->num_domains * sizeof(int*), SRC_LOC);
+	grid->domain_params = (int**) checked_malloc(grid->num_domains * sizeof(int*), SRC_LOC);
 
 	// Allocate second dimension arrays.
 	for (int i = 0; i < grid->num_domains; i++) {
-		grid->domains[i] = (int*) checked_malloc(NUM_CONFIG_ELEMENTS * sizeof(int), SRC_LOC);
+		grid->domain_params[i] = (int*) checked_malloc(NUM_CONFIG_ELEMENTS * sizeof(int), SRC_LOC);
 	}
 
 	// Copy the data into the domains array from the values array.
 	for (int i = 0; i < grid->num_domains; i++) {
 		for (int j = 0; j < NUM_CONFIG_ELEMENTS; j++) {
-			grid->domains[i][j] = values[(i * NUM_CONFIG_ELEMENTS) + j];
+			grid->domain_params[i][j] = values[(i * NUM_CONFIG_ELEMENTS) + j];
 		}
 	}
 
@@ -1384,8 +1379,6 @@ int read_config_file(int rank, char* filename, grid_parms* grid) {
 
 	free(buffer);
 	free(values);
-
-	return 0;
 }
 
 // Every cylinder root writes elapsed time to a file.
@@ -1402,22 +1395,22 @@ void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper*
 
 	int length = sprintf(buffer, "%2.12lf\n", elps_t->elapsed_time);
 
-	int *recv_count = (int*) checked_malloc(grid.tasks * sizeof(int),
+	int *recv_count = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int),
 			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
-	int *disp = (int*) checked_malloc(grid.tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
+	int *disp = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
 
 	/// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid.cart_comm));
 	int total_buffer_length = 0;
-	for (int i = 0; i < grid.tasks; i++) {
+	for (int i = 0; i < grid.num_ranks_branch; i++) {
 		disp[i] = total_buffer_length;
 		total_buffer_length += recv_count[i];
 	}
-	if (grid.rank == 0) {
+	if (grid.rank_branch == 0) {
 		write_buffer = (char*) checked_malloc(total_buffer_length * sizeof(char), "allocation error for writer_buffer for Elapsed_time file.");
 	}
 	CHECK_MPI_ERROR(MPI_Gatherv(buffer, length, MPI_CHAR, write_buffer, recv_count, disp, MPI_CHAR, root, grid.cart_comm));
-	if (grid.rank == 0) {
+	if (grid.rank_branch == 0) {
 		sprintf(filename, "Elapsed_time_%s.txt", grid.suffix);
 		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
 		CHECK_MPI_ERROR(MPI_File_write_at(check->elapsed_time, 0, write_buffer, total_buffer_length, MPI_CHAR, &status));
@@ -1458,7 +1451,7 @@ int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms g
 	char filename[50];
 //int err = sprintf(filename, "itter_count%s", grid.suffix);
 	int file_offset = 0;
-	disp = grid.rank * sizeof(int);
+	disp = grid.rank_branch * sizeof(int);
 	/*CHECK_MPI_ERROR(
 	 MPI_File_open(grid.cart_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->itter_count));
 	 */
@@ -1560,7 +1553,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 
 	// Read TASK meshes and post the coordinates to all grids.
-	if (grid->rank == 0)
+	if (grid->rank_branch == 0)
 	{
 		vtk_info* process_mesh = (vtk_info*)checked_malloc(sizeof(vtk_info), SRC_LOC);
 		process_mesh->points = (double**)checked_malloc(grid->info[PROCESS_MESH][TOTAL_POINTS] * sizeof(double*), SRC_LOC);
@@ -1642,7 +1635,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[SMC_MESH][TOTAL_CELLS] * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 
 	// Read SMC meshes, and post the coordinates to all cells.
-	if(grid->rank == 0)
+	if(grid->rank_branch == 0)
 	{
 
 		int num_SMC_points = grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[SMC_MESH][TOTAL_POINTS];
@@ -1756,7 +1749,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[EC_MESH][TOTAL_CELLS] * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 
 	// Read EC meshes, and post the coordinates to all cells.
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		vtk_info* ec_mesh = (vtk_info*)checked_malloc(sizeof(vtk_info), SRC_LOC);
 
 		ec_mesh->points = (double**)checked_malloc(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_MESH][TOTAL_POINTS] * sizeof(double*), SRC_LOC);
@@ -1853,7 +1846,7 @@ int read_topology_info(char* filename, grid_parms* grid, SMC_cell **smc, EC_cell
 	send_points = (double*)checked_malloc(tuple_offset * grid->info[EC_CENT_MESH][TOTAL_CELLS] * grid->info[PROCESS_MESH][TOTAL_CELLS] * sizeof(double), SRC_LOC);
 
 	// Read EC centroids, post them to all cells.
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		vtk_info* ec_centroids = (vtk_info*)checked_malloc(sizeof(vtk_info), SRC_LOC);
 		ec_centroids->points = (double**)checked_malloc(grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS] * sizeof(double*), SRC_LOC);
 		for (int i = 0; i < grid->info[PROCESS_MESH][TOTAL_CELLS] * grid->info[EC_CENT_MESH][TOTAL_POINTS]; i++) {
@@ -1940,13 +1933,13 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 
 	int jplc_per_task_count = grid->num_ec_circumferentially * grid->num_ec_axially;
 
-	int jplc_in_size = jplc_per_task_count * grid->tasks;
+	int jplc_in_size = jplc_per_task_count * grid->num_ranks_branch;
 
 	// This can be allocated only on the IO nodes.
 	double *send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
 
 	// Only the IO nodes read the input files.
-	if (grid->rank == 0)
+	if (grid->rank_branch == 0)
 	{
 		char jplc_file_name[64];
 		switch(branch)
@@ -1982,10 +1975,10 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 		fclose(fr);
 	}
 
-	int *send_jplc_counts = (int *)checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
-	int *send_jplc_offsets = (int *)checked_malloc(grid->tasks * sizeof(int), SRC_LOC);
+	int *send_jplc_counts = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+	int *send_jplc_offsets = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
 
-	for(int task = 0; task < grid->tasks; task++)
+	for(int task = 0; task < grid->num_ranks_branch; task++)
 	{
 		send_jplc_counts[task] = jplc_per_task_count;
 		send_jplc_offsets[task] = task * jplc_per_task_count;
@@ -2135,7 +2128,7 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 		writer_buffer->buffer_length[PROCESS_MESH] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->process_mesh_points = (char*) checked_malloc(writer_buffer->buffer_length[PROCESS_MESH] * sizeof(char),
 				"allocation error for writer_buffer member process mesh.");
 	}
@@ -2154,9 +2147,9 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 	send_buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * num_tuple_components * num_tuples * sizeof(char),
 			"error allocating send_buffer in gather_tasks_mesh_point_data_on_writers.");
 
-	length = sprintf(send_buffer, "%d %d %d %d %d\n", 4, (branch * grid->tasks * 4) + 4 * grid->rank + 0,
-			(branch * grid->tasks * 4) + 4 * grid->rank + 1, (branch * grid->tasks * 4) + 4 * grid->rank + 2,
-			(branch * grid->tasks * 4) + 4 * grid->rank + 3);
+	length = sprintf(send_buffer, "%d %d %d %d %d\n", 4, (branch * grid->tasks * 4) + 4 * grid->rank_branch + 0,
+			(branch * grid->tasks * 4) + 4 * grid->rank_branch + 1, (branch * grid->tasks * 4) + 4 * grid->rank_branch + 2,
+			(branch * grid->tasks * 4) + 4 * grid->rank_branch + 3);
 
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid->cart_comm));
 	writer_buffer->buffer_length[ProcessCell] = 0;
@@ -2165,7 +2158,7 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 		disp[i] = writer_buffer->buffer_length[ProcessCell];
 		writer_buffer->buffer_length[ProcessCell] += recv_count[i];
 	}
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->process_mesh_cells = (char*) checked_malloc(writer_buffer->buffer_length[ProcessCell] * sizeof(char),
 				"allocation error for writer_buffer member process cells.");
 	}
@@ -2193,7 +2186,7 @@ void gather_tasks_mesh_point_data_on_writers(grid_parms* grid, IO_domain_info* m
 		disp[i] = writer_buffer->buffer_length[ProcessCellType];
 		writer_buffer->buffer_length[ProcessCellType] += recv_count[i];
 	}
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->process_mesh_type = (char*) checked_malloc(writer_buffer->buffer_length[ProcessCellType] * sizeof(char),
 				"allocation error for writer_buffer member process cells.");
 	}
@@ -2241,7 +2234,7 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 		writer_buffer->buffer_length[SMC_MESH] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->smc_mesh_points = (char*) checked_malloc(writer_buffer->buffer_length[SMC_MESH] * sizeof(char),
 				"allocation error for writer_buffer member process mesh.");
 	}
@@ -2289,7 +2282,7 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 		disp[i] = writer_buffer->buffer_length[smcCell];
 		writer_buffer->buffer_length[smcCell] += recv_count[i];
 	}
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->smc_mesh_cells = (char*) checked_malloc(writer_buffer->buffer_length[smcCell] * sizeof(char),
 				"allocation error for writer_buffer member process cells.");
 	}
@@ -2322,7 +2315,7 @@ void gather_smc_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_dom
 		disp[i] = writer_buffer->buffer_length[smcCellType];
 		writer_buffer->buffer_length[smcCellType] += recv_count[i];
 	}
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->smc_mesh_type = (char*) checked_malloc(writer_buffer->buffer_length[smcCellType] * sizeof(char),
 				"allocation error for writer_buffer member process cells.");
 	}
@@ -2370,7 +2363,7 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 		writer_buffer->buffer_length[EC_MESH] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->ec_mesh_points = (char*) checked_malloc(writer_buffer->buffer_length[EC_MESH] * sizeof(char),
 				"allocation error for writer_buffer member process mesh.");
 	}
@@ -2418,7 +2411,7 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 		disp[i] = writer_buffer->buffer_length[ecCell];
 		writer_buffer->buffer_length[ecCell] += recv_count[i];
 	}
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->ec_mesh_cells = (char*) checked_malloc(writer_buffer->buffer_length[ecCell] * sizeof(char),
 				"allocation error for writer_buffer member process cells.");
 	}
@@ -2451,7 +2444,7 @@ void gather_ec_mesh_data_on_writers(grid_parms* grid, IO_domain_info* my_IO_doma
 		disp[i] = writer_buffer->buffer_length[ecCellType];
 		writer_buffer->buffer_length[ecCellType] += recv_count[i];
 	}
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->ec_mesh_type = (char*) checked_malloc(writer_buffer->buffer_length[ecCellType] * sizeof(char),
 				"allocation error for writer_buffer member process cells.");
 	}
@@ -2501,7 +2494,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 		writer_buffer->smc_stat_var_buffer_length[smc_Ca] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->ci = (char*) checked_malloc(writer_buffer->smc_stat_var_buffer_length[smc_Ca] * sizeof(char),
 				"allocation error for writer_buffer member ci.");
 	}
@@ -2539,7 +2532,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 		writer_buffer->smc_stat_var_buffer_length[smc_SR] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->si = (char*) checked_malloc(writer_buffer->smc_stat_var_buffer_length[smc_SR] * sizeof(char),
 				"allocation error for writer_buffer member si.");
 	}
@@ -2577,7 +2570,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 		writer_buffer->smc_stat_var_buffer_length[smc_Vm] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->vi = (char*) checked_malloc(writer_buffer->smc_stat_var_buffer_length[smc_Vm] * sizeof(char),
 				"allocation error for writer_buffer member vi.");
 	}
@@ -2615,7 +2608,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 		writer_buffer->smc_stat_var_buffer_length[smc_w] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->wi = (char*) checked_malloc(writer_buffer->smc_stat_var_buffer_length[smc_w] * sizeof(char),
 				"allocation error for writer_buffer member wi.");
 	}
@@ -2653,7 +2646,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 		writer_buffer->smc_stat_var_buffer_length[smc_IP3] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->Ii = (char*) checked_malloc(writer_buffer->smc_stat_var_buffer_length[smc_IP3] * sizeof(char),
 				"allocation error for writer_buffer member Ii.");
 	}
@@ -2689,7 +2682,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 		writer_buffer->smc_cpl[cpl_Ca] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->cpCi = (char*) checked_malloc(writer_buffer->smc_cpl[cpl_Ca] * sizeof(char),
 				"allocation error for writer_buffer member smc_cplCa.");
 	}
@@ -2725,7 +2718,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 		writer_buffer->smc_cpl[cpl_Vm] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->cpVi = (char*) checked_malloc(writer_buffer->smc_cpl[cpl_Vm] * sizeof(char),
 				"allocation error for writer_buffer member smc_cplVm.");
 	}
@@ -2761,7 +2754,7 @@ void gather_smcData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_bu
 		writer_buffer->smc_cpl[cpl_IP3] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->cpIi = (char*) checked_malloc(writer_buffer->smc_cpl[cpl_IP3] * sizeof(char),
 				"allocation error for writer_buffer member smc_cplIi.");
 	}
@@ -2812,7 +2805,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 		writer_buffer->ec_stat_var_buffer_length[ec_Ca] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->cj = (char*) checked_malloc(writer_buffer->ec_stat_var_buffer_length[ec_Ca] * sizeof(char),
 				"allocation error for writer_buffer member cj.");
 	}
@@ -2848,7 +2841,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 		writer_buffer->ec_stat_var_buffer_length[ec_SR] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->sj = (char*) checked_malloc(writer_buffer->ec_stat_var_buffer_length[ec_SR] * sizeof(char),
 				"allocation error for writer_buffer member sj.");
 	}
@@ -2884,7 +2877,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 		writer_buffer->ec_stat_var_buffer_length[ec_Vm] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->vj = (char*) checked_malloc(writer_buffer->ec_stat_var_buffer_length[ec_Vm] * sizeof(char),
 				"allocation error for writer_buffer member cj.");
 	}
@@ -2920,7 +2913,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 		writer_buffer->ec_stat_var_buffer_length[ec_IP3] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->Ij = (char*) checked_malloc(writer_buffer->ec_stat_var_buffer_length[ec_Vm] * sizeof(char),
 				"allocation error for writer_buffer member Ij.");
 	}
@@ -2956,7 +2949,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 		writer_buffer->ec_cpl[cpl_Ca] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->cpCj = (char*) checked_malloc(writer_buffer->ec_cpl[cpl_Ca] * sizeof(char),
 				"allocation error for writer_buffer member ec_cplCa.");
 	}
@@ -2992,7 +2985,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 		writer_buffer->ec_cpl[cpl_Vm] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->cpVj = (char*) checked_malloc(writer_buffer->ec_cpl[cpl_Vm] * sizeof(char),
 				"allocation error for writer_buffer member ec_cplVm.");
 	}
@@ -3028,7 +3021,7 @@ void gather_ecData(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_buf
 		writer_buffer->ec_cpl[cpl_IP3] += recv_count[i];
 	}
 
-	if (grid->rank == 0) {
+	if (grid->rank_branch == 0) {
 		writer_buffer->cpIj = (char*) checked_malloc(writer_buffer->ec_cpl[cpl_IP3] * sizeof(char),
 				"allocation error for writer_buffer member ec_cplIi.");
 	}
@@ -3078,7 +3071,7 @@ void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_b
 		writer_buffer->jplc_buffer_length += recv_count[i];
 	}
 
-	if (grid->rank == 0)
+	if (grid->rank_branch == 0)
 	{
 		writer_buffer->jplc = (char*)checked_malloc(writer_buffer->jplc_buffer_length * sizeof(char), SRC_LOC);
 	}
@@ -3112,25 +3105,29 @@ void write_timing(char* file_prefix, grid_parms grid, double field, IO_domain_in
 
 	int length = sprintf(buffer, "%2.12lf\n", field);
 
-	int *recv_count = (int*) checked_malloc(grid.tasks * sizeof(int),
-			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
-	int *disp = (int*) checked_malloc(grid.tasks * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
+	int *recv_count = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
+	int *disp = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
 
-	/// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
+	/// Gathering the lengths of buffer from each MPI process.
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid.cart_comm));
+
 	int total_buffer_length = 0;
-	for (int i = 0; i < grid.tasks; i++) {
+	for (int i = 0; i < grid.num_ranks_branch; i++)
+	{
 		disp[i] = total_buffer_length;
 		total_buffer_length += recv_count[i];
 	}
 
-	if (grid.rank == 0) {
-		write_buffer = (char*) checked_malloc(total_buffer_length * sizeof(char),
-				"allocation error for writer_buffer for time_profiling data in function push_coarse_timing_data_to_file().\n");
+	if (grid.rank_branch == 0)
+	{
+		write_buffer = (char*) checked_malloc(total_buffer_length * sizeof(char), SRC_LOC);
 	}
+
+	// Gathering the buffers from all MPI processes.
 	CHECK_MPI_ERROR(MPI_Gatherv(buffer, length, MPI_CHAR, write_buffer, recv_count, disp, MPI_CHAR, root, grid.cart_comm));
 
-	if (grid.rank == 0) {
+	if (grid.rank_branch == 0)
+	{
 		sprintf(filename, "%s/%s_%s.txt", grid.time_profiling_dir, file_prefix, grid.suffix);
 		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fw));
 		CHECK_MPI_ERROR(MPI_File_write_at(fw, 0, write_buffer, total_buffer_length, MPI_CHAR, &status));
@@ -3154,17 +3151,17 @@ void write_min_max_timing(char *file_prefix, grid_parms grid, double field, IO_d
 	int length = 0;
 	double max, min;
 	int max_ind, min_ind;
-	double array[grid.tasks];
+	double array[grid.num_ranks_branch];
 
-	int *recv_count = (int*) checked_malloc(grid.tasks * sizeof(int), SRC_LOC);
-	int *disp = (int*) checked_malloc(grid.tasks * sizeof(int), SRC_LOC);
+	int *recv_count = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
+	int *disp = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
 
 	CHECK_MPI_ERROR(MPI_Gather(&field, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, root, grid.cart_comm));
 
-	if (grid.rank == 0)
+	if (grid.rank_branch == 0)
 	{
-		maximum(array, grid.tasks, &max, &max_ind);
-		minimum(array, grid.tasks, &min, &min_ind);
+		maximum(array, grid.num_ranks_branch, &max, &max_ind);
+		minimum(array, grid.num_ranks_branch, &min, &min_ind);
 		write_buffer = (char*) checked_malloc(1024 * sizeof(char), SRC_LOC);
 		sprintf(filename, "%s/%s_%s.txt", grid.time_profiling_dir, file_prefix, grid.suffix);
 

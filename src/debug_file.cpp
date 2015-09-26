@@ -74,7 +74,8 @@ fprintf(logptr, "***Up direction***\n");
 
 void print_compare(FILE* logptr, double t, double y[], grid_parms grid, SMC_cell** smc, EC_cell** ec)
 {
-	if(grid.rank==0){
+	if(grid.rank_branch == 0)
+	{
 		fprintf(logptr,"*** t = %lf***\n--------------SMC DOMAIN -------------\n",t);
 		int kk, off;
 		for (int i = 1; i <= grid.num_smc_circumferentially; i++) {

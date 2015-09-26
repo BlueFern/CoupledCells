@@ -24,10 +24,10 @@ double
 	  cbj = 1.0,  CICRj = 5.0,  scj = 2.0,
 	  ccj = 0.9,  Dj = 0.24,  Lj = 0.025,
 	  kj = 0.1,  Gcatj = 0.66 * 1e-3,  ECa = 50.00,
-	  m3cat = -0.18,			//-6.18,
+	  m3cat = -0.18,
 	  m4cat = 0.37,  J0j = 0.029,  Cmj = 25.8,
 	  Gtot = 6927,   vKj = -80.0,  a1j = 53.3,
-	  a2j = 53.3,     bj = -80.8,  c1j = -0.4, //-6.4,
+	  a2j = 53.3,     bj = -80.8,  c1j = -0.4,
 	  m3b = 1.32e-3, m4b = 0.30,   m3s = -0.28,
 	  m4s = 0.389,   GRj = 955, vrestj = -31.10,
 	/*Intracellular calcium buffering*/
