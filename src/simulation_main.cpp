@@ -328,7 +328,7 @@ int main(int argc, char* argv[])
 #endif
 
 	// Final_checkpoint(check, grid);
-	update_elapsed_time(check, grid, &elps_t, my_IO_domain_info);
+	write_elapsed_time(check, grid, &elps_t); //, my_IO_domain_info);
 
 	// fclose(grid.logptr);
 

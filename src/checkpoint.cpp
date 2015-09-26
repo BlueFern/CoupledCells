@@ -1382,35 +1382,41 @@ void read_config_file(int rank, char* filename, grid_parms* grid) {
 }
 
 // Every cylinder root writes elapsed time to a file.
-void update_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper* elps_t, IO_domain_info* my_IO_domain_info) {
-
+void write_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper* elps_t) //, IO_domain_info* my_IO_domain_info)
+{
 	MPI_Status status;
 	char filename[50];
 	int root = 0;
-	char *buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), "Allocation error in buffer for elapsed time data.\n");
+	char *buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), SRC_LOC);
 	char* write_buffer;
 	elps_t->t_new = MPI_Wtime();
 	elps_t->elapsed_time = elps_t->t_new - elps_t->t_old;
 	elps_t->t_old = elps_t->t_new;
 
-	int length = sprintf(buffer, "%2.12lf\n", elps_t->elapsed_time);
+	int length = sprintf(buffer, "%.12lf\n", elps_t->elapsed_time);
 
-	int *recv_count = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int),
-			"allocation failed for recv_count array in gather_tasks_mesh_point_data_on_writers");
-	int *disp = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), "allocation failed for disp array in gather_tasks_mesh_point_data_on_writers");
+	int *recv_count = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
+	int *disp = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
 
-	/// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
+	// Gather and sum the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid.cart_comm));
+
 	int total_buffer_length = 0;
-	for (int i = 0; i < grid.num_ranks_branch; i++) {
+	for (int i = 0; i < grid.num_ranks_branch; i++)
+	{
 		disp[i] = total_buffer_length;
 		total_buffer_length += recv_count[i];
 	}
-	if (grid.rank_branch == 0) {
-		write_buffer = (char*) checked_malloc(total_buffer_length * sizeof(char), "allocation error for writer_buffer for Elapsed_time file.");
+	if (grid.rank_branch == 0)
+	{
+		write_buffer = (char*) checked_malloc(total_buffer_length * sizeof(char), SRC_LOC);
 	}
+
+	// Gather all buffers with ASCII elapsed time values.
 	CHECK_MPI_ERROR(MPI_Gatherv(buffer, length, MPI_CHAR, write_buffer, recv_count, disp, MPI_CHAR, root, grid.cart_comm));
-	if (grid.rank_branch == 0) {
+
+	if (grid.rank_branch == 0)
+	{
 		sprintf(filename, "Elapsed_time_%s.txt", grid.suffix);
 		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
 		CHECK_MPI_ERROR(MPI_File_write_at(check->elapsed_time, 0, write_buffer, total_buffer_length, MPI_CHAR, &status));

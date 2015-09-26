@@ -352,7 +352,7 @@ typedef struct {
 	int my_IO_domain_color, my_IO_domain_key;
 	int *my_IO_domain_members;
 	char ***data_filenames;				/// root rank stores receives data into this array
-	char **my_data_filenames;						/// filenames of files each Rank is suppose to have its data in.
+	char **my_data_filenames;			/// filenames of files each Rank is suppose to have its data in.
 	int *my_IO_domain_member_disp;
 	MPI_Comm IO_COMM, writer_comm;
 } IO_domain_info;
@@ -447,7 +447,7 @@ void initialize_t_stamp(time_stamps*);
 void Initialize_tsoukias_smc(grid_parms grid, double y[], SMC_cell** smc);
 void read_config_file(int, char*, grid_parms*);
 void set_file_naming_strings(grid_parms* grid);
-void update_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*,IO_domain_info*);
+void write_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*); //,IO_domain_info*);
 int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid);
 
 void Total_cells_in_computational_domain(grid_parms gird);
