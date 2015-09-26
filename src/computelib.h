@@ -278,22 +278,22 @@ typedef struct {
 } EC_cell;
 
 
-#if 1
+#if 0
 // TODO: This is to be thrown away along with all related functions. They do nothing.
 typedef struct {
 	MPI_File
 	/* common handlers */
-	logptr,
-	jplc,
-	coords,
-	elapsed_time,
-	itter_count,
+	logptr;
+	//jplc,
+	//coords,
+	//elapsed_time;
+	//itter_count,
 	//Task topology file
-	task_mesh,
+	//task_mesh,
 	//SMC Data file
-	smc_data_file,
+	//smc_data_file,
 	//EC Data file
-	ec_data_file;
+	//ec_data_file;
 } checkpoint_handle;
 #endif
 
@@ -346,6 +346,7 @@ typedef struct {
 } vtk_info;
 #endif
 
+#if 0
 typedef struct {
 	///IO_domain related members
 	int IO_rank, IO_domain_ID, num_IO_tasks, num_IO_domains, writer_rank, writer_tasks;
@@ -356,6 +357,7 @@ typedef struct {
 	int *my_IO_domain_member_disp;
 	MPI_Comm IO_COMM, writer_comm;
 } IO_domain_info;
+#endif
 
 #if 0
 typedef struct {
@@ -390,33 +392,33 @@ void koenigsberger_ec(grid_parms, EC_cell**);
 void koenigsberger_ec_derivatives(double, double*, grid_parms, EC_cell**);
 
 ///Checkpoint functions.
-checkpoint_handle* initialise_checkpoint(grid_parms);
-checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
-int checkpoint(checkpoint_handle*, grid_parms, double*, double*, SMC_cell**, EC_cell**);
+//checkpoint_handle* initialise_checkpoint(grid_parms);
+//checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
+//int checkpoint(checkpoint_handle*, grid_parms, double*, double*, SMC_cell**, EC_cell**);
 
-void open_common_checkpoint(checkpoint_handle*, grid_parms);
-void open_tsoukias_smc_checkpoint(checkpoint_handle*, grid_parms, char*);
-void open_koenigsberger_smc_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
-void open_tsoukias_ec_checkpoint(checkpoint_handle*, grid_parms, char*);
-void open_koenigsberger_ec_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
-void open_coupling_data_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
+//void open_common_checkpoint(checkpoint_handle*, grid_parms);
+//void open_tsoukias_smc_checkpoint(checkpoint_handle*, grid_parms, char*);
+//void open_koenigsberger_smc_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
+//void open_tsoukias_ec_checkpoint(checkpoint_handle*, grid_parms, char*);
+//void open_koenigsberger_ec_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
+//void open_coupling_data_checkpoint(checkpoint_handle*, grid_parms, int, char*, IO_domain_info*);
 
 //void dump_smc_async(grid_parms, SMC_cell**, checkpoint_handle*, int);
 //void dump_ec_async(grid_parms, EC_cell**, checkpoint_handle*, int);
 //void write_smc_and_ec_data(checkpoint_handle*, grid_parms*, double, SMC_cell**, EC_cell**, int, IO_domain_info*,data_buffer*);
-void final_checkpoint(checkpoint_handle*, grid_parms);
-void close_common_checkpoints(checkpoint_handle*);
-void close_time_wise_checkpoints(checkpoint_handle*);
-void close_time_profiling_checkpoints(checkpoint_handle*);
+//void final_checkpoint(checkpoint_handle*, grid_parms);
+//void close_common_checkpoints(checkpoint_handle*);
+//void close_time_wise_checkpoints(checkpoint_handle*);
+//void close_time_profiling_checkpoints(checkpoint_handle*);
 
-void dump_rank_info(checkpoint_handle*, conductance, grid_parms, IO_domain_info*);
-void dump_smc_with_ghost_cells(grid_parms, SMC_cell**, checkpoint_handle*, int);
-void dump_ec_with_ghost_cells(grid_parms, EC_cell**, checkpoint_handle*, int);
-void checkpoint_with_ghost_cells(checkpoint_handle*, grid_parms, double, SMC_cell**, EC_cell**, int);
+void dump_rank_info(conductance, grid_parms); //, IO_domain_info*);
+//void dump_smc_with_ghost_cells(grid_parms, SMC_cell**, checkpoint_handle*, int);
+//void dump_ec_with_ghost_cells(grid_parms, EC_cell**, checkpoint_handle*, int);
+//void checkpoint_with_ghost_cells(checkpoint_handle*, grid_parms, double, SMC_cell**, EC_cell**, int);
 
 // Solver wrapper functions.
 #ifdef RK_SUITE
-void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, checkpoint_handle*, char*, IO_domain_info*);
+void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, char*); //, IO_domain_info*);
 #endif
 #ifdef ARK_ODE
 void arkode_solver(double, double, double, double*, int, double, double, int, checkpoint_handle*, char*, IO_domain_info*);
@@ -440,15 +442,15 @@ grid_parms make_straight_segment_cart_grids(grid_parms);
 void set_task_parameters(grid_parms *);
 void configure_subdomains_topology(grid_parms *);
 
-void checkpoint_timing_data(grid_parms, checkpoint_handle*, double, time_stamps, int, int);
+// void checkpoint_timing_data(grid_parms, checkpoint_handle*, double, time_stamps, int, int);
 double agonist_profile(double, grid_parms, int, int, double);
 void initialize_t_stamp(time_stamps*);
 
 void Initialize_tsoukias_smc(grid_parms grid, double y[], SMC_cell** smc);
 void read_config_file(int, char*, grid_parms*);
 void set_file_naming_strings(grid_parms* grid);
-void write_elapsed_time(checkpoint_handle*, grid_parms, time_keeper*); //,IO_domain_info*);
-int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid);
+void write_elapsed_time(grid_parms, time_keeper*); //,IO_domain_info*);
+// int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid);
 
 void Total_cells_in_computational_domain(grid_parms gird);
 
@@ -458,13 +460,15 @@ void minimum(double* table, int size, double *value, int *index);
 void maximum(double* table, int size, double *value, int *index);
 void average(double* table, int size, double *value);
 
+#if 0
 void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double *y, double* yp, int total, double TOL, double* thres,
 		int file_write_per_unit_time, int line_number, checkpoint_handle *check);
+#endif
 
 int read_topology_info(char*, grid_parms*, SMC_cell**, EC_cell**);
 void read_init_ATP(grid_parms *grid, EC_cell **ECs);
 //void read_coordinates(int** info, vtk_info* mesh, int branch, int mesh_type, int points, int cells, int read_counts[2]);
-IO_domain_info* make_io_domains(grid_parms* grid);
+//IO_domain_info* make_io_domains(grid_parms* grid);
 
 //void gather_tasks_mesh_point_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, SMC_cell**, EC_cell**);
 //void gather_smc_mesh_data_on_writers(grid_parms*, IO_domain_info*, data_buffer*, SMC_cell**);
@@ -479,11 +483,11 @@ IO_domain_info* make_io_domains(grid_parms* grid);
 //void dump_smc_data(checkpoint_handle*, grid_parms* , IO_domain_info* , data_buffer* , SMC_cell**, int);
 //void dump_ec_data(checkpoint_handle*, grid_parms*, IO_domain_info*, data_buffer*, EC_cell**,int);
 
-void memory_diagnostics(FILE*);
+// void memory_diagnostics(FILE*);
 
-void write_timing(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
-void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info);
-void write_min_max_timing(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info);
+void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp); //, IO_domain_info* my_IO_domain_info);
+void write_timing(char* file_prefix, grid_parms grid, double field); //, IO_domain_info* my_IO_domain_info);
+void write_min_max_timing(char* file_prefix, grid_parms grid, double field); //, IO_domain_info* my_IO_domain_info);
 
 /**
  * \brief Catch failed memory allocation.

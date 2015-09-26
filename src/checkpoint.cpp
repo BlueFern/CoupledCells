@@ -1,11 +1,13 @@
 #include <assert.h>
 #include "computelib.h"
 
+#if 0
 checkpoint_handle* initialise_checkpoint(grid_parms grid)
 {
 	checkpoint_handle *check = (checkpoint_handle*) malloc(sizeof(checkpoint_handle));
 	return (check);
 }
+#endif
 
 #if 0
 void open_common_checkpoint(checkpoint_handle* check, grid_parms grid) {
@@ -26,7 +28,8 @@ void open_common_checkpoint(checkpoint_handle* check, grid_parms grid) {
 }
 #endif
 
-void open_koenigsberger_smc_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path, IO_domain_info* my_IO_domain_info)
+#if 0
+void open_koenigsberger_smc_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path) //, IO_domain_info* my_IO_domain_info)
 {
 	int err;
 	char filename[50];
@@ -43,7 +46,9 @@ void open_koenigsberger_smc_checkpoint(checkpoint_handle* check, grid_parms grid
 	 err = sprintf(filename, "%s/smc_IP3_t_%d.vtk", path, write_count);
 	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ii));*/
 }
+#endif
 
+#if 0
 void open_koenigsberger_ec_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path, IO_domain_info* my_IO_domain_info) {
 	int err;
 	char filename[50];
@@ -58,6 +63,7 @@ void open_koenigsberger_ec_checkpoint(checkpoint_handle* check, grid_parms grid,
 	 err = sprintf(filename, "%s/ec_IP3_t_%d.vtk", path, write_count);
 	 CHECK(MPI_File_open(my_IO_domain_info->writer_comm, filename, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &check->Ij));*/
 }
+#endif
 
 #if 0
 void open_coupling_data_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path, IO_domain_info* my_IO_domain_info)
@@ -998,7 +1004,7 @@ void dump_ec_data(checkpoint_handle* check, grid_parms* grid, IO_domain_info* my
 /**
  * Dump info/debug output to a log file.
  */
-void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms grid, IO_domain_info* my_IO_domain_info)
+void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my_IO_domain_info)
 {
 	MPI_Status status;
 	MPI_Offset displacement = 0;
@@ -1065,9 +1071,10 @@ void dump_rank_info(checkpoint_handle* check, conductance cpl_cef, grid_parms gr
 	if (grid.rank_branch == 0)
 	{
 		sprintf(filename, "Logfile_%s.txt", grid.suffix);
-		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &check->logptr));
-		CHECK_MPI_ERROR(MPI_File_write_at(check->logptr, displacement, grid.logfile_write_buffer, grid.logfile_displacements, MPI_CHAR, &status));
-		MPI_File_close(&check->logptr);
+		MPI_File rank_info_file;
+		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &rank_info_file));
+		CHECK_MPI_ERROR(MPI_File_write_at(rank_info_file, displacement, grid.logfile_write_buffer, grid.logfile_displacements, MPI_CHAR, &status));
+		MPI_File_close(&rank_info_file);
 		free(grid.logfile_write_buffer);
 	}
 
@@ -1147,6 +1154,7 @@ void Record_timing_data_in_arrays(grid_parms grid, double tnow, time_stamps t_st
 }
 #endif
 
+#if 0
 void final_checkpoint(checkpoint_handle *check, grid_parms grid)
 {
 	MPI_Barrier(grid.universe);
@@ -1154,7 +1162,9 @@ void final_checkpoint(checkpoint_handle *check, grid_parms grid)
 //	close_time_wise_checkpoints(check);
 //	close_time_profiling_checkpoints(check);
 }
+#endif
 
+#if 0
 void close_common_checkpoints(checkpoint_handle* check)
 {
 	MPI_File_close(&check->logptr);
@@ -1162,12 +1172,15 @@ void close_common_checkpoints(checkpoint_handle* check)
 	MPI_File_close(&check->jplc);
 	MPI_File_close(&check->coords);
 }
+#endif
 
+#if 0
 void close_time_wise_checkpoints(checkpoint_handle* check)
 {
 	MPI_File_close(&check->smc_data_file);
 	MPI_File_close(&check->ec_data_file);
 }
+#endif
 
 #if 0
 void close_time_profiling_checkpoints(checkpoint_handle* check) {
@@ -1382,7 +1395,7 @@ void read_config_file(int rank, char* filename, grid_parms* grid) {
 }
 
 // Every cylinder root writes elapsed time to a file.
-void write_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper* elps_t) //, IO_domain_info* my_IO_domain_info)
+void write_elapsed_time(grid_parms grid, time_keeper* elps_t) //, IO_domain_info* my_IO_domain_info)
 {
 	MPI_Status status;
 	char filename[50];
@@ -1418,9 +1431,10 @@ void write_elapsed_time(checkpoint_handle* check, grid_parms grid, time_keeper* 
 	if (grid.rank_branch == 0)
 	{
 		sprintf(filename, "Elapsed_time_%s.txt", grid.suffix);
-		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &check->elapsed_time));
-		CHECK_MPI_ERROR(MPI_File_write_at(check->elapsed_time, 0, write_buffer, total_buffer_length, MPI_CHAR, &status));
-		MPI_File_close(&check->elapsed_time);
+		MPI_File elapsed_time;
+		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &elapsed_time));
+		CHECK_MPI_ERROR(MPI_File_write_at(elapsed_time, 0, write_buffer, total_buffer_length, MPI_CHAR, &status));
+		MPI_File_close(&elapsed_time);
 		free(write_buffer);
 	}
 
@@ -1446,6 +1460,7 @@ void set_file_naming_strings(grid_parms* grid)
 	}
 }
 
+#if 0
 int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms grid) {
 ///This function implements checkpointing for time profiling data.
 ///If the simulation somehow crashes or gets discontinued, the file offset will be determined
@@ -1466,7 +1481,9 @@ int determine_file_offset_for_timing_data(checkpoint_handle* check, grid_parms g
 	return (file_offset);
 
 }
+#endif
 
+#if 0
 /*********************************************************************************************************/
 checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle* check, grid_parms grid, int write_count, char* path,
 		IO_domain_info* my_IO_domain_info)
@@ -1479,6 +1496,7 @@ checkpoint_handle* initialise_time_wise_checkpoint(checkpoint_handle* check, gri
 	//open_coupling_data_checkpoint(check, grid, write_count, path, my_IO_domain_info);
 	return (check);
 }
+#endif
 
 #if 0
 /// Read coordinates from relevant geometry files for each ec and smc in the computational domain.
@@ -3089,18 +3107,20 @@ void gather_JPLC_map(grid_parms* grid, IO_domain_info* my_IO_domain_info, data_b
 }
 #endif
 
-void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp, IO_domain_info* my_IO_domain_info) {
+void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp) //, IO_domain_info* my_IO_domain_info)
+{
 
-	write_timing((char *)"aggregated_compute_time", grid, t_stamp->aggregate_compute, my_IO_domain_info);
-	write_timing((char *)"aggregated_comm_time", grid, t_stamp->aggregate_comm, my_IO_domain_info);
-	write_timing((char *)"aggregated_write_time", grid, t_stamp->aggregate_write, my_IO_domain_info);
+	write_timing((char *)"aggregated_compute_time", grid, t_stamp->aggregate_compute); //, my_IO_domain_info);
+	write_timing((char *)"aggregated_comm_time", grid, t_stamp->aggregate_comm); //, my_IO_domain_info);
+	write_timing((char *)"aggregated_write_time", grid, t_stamp->aggregate_write); //, my_IO_domain_info);
 
-	write_min_max_timing((char *)"min_max_of_aggregate_compute" , grid, t_stamp->aggregate_compute, my_IO_domain_info);
-	write_min_max_timing((char *)"min_max_of_aggregate_comm" , grid, t_stamp->aggregate_comm, my_IO_domain_info);
-	write_min_max_timing((char *)"min_max_of_aggregate_write" , grid, t_stamp->aggregate_write, my_IO_domain_info);
+	write_min_max_timing((char *)"min_max_of_aggregate_compute" , grid, t_stamp->aggregate_compute); //, my_IO_domain_info);
+	write_min_max_timing((char *)"min_max_of_aggregate_comm" , grid, t_stamp->aggregate_comm); //, my_IO_domain_info);
+	write_min_max_timing((char *)"min_max_of_aggregate_write" , grid, t_stamp->aggregate_write); //, my_IO_domain_info);
 }
 
-void write_timing(char* file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info) {
+void write_timing(char* file_prefix, grid_parms grid, double field) //, IO_domain_info* my_IO_domain_info)
+{
 	MPI_Status status;
 	MPI_Offset displacement = 0;
 	MPI_File fw;
@@ -3145,7 +3165,7 @@ void write_timing(char* file_prefix, grid_parms grid, double field, IO_domain_in
 	free(disp);
 }
 
-void write_min_max_timing(char *file_prefix, grid_parms grid, double field, IO_domain_info* my_IO_domain_info)
+void write_min_max_timing(char *file_prefix, grid_parms grid, double field) //, IO_domain_info* my_IO_domain_info)
 {
 	MPI_Status status;
 	MPI_Offset displacement = 0;

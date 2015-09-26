@@ -501,6 +501,7 @@ grid_parms make_straight_segment_cart_grids(grid_parms grid)
 	return grid;
 }
 
+#if 0
 /**
  * Allocate MPI tasks/cores to IO.
  */
@@ -547,4 +548,5 @@ IO_domain_info* make_io_domains(grid_parms* grid)
 
 	return (my_IO_domain_info);
 }
+#endif
 

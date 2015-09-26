@@ -71,7 +71,7 @@ void computeDerivatives(double t, double y[], double f[])
 
 // line_number: redundant parameter.
 void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp, int neq, double TOL, double* thres,
-		int file_write_per_unit_time, checkpoint_handle *check, char* path, IO_domain_info *my_IO_domain_info)
+		int file_write_per_unit_time, char* path) //, IO_domain_info *my_IO_domain_info)
 {
 	RKSUITE rksuite;
 
@@ -272,5 +272,5 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 	// Write time profiling data.
 	// Time profiling data is lost in the event of a crash.
-	checkpoint_coarse_time_profiling_data(grid, &t_stamp, my_IO_domain_info);
+	checkpoint_coarse_time_profiling_data(grid, &t_stamp); //, my_IO_domain_info);
 }

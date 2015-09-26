@@ -114,10 +114,10 @@ int main(int argc, char* argv[])
 	set_file_naming_strings(&grid);
 
 	/// Initialise checkpoint routine which opens files.
-	checkpoint_handle *check = initialise_checkpoint(grid);
+	//checkpoint_handle *check = initialise_checkpoint(grid);
 
 	/// Initialising IO_domain for creating writers.
-	IO_domain_info* my_IO_domain_info = make_io_domains(&grid);
+	//IO_domain_info* my_IO_domain_info = make_io_domains(&grid);
 
 	/// Now allocate memory for the structures representing the cells and the various members of those structures.
 	/// Each of the two cell grids have two additional rows and two additional columns as ghost cells.
@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
 	int state = couplingParms(CASE, &cpl_cef);
 
 	// Debug output.
-	dump_rank_info(check, cpl_cef, grid, my_IO_domain_info);
+	dump_rank_info(cpl_cef, grid); //, my_IO_domain_info);
 
 	// Debug/validation/reporting.
 	Total_cells_in_computational_domain(grid);
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
 	//printf("[%d] %s:%d\n", grid.universal_rank, __FILE__, __LINE__);
 
 #ifdef RK_SUITE
-	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
+	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, grid.solution_dir); //, my_IO_domain_info);
 #elif defined ARK_ODE
 	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
 #elif defined BOOST_ODEINT
@@ -328,7 +328,7 @@ int main(int argc, char* argv[])
 #endif
 
 	// Final_checkpoint(check, grid);
-	write_elapsed_time(check, grid, &elps_t); //, my_IO_domain_info);
+	write_elapsed_time(grid, &elps_t); //, my_IO_domain_info);
 
 	// fclose(grid.logptr);
 
