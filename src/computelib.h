@@ -312,7 +312,7 @@ void arkode_solver(double, double, double, double*, int, double, double, int, ch
 void odeint_solver(double, double, double, double*, int, double, double, int, checkpoint_handle*, char*, IO_domain_info*);
 #endif
 
-int compute_with_time_profiling(time_stamps*, grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
+//int compute_with_time_profiling(time_stamps*, grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 int compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 
 ///These are debugging functions, not used in production runs.
@@ -327,29 +327,16 @@ grid_parms make_straight_segment_cart_grids(grid_parms);
 void set_task_parameters(grid_parms *);
 void configure_subdomains_topology(grid_parms *);
 
-// void checkpoint_timing_data(grid_parms, checkpoint_handle*, double, time_stamps, int, int);
-double agonist_profile(double, grid_parms, int, int, double);
 void initialize_t_stamp(time_stamps*);
 
 void Initialize_tsoukias_smc(grid_parms grid, double y[], SMC_cell** smc);
 void read_config_file(int, char*, grid_parms*);
 void set_file_naming_strings(grid_parms* grid);
-void write_elapsed_time(grid_parms, time_keeper*); //,IO_domain_info*);
 
-void Total_cells_in_computational_domain(grid_parms gird);
-
-void Record_timing_data_in_arrays(grid_parms, double, time_stamps, int, double**);
-void process_time_profiling_data(grid_parms, double**, int);
 void minimum(double* table, int size, double *value, int *index);
 void maximum(double* table, int size, double *value, int *index);
 void average(double* table, int size, double *value);
 
-#if 0
-void rksuite_solver_CT_debug(double tnow, double tfinal, double interval, double *y, double* yp, int total, double TOL, double* thres,
-		int file_write_per_unit_time, int line_number, checkpoint_handle *check);
-#endif
-
-int read_topology_info(char*, grid_parms*, SMC_cell**, EC_cell**);
 void read_init_ATP(grid_parms *grid, EC_cell **ECs);
 
 void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp); //, IO_domain_info* my_IO_domain_info);

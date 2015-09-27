@@ -7,6 +7,8 @@ time_stamps t_stamp;
  * Wrapper around malloc to catch failed memory allocation. If allocation fails
  * MPI_Abort is called.
  *
+ * TODO: This should be turned into a macro.
+ *
  * \param bytes Size of requested memory.
  * \param errmsg Message produced in the event of failed memory allocation.
  */
@@ -415,38 +417,8 @@ void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
 	}
 }
 
-
-/**
- * Provide a JPLC value for a given position along the axial dimension of the
- * current domain. The value is provided by a sigmoid function.
- *
- * \todo Provide a formula for this calculation.
- *
- * \param t
- * \param grid
- * \param i
- * \param j
- * \param axial_coordinate
- * \return
- */
-double agonist_profile(double t, grid_parms grid, int i, int j, double axial_coordinate)
+void initialize_t_stamp(time_stamps* t_stamp)
 {
-	double JPLC;
-	if (t > grid.stimulus_onset_time)
-	{
-		/*	JPLC =grid.min_jplc+ (grid.max_jplc/
-		 (1 + exp(-grid.gradient * ( ((j-1)+grid.num_ec_axially*floor(grid.rank/grid.n)) -(grid.m*grid.num_ec_axially / 2) )) ) );
-		 */
-		JPLC = grid.min_jplc + (grid.max_jplc / (1.0 + exp(-grid.gradient * axial_coordinate)));
-	}
-	else if (t <= grid.stimulus_onset_time)
-	{
-		JPLC = grid.uniform_jplc;
-	}
-	return JPLC;
-}
-
-void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_async_comm_calls = 0.0;
 	t_stamp->diff_async_comm_calls_wait = 0.0;
 	t_stamp->diff_barrier_in_solver_before_comm = 0.0;
@@ -455,6 +427,8 @@ void initialize_t_stamp(time_stamps* t_stamp) {
 	t_stamp->diff_coupling_fluxes = 0.0;
 }
 
+#if 0
+// TODO: This function replicates the core logic. Instead the profiling calls should be in the original function wrapped in ifdefs and endifs.
 /**
  *
  * \param t_stamp
@@ -467,9 +441,8 @@ void initialize_t_stamp(time_stamps* t_stamp) {
  * \param f
  * \return
  */
-int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
-		SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t,
-		double* y, double* f) {
+int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t, double* y, double* f)
+{
 	int err;
 
 	t_stamp->map_function_t1 = MPI_Wtime();
@@ -549,6 +522,7 @@ int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid,
 	}
 	return (err);
 }
+#endif
 
 int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 		double t, double* y, double* f) {
@@ -636,36 +610,6 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 		}
 	}
 	return (err);
-}
-
-/// Get the total number of cells for validation/debugging purposes.
-/// Gather local information on each CPU about the number of ECs and SMCs and sends to the root
-/// which evaluates the total number of ECs and SMCs constituting the global computational domain.
-void Total_cells_in_computational_domain(grid_parms grid)
-{
-	int sendcount = 2, recvcount = 2;
-	int root = 0;
-	int sendarray[2], recvarray[sendcount * grid.num_ranks];
-	int sumEC = 0, sumSMC = 0;
-	sendarray[0] = grid.num_ec_axially * grid.num_ec_circumferentially;
-	sendarray[1] = grid.num_smc_axially * grid.num_smc_circumferentially;
-
-	CHECK_MPI_ERROR(MPI_Gather(sendarray, sendcount, MPI_INT, recvarray, recvcount, MPI_INT, root, grid.universe));
-
-	if(grid.universal_rank == 0)
-	{
-		for(int i = 0; i < grid.num_ranks * recvcount; i += 2)
-		{
-			sumEC += recvarray[i];
-		}
-		for(int i = 1; i < grid.num_ranks * recvcount; i += 2)
-		{
-			sumSMC += recvarray[i];
-		}
-		printf("Total number of ECs = %d\n", sumEC);
-		printf("Total number of SMCs = %d\n", sumSMC);
-		printf("Total number of ECs+SMCs = %d\n", sumEC + sumSMC);
-	}
 }
 
 /************************************************************/

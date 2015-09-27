@@ -7,7 +7,6 @@ SMC_cell **smc;
 EC_cell **ec;
 double **sendbuf, **recvbuf;
 grid_parms grid;
-time_keeper elps_t;
 
 int CASE = 1;
 
@@ -26,8 +25,6 @@ int main(int argc, char* argv[])
 
 	/// - Initialise MPI.
 	MPI_Init(&argc, &argv);
-
-	elps_t.t_old = MPI_Wtime();
 
 	grid.universe = MPI_COMM_WORLD;
 
@@ -297,9 +294,6 @@ int main(int argc, char* argv[])
 	// Debug output.
 	dump_rank_info(cpl_cef, grid); //, my_IO_domain_info);
 
-	// Debug/validation/reporting.
-	Total_cells_in_computational_domain(grid);
-
 	// This is read in here for validation purposes in the output.
 	// the solver will reset JPLC and read later it when the time is right.
 	read_init_ATP(&grid, ec);
@@ -317,8 +311,6 @@ int main(int argc, char* argv[])
 #error ODE solver not selected. Use -DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT during compilation
 #endif
 
-	write_elapsed_time(grid, &elps_t); //, my_IO_domain_info);
-
 	MPI_Finalize();
-	return (0);
+	return 0;
 }

@@ -186,54 +186,6 @@ void read_config_file(int rank, char* filename, grid_parms* grid)
 	free(values);
 }
 
-// Every cylinder root writes elapsed time to a file.
-void write_elapsed_time(grid_parms grid, time_keeper* elps_t) //, IO_domain_info* my_IO_domain_info)
-{
-	MPI_Status status;
-	char filename[50];
-	int root = 0;
-	char *buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), SRC_LOC);
-	char* write_buffer;
-	elps_t->t_new = MPI_Wtime();
-	elps_t->elapsed_time = elps_t->t_new - elps_t->t_old;
-	elps_t->t_old = elps_t->t_new;
-
-	int length = sprintf(buffer, "%.12lf\n", elps_t->elapsed_time);
-
-	int *recv_count = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
-	int *disp = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
-
-	// Gather and sum the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
-	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid.cart_comm));
-
-	int total_buffer_length = 0;
-	for (int i = 0; i < grid.num_ranks_branch; i++)
-	{
-		disp[i] = total_buffer_length;
-		total_buffer_length += recv_count[i];
-	}
-	if (grid.rank_branch == 0)
-	{
-		write_buffer = (char*) checked_malloc(total_buffer_length * sizeof(char), SRC_LOC);
-	}
-
-	// Gather all buffers with ASCII elapsed time values.
-	CHECK_MPI_ERROR(MPI_Gatherv(buffer, length, MPI_CHAR, write_buffer, recv_count, disp, MPI_CHAR, root, grid.cart_comm));
-
-	if (grid.rank_branch == 0)
-	{
-		sprintf(filename, "Elapsed_time_%s.txt", grid.suffix);
-		MPI_File elapsed_time;
-		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &elapsed_time));
-		CHECK_MPI_ERROR(MPI_File_write_at(elapsed_time, 0, write_buffer, total_buffer_length, MPI_CHAR, &status));
-		MPI_File_close(&elapsed_time);
-		free(write_buffer);
-	}
-
-	free(recv_count);
-	free(disp);
-}
-
 // Prepare the suffix which indicates our subdomain information, bifurcation or tube segment suffix, and the containing branch info.
 void set_file_naming_strings(grid_parms* grid)
 {
