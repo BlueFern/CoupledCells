@@ -82,6 +82,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	int iteration = 0;
 	int write_count = 0;
 	int count = 0;
+
 	initialize_t_stamp(&t_stamp);
 	tend = interval;
 	char CTstr[] = "CT";
@@ -96,7 +97,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// computeDerivatives(tnow, y, yp);
 	MPI_Barrier(grid.universe);
 
-	// int file_offset_for_timing_data = determine_file_offset_for_timing_data(check, grid);
 	int totf, stpcst, stpsok;
 	double waste, hnext;
 
@@ -157,9 +157,9 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// ITERATION loop to go from INITIAL time to FINAL time.
 	while(tnow <= tfinal)
 	{
-		t_stamp.solver_t1 = MPI_Wtime();
-
 		// printf("[%d] line: %d, tnow: %f, %f, %f\n", grid.universal_rank, __LINE__, tnow, tend, tfinal);
+
+		t_stamp.solver_t1 = MPI_Wtime();
 
 		// The ct() function does not guarantee to advance all the way to the stop time. Keep stepping until it does.
 		// The solver decides step magnitude depending on the stiffness of the problem.
@@ -187,7 +187,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 		t_stamp.solver_t2 = MPI_Wtime();
 		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
-
 		timing_values[0][iteration] = t_stamp.diff_solver;
 		t_stamp.aggregate_compute += t_stamp.diff_solver;
 
@@ -235,7 +234,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		}
 
 		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
-		initialize_t_stamp(&t_stamp);
+		//initialize_t_stamp(&t_stamp);
 
 		/// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
 		iteration++;
@@ -272,5 +271,5 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 	// Write time profiling data.
 	// Time profiling data is lost in the event of a crash.
-	checkpoint_coarse_time_profiling_data(grid, &t_stamp); //, my_IO_domain_info);
+	checkpoint_coarse_time_profiling_data(grid, &t_stamp);
 }

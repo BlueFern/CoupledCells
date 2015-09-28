@@ -255,7 +255,7 @@ typedef struct {
 	diff_async_comm_calls_wait,
 	diff_remote_async_comm_calls,
 	diff_remote_async_comm_calls_wait,
-	diff_barrier_in_solver_before_comm,
+	//diff_barrier_in_solver_before_comm,
 	diff_total_comms_cost,
 
 	///Solver timings.
@@ -264,9 +264,9 @@ typedef struct {
 	coupling_fluxes_t1, coupling_fluxes_t2,
 	solver_t1, solver_t2,
 	write_t1, write_t2,
-	diff_map_function,
-	diff_single_cell_fluxes,
-	diff_coupling_fluxes,
+	//diff_map_function,
+	//diff_single_cell_fluxes,
+	//diff_coupling_fluxes,
 	diff_solver,
 	diff_write;
 	int computeDerivatives_call_counter;

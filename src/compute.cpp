@@ -417,14 +417,18 @@ void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
 	}
 }
 
+
 void initialize_t_stamp(time_stamps* t_stamp)
 {
-	t_stamp->diff_async_comm_calls = 0.0;
-	t_stamp->diff_async_comm_calls_wait = 0.0;
-	t_stamp->diff_barrier_in_solver_before_comm = 0.0;
-	t_stamp->diff_map_function = 0.0;
-	t_stamp->diff_single_cell_fluxes = 0.0;
-	t_stamp->diff_coupling_fluxes = 0.0;
+	t_stamp->aggregate_compute = 0;
+	t_stamp->aggregate_comm = 0;
+	t_stamp->aggregate_write = 0;
+	t_stamp->diff_async_comm_calls = 0;
+	t_stamp->diff_async_comm_calls_wait = 0;
+	//t_stamp->diff_barrier_in_solver_before_comm = 0.0;
+	//t_stamp->diff_map_function = 0.0;
+	//t_stamp->diff_single_cell_fluxes = 0.0;
+	//t_stamp->diff_coupling_fluxes = 0.0;
 }
 
 #if 0
