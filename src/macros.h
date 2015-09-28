@@ -6,11 +6,11 @@
 #define CHECK_MPI_ERROR(fn) \
 	{ \
 	int errcode = (fn); \
-	if(errcode != MPI_SUCCESS) \
-	{ \
-		fprintf(stderr, "MPI ERROR: %d; %s.\n", errcode, SRC_LOC); \
-		MPI_Abort(MPI_COMM_WORLD, 911); \
-	} \
+		if(errcode != MPI_SUCCESS) \
+		{ \
+			fprintf(stderr, "MPI ERROR: %d; %s.\n", errcode, SRC_LOC); \
+			MPI_Abort(MPI_COMM_WORLD, 911); \
+		} \
 	}
 
 /****** marcos for identifying models ******/

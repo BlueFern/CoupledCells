@@ -21,7 +21,7 @@ plt.xlabel("core #")
 
 for file in matching_files:
     data = np.loadtxt(file)
-    plt.plot(data)
+    plt.plot(data, 'o')
     
 plt.savefig(base_name + ".pdf", bbox_inches='tight')
 plt.show()

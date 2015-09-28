@@ -127,14 +127,12 @@ int main(int argc, char* argv[])
 \endverbatim
 */
 
-	// TODO: Write a flippin' macro for allocating 2D arrays.
 	smc = (SMC_cell**) checked_malloc((grid.num_smc_circumferentially + grid.num_ghost_cells) * sizeof(SMC_cell*), SRC_LOC);
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
 	{
 		smc[i] = (SMC_cell*) checked_malloc((grid.num_smc_axially + grid.num_ghost_cells) * sizeof(SMC_cell), SRC_LOC);
 	}
 
-	// TODO: Write a flippin' macro for allocating 2D arrays.
 	ec = (EC_cell**) checked_malloc((grid.num_ec_circumferentially + grid.num_ghost_cells) * sizeof(EC_cell*), SRC_LOC);
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++)
 	{
@@ -162,10 +160,10 @@ int main(int argc, char* argv[])
 	{
 		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++)
 		{
-			ec[i][j].vars = (double*) checked_malloc(grid.neq_ec * sizeof(double), "Allocation of array for state variables failed.");
-			ec[i][j].fluxes = (double*) checked_malloc(grid.num_fluxes_ec * sizeof(double), "Matrix A in ec.");
-			ec[i][j].homo_fluxes = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), "Matrix B in ec.");
-			ec[i][j].hetero_fluxes = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), "Matrix C in ec.");
+			ec[i][j].vars = (double*) checked_malloc(grid.neq_ec * sizeof(double), SRC_LOC);
+			ec[i][j].fluxes = (double*) checked_malloc(grid.num_fluxes_ec * sizeof(double), SRC_LOC);
+			ec[i][j].homo_fluxes = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), SRC_LOC);
+			ec[i][j].hetero_fluxes = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), SRC_LOC);
 		}
 	}
 
@@ -173,8 +171,8 @@ int main(int argc, char* argv[])
 
 	/// sendbuf and recvbuf are 2D arrays having up, down, left and right directions as their first dimension.
 
-	sendbuf = (double**) checked_malloc(4 * sizeof(double*), "sendbuf dimension 1");
-	recvbuf = (double**) checked_malloc(4 * sizeof(double*), "recvbuf dimension 1");
+	sendbuf = (double**) checked_malloc(4 * sizeof(double*), SRC_LOC);
+	recvbuf = (double**) checked_malloc(4 * sizeof(double*), SRC_LOC);
 
 	/// Each processor now allocates the memory for send and recv buffers those will hold the coupling information.
 	/// Since sendbuf must contain the information of number of SMCs and ECs being sent in the directions,
@@ -196,7 +194,7 @@ int main(int argc, char* argv[])
 	/// Recording the number of elements in Send buffer in Up direction for use in update routine as count of elements.
 	grid.num_elements_send_up = grid.added_info_in_send_buf + (grid.num_coupling_species_smc * extent_s + grid.num_coupling_species_ec * extent_e);
 
-	sendbuf[UP] = (double*) checked_malloc(grid.num_elements_send_up * sizeof(double), "sendbuf[UP] dimension 2");
+	sendbuf[UP] = (double*) checked_malloc(grid.num_elements_send_up * sizeof(double), SRC_LOC);
 
 	sendbuf[UP][0] = 1.0; //Start of the 1st segment of SMC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[UP][1] = (double) extent_s; //End of the 1st segment of SMC array in UP direction (circumferential direction) to be sent to neighbouring processor
@@ -207,7 +205,7 @@ int main(int argc, char* argv[])
 	/// Recording the number of elements in Send buffer in DOWN direction for use in update routine as count of elements.
 	grid.num_elements_send_down = grid.added_info_in_send_buf + (grid.num_coupling_species_smc * extent_s + grid.num_coupling_species_ec * extent_e);
 
-	sendbuf[DOWN] = (double*) checked_malloc(grid.num_elements_send_down * sizeof(double), "sendbuf[DOWN] dimension 2");
+	sendbuf[DOWN] = (double*) checked_malloc(grid.num_elements_send_down * sizeof(double), SRC_LOC);
 
 	sendbuf[DOWN][0] = 1.0; //Start of the 1st segment of SMC array in  in DOWN direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[DOWN][1] = (double) extent_s; //End of the 1st segment of SMC array in DOWN direction (circumferential direction) to be sent to neighbouring processor
@@ -220,7 +218,7 @@ int main(int argc, char* argv[])
 	/// Data to send to the neighbour in LEFT direction.
 	/// Recording the number of elements in Send buffer in Left direction for use in update routine as count of elements.
 	grid.num_elements_send_left = grid.added_info_in_send_buf + (grid.num_coupling_species_smc * extent_s + grid.num_coupling_species_ec * extent_e);
-	sendbuf[LEFT] = (double*) checked_malloc(grid.num_elements_send_left * sizeof(double), "sendbuf[LEFT] dimension 2");
+	sendbuf[LEFT] = (double*) checked_malloc(grid.num_elements_send_left * sizeof(double), SRC_LOC);
 
 	sendbuf[LEFT][0] = 1.0; //Start of the 1st segment of SMC array in  in LEFT direction (axial direction) to be sent to neighbouring processor
 	sendbuf[LEFT][1] = (double) extent_s; //END of the 1st segment of SMC array in  in LEFT direction (axial direction) to be sent to neighbouring processor
@@ -231,7 +229,7 @@ int main(int argc, char* argv[])
 	/// Recording the number of elements in Send buffer in RIGHT direction for use in update routine as count of elements.
 	grid.num_elements_send_right = grid.added_info_in_send_buf + (grid.num_coupling_species_smc * extent_s + grid.num_coupling_species_ec * extent_e);
 
-	sendbuf[RIGHT] = (double*) checked_malloc(grid.num_elements_send_right * sizeof(double), "sendbuf[RIGHT] dimension 2");
+	sendbuf[RIGHT] = (double*) checked_malloc(grid.num_elements_send_right * sizeof(double), SRC_LOC);
 
 	sendbuf[RIGHT][0] = 1.0; //Start of the 1st segment of SMC array in  in RIGHT direction (axial direction) to be sent to neighbouring processor
 	sendbuf[RIGHT][1] = (double) extent_s; //END of the 1st segment of SMC array in  in RIGHT direction (axial direction) to be sent to neighbouring processor
@@ -243,16 +241,16 @@ int main(int argc, char* argv[])
 	/// memory allocation
 
 	/// data to receive from the neighbour in UP direction
-	recvbuf[UP] = (double*) checked_malloc(grid.num_elements_recv_up * sizeof(double), "recvbuf[UP] dimension 2");
+	recvbuf[UP] = (double*) checked_malloc(grid.num_elements_recv_up * sizeof(double), SRC_LOC);
 
 	/// data to recv from the neighbour in DOWN direction
-	recvbuf[DOWN] = (double*) checked_malloc(grid.num_elements_recv_down * sizeof(double), "recvbuf[DOWN] dimension 2");
+	recvbuf[DOWN] = (double*) checked_malloc(grid.num_elements_recv_down * sizeof(double), SRC_LOC);
 
 	/// data to receive from the neighbour in LEFT direction
-	recvbuf[LEFT] = (double*) checked_malloc(grid.num_elements_recv_left * sizeof(double), "recvbuf[LEFT] dimension 2");
+	recvbuf[LEFT] = (double*) checked_malloc(grid.num_elements_recv_left * sizeof(double), SRC_LOC);
 
 	/// data to receive from the neighbour in RIGHT direction
-	recvbuf[RIGHT] = (double*) checked_malloc(grid.num_elements_recv_right * sizeof(double), "recvbuf[RIGHT] dimension 2");
+	recvbuf[RIGHT] = (double*) checked_malloc(grid.num_elements_recv_right * sizeof(double), SRC_LOC);
 
 	/// Setup output streams to write data in files. Each node opens an independent set of files and write various state variables into it.
 	///	checkpoint_handle *check = initialise_checkpoint(myRank);
@@ -262,17 +260,17 @@ int main(int argc, char* argv[])
 
 	// Error control variables.
 	double TOL = 1e-6, absTOL = 1e-7;
-	double *thres = (double*)checked_malloc(grid.NEQ * sizeof(double), "Threshold array for RKSUITE");
+	double *thres = (double*)checked_malloc(grid.NEQ * sizeof(double), SRC_LOC);
 	for (int i = 0; i < grid.NEQ; i++)
 	{
 		thres[i] = absTOL;
 	}
 
 	// State variables.
-	double* y = (double*) checked_malloc(grid.NEQ * sizeof(double), "Solver array y for RKSUITE");
+	double* y = (double*) checked_malloc(grid.NEQ * sizeof(double), SRC_LOC);
 
 	// Internal work space.
-	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double), "Workspace array y for RKSUITE");
+	double* yp = (double*) checked_malloc(grid.NEQ * sizeof(double), SRC_LOC);
 
 	/// Initialise state variables and coupling data values.
 

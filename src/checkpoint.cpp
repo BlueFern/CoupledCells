@@ -63,8 +63,7 @@ void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my
 
 	if (grid.rank_branch == 0)
 	{
-		grid.logfile_write_buffer = (char*) checked_malloc(grid.logfile_displacements * sizeof(char),
-				"Allocation error for writer_buffer for log file.");
+		grid.logfile_write_buffer = (char*) checked_malloc(grid.logfile_displacements * sizeof(char), SRC_LOC);
 	}
 	CHECK_MPI_ERROR(MPI_Gatherv(buffer, length, MPI_CHAR, grid.logfile_write_buffer, recv_count, disp, MPI_CHAR, root, grid.cart_comm));
 
@@ -161,9 +160,7 @@ void read_config_file(int rank, char* filename, grid_parms* grid)
 		MPI_Abort(MPI_COMM_WORLD, 911);
 	}
 
-	// TODO: Define a function for allocating 2D arrays.
 	// TODO: Check the allocated memory is released when appropriate.
-	// TODO: Define a function for releasing 2D arrays.
 
 	// Allocate first dimension array.
 	grid->domain_params = (int**) checked_malloc(grid->num_domains * sizeof(int*), SRC_LOC);
@@ -310,7 +307,7 @@ void dump_time_field(char* file_prefix, grid_parms grid, double field) //, IO_do
 	MPI_Status status;
 	MPI_Offset displacement = 0;
 	MPI_File fw;
-	char* buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), "allocation for logfile segment space\n");
+	char* buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), SRC_LOC);
 	char* write_buffer;
 	int root = 0;
 	char filename[50];

@@ -4,22 +4,19 @@ using namespace std;
 time_stamps t_stamp;
 
 /**
- * Wrapper around malloc to catch failed memory allocation. If allocation fails
- * MPI_Abort is called.
- *
- * TODO: This should be turned into a macro.
+ * Wrapper around malloc to catch failed memory allocation. If allocation fails MPI_Abort is called.
  *
  * \param bytes Size of requested memory.
  * \param errmsg Message produced in the event of failed memory allocation.
  */
-void* checked_malloc(size_t bytes, const char* errmsg) {
+void* checked_malloc(size_t bytes, const char* errmsg)
+{
 	void *pval = malloc(bytes);
-
-	if (pval == NULL) {
-		fprintf(stderr, "************************ MEMORY ALLOCATION ERROR: %s ************************\n", errmsg);
+	if (pval == NULL)
+	{
+		fprintf(stderr, "MEMORY ALLOCATION ERROR: %s\n", errmsg);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 	}
-
 	return pval;
 }
 
@@ -617,6 +614,7 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 }
 
 #if 0
+// TODO: These functions are to be moved to a util_func.cpp or something of that sort.
 /************************************************************/
 void minimum(double* table, int size, double *value, int *index) {
 	///For evaluating minimum of an array.

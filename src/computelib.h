@@ -126,8 +126,6 @@ struct node {
 struct my_tree {
 	node internal_info;
 	node left_child, right_child, parent;
-	//double z_offset_start, z_offset_end;				/// These are domain offsets start and end points to demacated distance in
-	//double local_z_start, local_z_end;					/// z direction spanned by a processor's own sub-domain that it belongs to.
 };
 #endif
 
