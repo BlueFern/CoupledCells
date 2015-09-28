@@ -65,13 +65,13 @@ void computeDerivatives(double t, double y[], double f[])
 {
 	// compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
 	compute(grid, smc, ec, cpl_cef, t, y, f);
-	t_stamp.computeDerivatives_call_counter += 1;
-
 }
 
-// line_number: redundant parameter.
-void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp, int neq, double TOL, double* thres,
-		int file_write_per_unit_time, char* path) //, IO_domain_info *my_IO_domain_info)
+// neq: redundant parameter.
+// path: redundant parameter.
+void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp,
+		int neq, double TOL, double* thres,
+		int file_write_per_unit_time, char* path)
 {
 	RKSUITE rksuite;
 
@@ -82,11 +82,13 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	int iteration = 0;
 	int write_count = 0;
 	int count = 0;
+	char CTstr[] = "CT";
+
+	tend = interval;
+
+	rksuite.setup(neq, tnow, y, tend, TOL, thres, method, CTstr, false, 0.0, false);
 
 	initialize_t_stamp(&t_stamp);
-	tend = interval;
-	char CTstr[] = "CT";
-	rksuite.setup(neq, tnow, y, tend, TOL, thres, method, CTstr, false, 0.0, false);
 
 	// Exchange SMC and EC variables in the ghost cells.
 	// Essential for restarts when data is loaded from a checkpoint.
@@ -135,9 +137,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 	bool jplc_read_in = false;
 
-	// Profiling.
-	double timing_values[3][int(tfinal / interval)];
-
 	// Data buffers for collecting and writing HDF5 output.
 	ec_data_buffer *ec_buffer;
 	smc_data_buffer *smc_buffer;
@@ -159,25 +158,16 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	{
 		// printf("[%d] line: %d, tnow: %f, %f, %f\n", grid.universal_rank, __LINE__, tnow, tend, tfinal);
 
-		t_stamp.solver_t1 = MPI_Wtime();
+		double solver_start = MPI_Wtime();
 
 		// The ct() function does not guarantee to advance all the way to the stop time. Keep stepping until it does.
 		// The solver decides step magnitude depending on the stiffness of the problem.
 		do
 		{
-			// Read JPLC in if it is time to do so.
-			if(tnow >= grid.stimulus_onset_time && !jplc_read_in)
-			{
-				read_init_ATP(&grid, ec);
-				jplc_read_in = true;
-			}
-
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
 
 			// report_RK_suite_error(cflag, tnow, grid.universal_rank);
-
 			// printf("\t[%d] line: %d, tnow: %f, %f, %f\n", grid.universal_rank, __LINE__, tnow, tend, tfinal);
-
 		}
 		while(tnow < tend);
 
@@ -185,56 +175,58 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		/// Amongst other things it also informs about what the next step size should be.
 		rksuite.stat(totf, stpcst, waste, stpsok, hnext);
 
-		t_stamp.solver_t2 = MPI_Wtime();
-		t_stamp.diff_solver = t_stamp.solver_t2 - t_stamp.solver_t1;
-		timing_values[0][iteration] = t_stamp.diff_solver;
-		t_stamp.aggregate_compute += t_stamp.diff_solver;
+		t_stamp.aggregate_compute += MPI_Wtime() - solver_start;
 
 		/// Call for interprocessor communication.
-		t_stamp.total_comms_cost_t1 = MPI_Wtime();
-
+		double comms_0_start = MPI_Wtime();
 		communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
-
-		t_stamp.total_comms_cost_t2 = MPI_Wtime();
-		t_stamp.diff_total_comms_cost = t_stamp.total_comms_cost_t2 - t_stamp.total_comms_cost_t1;
-		timing_values[1][iteration] = t_stamp.diff_total_comms_cost;
-		t_stamp.aggregate_comm += t_stamp.diff_total_comms_cost;
+		t_stamp.aggregate_comm += MPI_Wtime() - comms_0_start;
 
 		if((iteration % file_write_per_unit_time) == 0)
 		{
-			t_stamp.write_t1 = MPI_Wtime();
-
 			// HDF5 Start
 			// HDF5 Start
 			// HDF5 Start
 
 			// Collect state variable data on writers.
-			// TODO: Perhaps the ECs matrix is better stored as pointers in the grid?
-			gather_EC_data(&grid, ec_buffer, ec);
-			// TODO: Perhaps the SMCs matrix is better stored as pointers in the grid?
-			gather_SMC_data(&grid, smc_buffer, smc);
 
+			double ec_gather = MPI_Wtime();
+			gather_EC_data(&grid, ec_buffer, ec);
+			t_stamp.aggregate_ec_gather += MPI_Wtime() - ec_gather;
+
+			double smc_gather = MPI_Wtime();
+			gather_SMC_data(&grid, smc_buffer, smc);
+			t_stamp.aggregate_smc_gather += MPI_Wtime() - smc_gather;
+
+			double ec_write = MPI_Wtime();
 			if(grid.rank_branch == 0)
 			{
 				// Write state variables to HDF5.
 				write_EC_data_HDF5(&grid, ec_buffer, write_count, path);
+			}
+			t_stamp.aggregate_ec_write += MPI_Wtime() - ec_write;
+
+			double smc_write = MPI_Wtime();
+			if(grid.rank_branch == 0)
+			{
+				// Write state variables to HDF5.
 				write_SMC_data_HDF5(&grid, smc_buffer, write_count, path);
 			}
+			t_stamp.aggregate_smc_write += MPI_Wtime() - smc_write;
 
 			// HDF5 End
 			// HDF5 End
 			// HDF5 End
-
-			t_stamp.write_t2 = MPI_Wtime();
-			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;
-			timing_values[2][write_count] = t_stamp.diff_write;
-			t_stamp.aggregate_write += t_stamp.diff_write;
 
 			write_count++;
 		}
 
-		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
-		//initialize_t_stamp(&t_stamp);
+		// Read JPLC in if it is time to do so.
+		if(tnow >= grid.stimulus_onset_time && !jplc_read_in)
+		{
+			read_init_ATP(&grid, ec);
+			jplc_read_in = true;
+		}
 
 		/// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
 		iteration++;
@@ -254,22 +246,7 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 		free_SMC_data_buffer(smc_buffer, 0);
 	}
 
-	// Prepare time profiling data.
-	double tmp_array[write_count];
-
-	for(int i = 0; i < write_count; i++)
-	{
-		tmp_array[i] = timing_values[2][i];
-	}
-	maximum(timing_values[0], iteration, &t_stamp.max_compute, &t_stamp.max_compute_index);
-	maximum(timing_values[1], iteration, &t_stamp.max_comm, &t_stamp.max_comm_index);
-	maximum(tmp_array, write_count, &t_stamp.max_write, &t_stamp.max_write_index);
-
-	minimum(timing_values[0], iteration, &t_stamp.min_compute, &t_stamp.min_compute_index);
-	minimum(timing_values[1], iteration, &t_stamp.min_comm, &t_stamp.min_comm_index);
-	minimum(tmp_array, write_count, &t_stamp.min_write, &t_stamp.min_write_index);
-
 	// Write time profiling data.
 	// Time profiling data is lost in the event of a crash.
-	checkpoint_coarse_time_profiling_data(grid, &t_stamp);
+	dump_time_profiling(grid, &t_stamp);
 }

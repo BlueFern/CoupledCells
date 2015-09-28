@@ -247,7 +247,6 @@ typedef struct {
 	remote_async_comm_calls_wait_t1, remote_async_comm_calls_wait_t2,
 	update_sendbuf_t1, update_sendbuf_t2,
 	update_recvbuf_t1, update_recvbuf_t2,
-	barrier_in_solver_before_comm_t1, barrier_in_solver_before_comm_t2,
 	total_comms_cost_t1, total_comms_cost_t2,
 	diff_update_sendbuf,
 	diff_update_recvbuf,
@@ -255,24 +254,11 @@ typedef struct {
 	diff_async_comm_calls_wait,
 	diff_remote_async_comm_calls,
 	diff_remote_async_comm_calls_wait,
-	//diff_barrier_in_solver_before_comm,
-	diff_total_comms_cost,
+	diff_total_comms_cost;
 
-	///Solver timings.
-	map_function_t1, map_function_t2,
-	single_cell_fluxes_t1, single_cell_fluxes_t2,
-	coupling_fluxes_t1, coupling_fluxes_t2,
-	solver_t1, solver_t2,
-	write_t1, write_t2,
-	//diff_map_function,
-	//diff_single_cell_fluxes,
-	//diff_coupling_fluxes,
-	diff_solver,
-	diff_write;
-	int computeDerivatives_call_counter;
-	double aggregate_write, aggregate_compute, aggregate_comm;
-	double max_compute, max_comm, max_write, min_compute, min_comm, min_write;
-	int max_compute_index, max_comm_index, max_write_index, min_compute_index, min_comm_index, min_write_index;
+	double aggregate_compute, aggregate_comm;
+	double aggregate_ec_gather, aggregate_smc_gather;
+	double aggregate_ec_write, aggregate_smc_write;
 } time_stamps;
 
 typedef struct {
@@ -333,15 +319,14 @@ void Initialize_tsoukias_smc(grid_parms grid, double y[], SMC_cell** smc);
 void read_config_file(int, char*, grid_parms*);
 void set_file_naming_strings(grid_parms* grid);
 
-void minimum(double* table, int size, double *value, int *index);
-void maximum(double* table, int size, double *value, int *index);
-void average(double* table, int size, double *value);
+//void minimum(double* table, int size, double *value, int *index);
+//void maximum(double* table, int size, double *value, int *index);
+//void average(double* table, int size, double *value);
 
 void read_init_ATP(grid_parms *grid, EC_cell **ECs);
 
-void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp); //, IO_domain_info* my_IO_domain_info);
-void write_timing(char* file_prefix, grid_parms grid, double field); //, IO_domain_info* my_IO_domain_info);
-void write_min_max_timing(char* file_prefix, grid_parms grid, double field); //, IO_domain_info* my_IO_domain_info);
+void dump_time_profiling(grid_parms grid, time_stamps* t_stamp);
+void dump_time_field(char* file_prefix, grid_parms grid, double field);
 
 /**
  * \brief Catch failed memory allocation.

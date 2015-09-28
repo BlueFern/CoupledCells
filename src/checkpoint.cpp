@@ -295,19 +295,17 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 	free(recv_jplc);
 }
 
-void checkpoint_coarse_time_profiling_data(grid_parms grid, time_stamps* t_stamp) //, IO_domain_info* my_IO_domain_info)
+void dump_time_profiling(grid_parms grid, time_stamps* t_stamp)
 {
-
-	write_timing((char *)"aggregated_compute_time", grid, t_stamp->aggregate_compute); //, my_IO_domain_info);
-	write_timing((char *)"aggregated_comm_time", grid, t_stamp->aggregate_comm); //, my_IO_domain_info);
-	write_timing((char *)"aggregated_write_time", grid, t_stamp->aggregate_write); //, my_IO_domain_info);
-
-	write_min_max_timing((char *)"min_max_of_aggregate_compute" , grid, t_stamp->aggregate_compute); //, my_IO_domain_info);
-	write_min_max_timing((char *)"min_max_of_aggregate_comm" , grid, t_stamp->aggregate_comm); //, my_IO_domain_info);
-	write_min_max_timing((char *)"min_max_of_aggregate_write" , grid, t_stamp->aggregate_write); //, my_IO_domain_info);
+	dump_time_field((char *)"aggregated_compute", grid, t_stamp->aggregate_compute);
+	dump_time_field((char *)"aggregated_comm", grid, t_stamp->aggregate_comm);
+	dump_time_field((char *)"aggregated_ec_gather", grid, t_stamp->aggregate_ec_gather);
+	dump_time_field((char *)"aggregated_smc_gather", grid, t_stamp->aggregate_smc_gather);
+	dump_time_field((char *)"aggregated_ec_write", grid, t_stamp->aggregate_ec_write);
+	dump_time_field((char *)"aggregated_smc_write", grid, t_stamp->aggregate_smc_write);
 }
 
-void write_timing(char* file_prefix, grid_parms grid, double field) //, IO_domain_info* my_IO_domain_info)
+void dump_time_field(char* file_prefix, grid_parms grid, double field) //, IO_domain_info* my_IO_domain_info)
 {
 	MPI_Status status;
 	MPI_Offset displacement = 0;
@@ -352,45 +350,3 @@ void write_timing(char* file_prefix, grid_parms grid, double field) //, IO_domai
 	free(buffer);
 	free(disp);
 }
-
-void write_min_max_timing(char *file_prefix, grid_parms grid, double field) //, IO_domain_info* my_IO_domain_info)
-{
-	MPI_Status status;
-	MPI_Offset displacement = 0;
-	MPI_File fw;
-	char* buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), SRC_LOC);
-	char* write_buffer;
-	int root = 0;
-	char filename[50];
-	int length = 0;
-	double max, min;
-	int max_ind, min_ind;
-	double array[grid.num_ranks_branch];
-
-	int *recv_count = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
-	int *disp = (int*) checked_malloc(grid.num_ranks_branch * sizeof(int), SRC_LOC);
-
-	CHECK_MPI_ERROR(MPI_Gather(&field, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, root, grid.cart_comm));
-
-	if (grid.rank_branch == 0)
-	{
-		maximum(array, grid.num_ranks_branch, &max, &max_ind);
-		minimum(array, grid.num_ranks_branch, &min, &min_ind);
-		write_buffer = (char*) checked_malloc(1024 * sizeof(char), SRC_LOC);
-		sprintf(filename, "%s/%s_%s.txt", grid.time_profiling_dir, file_prefix, grid.suffix);
-
-		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fw));
-
-		length = sprintf(write_buffer, "Maximum = %lf\t by Rank = %d\nMinimum = %lf\t by Rank = %d\n", max, max_ind, min, min_ind);
-
-		CHECK_MPI_ERROR(MPI_File_write_at(fw, 0, write_buffer, length, MPI_CHAR, &status));
-
-		MPI_File_close(&fw);
-		free(write_buffer);
-	}
-
-	free(recv_count);
-	free(buffer);
-	free(disp);
-}
-

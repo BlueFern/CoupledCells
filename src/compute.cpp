@@ -422,13 +422,13 @@ void initialize_t_stamp(time_stamps* t_stamp)
 {
 	t_stamp->aggregate_compute = 0;
 	t_stamp->aggregate_comm = 0;
-	t_stamp->aggregate_write = 0;
+	t_stamp->aggregate_ec_gather = 0;
+	t_stamp->aggregate_smc_gather = 0;
+	t_stamp->aggregate_ec_write = 0;
+	t_stamp->aggregate_smc_write = 0;
+
 	t_stamp->diff_async_comm_calls = 0;
 	t_stamp->diff_async_comm_calls_wait = 0;
-	//t_stamp->diff_barrier_in_solver_before_comm = 0.0;
-	//t_stamp->diff_map_function = 0.0;
-	//t_stamp->diff_single_cell_fluxes = 0.0;
-	//t_stamp->diff_coupling_fluxes = 0.0;
 }
 
 #if 0
@@ -616,6 +616,7 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 	return (err);
 }
 
+#if 0
 /************************************************************/
 void minimum(double* table, int size, double *value, int *index) {
 	///For evaluating minimum of an array.
@@ -649,3 +650,6 @@ void average(double* table, int size, double *value) {
 	}
 	*value = *value / (double) (size);
 }
+#endif
+
+

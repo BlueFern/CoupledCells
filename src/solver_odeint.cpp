@@ -289,13 +289,13 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 	{
 		tmp_array[i] = palce_holder_for_timing_max_min[2][i];
 	}
-	maximum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.max_compute, &t_stamp.max_compute_index);
-	maximum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.max_comm, &t_stamp.max_comm_index);
-	maximum(tmp_array, write_count, &t_stamp.max_write, &t_stamp.max_write_index);
+	//maximum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.max_compute, &t_stamp.max_compute_index);
+	//maximum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.max_comm, &t_stamp.max_comm_index);
+	//maximum(tmp_array, write_count, &t_stamp.max_write, &t_stamp.max_write_index);
 
-	minimum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.min_compute, &t_stamp.min_compute_index);
-	minimum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.min_comm, &t_stamp.min_comm_index);
-	minimum(tmp_array, write_count, &t_stamp.min_write, &t_stamp.min_write_index);
+	//minimum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.min_compute, &t_stamp.min_compute_index);
+	//minimum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.min_comm, &t_stamp.min_comm_index);
+	//minimum(tmp_array, write_count, &t_stamp.min_write, &t_stamp.min_write_index);
 
 	// Write time profiling data.
 	// Time profiling data gets lost in the event of a crash.
