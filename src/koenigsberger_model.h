@@ -1,3 +1,13 @@
+#ifndef KOENIGSBERGER_CONSTANTS_H_
+#define KOENIGSBERGER_CONSTANTS_H_
+
+/*
+ * koenigsberger_constants.h
+ *
+ * FIXED MODEL PARAMETERS FOR THE KOENIGSBERGER MODEL
+ *
+ */
+
 //SMC state variables
 #define     smc_Ca              0
 #define     smc_SR              1
@@ -35,3 +45,14 @@
 #define	    cpl_Ca		        0
 #define	    cpl_Vm		        1
 #define	    cpl_IP3		        2
+
+void initialize_koeingsberger_smc(grid_parms, double*, SMC_cell**);
+void initialize_koeingsberger_ec(grid_parms, double*, EC_cell**);
+
+void koenigsberger_smc(grid_parms, SMC_cell**);
+void koenigsberger_ec(grid_parms, EC_cell**);
+
+void koenigsberger_smc_derivatives(double*, grid_parms, SMC_cell**);
+void koenigsberger_ec_derivatives(double, double*, grid_parms, EC_cell**);
+
+#endif /* KOENIGSBERGER_CONSTANTS_H_ */

@@ -1,5 +1,9 @@
+#include <malloc.h>
 
 #include "computelib.h"
+#include "koenigsberger_model.h"
+#include "tsoukias_model.h"
+
 using namespace std;
 time_stamps t_stamp;
 
@@ -191,6 +195,7 @@ int couplingParms(int CASE, conductance* cpl_cef)
 	return 0;
 }
 
+// TODO: Move the Tsoukias code to the appropriate location.
 // Mapping from state variable vector to cells.
 int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_cell** ec)
 {
@@ -414,119 +419,8 @@ void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
 	}
 }
 
-
-void initialize_t_stamp(time_stamps* t_stamp)
+int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t, double* y, double* f)
 {
-	t_stamp->aggregate_compute = 0;
-	t_stamp->aggregate_comm = 0;
-	t_stamp->aggregate_ec_gather = 0;
-	t_stamp->aggregate_smc_gather = 0;
-	t_stamp->aggregate_ec_write = 0;
-	t_stamp->aggregate_smc_write = 0;
-
-	t_stamp->diff_async_comm_calls = 0;
-	t_stamp->diff_async_comm_calls_wait = 0;
-}
-
-#if 0
-// TODO: This function replicates the core logic. Instead the profiling calls should be in the original function wrapped in ifdefs and endifs.
-/**
- *
- * \param t_stamp
- * \param grid
- * \param smc
- * \param ec
- * \param cpl_cef
- * \param t
- * \param y
- * \param f
- * \return
- */
-int compute_with_time_profiling(time_stamps* t_stamp, grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t, double* y, double* f)
-{
-	int err;
-
-	t_stamp->map_function_t1 = MPI_Wtime();
-	map_solver_output_to_cells(grid, y, smc, ec);
-	t_stamp->map_function_t2 = MPI_Wtime();
-	t_stamp->diff_map_function = t_stamp->diff_map_function
-			+ (t_stamp->map_function_t2 - t_stamp->map_function_t1);
-
-	t_stamp->single_cell_fluxes_t1 = MPI_Wtime();
-	switch (grid.smc_model) {
-	case (TSK): {
-		tsoukias_smc(grid, smc);
-		break;
-	}
-	case (KNBGR): {
-		koenigsberger_smc(grid, smc);
-		break;
-	}
-	default: {
-		err = 1;
-		break;
-	}
-	}
-	switch (grid.ec_model) {
-	case (TSK): {
-		koenigsberger_ec(grid, ec);
-		break;
-	}
-	case (KNBGR): {
-		koenigsberger_ec(grid, ec);
-		break;
-	}
-	default: {
-		err = 1;
-		break;
-	}
-	}
-	t_stamp->single_cell_fluxes_t2 = MPI_Wtime();
-	t_stamp->diff_single_cell_fluxes = t_stamp->diff_single_cell_fluxes
-			+ (t_stamp->single_cell_fluxes_t2 - t_stamp->single_cell_fluxes_t1);
-
-	t_stamp->coupling_fluxes_t1 = MPI_Wtime();
-	coupling(t, y, grid, smc, ec, cpl_cef);
-	t_stamp->coupling_fluxes_t2 = MPI_Wtime();
-	t_stamp->diff_coupling_fluxes = t_stamp->diff_coupling_fluxes
-			+ (t_stamp->coupling_fluxes_t2 - t_stamp->coupling_fluxes_t1);
-
-	//tsoukias_smc_derivatives(f, grid, smc);
-	//koenigsberger_ec_derivatives(t, f, grid, ec);
-	switch (grid.smc_model) {
-	case (TSK): {
-		tsoukias_smc_derivatives(f, grid, smc);
-		break;
-	}
-	case (KNBGR): {
-		koenigsberger_smc_derivatives(f, grid, smc);
-		break;
-	}
-	default: {
-		err = 1;
-		break;
-	}
-	}
-	switch (grid.ec_model) {
-	case (TSK): {
-		koenigsberger_ec_derivatives(t, f, grid, ec);
-		break;
-	}
-	case (KNBGR): {
-		koenigsberger_ec_derivatives(t, f, grid, ec);
-		break;
-	}
-	default: {
-		err = 1;
-		break;
-	}
-	}
-	return (err);
-}
-#endif
-
-int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
-		double t, double* y, double* f) {
 	int err;
 
 	// TODO: Is there a reason this mapping is done before the solver is called?

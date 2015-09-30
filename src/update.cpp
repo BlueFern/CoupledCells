@@ -1,10 +1,9 @@
 #include <mpi.h>
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
-#include <math.h>
-#include "macros.h"
+#include <malloc.h>
+#include <assert.h>
+
 #include "computelib.h"
+#include "koenigsberger_model.h"
 
 using namespace std;
 extern time_stamps t_stamp;
@@ -446,4 +445,95 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 		ec[i][j].vars[ec_IP3] = recvbuf[RIGHT][buf_offset + k + 2];
 		k += grid.num_coupling_species_ec;
 	}
+}
+
+void read_init_ATP(grid_parms *grid, EC_cell **ECs)
+{
+	int branch;
+	if (grid->my_domain.internal_info.domain_type == STRSEG)
+	{
+		branch = P;
+	}
+	else if (grid->my_domain.internal_info.domain_type == BIF)
+	{
+		branch = grid->branch_tag;
+	}
+
+	int jplc_per_task_count = grid->num_ec_circumferentially * grid->num_ec_axially;
+
+	int jplc_in_size = jplc_per_task_count * grid->num_ranks_branch;
+
+	// This can be allocated only on the IO nodes.
+	double *send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
+
+	// Only the IO nodes read the input files.
+	if (grid->rank_branch == 0)
+	{
+		char jplc_file_name[64];
+		switch(branch)
+		{
+			case P:
+				sprintf(jplc_file_name, "files/parent_atp.txt");
+				break;
+			case L:
+				sprintf(jplc_file_name, "files/left_daughter_atp.txt");
+				break;
+			case R:
+				sprintf(jplc_file_name, "files/right_daughter_atp.txt");
+				break;
+			default:
+				; // Do something sensible here otherwise all hell breaks loose...
+		}
+
+		FILE *fr = fopen(jplc_file_name, "r+");
+		printf("Reading ATP from %s, FILE is %s...\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
+
+		int count_in = 0;
+		double jplc_val = 0;
+		while(fscanf(fr, "%lf", &jplc_val) == 1)
+		{
+			send_jplc[count_in] = jplc_val;
+			count_in++;
+		}
+		if(feof(fr))
+		{
+			// Check the number of values read.
+			assert(jplc_in_size == count_in);
+		}
+		fclose(fr);
+	}
+
+	int *send_jplc_counts = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+	int *send_jplc_offsets = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+
+	for(int task = 0; task < grid->num_ranks_branch; task++)
+	{
+		send_jplc_counts[task] = jplc_per_task_count;
+		send_jplc_offsets[task] = task * jplc_per_task_count;
+	}
+
+	int recv_jplc_count = jplc_per_task_count;
+	double *recv_jplc = (double *)checked_malloc(recv_jplc_count * sizeof(double), SRC_LOC);
+
+	int root = 0;
+
+	// printf("%s, grid->cart_comm: %p\n", __FUNCTION__, (void *)grid->cart_comm);
+
+	// Scatter JPLC values to the nodes in this Cartesian grid.
+	CHECK_MPI_ERROR(MPI_Scatterv(send_jplc, send_jplc_counts, send_jplc_offsets, MPI_DOUBLE, recv_jplc, recv_jplc_count, MPI_DOUBLE, root, grid->cart_comm));
+
+	// Assign received JPLC values to the cells.
+	for(int m = 1; m <= grid->num_ec_circumferentially; m++)
+	{
+		for(int n = 1; n <= grid->num_ec_axially; n++)
+		{
+			// Fortran array referencing!
+			ECs[m][n].JPLC = recv_jplc[(n - 1) * grid->num_ec_circumferentially + m - 1];
+		}
+	}
+
+	free(send_jplc);
+	free(send_jplc_counts);
+	free(send_jplc_offsets);
+	free(recv_jplc);
 }

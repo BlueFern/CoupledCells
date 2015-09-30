@@ -5,12 +5,9 @@
  */
 
 #include <assert.h>
+#include <malloc.h>
 #include <mpi.h>
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
-#include <math.h>
-#include "macros.h"
+
 #include "computelib.h"
 
 void set_task_parameters(grid_parms *grid)

@@ -91,14 +91,14 @@ endif(${ODE_SOLVER} STREQUAL "RK_suite")
 file(GLOB HDRs src/*.h)
 
 set (SRCs 
-	src/checkpoint.cpp 
+	src/time_profiling.cpp 
 	src/koenigsberger_model.cpp
-	src/tsoukias_smc_multicell.cpp
+	src/tsoukias_model.cpp
 	src/update.cpp
 	src/compute.cpp
 	src/simulation_main.cpp 
 	src/writeHDF5.cpp
-	src/debug_file.cpp 
+	src/debug_helpers.cpp 
 	src/topology.cpp
 	src/gather.cpp
 	${ODE_SOLVER_WRAPPER})

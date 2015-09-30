@@ -1,6 +1,10 @@
-#include "macros.h"
+#include <malloc.h>
+
 #include "computelib.h"
+#include "koenigsberger_model.h"
 #include "gather.h"
+
+// #TODO: Use checked_malloc instead of malloc.
 
 ec_data_buffer *allocate_EC_data_buffer(int tasks_per_branch, int elements_per_task, int deep)
 {

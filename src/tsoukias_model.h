@@ -1,68 +1,15 @@
+#ifndef TSOUKIAS_CONSTANTS_H_
+#define TSOUKIAS_CONSTANTS_H_
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-#define SRC_LOC __FILE__ ":" TOSTRING(__LINE__)
-
-#define CHECK_MPI_ERROR(fn) \
-	{ \
-	int errcode = (fn); \
-		if(errcode != MPI_SUCCESS) \
-		{ \
-			fprintf(stderr, "MPI ERROR: %d; %s.\n", errcode, SRC_LOC); \
-			MPI_Abort(MPI_COMM_WORLD, 911); \
-		} \
-	}
-
-/****** marcos for identifying models ******/
-#define 		KNBGR			0
-#define 		TSK				1
-
-
-/*******Koenigsberger model*******/
-//SMC state variables
-#define     smc_Ca              0
-#define     smc_SR              1
-#define     smc_Vm              2
-#define		smc_w				4
-#define     smc_IP3             3
-
-//EC state variables
-#define     ec_Ca               0
-#define     ec_SR               1
-#define     ec_Vm               2
-#define     ec_IP3              3
-
-//Ionic currents common to both celltypes
-#define     J_IP3               0
-#define     J_SERCA             1
-#define     J_CICR              2
-#define     J_Extrusion         3
-#define     J_Leak              4
-#define     J_IP3_deg           5
-//SMC specific currents
-#define     J_VOCC              6
-#define     J_Na_Ca             7
-#define     J_Na_K              8
-#define     J_Cl	             9
-#define     J_K                 10
-#define     K_activation        11
-//EC specific currents
-#define     J_NSC               6
-#define     J_BK_Ca             7
-#define     J_SK_Ca             8
-#define     J_Ktot              9
-#define     J_Residual          10
-#define     J_trivial_Ca        11
-
-
-
-#define	    cpl_Ca		         0
-#define	    cpl_Vm		         1
-#define	    cpl_IP3		         2
+// FIXED MODEL PARAMETERS FOR TSOUKIAS MODEL
 
 /*******Tsoukias model*******/
+#define     smc_Ca              0
+#define     smc_Vm              2
+#define     smc_IP3             4
+
 //SMC state variables in Tsoukias model
-#define		smc_q_1		    	smc_w		/// Kv fast inact q1 gate probability
+#define		smc_q_1		    	3		/// Kv fast inact q1 gate probability
 #define		smc_q_2		    	5			/// Kv slow inact q2 gate probability
 #define 	smc_d_L 	    	6			/// L-type Ca d gate probability
 #define		smc_f_L         	7			/// L-type Ca f gate probability
@@ -70,7 +17,7 @@
 #define		smc_p_s         	9			/// BKCa slow p gate probability
 #define		smc_p_K		    	10			/// Kv activating p gate probability
 #define		smc_h_IP3	    	11			/// IIP3 recept h gate probability
-#define		smc_Ca_u			smc_SR		/// SR uptake Ca concentration
+#define		smc_Ca_u			1		/// SR uptake Ca concentration
 #define		smc_Ca_r	    	12			/// SR release Ca concentration
 #define		smc_R_10	    	13			/// RyR w/ act Ca bnd state
 #define		smc_R_11	    	14			/// RyR w/act-inact Ca bnd state
@@ -149,4 +96,12 @@
 #define 	rho_r_G     		60
 #define 	delta_G     		61
 
+#define	    cpl_Ca		        0
+#define	    cpl_Vm		        1
+#define	    cpl_IP3		        2
 
+void initialize_tsoukias_smc(grid_parms grid, double y[], SMC_cell** smc);
+void tsoukias_smc(grid_parms, SMC_cell**);
+void tsoukias_smc_derivatives(double*, grid_parms, SMC_cell**);
+
+#endif /* TSOUKIAS_CONSTANTS_H_ */

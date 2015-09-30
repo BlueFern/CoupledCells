@@ -2,21 +2,27 @@
 #define _COMPUTE_LIB_
 
 #include <mpi.h>
-#include <iostream>
-#include <fstream>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <math.h>
-#include "macros.h"
 
-#define success 0
-#define	none -1
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define SRC_LOC __FILE__ ":" TOSTRING(__LINE__)
+
+#define CHECK_MPI_ERROR(fn) \
+{ \
+int errcode = (fn); \
+	if(errcode != MPI_SUCCESS) \
+	{ \
+		fprintf(stderr, "MPI ERROR: %d; %s.\n", errcode, SRC_LOC); \
+		MPI_Abort(MPI_COMM_WORLD, 911); \
+	} \
+}
 
 #define local 0
 #define remote 1
+
+/****** marcos for identifying models ******/
+#define 		KNBGR			0
+#define 		TSK				1
 
 /**
  * When converting double to char for writing via MPI-IO to write in ASCII format
@@ -87,7 +93,8 @@
 /**
  * Conductance / coupling coefficients.
  */
-struct conductance {
+struct conductance
+{
 	double Vm_hm_smc,	///< Homocellular membrane potential coupling between SMCs.
 			Vm_hm_ec,	///< Homocellular membrane potential coupling between ECs.
 			Ca_hm_smc,	///< Homocellular Ca coupling between SMCs.
@@ -104,7 +111,8 @@ struct conductance {
 
 #if 1
 // TODO: Pretty sure this can be chucked out.
-struct node {
+struct node
+{
 	int domain_type, ///< Bifurcation or a straight segment.
 	    domain_index,
 	    domain_start, ///< Universal ranks from MPI_COMM_WORLD.
@@ -123,7 +131,8 @@ struct node {
 
 };
 // TODO: Pretty sure this can be chucked out.
-struct my_tree {
+struct my_tree
+{
 	node internal_info;
 	node left_child, right_child, parent;
 };
@@ -144,9 +153,8 @@ struct my_tree {
 #define CR_SMCS 8
 #define NUM_CONFIG_ELEMENTS 9
 
-typedef struct {
-	// double tfinal;
-
+typedef struct
+{
 	///General information on cell geometry and the geometric primitive constructed.
 	int num_smc_fundblk_circumferentially;
 	int num_ec_fundblk_circumferentially;
@@ -212,7 +220,8 @@ typedef struct {
 	char solution_dir[1024], time_profiling_dir[1024], config_file[1024];
 } grid_parms;
 
-typedef struct {
+typedef struct
+{
 	double *vars;		///storage for the state variables corresponding to an SMC.
 	double NO, NE, I_stim;		///specific to Tsoukias model
 	int node_row, node_col;	///stores coordinates of the node on which I am located.
@@ -224,7 +233,8 @@ typedef struct {
 	conductance cpl_cef;
 } SMC_cell;
 
-typedef struct {
+typedef struct
+{
 	double *vars;		///storage for the state variables corresponding to an SMC.
 	int node_row, node_col;	///stores coordinates of the node on which I am located.
 	int my_row, my_col;		///stores my location on the node.
@@ -235,9 +245,9 @@ typedef struct {
 	conductance cpl_cef;
 } EC_cell;
 
-typedef struct {
+typedef struct
+{
 	double
-
 	/// Communication timings.
 	async_comm_calls_t1, async_comm_calls_t2,
 	async_comm_calls_wait_t1, async_comm_calls_wait_t2,
@@ -259,13 +269,8 @@ typedef struct {
 	double aggregate_ec_write, aggregate_smc_write;
 } time_stamps;
 
-typedef struct {
-	double t_new, t_old, elapsed_time;
-} time_keeper;
 
 int couplingParms(int CASE, conductance* cpl_cef);
-void Initialize_koeingsberger_smc(grid_parms, double*, SMC_cell**);
-void Initialize_koeingsberger_ec(grid_parms, double*, EC_cell**);
 int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
 grid_parms communicate_num_recv_elements_to_nbrs(grid_parms);
@@ -276,12 +281,6 @@ void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, E
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
 void coupling(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
-void tsoukias_smc(grid_parms, SMC_cell**);
-void koenigsberger_smc(grid_parms, SMC_cell**);
-void tsoukias_smc_derivatives(double*, grid_parms, SMC_cell**);
-void koenigsberger_smc_derivatives(double*, grid_parms, SMC_cell**);
-void koenigsberger_ec(grid_parms, EC_cell**);
-void koenigsberger_ec_derivatives(double, double*, grid_parms, EC_cell**);
 
 void dump_rank_info(conductance, grid_parms); //, IO_domain_info*);
 
@@ -296,7 +295,6 @@ void arkode_solver(double, double, double, double*, int, double, double, int, ch
 void odeint_solver(double, double, double, double*, int, double, double, int, checkpoint_handle*, char*, IO_domain_info*);
 #endif
 
-//int compute_with_time_profiling(time_stamps*, grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 int compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 
 ///These are debugging functions, not used in production runs.
@@ -311,18 +309,9 @@ grid_parms make_straight_segment_cart_grids(grid_parms);
 void set_task_parameters(grid_parms *);
 void configure_subdomains_topology(grid_parms *);
 
-void initialize_t_stamp(time_stamps*);
-
-void Initialize_tsoukias_smc(grid_parms grid, double y[], SMC_cell** smc);
-void read_config_file(int, char*, grid_parms*);
-void set_file_naming_strings(grid_parms* grid);
-
-//void minimum(double* table, int size, double *value, int *index);
-//void maximum(double* table, int size, double *value, int *index);
-//void average(double* table, int size, double *value);
-
 void read_init_ATP(grid_parms *grid, EC_cell **ECs);
 
+void initialize_t_stamp(time_stamps*);
 void dump_time_profiling(grid_parms grid, time_stamps* t_stamp);
 void dump_time_field(char* file_prefix, grid_parms grid, double field);
 

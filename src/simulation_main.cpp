@@ -1,6 +1,11 @@
-#include "computelib.h"
+#include <stdlib.h>
+#include <cstring>
 
-using namespace std;
+#include "computelib.h"
+#include "koenigsberger_model.h"
+
+void read_config_file(int, char*, grid_parms*);
+void set_file_naming_strings(grid_parms* grid);
 
 conductance cpl_cef;
 SMC_cell **smc;
@@ -274,8 +279,8 @@ int main(int argc, char* argv[])
 
 	/// Initialise state variables and coupling data values.
 
-	Initialize_koeingsberger_smc(grid, y, smc);
-	Initialize_koeingsberger_ec(grid, y, ec);
+	initialize_koeingsberger_smc(grid, y, smc);
+	initialize_koeingsberger_ec(grid, y, ec);
 
 	// Reverse mapping from state vector to cells.
 	// Essential for restarts, when data is loaded from a checkpoint.
@@ -311,4 +316,124 @@ int main(int argc, char* argv[])
 
 	MPI_Finalize();
 	return 0;
+}
+
+/// Read data from the config.txt file to retrieve the information related to how the domain is set up.
+/// All tasks open the same file to read.
+/// Every task has the same displacement so each start to read data from the same position.
+/// Each task decides the read buffer size to be allocated by looking at the file size of the file opened for read operation.
+/// The data is read and sorted into delimited strings; numbers and stored into corresponding place holders in the array
+/// domains[][] in the structure grid_parms grid.
+///
+///	For a bifurcation as well as a straight segment there's only one domain.
+///
+/// The arrays in the domains[][] store the following information:
+///
+/// Element 0: 	Key_val or serial number of the subdomain
+/// Element 1:	Subdomain Type (2 possibilities and their values)
+/// 				1. Straight Segment (STRSEG): (0)
+/// 				2. Bifurcation	(BIF): (1)
+/// Element 2: Number of quads/tasks in the axial extent for the current key_val.
+/// Element 3: Number of quads/tasks in the circumferential for the current key_val.
+/// Element 4: Parent subdomain key_val of current key_val.
+/// Element 5: Left child subdomain key_val of the current key_val.
+/// Element 6: Right child subdomain key_val of the current key_val.
+/// Element 7: Required number of endothelial cells axially per quad/task.
+/// Element 8: Required number of smooth muscle cells circumferentially per quad/task.
+///
+/// In the case of elements 5 and 6, if subdomain type of current key_val is a straight segment,
+/// left child is positive or zero, and right child is negative. ???
+/// If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative. ???
+
+void read_config_file(int rank, char* filename, grid_parms* grid)
+{
+	int err;
+	MPI_File input_file;
+	MPI_Offset file_size;
+	MPI_Status status;
+	const char *delimiter = ";,\n";
+	char *buffer;
+	char *token;
+	int *values;
+
+	CHECK_MPI_ERROR(MPI_File_open(grid->universe, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &input_file));
+
+	err = MPI_File_get_size(input_file, &file_size);
+
+	buffer = (char*)checked_malloc((int)file_size * sizeof(char) + 1, SRC_LOC); // Extra char is for the null character.
+
+	err = MPI_File_read_all(input_file, buffer, file_size, MPI_CHAR, &status);
+	buffer[file_size] = '\0'; // Null-terminate the damn string!
+
+	// Parse the first value indicating the number of domains.
+	token = strtok(buffer, delimiter);
+
+	if(token != NULL)
+	{
+		grid->num_domains = atoi(token);
+	}
+	else
+	{
+		printf("[%d] Unable to read the number of domains value from file %s.\n", grid->universal_rank, filename);
+		MPI_Abort(MPI_COMM_WORLD, 911);
+	}
+
+	// Allocate the array for the rest of the values in the config file.
+	values = (int*)checked_malloc(NUM_CONFIG_ELEMENTS * grid->num_domains * sizeof(int), SRC_LOC);
+
+	// Parse the rest of the values in the config file.
+	int index = 0;
+	token = strtok(NULL, delimiter);
+	while(token != NULL)
+	{
+		values[index++] = atoi(token);
+		token = strtok(NULL, delimiter);
+	}
+
+	// Error checking.
+	if(index != (NUM_CONFIG_ELEMENTS * grid->num_domains))
+	{
+		printf("[%d] Insufficient number of values in the config file %s.\n", grid->universal_rank, filename);
+		MPI_Abort(MPI_COMM_WORLD, 911);
+	}
+
+	// TODO: Check the allocated memory is released when appropriate.
+
+	// Allocate first dimension array.
+	grid->domain_params = (int**) checked_malloc(grid->num_domains * sizeof(int*), SRC_LOC);
+
+	// Allocate second dimension arrays.
+	for (int i = 0; i < grid->num_domains; i++) {
+		grid->domain_params[i] = (int*) checked_malloc(NUM_CONFIG_ELEMENTS * sizeof(int), SRC_LOC);
+	}
+
+	// Copy the data into the domains array from the values array.
+	for (int i = 0; i < grid->num_domains; i++) {
+		for (int j = 0; j < NUM_CONFIG_ELEMENTS; j++) {
+			grid->domain_params[i][j] = values[(i * NUM_CONFIG_ELEMENTS) + j];
+		}
+	}
+
+	MPI_File_close(&input_file);
+
+	free(buffer);
+	free(values);
+}
+
+// Prepare the suffix which indicates our subdomain information, bifurcation or tube segment suffix, and the containing branch info.
+void set_file_naming_strings(grid_parms* grid)
+{
+	int subdomain, branch, err;
+
+	if(grid->my_domain.internal_info.domain_type == STRSEG)
+	{
+		subdomain = grid->my_domain.internal_info.domain_index;
+		err = sprintf(grid->suffix, "%d", subdomain);
+	}
+	else if(grid->my_domain.internal_info.domain_type == BIF)
+	{
+		subdomain = grid->my_domain.internal_info.domain_index;
+		branch = grid->branch_tag;
+		err = sprintf(grid->suffix, "%d_%d", subdomain, branch);
+	}
 }

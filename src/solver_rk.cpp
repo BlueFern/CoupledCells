@@ -63,7 +63,6 @@ void report_RK_suite_error(int cflag, double tnow, int rank)
 
 void computeDerivatives(double t, double y[], double f[])
 {
-	// compute_with_time_profiling(&t_stamp, grid, smc, ec, cpl_cef, t, y, f);
 	compute(grid, smc, ec, cpl_cef, t, y, f);
 }
 
@@ -102,7 +101,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	int totf, stpcst, stpsok;
 	double waste, hnext;
 
-	// Start HDF5 Output.
 	// Buffer for the JPLC values for the current branch.
 	double *jplc_buffer = 0;
 
@@ -117,13 +115,12 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 	// MPI_Barrier(MPI_COMM_WORLD);
 
-	// Write jplc values to HDF5.
+	// Write JPLC for validation.
 	if(grid.rank_branch == 0)
 	{
 		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
 	}
-	// End HDf5 Output.
 
 	// Reset JPLC to the uniform map.
 	// The input file will have to be read later when the time is right.
@@ -184,10 +181,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 
 		if((iteration % file_write_per_unit_time) == 0)
 		{
-			// HDF5 Start
-			// HDF5 Start
-			// HDF5 Start
-
 			// Collect state variable data on writers.
 
 			double ec_gather = MPI_Wtime();
@@ -213,10 +206,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 				write_SMC_data_HDF5(&grid, smc_buffer, write_count, path);
 			}
 			t_stamp.aggregate_smc_write += MPI_Wtime() - smc_write;
-
-			// HDF5 End
-			// HDF5 End
-			// HDF5 End
 
 			write_count++;
 		}
