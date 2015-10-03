@@ -146,15 +146,6 @@ void configure_subdomains_topology(grid_parms *grid)
 		free(subdomain_extents[i]);
 	}
 	free(subdomain_extents);
-
-	// Since we always have only one domain, the sub-universe communicator will always be identical to the universe communicator.
-
-	// Do the domain splitting to make subdomains.
-	//CHECK_MPI_ERROR(MPI_Comm_split(grid->universe, grid->my_domain_color, grid->my_domain_key, &grid->sub_universe));
-
-	// Reveal information of myself and size of grid.sub_universe.
-	//CHECK_MPI_ERROR(MPI_Comm_rank(grid->sub_universe, &grid->sub_universe_rank));
-	//CHECK_MPI_ERROR(MPI_Comm_size(grid->sub_universe, &grid->sub_universe_numtasks));
 }
 
 /**

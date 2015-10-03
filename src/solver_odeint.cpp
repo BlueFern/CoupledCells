@@ -91,27 +91,6 @@ struct observer
 
 			t_stamp.write_t1 = MPI_Wtime();
 
-#if 0
-			// Geometry to be written.
-			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info_, writer_buffer_, smc);
-			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info_, writer_buffer_, ec);
-
-			// State variables to be written as attributes.
-			gather_smcData(&grid, my_IO_domain_info_, writer_buffer_, smc, *write_count_);
-			gather_ecData(&grid, my_IO_domain_info_, writer_buffer_, ec, *write_count_);
-
-			if (grid.rank == 0)
-			{
-				// Write out the meshes with attributes.
-				initialise_time_wise_checkpoint(check_, grid, *write_count_, path_, my_IO_domain_info_);
-				write_smc_and_ec_data(check_, &grid, tnow, smc, ec, *write_count_, my_IO_domain_info_, writer_buffer_);
-				close_time_wise_checkpoints(check_);
-			}
-#endif
-			// HDF5 Start
-			// HDF5 Start
-			// HDF5 Start
-
 			// Collect state variable data on writers.
 			// TODO: Perhaps the ECs matrix is better stored as pointers in the grid?
 			gather_EC_data(&grid, ec_buffer_, ec);
@@ -171,36 +150,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 	double waste, hnext;
 	int err;
 
-#if 0
-	// Aggregation of data for the writer.
-	data_buffer* writer_buffer = (data_buffer*) checked_malloc(sizeof(data_buffer), SRC_LOC);
-	writer_buffer->buffer_length = (int*) checked_malloc(12 * sizeof(int), SRC_LOC);
-	writer_buffer->smc_stat_var_buffer_length = (int*) checked_malloc((grid.neq_smc) * sizeof(int), SRC_LOC);
-	writer_buffer->ec_stat_var_buffer_length = (int*) checked_malloc((grid.neq_ec) * sizeof(int), SRC_LOC);
-	writer_buffer->smc_cpl = (int*) checked_malloc((grid.num_coupling_species_smc) * sizeof(int), SRC_LOC);
-	writer_buffer->ec_cpl = (int*) checked_malloc((grid.num_coupling_species_ec) * sizeof(int), SRC_LOC);
-
-	// Dump MPI task mesh representation into vtk file to manifest task map.
-	gather_tasks_mesh_point_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc, ec);
-	if (grid.rank == 0)
-	{
-		// Validation, debugging.
-		write_process_mesh(check, &grid, my_IO_domain_info, writer_buffer, path);
-	}
-
-	// Dump JPLC map on bifurcation into a vtk file.
-	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
-	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
-
-	if(grid.rank == 0)
-	{
-		// Initial concentration of JPLC in the EC cells.
-		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
-	}
-#endif
-
-	// Start HDF5 Output Prototyping.
-
 	// Buffer for jplc values for the whole mesh.
 	double *jplc_buffer = 0;
 
@@ -221,8 +170,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
 	}
-
-	// End HDf5 Output Prototyping.
 
 	// Reset JPLC to the uniform map.
 	// The input file will have to be read later when the time is right.
@@ -278,10 +225,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		free_SMC_data_buffer(smc_buffer, 0);
 	}
 
-	//t_stamp.aggregate_compute = t_stamp.aggregate_compute / iteration;
-	//t_stamp.aggregate_comm = t_stamp.aggregate_comm / iteration;
-	//t_stamp.aggregate_write = t_stamp.aggregate_write / write_count;
-
 	// Prepare time profiling data.
 	double tmp_array[write_count];
 
@@ -289,13 +232,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 	{
 		tmp_array[i] = palce_holder_for_timing_max_min[2][i];
 	}
-	//maximum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.max_compute, &t_stamp.max_compute_index);
-	//maximum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.max_comm, &t_stamp.max_comm_index);
-	//maximum(tmp_array, write_count, &t_stamp.max_write, &t_stamp.max_write_index);
-
-	//minimum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.min_compute, &t_stamp.min_compute_index);
-	//minimum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.min_comm, &t_stamp.min_comm_index);
-	//minimum(tmp_array, write_count, &t_stamp.min_write, &t_stamp.min_write_index);
 
 	// Write time profiling data.
 	// Time profiling data gets lost in the event of a crash.
@@ -366,35 +302,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 	double waste, hnext;
 	int err;
 
-	// Aggregation of data for the writer.
-	data_buffer* writer_buffer = (data_buffer*) checked_malloc(sizeof(data_buffer), SRC_LOC);
-	writer_buffer->buffer_length = (int*) checked_malloc(12 * sizeof(int), SRC_LOC);
-	writer_buffer->smc_stat_var_buffer_length = (int*) checked_malloc((grid.neq_smc) * sizeof(int), SRC_LOC);
-	writer_buffer->ec_stat_var_buffer_length = (int*) checked_malloc((grid.neq_ec) * sizeof(int), SRC_LOC);
-	writer_buffer->smc_cpl = (int*) checked_malloc((grid.num_coupling_species_smc) * sizeof(int), SRC_LOC);
-	writer_buffer->ec_cpl = (int*) checked_malloc((grid.num_coupling_species_ec) * sizeof(int), SRC_LOC);
-
-	// Dump MPI task mesh representation into vtk file to manifest task map.
-	gather_tasks_mesh_point_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc, ec);
-	if (grid.rank == 0)
-	{
-		// Validation, debugging.
-		write_process_mesh(check, &grid, my_IO_domain_info, writer_buffer, path);
-	}
-
-	// Dump JPLC map on bifurcation into a vtk file.
-	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
-	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
-
-	if(grid.rank == 0)
-	{
-		// Initial concentration of JPLC in the EC cells.
-		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
-	}
-
-	// Start HDF5 Output Prototyping.
-	// printf("* %d\t%d\t%d\t%d\t%d *\n", grid.universal_rank, grid.sub_universe_numtasks, grid.sub_universe_rank, grid.rank, grid.tasks);
-
 	// Buffer for jplc values for the whole mesh.
 	double *jplc_buffer = 0;
 
@@ -415,14 +322,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
 	}
-
-	//MPI_Barrier(MPI_COMM_WORLD);
-	//printf("[%d] *** Pulling the plug in %s:%s\n", grid.universal_rank, __FILE__, __FUNCTION__);
-	//MPI_Abort(MPI_COMM_WORLD, 911);
-
-	// End HDf5 Output Prototyping.
-
-	// printf("%s, grid.cart_comm: %p\n", __FUNCTION__, (void *)grid.cart_comm);
 
 	// Reset JPLC to the uniform map.
 	// The input file will have to be read later when the time is right.
@@ -489,26 +388,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		{
 			t_stamp.write_t1 = MPI_Wtime();
 
-			// Geometry to be written.
-			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc);
-			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
-
-			// State variables to be written as attributes.
-			gather_smcData(&grid, my_IO_domain_info, writer_buffer, smc, write_count);
-			gather_ecData(&grid, my_IO_domain_info, writer_buffer, ec, write_count);
-
-			if (grid.rank == 0)
-			{
-				// Write out the meshes with attributes.
-				initialise_time_wise_checkpoint(check, grid, write_count, path, my_IO_domain_info);
-				write_smc_and_ec_data(check, &grid, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
-				close_time_wise_checkpoints(check);
-			}
-
-			// HDF5 Start
-			// HDF5 Start
-			// HDF5 Start
-
 			// Collect state variable data on writers.
 			// TODO: Perhaps the ECs matrix is better stored as pointers in the grid?
 			gather_EC_data(&grid, ec_buffer, ec);
@@ -521,10 +400,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 				write_EC_data_HDF5(&grid, ec_buffer, write_count, path);
 				write_SMC_data_HDF5(&grid, smc_buffer, write_count, path);
 			}
-
-			// HDF5 End
-			// HDF5 End
-			// HDF5 End
 
 			t_stamp.write_t2 = MPI_Wtime();
 			t_stamp.diff_write = t_stamp.write_t2 - t_stamp.write_t1;
@@ -554,10 +429,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		free_SMC_data_buffer(smc_buffer, 0);
 	}
 
-	//t_stamp.aggregate_compute = t_stamp.aggregate_compute / iteration;
-	//t_stamp.aggregate_comm = t_stamp.aggregate_comm / iteration;
-	//t_stamp.aggregate_write = t_stamp.aggregate_write / write_count;
-
 	// Prepare time profiling data.
 	double tmp_array[write_count];
 
@@ -565,13 +436,6 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 	{
 		tmp_array[i] = palce_holder_for_timing_max_min[2][i];
 	}
-	maximum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.max_compute, &t_stamp.max_compute_index);
-	maximum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.max_comm, &t_stamp.max_comm_index);
-	maximum(tmp_array, write_count, &t_stamp.max_write, &t_stamp.max_write_index);
-
-	minimum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.min_compute, &t_stamp.min_compute_index);
-	minimum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.min_comm, &t_stamp.min_comm_index);
-	minimum(tmp_array, write_count, &t_stamp.min_write, &t_stamp.min_write_index);
 
 	// Write time profiling data.
 	// Time profiling data gets lost in the event of a crash.

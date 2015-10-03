@@ -11,7 +11,7 @@ void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my
 {
 	MPI_Status status;
 	MPI_Offset displacement = 0;
-	char* buffer = (char*) checked_malloc(2 * 1024 * sizeof(char), SRC_LOC);
+	char *buffer = (char*)checked_malloc(2 * 1024 * sizeof(char), SRC_LOC);
 	int root = 0;
 	char filename[50];
 	int length =
@@ -80,6 +80,12 @@ void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my
 		free(grid.logfile_write_buffer);
 	}
 
+	if (grid.rank_branch == 0)
+	{
+		free(grid.logfile_write_buffer);
+	}
+
+	free(buffer);
 	free(recv_count);
 	free(disp);
 }

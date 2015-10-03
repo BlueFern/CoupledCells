@@ -110,19 +110,12 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 
 	/// Communication block
 	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[UP][0], grid.num_elements_recv_up, MPI_DOUBLE, source[UP], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + UP]));
-
 	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[DOWN][0], grid.num_elements_recv_down, MPI_DOUBLE, source[DOWN], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + DOWN]));
-
 	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[LEFT][0], grid.num_elements_recv_left, MPI_DOUBLE, source[LEFT], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + LEFT]));
-
 	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[RIGHT][0], grid.num_elements_recv_right, MPI_DOUBLE, source[RIGHT], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + RIGHT]));
-
 	CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, dest[UP], 0, grid.cart_comm, &reqs[UP]));
-
 	CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, dest[DOWN], 0, grid.cart_comm, &reqs[DOWN]));
-
 	CHECK_MPI_ERROR(MPI_Isend(sendbuf[LEFT], grid.num_elements_send_left, MPI_DOUBLE, dest[LEFT], 0, grid.cart_comm, &reqs[LEFT]));
-
 	CHECK_MPI_ERROR(MPI_Isend(sendbuf[RIGHT], grid.num_elements_send_right, MPI_DOUBLE, dest[RIGHT], 0, grid.cart_comm, &reqs[RIGHT]));
 
 	t_stamp.async_comm_calls_t2 = MPI_Wtime();
@@ -486,7 +479,12 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 		}
 
 		FILE *fr = fopen(jplc_file_name, "r+");
-		printf("Reading ATP from %s, FILE is %s...\n", jplc_file_name, fr == NULL ? "NULL" : "OK");
+
+		if(fr == NULL)
+		{
+			fprintf(stderr, "[%d] Unable to open file %s.\n", grid->universal_rank, jplc_file_name);
+			MPI_Abort(MPI_COMM_WORLD, 911);
+		}
 
 		int count_in = 0;
 		double jplc_val = 0;

@@ -43,77 +43,62 @@ void ark_check_flag(int cflag, char *funcname, int rank, double tnow)
 		break;
 
 	case ARK_MEM_NULL:
-		fprintf(stdout, "[%d] in %s. arkode_mem is NULL at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. arkode_mem is NULL at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	case ARK_MEM_FAIL:
-		fprintf(stdout, "[%d] in %s. Memory allocation failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Memory allocation failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	case ARK_NO_MALLOC:
-		fprintf(stdout, "[%d] in %s. arkode_mem was not allocated at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. arkode_mem was not allocated at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	case ARK_ILL_INPUT:
-		fprintf(stdout, "[%d] in %s. Illegal input/s at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Illegal input/s at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	case ARK_TOO_MUCH_WORK:
-		fprintf(stdout, "[%d] in %s. Too much work at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Too much work at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		break;
 
 	case ARK_TOO_MUCH_ACC:
-		fprintf(stdout, "[%d] in %s. Required accuracy too high at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Required accuracy too high at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		break;
 
 	case ARK_ERR_FAILURE:
-		fprintf(stdout, "[%d] in %s. Error test failures at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Error test failures at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		break;
 
 	case ARK_CONV_FAILURE:
-		fprintf(stdout, "[%d] in %s. Convergence test failures at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Convergence test failures at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		break;
 
 	case ARK_LINIT_FAIL:
-		fprintf(stdout, "[%d] in %s. Linear solver’s initialization function failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Linear solver’s initialization function failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	case ARK_LSETUP_FAIL:
-		fprintf(stdout, "[%d] in %s. Linear solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Linear solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	case ARK_LSOLVE_FAIL:
-		fprintf(stdout, "[%d] in %s. Linear solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Linear solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	case ARK_MASSINIT_FAIL:
-		fprintf(stdout, "[%d] in %s. Mass matrix solver’s initialization function failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Mass matrix solver’s initialization function failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	case ARK_MASSSETUP_FAIL:
-		fprintf(stdout, "[%d] in %s. Mass matrix solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Mass matrix solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	case ARK_MASSSOLVE_FAIL:
-		fprintf(stdout, "[%d] in %s. Mass matrix solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		fprintf(stderr, "[%d] in %s. Mass matrix solver’s setup routine failed at tnow = %f: %d\n", rank, funcname, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 
 	default:
-		fprintf(stdout, "[%d] Unexpected ARK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
 		fprintf(stderr, "[%d] Unexpected ARK Solver Error at tnow = %f: %d\n", rank, tnow, cflag);
 		MPI_Abort(MPI_COMM_WORLD, 911);
 	}
@@ -160,36 +145,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	double waste, hnext;
 	int err;
 
-#if 0
-	// Aggregation of data for the writer.
-	data_buffer* writer_buffer = (data_buffer*) checked_malloc(sizeof(data_buffer), SRC_LOC);
-	writer_buffer->buffer_length = (int*) checked_malloc(12 * sizeof(int), SRC_LOC);
-	writer_buffer->smc_stat_var_buffer_length = (int*) checked_malloc((grid.neq_smc) * sizeof(int), SRC_LOC);
-	writer_buffer->ec_stat_var_buffer_length = (int*) checked_malloc((grid.neq_ec) * sizeof(int), SRC_LOC);
-	writer_buffer->smc_cpl = (int*) checked_malloc((grid.num_coupling_species_smc) * sizeof(int), SRC_LOC);
-	writer_buffer->ec_cpl = (int*) checked_malloc((grid.num_coupling_species_ec) * sizeof(int), SRC_LOC);
-
-	// Dump MPI task mesh representation into vtk file to manifest task map.
-	gather_tasks_mesh_point_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc, ec);
-	if (grid.rank == 0)
-	{
-		// Validation, debugging.
-		write_process_mesh(check, &grid, my_IO_domain_info, writer_buffer, path);
-	}
-
-	// Dump JPLC map on bifurcation into a vtk file.
-	gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
-	gather_JPLC_map(&grid, my_IO_domain_info, writer_buffer, ec);
-
-	if(grid.rank == 0)
-	{
-		// Initial concentration of JPLC in the EC cells.
-		write_JPLC_map(check, &grid, my_IO_domain_info, writer_buffer, ec, path);
-	}
-#endif
-
-	// Start HDF5 Output Prototyping.
-
 	// Buffer for jplc values for the whole mesh.
 	double *jplc_buffer = 0;
 
@@ -210,7 +165,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
 	}
-	// End HDf5 Output Prototyping.
 
 	// Reset JPLC to the uniform map.
 	// The input file will have to be read later when the time is right.
@@ -284,28 +238,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 
 			t_stamp.write_t1 = MPI_Wtime();
 
-#if 0
-			// Geometry to be written.
-			gather_smc_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, smc);
-			gather_ec_mesh_data_on_writers(&grid, my_IO_domain_info, writer_buffer, ec);
-
-			// State variables to be written as attributes.
-			gather_smcData(&grid, my_IO_domain_info, writer_buffer, smc, write_count);
-			gather_ecData(&grid, my_IO_domain_info, writer_buffer, ec, write_count);
-
-			if (grid.rank == 0)
-			{
-				// Write out the meshes with attributes.
-				initialise_time_wise_checkpoint(check, grid, write_count, path, my_IO_domain_info);
-				write_smc_and_ec_data(check, &grid, tnow, smc, ec, write_count, my_IO_domain_info, writer_buffer);
-				close_time_wise_checkpoints(check);
-			}
-#endif
-
-			// HDF5 Start
-			// HDF5 Start
-			// HDF5 Start
-
 			// Collect state variable data on writers.
 			// TODO: Perhaps the ECs matrix is better stored as pointers in the grid?
 			gather_EC_data(&grid, ec_buffer, ec);
@@ -349,10 +281,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		free_SMC_data_buffer(smc_buffer, 0);
 	}
 
-	//t_stamp.aggregate_compute = t_stamp.aggregate_compute / iteration;
-	//t_stamp.aggregate_comm = t_stamp.aggregate_comm / iteration;
-	//t_stamp.aggregate_write = t_stamp.aggregate_write / write_count;
-
 	// Prepare time profiling data.
 	double tmp_array[write_count];
 
@@ -360,13 +288,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	{
 		tmp_array[i] = palce_holder_for_timing_max_min[2][i];
 	}
-	//maximum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.max_compute, &t_stamp.max_compute_index);
-	//maximum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.max_comm, &t_stamp.max_comm_index);
-	//maximum(tmp_array, write_count, &t_stamp.max_write, &t_stamp.max_write_index);
-
-	//minimum(palce_holder_for_timing_max_min[0], iteration, &t_stamp.min_compute, &t_stamp.min_compute_index);
-	//minimum(palce_holder_for_timing_max_min[1], iteration, &t_stamp.min_comm, &t_stamp.min_comm_index);
-	//minimum(tmp_array, write_count, &t_stamp.min_write, &t_stamp.min_write_index);
 
 	// Write time profiling data.
 	// Time profiling data gets lost in the event of a crash.

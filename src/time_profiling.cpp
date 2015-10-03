@@ -25,12 +25,12 @@ void dump_time_profiling(grid_parms grid, time_stamps* t_stamp)
 	dump_time_field((char *)"aggregated_smc_write", grid, t_stamp->aggregate_smc_write);
 }
 
-void dump_time_field(char* file_prefix, grid_parms grid, double field) //, IO_domain_info* my_IO_domain_info)
+void dump_time_field(char* file_prefix, grid_parms grid, double field)
 {
 	MPI_Status status;
 	MPI_Offset displacement = 0;
 	MPI_File fw;
-	char* buffer = (char*) checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), SRC_LOC);
+	char* buffer = (char*)checked_malloc(NUM_DBL_TO_CHAR_BYTES * sizeof(char), SRC_LOC);
 	char* write_buffer;
 	int root = 0;
 	char filename[50];
@@ -66,6 +66,12 @@ void dump_time_field(char* file_prefix, grid_parms grid, double field) //, IO_do
 		MPI_File_close(&fw);
 		free(write_buffer);
 	}
+
+	if (grid.rank_branch == 0)
+	{
+		free(write_buffer);
+	}
+
 	free(recv_count);
 	free(buffer);
 	free(disp);

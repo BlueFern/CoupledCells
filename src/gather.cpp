@@ -4,11 +4,9 @@
 #include "koenigsberger_model.h"
 #include "gather.h"
 
-// #TODO: Use checked_malloc instead of malloc.
-
 ec_data_buffer *allocate_EC_data_buffer(int tasks_per_branch, int elements_per_task, int deep)
 {
-	ec_data_buffer *ec_buffer = (ec_data_buffer *)malloc(sizeof(ec_data_buffer));
+	ec_data_buffer *ec_buffer = (ec_data_buffer *)checked_malloc(sizeof(ec_data_buffer), SRC_LOC);
 
 	ec_buffer->num_chunks = tasks_per_branch;
 	ec_buffer->chunk_size = elements_per_task;
@@ -19,13 +17,13 @@ ec_data_buffer *allocate_EC_data_buffer(int tasks_per_branch, int elements_per_t
 
 		// This is not the neatest way of allocating (and, consequently, releasing memory).
 		// Perhaps we can use a double ** array here, where the elements are accessed with enumerated constants.
-		ec_buffer->_ec_Ca = (double *)malloc(sizeof(double) * buffer_size);
-		ec_buffer->_ec_SR = (double *)malloc(sizeof(double) * buffer_size);
-		ec_buffer->_ec_Vm = (double *)malloc(sizeof(double) * buffer_size);
-		ec_buffer->_ec_IP3 = (double *)malloc(sizeof(double) * buffer_size);
-		ec_buffer->_ec_cpl_Ca = (double *)malloc(sizeof(double) * buffer_size);
-		ec_buffer->_ec_cpl_Vm = (double *)malloc(sizeof(double) * buffer_size);
-		ec_buffer->_ec_cpl_IP3 = (double *)malloc(sizeof(double) * buffer_size);
+		ec_buffer->_ec_Ca = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		ec_buffer->_ec_SR = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		ec_buffer->_ec_Vm = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		ec_buffer->_ec_IP3 = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		ec_buffer->_ec_cpl_Ca = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		ec_buffer->_ec_cpl_Vm = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		ec_buffer->_ec_cpl_IP3 = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
 	}
 
 	return ec_buffer;
@@ -155,7 +153,7 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 /* Allocate memory for the smc_data_buffer. */
 smc_data_buffer *allocate_SMC_data_buffer(int tasks_per_branch, int elements_per_task, int deep)
 {
-	smc_data_buffer *smc_buffer = (smc_data_buffer *)malloc(sizeof(smc_data_buffer));
+	smc_data_buffer *smc_buffer = (smc_data_buffer *)checked_malloc(sizeof(smc_data_buffer), SRC_LOC);
 
 	smc_buffer->num_chunks = tasks_per_branch;
 	smc_buffer->chunk_size = elements_per_task;
@@ -166,14 +164,14 @@ smc_data_buffer *allocate_SMC_data_buffer(int tasks_per_branch, int elements_per
 
 		// This is not the neatest way of allocating (and, consequently, releasing memory).
 		// Perhaps we can use a double ** array here, where the elements are accessed with enumerated constants.
-		smc_buffer->_smc_Ca = (double *)malloc(sizeof(double) * buffer_size);
-		smc_buffer->_smc_SR = (double *)malloc(sizeof(double) * buffer_size);
-		smc_buffer->_smc_W = (double *)malloc(sizeof(double) * buffer_size);
-		smc_buffer->_smc_Vm = (double *)malloc(sizeof(double) * buffer_size);
-		smc_buffer->_smc_IP3 = (double *)malloc(sizeof(double) * buffer_size);
-		smc_buffer->_smc_cpl_Ca = (double *)malloc(sizeof(double) * buffer_size);
-		smc_buffer->_smc_cpl_Vm = (double *)malloc(sizeof(double) * buffer_size);
-		smc_buffer->_smc_cpl_IP3 = (double *)malloc(sizeof(double) * buffer_size);
+		smc_buffer->_smc_Ca = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		smc_buffer->_smc_SR = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		smc_buffer->_smc_W = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		smc_buffer->_smc_Vm = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		smc_buffer->_smc_IP3 = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		smc_buffer->_smc_cpl_Ca = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		smc_buffer->_smc_cpl_Vm = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
+		smc_buffer->_smc_cpl_IP3 = (double *)checked_malloc(sizeof(double) * buffer_size, SRC_LOC);
 	}
 
 	return smc_buffer;

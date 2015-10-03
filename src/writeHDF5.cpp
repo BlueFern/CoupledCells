@@ -20,7 +20,7 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 	char filename[256];
 	int err = sprintf(filename, "%s/jplc_%d.h5", path, grid->branch_tag);
 
-	// printf("Writing JPLC file: %s\n", filename);
+	printf("[%d] Writing JPLC file: %s\n", grid->universal_rank, filename);
 
 	hid_t file_id;
 	hid_t space_id;
@@ -108,7 +108,7 @@ void write_EC_data_HDF5(grid_parms* grid, ec_data_buffer *ec_buffer, int write_c
 	char filename[256];
 	int err = sprintf(filename, "%s/ec_data_t_%d_b_%d.h5", path, write_count, grid->branch_tag);
 
-	// printf("Writing EC data file: %s\n", filename);
+	printf("[%d] Writing EC file: %s\n", grid->universal_rank, filename);
 
 	hid_t file_id;
 
@@ -221,7 +221,7 @@ void write_SMC_data_HDF5(grid_parms* grid, smc_data_buffer *smc_buffer, int writ
 	char filename[256];
 	int err = sprintf(filename, "%s/smc_data_t_%d_b_%d.h5", path, write_count, grid->branch_tag);
 
-	// printf("Writing SMC data file: %s\n", filename);
+	printf("[%d] Writing SMC file: %s\n", grid->universal_rank, filename);
 
 	hid_t file_id;
 

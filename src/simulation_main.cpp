@@ -1,10 +1,11 @@
+
 #include <stdlib.h>
 #include <cstring>
 
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
-void read_config_file(int, char*, grid_parms*);
+void read_config_file(grid_parms* grid);
 void set_file_naming_strings(grid_parms* grid);
 
 conductance cpl_cef;
@@ -69,8 +70,6 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	// File written every 1 second.
-	int file_write_per_unit_time = (int) (data_writing_frequency * int(1 / interval));
 	grid.NO_path = 0;
 	grid.cGMP_path = 0;
 	grid.smc_model = KNBGR;
@@ -93,9 +92,14 @@ int main(int argc, char* argv[])
 	grid.neq_smc = 5;
 	grid.neq_ec = 4;
 
-	/// - Read domain configuration from input config file (domain_info.txt).
-	/// Why does this function need three parameters? They all come from the same struct.
-	read_config_file(grid.universal_rank, grid.config_file, &grid);
+	// File written every 1 second.
+	int file_write_per_unit_time = (int) (data_writing_frequency * int(1 / interval));
+
+	/// - Read domain configuration from input config file.
+	read_config_file(&grid);
+
+	/// Set prefixes for output files.
+	set_file_naming_strings(&grid);
 
 	/// - Calculate the number of cells per task.
 	set_task_parameters(&grid);
@@ -112,8 +116,6 @@ int main(int argc, char* argv[])
 		grid = make_bifucation_cart_grids(grid);
 	}
 
-	/// Set prefixes for output files.
-	set_file_naming_strings(&grid);
 
 	/// Now allocate memory for the structures representing the cells and the various members of those structures.
 	/// Each of the two cell grids have two additional rows and two additional columns as ghost cells.
@@ -257,9 +259,6 @@ int main(int argc, char* argv[])
 	/// data to receive from the neighbour in RIGHT direction
 	recvbuf[RIGHT] = (double*) checked_malloc(grid.num_elements_recv_right * sizeof(double), SRC_LOC);
 
-	/// Setup output streams to write data in files. Each node opens an independent set of files and write various state variables into it.
-	///	checkpoint_handle *check = initialise_checkpoint(myRank);
-
 	/// Setting up the solver.
 	double tnow = 0.0;
 
@@ -314,8 +313,61 @@ int main(int argc, char* argv[])
 #error ODE solver not selected. Use -DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT during compilation
 #endif
 
+	// Free grid->domain_params.
+	for(int domain_num = 0; domain_num < grid.num_domains; domain_num++)
+	{
+		free(grid.domain_params[domain_num]);
+	}
+	free(grid.domain_params);
+
+
+	// Free SMCs.
+	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
+	{
+		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells); j++)
+		{
+			free(smc[i][j].vars);
+			free(smc[i][j].fluxes);
+			free(smc[i][j].homo_fluxes);
+			free(smc[i][j].hetero_fluxes);
+		}
+		free(smc[i]);
+	}
+	free(smc);
+
+	// Free ECs.
+	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++)
+	{
+		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++)
+		{
+			free(ec[i][j].vars);
+			free(ec[i][j].fluxes);
+			free(ec[i][j].homo_fluxes);
+			free(ec[i][j].hetero_fluxes);
+		}
+		free(ec[i]);
+	}
+	free(ec);
+
+	free(sendbuf[UP]);
+	free(sendbuf[DOWN]);
+	free(sendbuf[LEFT]);
+	free(sendbuf[RIGHT]);
+	free(sendbuf);
+
+	free(recvbuf[UP]);
+	free(recvbuf[DOWN]);
+	free(recvbuf[LEFT]);
+	free(recvbuf[RIGHT]);
+	free(recvbuf);
+
+	free(thres);
+	free(y);
+	free(yp);
+
 	MPI_Finalize();
-	return 0;
+
+	return EXIT_SUCCESS;
 }
 
 /// Read data from the config.txt file to retrieve the information related to how the domain is set up.
@@ -345,8 +397,9 @@ int main(int argc, char* argv[])
 /// left child is positive or zero, and right child is negative. ???
 /// If subdomain type of current key_val is a bifurcation, then both right and left child subdomains are non-negative. ???
 
-void read_config_file(int rank, char* filename, grid_parms* grid)
+void read_config_file(grid_parms* grid)
 {
+#if 0
 	int err;
 	MPI_File input_file;
 	MPI_Offset file_size;
@@ -418,6 +471,66 @@ void read_config_file(int rank, char* filename, grid_parms* grid)
 
 	free(buffer);
 	free(values);
+#endif
+
+#if 1
+	char line[1024];
+	char *token;
+	FILE *input_file;
+	const char *delims = ";,\n";
+
+	// Open config file for reading.
+	input_file = fopen(grid->config_file, "r");
+	if(input_file == NULL)
+	{
+		fprintf(stderr, "[%d] Unable to open file %s.\n", grid->universal_rank, grid->config_file);
+		MPI_Abort(MPI_COMM_WORLD, 911);
+	}
+
+	// Read the number of domains value from the first line.
+	if(fgets(line, 1024, input_file) != NULL)
+	{
+		sscanf(line, "%d", &grid->num_domains);
+	}
+	else
+	{
+		fprintf(stderr, "[%d] Unable to read the number of domains value from file %s.\n", grid->universal_rank, grid->config_file);
+		MPI_Abort(MPI_COMM_WORLD, 911);
+	}
+
+	// Allocate first dimension array.
+	grid->domain_params = (int**)checked_malloc(grid->num_domains * sizeof(int*), SRC_LOC);
+
+	// Read domain parameters line-by-line.
+	for(int domain_num = 0; domain_num < grid->num_domains; domain_num++)
+	{
+
+		if(fgets(line, 1024, input_file) != NULL)
+		{
+			// Allocate second dimension array.
+			grid->domain_params[domain_num] = (int*) checked_malloc(NUM_CONFIG_ELEMENTS * sizeof(int), SRC_LOC);
+
+			// Get first token.
+			token = strtok(line, delims);
+
+			for(int elem_num = 0; elem_num < NUM_CONFIG_ELEMENTS; elem_num++)
+			{
+				// Parse the token and remember the value.
+				grid->domain_params[domain_num][elem_num] = atoi(token);
+
+				// Get next token.
+				token = strtok(NULL, delims);
+			}
+		}
+		else
+		{
+			fprintf(stderr, "[%d] Unable to read domains parameters for domain num %d from file %s.\n", grid->universal_rank, domain_num, grid->config_file);
+			MPI_Abort(MPI_COMM_WORLD, 911);
+		}
+	}
+
+	fclose(input_file);
+#endif
 }
 
 // Prepare the suffix which indicates our subdomain information, bifurcation or tube segment suffix, and the containing branch info.
