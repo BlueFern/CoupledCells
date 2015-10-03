@@ -270,7 +270,7 @@ typedef struct
 } time_stamps;
 
 
-int couplingParms(int CASE, conductance* cpl_cef);
+void set_coupling_parms(int CASE, conductance* cpl_cef);
 int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
 grid_parms communicate_num_recv_elements_to_nbrs(grid_parms);

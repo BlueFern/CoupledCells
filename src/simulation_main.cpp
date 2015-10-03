@@ -70,14 +70,14 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	grid.NO_path = 0;
-	grid.cGMP_path = 0;
+	//grid.NO_path = 0;
+	//grid.cGMP_path = 0;
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
-	grid.min_jplc = 0.20;
-	grid.max_jplc = 2.5;
-	grid.gradient = 0.288e3;
+	grid.min_jplc = 0.20; // Can be thrown away.
+	grid.max_jplc = 2.5; // Can be thrown away.
+	grid.gradient = 0.288e3; // Can be thrown away.
 	grid.stimulus_onset_time = 10.00;
 
 	grid.num_smc_fundblk_circumferentially = 1;
@@ -145,9 +145,8 @@ int main(int argc, char* argv[])
 		ec[i] = (EC_cell*) checked_malloc((grid.num_ec_axially + grid.num_ghost_cells) * sizeof(EC_cell), SRC_LOC);
 	}
 
-	/// Memory allocation for state vector, the single cell evaluation placeholders (the RHS of the ODEs for each cell) and coupling fluxes is implemented in this section.
+	/// Memory allocation for state vector, the single cell evaluation placeholders (the RHS of the ODEs for each cell) and coupling fluxes.
 	/// In ghost cells, only the state vector array for each type of cells exists including all other cells.
-	/// The memory is allocated for all the cells except the ghost cells, hence the ranges 1 to grid.num_ec/smc_circumferentially (inclusive).
 
 	/// SMC domain.
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
@@ -174,16 +173,15 @@ int main(int argc, char* argv[])
 	}
 
 	/// Allocating memory for coupling data to be sent and received by MPI communication routines.
-
-	/// sendbuf and recvbuf are 2D arrays having up, down, left and right directions as their first dimension.
+	/// sendbuf and recvbuf are 2D arrays with up, down, left and right directions as their first dimension.
 
 	sendbuf = (double**) checked_malloc(4 * sizeof(double*), SRC_LOC);
 	recvbuf = (double**) checked_malloc(4 * sizeof(double*), SRC_LOC);
 
 	/// Each processor now allocates the memory for send and recv buffers those will hold the coupling information.
-	/// Since sendbuf must contain the information of number of SMCs and ECs being sent in the directions,
-	/// the first two elements contain the total count of SMCs located on the rank in the relevant dimension (circumferential or axial) and the count of SMCs for which
-	/// information is being sent, respectively.
+	/// Since sendbuf must contain the information of number of SMCs and ECs being sent in all directions,
+	/// the first two elements contain the total count of SMCs located on the rank in the relevant dimension (circumferential or axial)
+	/// and the count of SMCs for which information is being sent, respectively.
 	/// The next two elements contain the same information for ECs.
 
 	/// Variables to calculate the length of the prospective buffer based on number of cell in either orientations (circumferential or axial).
@@ -205,7 +203,7 @@ int main(int argc, char* argv[])
 	sendbuf[UP][0] = 1.0; //Start of the 1st segment of SMC array in  in UP direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[UP][1] = (double) extent_s; //End of the 1st segment of SMC array in UP direction (circumferential direction) to be sent to neighbouring processor
 	sendbuf[UP][2] = 1.0; //Start of the 1st segment of EC array in UP direction (circumferential direction) to be sent to neighbouring processor
-	sendbuf[UP][3] = (double) (extent_e); ///End of the 1st segment of EC array in UP direction (circumferential direction) to be sent to neighbouring processor
+	sendbuf[UP][3] = (double) extent_e; ///End of the 1st segment of EC array in UP direction (circumferential direction) to be sent to neighbouring processor
 
 	/// Data to send to the neighbour in  direction.
 	/// Recording the number of elements in Send buffer in DOWN direction for use in update routine as count of elements.
@@ -290,7 +288,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Initialising the coupling coefficients to be used in the ODEs.
-	int state = couplingParms(CASE, &cpl_cef);
+	set_coupling_parms(CASE, &cpl_cef);
 
 	// Debug output.
 	dump_rank_info(cpl_cef, grid); //, my_IO_domain_info);
@@ -348,18 +346,17 @@ int main(int argc, char* argv[])
 	}
 	free(ec);
 
-	free(sendbuf[UP]);
-	free(sendbuf[DOWN]);
-	free(sendbuf[LEFT]);
-	free(sendbuf[RIGHT]);
+	// Free send/receive buffers.
+	for (int i = 0; i < 4; i++)
+	{
+		free(sendbuf[i]);
+		free(recvbuf[i]);
+	}
 	free(sendbuf);
-
-	free(recvbuf[UP]);
-	free(recvbuf[DOWN]);
-	free(recvbuf[LEFT]);
-	free(recvbuf[RIGHT]);
 	free(recvbuf);
 
+	// TODO: Do all solvers have the same arrays or do we need to have some ifdefs here?
+	// Free the solver-related arrays.
 	free(thres);
 	free(y);
 	free(yp);
@@ -398,81 +395,6 @@ int main(int argc, char* argv[])
 
 void read_config_file(grid_parms* grid)
 {
-#if 0
-	int err;
-	MPI_File input_file;
-	MPI_Offset file_size;
-	MPI_Status status;
-	const char *delimiter = ";,\n";
-	char *buffer;
-	char *token;
-	int *values;
-
-	CHECK_MPI_ERROR(MPI_File_open(grid->universe, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &input_file));
-
-	err = MPI_File_get_size(input_file, &file_size);
-
-	buffer = (char*)checked_malloc((int)file_size * sizeof(char) + 1, SRC_LOC); // Extra char is for the null character.
-
-	err = MPI_File_read_all(input_file, buffer, file_size, MPI_CHAR, &status);
-	buffer[file_size] = '\0'; // Null-terminate the damn string!
-
-	// Parse the first value indicating the number of domains.
-	token = strtok(buffer, delimiter);
-
-	if(token != NULL)
-	{
-		grid->num_domains = atoi(token);
-	}
-	else
-	{
-		printf("[%d] Unable to read the number of domains value from file %s.\n", grid->universal_rank, filename);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-	}
-
-	// Allocate the array for the rest of the values in the config file.
-	values = (int*)checked_malloc(NUM_CONFIG_ELEMENTS * grid->num_domains * sizeof(int), SRC_LOC);
-
-	// Parse the rest of the values in the config file.
-	int index = 0;
-	token = strtok(NULL, delimiter);
-	while(token != NULL)
-	{
-		values[index++] = atoi(token);
-		token = strtok(NULL, delimiter);
-	}
-
-	// Error checking.
-	if(index != (NUM_CONFIG_ELEMENTS * grid->num_domains))
-	{
-		printf("[%d] Insufficient number of values in the config file %s.\n", grid->universal_rank, filename);
-		MPI_Abort(MPI_COMM_WORLD, 911);
-	}
-
-	// TODO: Check the allocated memory is released when appropriate.
-
-	// Allocate first dimension array.
-	grid->domain_params = (int**) checked_malloc(grid->num_domains * sizeof(int*), SRC_LOC);
-
-	// Allocate second dimension arrays.
-	for (int i = 0; i < grid->num_domains; i++) {
-		grid->domain_params[i] = (int*) checked_malloc(NUM_CONFIG_ELEMENTS * sizeof(int), SRC_LOC);
-	}
-
-	// Copy the data into the domains array from the values array.
-	for (int i = 0; i < grid->num_domains; i++) {
-		for (int j = 0; j < NUM_CONFIG_ELEMENTS; j++) {
-			grid->domain_params[i][j] = values[(i * NUM_CONFIG_ELEMENTS) + j];
-		}
-	}
-
-	MPI_File_close(&input_file);
-
-	free(buffer);
-	free(values);
-#endif
-
-#if 1
 	char line[1024];
 	char *token;
 	FILE *input_file;
@@ -529,7 +451,6 @@ void read_config_file(grid_parms* grid)
 	}
 
 	fclose(input_file);
-#endif
 }
 
 // Prepare the suffix which indicates our subdomain information, bifurcation or tube segment suffix, and the containing branch info.

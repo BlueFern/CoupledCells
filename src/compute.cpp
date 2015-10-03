@@ -24,7 +24,7 @@ void* checked_malloc(size_t bytes, const char* errmsg)
 	return pval;
 }
 
-int couplingParms(int CASE, conductance* cpl_cef)
+void set_coupling_parms(int CASE, conductance* cpl_cef)
 {
 	if(CASE == 1)
 	{
@@ -192,7 +192,6 @@ int couplingParms(int CASE, conductance* cpl_cef)
 		cpl_cef->IP3_ht_smc = 0.05;
 		cpl_cef->IP3_ht_ec = 0.05;
 	}
-	return 0;
 }
 
 // TODO: Move the Tsoukias code to the appropriate location.
