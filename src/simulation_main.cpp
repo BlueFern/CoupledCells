@@ -116,7 +116,6 @@ int main(int argc, char* argv[])
 		grid = make_bifucation_cart_grids(grid);
 	}
 
-
 	/// Now allocate memory for the structures representing the cells and the various members of those structures.
 	/// Each of the two cell grids have two additional rows and two additional columns as ghost cells.
 	/// Following is an example of a 5x7 grid with added ghost cells on all four sides. the '0's are the actual

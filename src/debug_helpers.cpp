@@ -77,7 +77,6 @@ void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my
 		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &rank_info_file));
 		CHECK_MPI_ERROR(MPI_File_write_at(rank_info_file, displacement, grid.logfile_write_buffer, grid.logfile_displacements, MPI_CHAR, &status));
 		MPI_File_close(&rank_info_file);
-		free(grid.logfile_write_buffer);
 	}
 
 	if (grid.rank_branch == 0)
