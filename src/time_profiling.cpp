@@ -64,7 +64,6 @@ void dump_time_field(char* file_prefix, grid_parms grid, double field)
 		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fw));
 		CHECK_MPI_ERROR(MPI_File_write_at(fw, 0, write_buffer, total_buffer_length, MPI_CHAR, &status));
 		MPI_File_close(&fw);
-		free(write_buffer);
 	}
 
 	if (grid.rank_branch == 0)
