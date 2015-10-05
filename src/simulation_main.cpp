@@ -75,9 +75,6 @@ int main(int argc, char* argv[])
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
-	grid.min_jplc = 0.20; // Can be thrown away.
-	grid.max_jplc = 2.5; // Can be thrown away.
-	grid.gradient = 0.288e3; // Can be thrown away.
 	grid.stimulus_onset_time = 10.00;
 
 	grid.num_smc_fundblk_circumferentially = 1;
@@ -145,8 +142,7 @@ int main(int argc, char* argv[])
 		ec[i] = (EC_cell*) checked_malloc((grid.num_ec_axially + grid.num_ghost_cells) * sizeof(EC_cell), SRC_LOC);
 	}
 
-	/// Memory allocation for state vector, the single cell evaluation placeholders (the RHS of the ODEs for each cell) and coupling fluxes.
-	/// In ghost cells, only the state vector array for each type of cells exists including all other cells.
+	/// Memory allocation for state vectors (the RHS of the ODEs for each cell) and coupling fluxes.
 
 	/// SMC domain.
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
@@ -172,7 +168,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	/// Allocating memory for coupling data to be sent and received by MPI communication routines.
+	/// Allocating memory for coupling data to be sent and received through MPI.
 	/// sendbuf and recvbuf are 2D arrays with up, down, left and right directions as their first dimension.
 
 	sendbuf = (double**) checked_malloc(4 * sizeof(double*), SRC_LOC);
@@ -240,9 +236,8 @@ int main(int argc, char* argv[])
 	sendbuf[RIGHT][2] = 1.0; //Start of the 1st segment of EC array in  in RIGHT direction (axial direction) to be sent to neighbouring processor
 	sendbuf[RIGHT][3] = (double) extent_e; //END of the 1st segment of EC array in  in RIGHT direction (axial direction) to be sent to neighbouring processor
 
-	/// Call communication to the number of elements to be recieved by neighbours and allocate memory of recvbuf for each direction accordingly.
-	grid = communicate_num_recv_elements_to_nbrs(grid);
-	/// memory allocation
+	/// Tell neighbours the number of elements to be sent to them and allocate memory of recvbuf for each direction accordingly.
+	communication_update_recv_size(&grid);
 
 	/// data to receive from the neighbour in UP direction
 	recvbuf[UP] = (double*) checked_malloc(grid.num_elements_recv_up * sizeof(double), SRC_LOC);

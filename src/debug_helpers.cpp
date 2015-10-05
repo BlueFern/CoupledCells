@@ -23,7 +23,6 @@ void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my
 					"Vm_hm_smc=%2.5lf\nVm_hm_ec=%2.5lf\nCa_hm_smc=%2.5lf\nCa_hm_ec=%2.5lf\nIP3_hm_smc=%2.5lf\n"
 					"IP3_hm_ec=%2.5lf\nVm_ht_smc=%2.5lf\nVm_ht_ec=%2.5lf\nCa_ht_smc=%2.5lf\nCa_ht_ec=%2.5lf\n"
 					"IP3_ht_smc=%2.5lf\nIP3_ht_ec=%2.5lf\n\n"
-					"Spatial Gradient info:\nUniform JPLC\t=%2.5lf\nMinimum JPLC\t=%2.5lf\nMaximum JPLC\t=%2.5lf\nGradient\t=%2.5lf\n"
 					"Total Tasks=%d\n"
 					"Number of grid points in axial direction =%d\n"
 					"Number of grid points in circumferential direction =%d\n"
@@ -42,7 +41,7 @@ void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my
 					grid.flip_array[0], grid.flip_array[1], grid.flip_array[2], grid.flip_array[3],
 					grid.my_domain.internal_info.boundary_tag, cpl_cef.Vm_hm_smc, cpl_cef.Vm_hm_ec, cpl_cef.Ca_hm_smc, cpl_cef.Ca_hm_ec,
 					cpl_cef.IP3_hm_smc, cpl_cef.IP3_hm_ec, cpl_cef.Vm_ht_smc, cpl_cef.Vm_ht_ec, cpl_cef.Ca_ht_smc, cpl_cef.Ca_ht_ec,
-					cpl_cef.IP3_ht_smc, cpl_cef.IP3_ht_ec, grid.uniform_jplc, grid.min_jplc, grid.max_jplc, grid.gradient, grid.num_ranks, grid.m,
+					cpl_cef.IP3_ht_smc, cpl_cef.IP3_ht_ec, grid.num_ranks, grid.m,
 					grid.n, grid.num_ec_axially, grid.num_smc_circumferentially, grid.num_ec_axially * grid.num_ec_circumferentially,
 					grid.num_smc_axially * grid.num_smc_circumferentially,
 					(grid.num_ec_axially * grid.num_ec_circumferentially) + (grid.num_smc_axially * grid.num_smc_circumferentially),

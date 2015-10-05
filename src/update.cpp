@@ -8,6 +8,9 @@
 using namespace std;
 extern time_stamps t_stamp;
 
+// This determine source/destination should be done only once.
+// Basically we need to know only destination.
+// All destinations should be done in universal rank space.
 void determine_source_destination(grid_parms grid, int source[], int dest[])
 {
 	if (grid.nbrs[local][UP] >= 0)
@@ -17,6 +20,7 @@ void determine_source_destination(grid_parms grid, int source[], int dest[])
 	}
 	else if (grid.nbrs[local][UP] < 0)
 	{
+		// Ourselves.
 		dest[UP] = grid.rank_branch; //MPI_PROC_NULL;
 		source[UP] = grid.rank_branch; //MPI_PROC_NULL;
 	}
@@ -28,6 +32,7 @@ void determine_source_destination(grid_parms grid, int source[], int dest[])
 	}
 	else if (grid.nbrs[local][DOWN] < 0)
 	{
+		// Ourselves.
 		dest[DOWN] = grid.rank_branch; //MPI_PROC_NULL;
 		source[DOWN] = grid.rank_branch; //MPI_PROC_NULL;
 	}
@@ -39,6 +44,7 @@ void determine_source_destination(grid_parms grid, int source[], int dest[])
 	}
 	else if (grid.nbrs[local][LEFT] < 0)
 	{
+		// Ourselves.
 		dest[LEFT] = grid.rank_branch; //MPI_PROC_NULL;
 		source[LEFT] = grid.rank_branch; //MPI_PROC_NULL;
 	}
@@ -50,36 +56,35 @@ void determine_source_destination(grid_parms grid, int source[], int dest[])
 	}
 	else if (grid.nbrs[local][RIGHT] < 0)
 	{
+		// Ourselves.
 		dest[RIGHT] = grid.rank_branch; //MPI_PROC_NULL;
 		source[RIGHT] = grid.rank_branch; // MPI_PROC_NULL;
 	}
 }
 
-grid_parms communicate_num_recv_elements_to_nbrs(grid_parms grid)
+// Send the sizes of receive buffers to neighbours prior to receive buffers memory allocation.
+void communication_update_recv_size(grid_parms *grid)
 {
-	int err;
 	MPI_Request reqs[8];
 	MPI_Status stats[8];
 
 	int source[4], dest[4];
-	int tag;
-	int num[4];
-	determine_source_destination(grid, source, dest);
 
-	tag = 0;
-	int tmp[4];
-	CHECK_MPI_ERROR(MPI_Irecv(&grid.num_elements_recv_up, 1, MPI_INT, source[UP], tag, grid.cart_comm, &reqs[4 + UP]));
-	CHECK_MPI_ERROR(MPI_Isend(&grid.num_elements_send_up, 1, MPI_INT, dest[UP], tag, grid.cart_comm, &reqs[UP]));
-	CHECK_MPI_ERROR(MPI_Irecv(&grid.num_elements_recv_down, 1, MPI_INT, source[DOWN], tag, grid.cart_comm, &reqs[4 + DOWN]));
-	CHECK_MPI_ERROR(MPI_Isend(&grid.num_elements_send_down, 1, MPI_INT, dest[DOWN], tag, grid.cart_comm, &reqs[DOWN]));
-	CHECK_MPI_ERROR(MPI_Irecv(&grid.num_elements_recv_left, 1, MPI_INT, source[LEFT], tag, grid.cart_comm, &reqs[4 + LEFT]));
-	CHECK_MPI_ERROR(MPI_Isend(&grid.num_elements_send_left, 1, MPI_INT, dest[LEFT], tag, grid.cart_comm, &reqs[LEFT]));
-	CHECK_MPI_ERROR(MPI_Irecv(&grid.num_elements_recv_right, 1, MPI_INT, source[RIGHT], tag, grid.cart_comm, &reqs[4 + RIGHT]));
-	CHECK_MPI_ERROR(MPI_Isend(&grid.num_elements_send_right, 1, MPI_INT, dest[RIGHT], tag, grid.cart_comm, &reqs[RIGHT]));
+	determine_source_destination(*grid, source, dest);
+
+	CHECK_MPI_ERROR(MPI_Irecv(&grid->num_elements_recv_up, 1, MPI_INT, source[UP], MPI_ANY_TAG, grid->cart_comm, &reqs[4 + UP]));
+	CHECK_MPI_ERROR(MPI_Isend(&grid->num_elements_send_up, 1, MPI_INT, dest[UP], 0, grid->cart_comm, &reqs[UP]));
+
+	CHECK_MPI_ERROR(MPI_Irecv(&grid->num_elements_recv_down, 1, MPI_INT, source[DOWN], MPI_ANY_TAG, grid->cart_comm, &reqs[4 + DOWN]));
+	CHECK_MPI_ERROR(MPI_Isend(&grid->num_elements_send_down, 1, MPI_INT, dest[DOWN], 0, grid->cart_comm, &reqs[DOWN]));
+
+	CHECK_MPI_ERROR(MPI_Irecv(&grid->num_elements_recv_left, 1, MPI_INT, source[LEFT], MPI_ANY_TAG, grid->cart_comm, &reqs[4 + LEFT]));
+	CHECK_MPI_ERROR(MPI_Isend(&grid->num_elements_send_left, 1, MPI_INT, dest[LEFT], 0, grid->cart_comm, &reqs[LEFT]));
+
+	CHECK_MPI_ERROR(MPI_Irecv(&grid->num_elements_recv_right, 1, MPI_INT, source[RIGHT], MPI_ANY_TAG, grid->cart_comm, &reqs[4 + RIGHT]));
+	CHECK_MPI_ERROR(MPI_Isend(&grid->num_elements_send_right, 1, MPI_INT, dest[RIGHT], 0, grid->cart_comm, &reqs[RIGHT]));
 
 	MPI_Waitall(8, reqs, stats);
-
-	return (grid);
 }
 
 // Carry out asynchronous communication send and receive of edge cell data.
@@ -98,38 +103,30 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 	// Get nearest neighbours indices.
 	determine_source_destination(grid, source, dest);
 
-	t_stamp.update_sendbuf_t1 = MPI_Wtime();
-
 	// Prepare the buffer for exchanging edge cell data with ghost cells.
 	communication_update_sendbuf(grid, sendbuf, smc, ec);
 
-	t_stamp.update_sendbuf_t2 = MPI_Wtime();
-	t_stamp.diff_update_sendbuf = t_stamp.update_sendbuf_t2 - t_stamp.update_sendbuf_t1;
+	/// Communication block.
+	/// Send the relevant portion of the sendbuff to our neighbours within the branch.
 
-	t_stamp.async_comm_calls_t1 = MPI_Wtime();
-
-	/// Communication block
+	// TODO: Cores on the boundaries of the Cartesian grids send data to themselves. Should be removed.
 	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[UP][0], grid.num_elements_recv_up, MPI_DOUBLE, source[UP], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + UP]));
 	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[DOWN][0], grid.num_elements_recv_down, MPI_DOUBLE, source[DOWN], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + DOWN]));
 	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[LEFT][0], grid.num_elements_recv_left, MPI_DOUBLE, source[LEFT], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + LEFT]));
 	CHECK_MPI_ERROR(MPI_Irecv(&recvbuf[RIGHT][0], grid.num_elements_recv_right, MPI_DOUBLE, source[RIGHT], MPI_ANY_TAG, grid.cart_comm, &reqs[4 + RIGHT]));
-	CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, dest[UP], 0, grid.cart_comm, &reqs[UP]));
-	CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, dest[DOWN], 0, grid.cart_comm, &reqs[DOWN]));
-	CHECK_MPI_ERROR(MPI_Isend(sendbuf[LEFT], grid.num_elements_send_left, MPI_DOUBLE, dest[LEFT], 0, grid.cart_comm, &reqs[LEFT]));
-	CHECK_MPI_ERROR(MPI_Isend(sendbuf[RIGHT], grid.num_elements_send_right, MPI_DOUBLE, dest[RIGHT], 0, grid.cart_comm, &reqs[RIGHT]));
 
-	t_stamp.async_comm_calls_t2 = MPI_Wtime();
-	t_stamp.diff_async_comm_calls = t_stamp.async_comm_calls_t2 - t_stamp.async_comm_calls_t1;
+	CHECK_MPI_ERROR(MPI_Isend(&sendbuf[UP][0], grid.num_elements_send_up, MPI_DOUBLE, dest[UP], 0, grid.cart_comm, &reqs[UP]));
+	CHECK_MPI_ERROR(MPI_Isend(&sendbuf[DOWN][0], grid.num_elements_send_down, MPI_DOUBLE, dest[DOWN], 0, grid.cart_comm, &reqs[DOWN]));
+	CHECK_MPI_ERROR(MPI_Isend(&sendbuf[LEFT][0], grid.num_elements_send_left, MPI_DOUBLE, dest[LEFT], 0, grid.cart_comm, &reqs[LEFT]));
+	CHECK_MPI_ERROR(MPI_Isend(&sendbuf[RIGHT][0], grid.num_elements_send_right, MPI_DOUBLE, dest[RIGHT], 0, grid.cart_comm, &reqs[RIGHT]));
 
-	t_stamp.async_comm_calls_wait_t1 = MPI_Wtime();
 	MPI_Waitall(8, reqs, stats);
-	t_stamp.async_comm_calls_wait_t2 = MPI_Wtime();
-	t_stamp.diff_async_comm_calls_wait = t_stamp.async_comm_calls_wait_t2 - t_stamp.async_comm_calls_wait_t1;
 
+	// Communicating along the boundaries between branches.
 	int remote_source[2], remote_dest[2];
 	MPI_Request remote_req[4];
 	MPI_Status remote_status[4];
-	int tag_remote_1 = 3, tag_remote_2 = 4;
+	int tag_remote_1 = 3;
 
 	if (grid.my_domain.internal_info.boundary_tag == 'I')
 	{
@@ -138,28 +135,12 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 			remote_dest[i] = grid.nbrs[remote][i];
 		}
 
-		t_stamp.remote_async_comm_calls_t1 = MPI_Wtime();
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE, remote_source[UP], MPI_ANY_TAG, grid.universe, &remote_req[2 + UP]));
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down, MPI_DOUBLE, remote_source[DOWN], MPI_ANY_TAG, grid.universe, &remote_req[2 + DOWN]));
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, remote_dest[UP], 0, grid.universe, &remote_req[UP]));
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, remote_dest[DOWN], 0, grid.universe, &remote_req[DOWN]));
 
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE, remote_source[UP], tag_remote_1, grid.universe,
-				&remote_req[2 + UP]));
-
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down, MPI_DOUBLE, remote_source[DOWN], tag_remote_1, grid.universe,
-				&remote_req[2 + DOWN]));
-
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, remote_dest[UP], tag_remote_1, grid.universe,
-				&remote_req[UP]));
-
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, remote_dest[DOWN], tag_remote_1, grid.universe,
-				&remote_req[DOWN]));
-
-		t_stamp.remote_async_comm_calls_t2 = MPI_Wtime();
-		t_stamp.diff_remote_async_comm_calls = t_stamp.remote_async_comm_calls_t2 - t_stamp.remote_async_comm_calls_t1;
-
-		t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
 		MPI_Waitall(4, remote_req, remote_status);
-		t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
-		t_stamp.diff_remote_async_comm_calls_wait = t_stamp.remote_async_comm_calls_wait_t2 - t_stamp.remote_async_comm_calls_wait_t1;
-
 	}
 	else if ((grid.my_domain.internal_info.boundary_tag == 'T') || (grid.my_domain.internal_info.boundary_tag == 'B'))
 	{
@@ -168,51 +149,29 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 			remote_dest[i] = grid.nbrs[remote][i];
 		}
 
-		t_stamp.remote_async_comm_calls_t1 = MPI_Wtime();
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE, remote_source[UP], MPI_ANY_TAG, grid.universe, &remote_req[2 + UP]));
+		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down, MPI_DOUBLE, remote_source[DOWN], MPI_ANY_TAG, grid.universe, &remote_req[2 + DOWN]));
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, remote_dest[UP], 0, grid.universe, &remote_req[UP]));
+		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, remote_dest[DOWN], 0, grid.universe, &remote_req[DOWN]));
 
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE, remote_source[UP], tag_remote_1, grid.universe,
-						&remote_req[2 + UP]));
-
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down, MPI_DOUBLE, remote_source[DOWN], tag_remote_1,
-						grid.universe, &remote_req[2 + DOWN]));
-
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, remote_dest[UP], tag_remote_1, grid.universe,
-						&remote_req[UP]));
-
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, remote_dest[DOWN], tag_remote_1,
-						grid.universe, &remote_req[DOWN]));
-
-		t_stamp.remote_async_comm_calls_t2 = MPI_Wtime();
-		t_stamp.diff_remote_async_comm_calls = t_stamp.remote_async_comm_calls_t2 - t_stamp.remote_async_comm_calls_t1;
-
-		t_stamp.remote_async_comm_calls_wait_t1 = MPI_Wtime();
 		MPI_Waitall(4, remote_req, remote_status);
-
-		t_stamp.remote_async_comm_calls_wait_t2 = MPI_Wtime();
-		t_stamp.diff_remote_async_comm_calls_wait = t_stamp.remote_async_comm_calls_wait_t2 - t_stamp.remote_async_comm_calls_wait_t1;
 	}
-
-	t_stamp.update_recvbuf_t1 = MPI_Wtime();
 
 	// Unpack received data into ghost cells.
 	communication_update_recvbuf(grid, recvbuf, smc, ec);
-
-	t_stamp.update_recvbuf_t2 = MPI_Wtime();
-	t_stamp.diff_update_recvbuf = t_stamp.update_recvbuf_t2 - t_stamp.update_recvbuf_t1;
 }
 
-// Prepare the sendbuf pub putting ECs's and SMCs's edge data to be sent to the neighbours's ghost cells.
+// Prepare the sendbuf by putting ECs's and SMCs's edge data to be sent to the neighbours's ghost cells.
 // Specific to KNBGR.
 void communication_update_sendbuf(grid_parms grid, double** sendbuf, SMC_cell** smc, EC_cell** ec)
 {
 	int k, buf_offset;
 
-///UP direction
+	/// UP direction
 
+	// Copy SMC values.
 	buf_offset = grid.added_info_in_send_buf;
-
 	k = 0;
-
 	for (int i = (int) sendbuf[UP][0]; i <= (int) sendbuf[UP][1]; i++) {
 		int j = 1;
 		sendbuf[UP][buf_offset + k + 0] = smc[i][j].vars[smc_Ca];
@@ -221,10 +180,8 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf, SMC_cell** 
 		k += grid.num_coupling_species_smc;
 	}
 
-	//Setting up the offset to transfer the EC info into SEND BUFFER
-	buf_offset = grid.added_info_in_send_buf
-			+ grid.num_coupling_species_smc * (sendbuf[UP][1] - sendbuf[UP][0] + 1);
-
+	// Copy EC values.
+	buf_offset = grid.added_info_in_send_buf + grid.num_coupling_species_smc * (sendbuf[UP][1] - sendbuf[UP][0] + 1);
 	k = 0;
 	for (int i = (int) sendbuf[UP][2]; i <= (int) sendbuf[UP][3]; i++) {
 		int j = 1;
@@ -234,10 +191,10 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf, SMC_cell** 
 		k += grid.num_coupling_species_ec;
 	}
 
-///DOWN direction
+	/// DOWN direction
 
+	// Copy SMC values.
 	buf_offset = grid.added_info_in_send_buf;
-
 	k = 0;
 	for (int i = (int) sendbuf[DOWN][0]; i <= (int) sendbuf[DOWN][1]; i++) {
 		int j = grid.num_smc_axially;
@@ -247,9 +204,8 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf, SMC_cell** 
 		k += grid.num_coupling_species_smc;
 	}
 
-	buf_offset = grid.added_info_in_send_buf
-			+ grid.num_coupling_species_smc * (sendbuf[DOWN][1] - sendbuf[DOWN][0] + 1);
-
+	// Copy EC values.
+	buf_offset = grid.added_info_in_send_buf + grid.num_coupling_species_smc * (sendbuf[DOWN][1] - sendbuf[DOWN][0] + 1);
 	k = 0;
 	for (int i = (int) sendbuf[DOWN][2]; i <= (int) sendbuf[DOWN][3]; i++) {
 		int j = grid.num_ec_axially;
@@ -259,10 +215,10 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf, SMC_cell** 
 		k += grid.num_coupling_species_ec;
 	}
 
-///LEFT direction
+	/// LEFT direction
 
+	// Copy SMC values.
 	buf_offset = grid.added_info_in_send_buf;
-
 	k = 0;
 	for (int j = (int) sendbuf[LEFT][0]; j <= (int) sendbuf[LEFT][1]; j++) {
 		int i = 1;
@@ -272,9 +228,8 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf, SMC_cell** 
 		k += grid.num_coupling_species_smc;
 	}
 
-	buf_offset = grid.added_info_in_send_buf
-			+ grid.num_coupling_species_smc * (sendbuf[LEFT][1] - sendbuf[LEFT][0] + 1);
-
+	// Copy EC values.
+	buf_offset = grid.added_info_in_send_buf + grid.num_coupling_species_smc * (sendbuf[LEFT][1] - sendbuf[LEFT][0] + 1);
 	k = 0;
 	for (int j = (int) sendbuf[LEFT][2]; j <= (int) sendbuf[LEFT][3]; j++) {
 		int i = 1;
@@ -284,10 +239,10 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf, SMC_cell** 
 		k += grid.num_coupling_species_ec;
 	}
 
-///RIGHT direction
+	/// RIGHT direction
 
+	// Copy SMC values.
 	buf_offset = grid.added_info_in_send_buf;
-
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT][0]; j <= (int) sendbuf[RIGHT][1]; j++) {
 		int i = grid.num_smc_circumferentially;
@@ -297,9 +252,8 @@ void communication_update_sendbuf(grid_parms grid, double** sendbuf, SMC_cell** 
 		k += grid.num_coupling_species_smc;
 	}
 
-	buf_offset = grid.added_info_in_send_buf
-			+ grid.num_coupling_species_smc * (sendbuf[RIGHT][1] - sendbuf[RIGHT][0] + 1);
-
+	// Copy EC values.
+	buf_offset = grid.added_info_in_send_buf + grid.num_coupling_species_smc * (sendbuf[RIGHT][1] - sendbuf[RIGHT][0] + 1);
 	k = 0;
 	for (int j = (int) sendbuf[RIGHT][2]; j <= (int) sendbuf[RIGHT][3]; j++) {
 		int i = grid.num_ec_circumferentially;
@@ -318,9 +272,10 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 {
 	int k, buf_offset;
 
-/// UP direction
-	buf_offset = grid.added_info_in_send_buf;
+	/// UP direction
 
+	// Copy SMC data.
+	buf_offset = grid.added_info_in_send_buf;
 	k = 0;
 	for (int i = (int) recvbuf[UP][0]; i <= (int) recvbuf[UP][1]; i++) {
 		int j = 0;
@@ -330,9 +285,8 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 		k += grid.num_coupling_species_smc;
 	}
 
-	buf_offset = grid.added_info_in_send_buf
-			+ grid.num_coupling_species_smc * (recvbuf[UP][1] - recvbuf[UP][0] + 1);
-
+	// Copy EC data.
+	buf_offset = grid.added_info_in_send_buf + grid.num_coupling_species_smc * (recvbuf[UP][1] - recvbuf[UP][0] + 1);
 	k = 0;
 	for (int i = (int) recvbuf[UP][2]; i <= (int) recvbuf[UP][3]; i++) {
 		int j = 0;
@@ -342,20 +296,25 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 		k += grid.num_coupling_species_ec;
 	}
 
-/// DOWN direction
-	buf_offset = grid.added_info_in_send_buf;
+	/// DOWN direction
 
+	// Here the flip array indicates whether the values need to be reordered, if they come from a sibling branch.
+
+	// Copy SMC data.
+	buf_offset = grid.added_info_in_send_buf;
 	k = 0;
-	if (grid.flip_array[DOWN] == 0) {
-		for (int i = (int) recvbuf[DOWN][0]; i <= (int) recvbuf[DOWN][1];
-				i++) {
+	if (grid.flip_array[DOWN] == 0)
+	{
+		for (int i = (int) recvbuf[DOWN][0]; i <= (int) recvbuf[DOWN][1]; i++) {
 			int j = grid.num_smc_axially + 1;
 			smc[i][j].vars[smc_Ca] = recvbuf[DOWN][buf_offset + k + 0];
 			smc[i][j].vars[smc_Vm] = recvbuf[DOWN][buf_offset + k + 1];
 			smc[i][j].vars[smc_IP3] = recvbuf[DOWN][buf_offset + k + 2];
 			k += grid.num_coupling_species_smc;
 		}
-	} else if (grid.flip_array[DOWN] == 1) {
+	}
+	else if (grid.flip_array[DOWN] == 1)
+	{
 		int start = (int) recvbuf[DOWN][0], end = (int) recvbuf[DOWN][1];
 		for (int i = end; i >= start; i--) {
 			int j = grid.num_smc_axially + 1;
@@ -366,9 +325,8 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 		}
 	}
 
-	buf_offset = grid.added_info_in_send_buf
-			+ grid.num_coupling_species_smc * (recvbuf[DOWN][1] - recvbuf[DOWN][0] + 1);
-
+	// Copy EC data.
+	buf_offset = grid.added_info_in_send_buf + grid.num_coupling_species_smc * (recvbuf[DOWN][1] - recvbuf[DOWN][0] + 1);
 	k = 0;
 	if (grid.flip_array[DOWN] == 0) {
 		for (int i = (int) recvbuf[DOWN][2]; i <= (int) recvbuf[DOWN][3];
@@ -391,9 +349,10 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 		}
 	}
 
-/// LEFT direction
-	buf_offset = grid.added_info_in_send_buf;
+	/// LEFT direction
 
+	// Compy SMC data.
+	buf_offset = grid.added_info_in_send_buf;
 	k = 0;
 	for (int j = (int) recvbuf[LEFT][0]; j <= (int) recvbuf[LEFT][1]; j++) {
 		int i = 0;
@@ -403,9 +362,8 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 		k += grid.num_coupling_species_smc;
 	}
 
-	buf_offset = grid.added_info_in_send_buf
-			+ grid.num_coupling_species_smc * (recvbuf[LEFT][1] - recvbuf[LEFT][0] + 1);
-
+	// Copy EC data.
+	buf_offset = grid.added_info_in_send_buf + grid.num_coupling_species_smc * (recvbuf[LEFT][1] - recvbuf[LEFT][0] + 1);
 	k = 0;
 	for (int j = (int) recvbuf[LEFT][2]; j <= (int) recvbuf[LEFT][3]; j++) {
 		int i = 0;
@@ -415,9 +373,10 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 		k += grid.num_coupling_species_ec;
 	}
 
-/// RIGHT direction
-	buf_offset = grid.added_info_in_send_buf;
+	/// RIGHT direction
 
+	// Copy SMC data.
+	buf_offset = grid.added_info_in_send_buf;
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT][0]; j <= (int) recvbuf[RIGHT][1]; j++) {
 		int i = grid.num_smc_circumferentially + 1;
@@ -427,9 +386,8 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 		k += grid.num_coupling_species_smc;
 	}
 
-	buf_offset = grid.added_info_in_send_buf
-			+ grid.num_coupling_species_smc * (recvbuf[RIGHT][1] - recvbuf[RIGHT][0] + 1);
-
+	// Copy EC data.
+	buf_offset = grid.added_info_in_send_buf + grid.num_coupling_species_smc * (recvbuf[RIGHT][1] - recvbuf[RIGHT][0] + 1);
 	k = 0;
 	for (int j = (int) recvbuf[RIGHT][2]; j <= (int) recvbuf[RIGHT][3]; j++) {
 		int i = grid.num_ec_circumferentially + 1;

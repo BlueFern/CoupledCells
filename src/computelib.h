@@ -153,6 +153,8 @@ struct my_tree
 #define CR_SMCS 8
 #define NUM_CONFIG_ELEMENTS 9
 
+// const int num_ghost_cells = 2;
+
 typedef struct
 {
 	///General information on cell geometry and the geometric primitive constructed.
@@ -160,7 +162,7 @@ typedef struct
 	int num_ec_fundblk_circumferentially;
 	int num_smc_fundblk_axially;
 	int num_ec_fundblk_axially;
-	int num_ghost_cells;
+	int num_ghost_cells; // TODO: Should be replaced with a macro.
 	int num_fluxes_smc; // Number of SMC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
 	int num_fluxes_ec; // Number of EC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
 	int num_coupling_species_smc; // Number of SMC coupling species homogenic/heterogenic.
@@ -200,16 +202,15 @@ typedef struct
 	num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right,
 	num_elements_recv_up, num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
 
-	///Information for spatial variation in agonist
-	double min_jplc, max_jplc, gradient, uniform_jplc, stimulus_onset_time;	/// the time when spatially varying agonist kicks in
+	///Information for spatial variation in agonist.
+	double uniform_jplc, stimulus_onset_time;	/// the time when spatially varying agonist kicks in
 
 	my_tree my_domain;
 
-	// Allow three types of communicators to exist, first resulting from subdomain allocation, second resulting from comm_split
-	// operation on MPI_COMM_WORLD and the other a Cartesian communicator arising from Cart_create operation.
+	// MPI_COMM_WORLD, and branch communicatior.
 	MPI_Comm universe, cart_comm;
 
-	int smc_model, ec_model;	// These are placeholders for the selection of model to be simulated in each cell.
+	int smc_model, ec_model; // These are placeholders for the selection of model to be simulated in each cell.
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
 
 	char suffix[16];	// this is for use in the naming convention of the IO files to recognise and record
@@ -247,23 +248,6 @@ typedef struct
 
 typedef struct
 {
-	double
-	/// Communication timings.
-	async_comm_calls_t1, async_comm_calls_t2,
-	async_comm_calls_wait_t1, async_comm_calls_wait_t2,
-	remote_async_comm_calls_t1, remote_async_comm_calls_t2,
-	remote_async_comm_calls_wait_t1, remote_async_comm_calls_wait_t2,
-	update_sendbuf_t1, update_sendbuf_t2,
-	update_recvbuf_t1, update_recvbuf_t2,
-	total_comms_cost_t1, total_comms_cost_t2,
-	diff_update_sendbuf,
-	diff_update_recvbuf,
-	diff_async_comm_calls,
-	diff_async_comm_calls_wait,
-	diff_remote_async_comm_calls,
-	diff_remote_async_comm_calls_wait,
-	diff_total_comms_cost;
-
 	double aggregate_compute, aggregate_comm;
 	double aggregate_ec_gather, aggregate_smc_gather;
 	double aggregate_ec_write, aggregate_smc_write;
@@ -273,7 +257,7 @@ typedef struct
 void set_coupling_parms(int CASE, conductance* cpl_cef);
 int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
-grid_parms communicate_num_recv_elements_to_nbrs(grid_parms);
+void communication_update_recv_size(grid_parms *);
 void communication_update_sendbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void determine_source_destination(grid_parms, int*, int*);

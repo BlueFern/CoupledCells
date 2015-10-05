@@ -10,9 +10,6 @@ void initialize_t_stamp(time_stamps* t_stamp)
 	t_stamp->aggregate_smc_gather = 0;
 	t_stamp->aggregate_ec_write = 0;
 	t_stamp->aggregate_smc_write = 0;
-
-	t_stamp->diff_async_comm_calls = 0;
-	t_stamp->diff_async_comm_calls_wait = 0;
 }
 
 void dump_time_profiling(grid_parms grid, time_stamps* t_stamp)

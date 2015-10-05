@@ -10,10 +10,6 @@
 
 #include "rksuite.h"
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-#define SRC_LOC __FILE__ ":" TOSTRING(__LINE__)
-
 extern conductance cpl_cef;
 extern SMC_cell** smc;
 extern EC_cell** ec;
