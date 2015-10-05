@@ -203,7 +203,7 @@ void odeint_solver(double, double, double, double*, int, double, double, int, ch
 int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
 ///These are debugging functions, not used in production runs.
-void dump_rank_info(conductance, grid_parms); //, IO_domain_info*);
+void dump_rank_info(conductance, grid_parms);
 void print_domains(FILE*, grid_parms, SMC_cell**, EC_cell**);
 void print_send_buffer(FILE*, grid_parms, double**);
 void print_recv_buffer(FILE*, grid_parms, double**);

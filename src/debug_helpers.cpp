@@ -7,7 +7,7 @@
 /**
  * Dump info/debug output to a log file.
  */
-void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my_IO_domain_info)
+void dump_rank_info(conductance cpl_cef, grid_parms grid)
 {
 	MPI_Status status;
 	MPI_Offset displacement = 0;
