@@ -128,7 +128,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 	MPI_Status remote_status[4];
 	int tag_remote_1 = 3;
 
-	if (grid.my_domain.internal_info.boundary_tag == 'I')
+	if (grid.boundary_tag == 'I')
 	{
 		for (int i = 0; i < 2; i++) {
 			remote_source[i] = grid.nbrs[remote][i];
@@ -142,7 +142,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 
 		MPI_Waitall(4, remote_req, remote_status);
 	}
-	else if ((grid.my_domain.internal_info.boundary_tag == 'T') || (grid.my_domain.internal_info.boundary_tag == 'B'))
+	else if ((grid.boundary_tag == 'T') || (grid.boundary_tag == 'B'))
 	{
 		for (int i = 0; i < 2; i++) {
 			remote_source[i] = grid.nbrs[remote][i];
@@ -401,11 +401,11 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 {
 	int branch;
-	if (grid->my_domain.internal_info.domain_type == STRSEG)
+	if (grid->domain_type == STRSEG)
 	{
 		branch = P;
 	}
-	else if (grid->my_domain.internal_info.domain_type == BIF)
+	else if (grid->domain_type == BIF)
 	{
 		branch = grid->branch_tag;
 	}

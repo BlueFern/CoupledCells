@@ -22,6 +22,8 @@ void dump_time_profiling(grid_parms grid, time_stamps* t_stamp)
 	dump_time_field((char *)"aggregated_smc_write", grid, t_stamp->aggregate_smc_write);
 }
 
+#define NUM_DBL_TO_CHAR_BYTES 64
+
 void dump_time_field(char* file_prefix, grid_parms grid, double field)
 {
 	MPI_Status status;
@@ -57,7 +59,8 @@ void dump_time_field(char* file_prefix, grid_parms grid, double field)
 
 	if (grid.rank_branch == 0)
 	{
-		sprintf(filename, "%s/%s_%s.txt", grid.time_profiling_dir, file_prefix, grid.suffix);
+		sprintf(filename, "%s/%s_%d_%d.txt", grid.time_profiling_dir, file_prefix, grid.domain_index, grid.branch_tag);
+
 		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fw));
 		CHECK_MPI_ERROR(MPI_File_write_at(fw, 0, write_buffer, total_buffer_length, MPI_CHAR, &status));
 		MPI_File_close(&fw);

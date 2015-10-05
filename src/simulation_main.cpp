@@ -6,7 +6,6 @@
 #include "koenigsberger_model.h"
 
 void read_config_file(grid_parms* grid);
-void set_file_naming_strings(grid_parms* grid);
 
 conductance cpl_cef;
 SMC_cell **smc;
@@ -95,20 +94,14 @@ int main(int argc, char* argv[])
 	/// - Read domain configuration from input config file.
 	read_config_file(&grid);
 
-	/// Set prefixes for output files.
-	set_file_naming_strings(&grid);
-
 	/// - Calculate the number of cells per task.
 	set_task_parameters(&grid);
 
-	/// - Make subdomains according to the information read from the config file (domain_info.txt).
-	configure_subdomains_topology(&grid);
-
-	if (grid.my_domain.internal_info.domain_type == STRSEG)
+	if (grid.domain_type == STRSEG)
 	{
 		grid = make_straight_segment_cart_grids(grid);
 	}
-	else if (grid.my_domain.internal_info.domain_type == BIF)
+	else if (grid.domain_type == BIF)
 	{
 		grid = make_bifucation_cart_grids(grid);
 	}
@@ -286,7 +279,7 @@ int main(int argc, char* argv[])
 	set_coupling_parms(CASE, &cpl_cef);
 
 	// Debug output.
-	dump_rank_info(cpl_cef, grid); //, my_IO_domain_info);
+	dump_rank_info(cpl_cef, grid);
 
 	// This is read in here for validation purposes in the output.
 	// the solver will reset JPLC and read later it when the time is right.
@@ -448,20 +441,3 @@ void read_config_file(grid_parms* grid)
 	fclose(input_file);
 }
 
-// Prepare the suffix which indicates our subdomain information, bifurcation or tube segment suffix, and the containing branch info.
-void set_file_naming_strings(grid_parms* grid)
-{
-	int subdomain, branch, err;
-
-	if(grid->my_domain.internal_info.domain_type == STRSEG)
-	{
-		subdomain = grid->my_domain.internal_info.domain_index;
-		err = sprintf(grid->suffix, "%d", subdomain);
-	}
-	else if(grid->my_domain.internal_info.domain_type == BIF)
-	{
-		subdomain = grid->my_domain.internal_info.domain_index;
-		branch = grid->branch_tag;
-		err = sprintf(grid->suffix, "%d_%d", subdomain, branch);
-	}
-}

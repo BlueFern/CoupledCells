@@ -14,6 +14,8 @@ void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my
 	char *buffer = (char*)checked_malloc(2 * 1024 * sizeof(char), SRC_LOC);
 	int root = 0;
 	char filename[50];
+	int logfile_displacements = 0;
+	char *logfile_write_buffer = NULL;
 	int length =
 			sprintf(buffer,
 					"BRANCH_TAG	= %d\n[Universal_Rank, Cart_Rank= (%d,%d)] \tcoords= %d,%d\t nbrs: local (u,d,l,r)=(%d %d %d %d)\t "
@@ -39,7 +41,7 @@ void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my
 					grid.branch_tag, grid.universal_rank, grid.rank_branch, grid.coords[0], grid.coords[1], grid.nbrs[local][UP], grid.nbrs[local][DOWN],
 					grid.nbrs[local][LEFT], grid.nbrs[local][RIGHT], grid.nbrs[remote][UP], grid.nbrs[remote][DOWN],
 					grid.flip_array[0], grid.flip_array[1], grid.flip_array[2], grid.flip_array[3],
-					grid.my_domain.internal_info.boundary_tag, cpl_cef.Vm_hm_smc, cpl_cef.Vm_hm_ec, cpl_cef.Ca_hm_smc, cpl_cef.Ca_hm_ec,
+					grid.boundary_tag, cpl_cef.Vm_hm_smc, cpl_cef.Vm_hm_ec, cpl_cef.Ca_hm_smc, cpl_cef.Ca_hm_ec,
 					cpl_cef.IP3_hm_smc, cpl_cef.IP3_hm_ec, cpl_cef.Vm_ht_smc, cpl_cef.Vm_ht_ec, cpl_cef.Ca_ht_smc, cpl_cef.Ca_ht_ec,
 					cpl_cef.IP3_ht_smc, cpl_cef.IP3_ht_ec, grid.num_ranks, grid.m,
 					grid.n, grid.num_ec_axially, grid.num_smc_circumferentially, grid.num_ec_axially * grid.num_ec_circumferentially,
@@ -56,31 +58,33 @@ void dump_rank_info(conductance cpl_cef, grid_parms grid) //, IO_domain_info* my
 	// Gathering and summing the length of all the CHARs contained in every send_buffer containing coordinates from each MPI process.
 	CHECK_MPI_ERROR(MPI_Gather(&length, 1, MPI_INT, recv_count, 1, MPI_INT, root, grid.cart_comm));
 
-	grid.logfile_displacements = 0;
 	for (int i = 0; i < grid.num_ranks_branch; i++)
 	{
-		disp[i] = grid.logfile_displacements;
-		grid.logfile_displacements += recv_count[i];
+		disp[i] = logfile_displacements;
+		logfile_displacements += recv_count[i];
 	}
 
 	if (grid.rank_branch == 0)
 	{
-		grid.logfile_write_buffer = (char*) checked_malloc(grid.logfile_displacements * sizeof(char), SRC_LOC);
+		logfile_write_buffer = (char*) checked_malloc(logfile_displacements * sizeof(char), SRC_LOC);
 	}
-	CHECK_MPI_ERROR(MPI_Gatherv(buffer, length, MPI_CHAR, grid.logfile_write_buffer, recv_count, disp, MPI_CHAR, root, grid.cart_comm));
+	CHECK_MPI_ERROR(MPI_Gatherv(buffer, length, MPI_CHAR, logfile_write_buffer, recv_count, disp, MPI_CHAR, root, grid.cart_comm));
 
 	if (grid.rank_branch == 0)
 	{
-		sprintf(filename, "Logfile_%s.txt", grid.suffix);
+
+		sprintf(filename, "Logfile_%d_%d.txt", grid.domain_index, grid.branch_tag);
+
+		printf("[%d] Writing %s\n", grid.universal_rank, filename);
 		MPI_File rank_info_file;
 		CHECK_MPI_ERROR(MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &rank_info_file));
-		CHECK_MPI_ERROR(MPI_File_write_at(rank_info_file, displacement, grid.logfile_write_buffer, grid.logfile_displacements, MPI_CHAR, &status));
+		CHECK_MPI_ERROR(MPI_File_write_at(rank_info_file, displacement, logfile_write_buffer, logfile_displacements, MPI_CHAR, &status));
 		MPI_File_close(&rank_info_file);
 	}
 
 	if (grid.rank_branch == 0)
 	{
-		free(grid.logfile_write_buffer);
+		free(logfile_write_buffer);
 	}
 
 	free(buffer);

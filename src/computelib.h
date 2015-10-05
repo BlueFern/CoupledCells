@@ -17,24 +17,17 @@ int errcode = (fn); \
 	} \
 }
 
-#define local 0
-#define remote 1
+/**
+ * Helper functions for exponentiation to integer powers.
+ * @{ */
+#define P2(x) ((x)*(x))
+#define P3(x) ((x)*(x)*(x))
+#define P4(x) ((x)*(x)*(x)*(x))
+/** @} */
 
 /****** marcos for identifying models ******/
 #define 		KNBGR			0
 #define 		TSK				1
-
-/**
- * When converting double to char for writing via MPI-IO to write in ASCII format
- * the double is to be truncated to 12 characters including the decimal point.
- * The 13th char is a white space (new line or tab).
- */
-#define NUM_DBL_TO_CHAR_BYTES 64
-
-#define WRITER_COLOR 43
-#define WRITER_KEY 43
-#define COMPUTE_ONLY_COLOR 1
-#define COMPUTE_ONLY_KEY 1
 
 #define UP 0
 #define DOWN 1
@@ -47,48 +40,8 @@ int errcode = (fn); \
 #define L 2 ///< Left branch.
 #define R 3 ///< Right branch.
 
-/**
- * Macros for use in retrieving mesh topological data from grid_parms.info.
- * @{ */
-#define 	TOTAL_POINTS		0
-#define		POINTS_m			1
-#define     POINTS_n			2
-#define		TOTAL_CELLS			3
-#define		CELLS_m				4
-#define		CELLS_n				5
-/** @} */
-
-/**
- * Macros representing mesh types.
- * @{ */
-#define     PROCESS_MESH 		0
-#define 	SMC_MESH 			1
-#define		EC_MESH 			2
-#define		EC_CENT_MESH 		3
-
-#define 	ProcessCell			4
-#define 	smcCell				5
-#define		ecCell				6
-#define		ecCentroidCell		7
-
-#define 	ProcessCellType		8
-#define		smcCellType			9
-#define		ecCellType			10
-#define		ecCentroidCellType	11
-#define 	ec_ATP_Conc			12
-#define 	ec_WSS_val			13
-/** @} */
-
-#define		smcDataLength		0
-#define		ecDataLength		1
-
-/**
- * Helper functions for exponentiation to integer powers.
- * @{ */
-#define P2(x) ((x)*(x))
-#define P3(x) ((x)*(x)*(x))
-#define P4(x) ((x)*(x)*(x)*(x))
-/** @} */
+#define local 0
+#define remote 1
 
 /**
  * Conductance / coupling coefficients.
@@ -109,39 +62,6 @@ struct conductance
 			IP3_ht_ec;	///< Heterocellular IP3 coupling between ECs.
 };
 
-#if 1
-// TODO: Pretty sure this can be chucked out.
-struct node
-{
-	int domain_type, ///< Bifurcation or a straight segment.
-	    domain_index,
-	    domain_start, ///< Universal ranks from MPI_COMM_WORLD.
-	    domain_end, ///< Universal ranks from MPI_COMM_WORLD.
-		parent_branch_case_bifurcation,	///< If my parent is a bifurcation which branch am I a child of?
-		m, n; ///< Row and columns in my MPI_sub_world.
-	char boundary_tag; ///< An identifier showing whether I am a rank from top or bottom edge of a subdomain.
-	int half_marker; ///< A marker for demarcating the bottom edge of the Left/Right daughter artery.
-					///exists which couples not to the parent artery but the other daughter segment. This can have following values:
-					/// 1. half coupling to parent
-					/// 2. half coupling to other daughter
-					/// 3. half splitting in the middle with left portion coupling to parent, and right portion of data coupling
-					///    to other daughter segment.
-
-	//double d, l; ///< Diameter and length scales.
-
-};
-// TODO: Pretty sure this can be chucked out.
-struct my_tree
-{
-	node internal_info;
-	node left_child, right_child, parent;
-};
-#endif
-
-///on that particular z coordinate. First two elements store the coords for any STRSEG or Left/Right child of
-///bifurcation where as the last two elements store coords for the parent segment of a bifurcation, if the domain
-///type is BIF
-
 #define DOMAIN_NUM 0
 #define DOMAIN_TYPE 1
 #define AX_QUADS 2
@@ -153,8 +73,8 @@ struct my_tree
 #define CR_SMCS 8
 #define NUM_CONFIG_ELEMENTS 9
 
+// TODO: Initialise and use constants correctly within grid_params.
 // const int num_ghost_cells = 2;
-
 typedef struct
 {
 	///General information on cell geometry and the geometric primitive constructed.
@@ -162,13 +82,20 @@ typedef struct
 	int num_ec_fundblk_circumferentially;
 	int num_smc_fundblk_axially;
 	int num_ec_fundblk_axially;
-	int num_ghost_cells; // TODO: Should be replaced with a macro.
+	int num_ghost_cells;
 	int num_fluxes_smc; // Number of SMC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
 	int num_fluxes_ec; // Number of EC ioinic currents to be evaluated for eval of LHS of the d/dt terms of the ODEs.
 	int num_coupling_species_smc; // Number of SMC coupling species homogenic/heterogenic.
 	int num_coupling_species_ec; // Number of SMC coupling species homogenic/heterogenic.
 	int neq_smc; // Number of SMC ODEs for a single cell.
 	int neq_ec; // Number of EC ODEs for a single cell.
+
+	///Number of elements added to the send buffer for sending relevant information on the content of the buffer to receiving task.
+	int added_info_in_send_buf;
+
+	int domain_index;
+	int domain_type;
+	int boundary_tag;
 
 	int
 	/// Global domain information storage with these elements:
@@ -180,18 +107,15 @@ typedef struct
 	n,
 	/// My coordinates
 	coords[2],
-	///Coordinates for neighbour tasks
+	///Coordinates for neighbour tasks.
 	nbrs[2][4],
-	///Node payload information(number of cells laid out on a node)
+	///Node payload information (number of cells laid out on a node).
 	num_ec_axially, num_ec_circumferentially, num_smc_axially, num_smc_circumferentially, neq_ec_axially, neq_smc_axially,
 	///Total number of state variables in the computational domain
 	NEQ,
-	///Number of elements added to the Send buffer for sending relevant information on the content of the buffer to receiving task
-	added_info_in_send_buf,
 	///This is global and local MPI information
 	num_ranks, universal_rank, /// numtasks = total CPUs in MPI_COMM_WORLD,
 	num_ranks_branch, rank_branch, /// tasks = total CPUs in my-subdomain's comm (branch)
-	color, key,
 
 	//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right branch = 3.
 	//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
@@ -205,7 +129,7 @@ typedef struct
 	///Information for spatial variation in agonist.
 	double uniform_jplc, stimulus_onset_time;	/// the time when spatially varying agonist kicks in
 
-	my_tree my_domain;
+	//my_tree my_domain;
 
 	// MPI_COMM_WORLD, and branch communicatior.
 	MPI_Comm universe, cart_comm;
@@ -213,11 +137,6 @@ typedef struct
 	int smc_model, ec_model; // These are placeholders for the selection of model to be simulated in each cell.
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
 
-	char suffix[16];	// this is for use in the naming convention of the IO files to recognise and record
-						// which files are associated with a given task/processor.
-
-	int logfile_displacements;
-	char *logfile_write_buffer;
 	char solution_dir[1024], time_profiling_dir[1024], config_file[1024];
 } grid_parms;
 
@@ -253,20 +172,22 @@ typedef struct
 	double aggregate_ec_write, aggregate_smc_write;
 } time_stamps;
 
-
+//Topology related functions
+void set_task_parameters(grid_parms *);
+grid_parms make_bifucation_cart_grids(grid_parms);
+grid_parms make_straight_segment_cart_grids(grid_parms);
+void read_init_ATP(grid_parms *grid, EC_cell **ECs);
 void set_coupling_parms(int CASE, conductance* cpl_cef);
-int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
+void determine_source_destination(grid_parms, int*, int*);
 void communication_update_recv_size(grid_parms *);
 void communication_update_sendbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
-void determine_source_destination(grid_parms, int*, int*);
 void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, EC_cell**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
+int compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 void coupling(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
-
-void dump_rank_info(conductance, grid_parms); //, IO_domain_info*);
 
 // Solver wrapper functions.
 #ifdef RK_SUITE
@@ -279,21 +200,14 @@ void arkode_solver(double, double, double, double*, int, double, double, int, ch
 void odeint_solver(double, double, double, double*, int, double, double, int, checkpoint_handle*, char*, IO_domain_info*);
 #endif
 
-int compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
+int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
 
 ///These are debugging functions, not used in production runs.
+void dump_rank_info(conductance, grid_parms); //, IO_domain_info*);
 void print_domains(FILE*, grid_parms, SMC_cell**, EC_cell**);
 void print_send_buffer(FILE*, grid_parms, double**);
 void print_recv_buffer(FILE*, grid_parms, double**);
 void print_compare(double, double*, grid_parms, SMC_cell**, EC_cell**);
-
-//Topology related functions
-grid_parms make_bifucation_cart_grids(grid_parms);
-grid_parms make_straight_segment_cart_grids(grid_parms);
-void set_task_parameters(grid_parms *);
-void configure_subdomains_topology(grid_parms *);
-
-void read_init_ATP(grid_parms *grid, EC_cell **ECs);
 
 void initialize_t_stamp(time_stamps*);
 void dump_time_profiling(grid_parms grid, time_stamps* t_stamp);
