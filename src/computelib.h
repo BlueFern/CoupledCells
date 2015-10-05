@@ -174,8 +174,8 @@ typedef struct
 
 //Topology related functions
 void set_task_parameters(grid_parms *);
-grid_parms make_bifucation_cart_grids(grid_parms);
-grid_parms make_straight_segment_cart_grids(grid_parms);
+void make_bifucation_cart_grids(grid_parms *);
+void make_straight_cart_grid(grid_parms *);
 void read_init_ATP(grid_parms *grid, EC_cell **ECs);
 void set_coupling_parms(int CASE, conductance* cpl_cef);
 

@@ -5,9 +5,6 @@
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
-using namespace std;
-extern time_stamps t_stamp;
-
 // This determine source/destination should be done only once.
 // Basically we need to know only destination.
 // All destinations should be done in universal rank space.
@@ -128,7 +125,7 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 	MPI_Status remote_status[4];
 	int tag_remote_1 = 3;
 
-	if (grid.boundary_tag == 'I')
+	if ((grid.boundary_tag == 'I') || (grid.boundary_tag == 'T') || (grid.boundary_tag == 'B'))
 	{
 		for (int i = 0; i < 2; i++) {
 			remote_source[i] = grid.nbrs[remote][i];
@@ -142,21 +139,6 @@ void communication_async_send_recv(grid_parms grid, double** sendbuf, double** r
 
 		MPI_Waitall(4, remote_req, remote_status);
 	}
-	else if ((grid.boundary_tag == 'T') || (grid.boundary_tag == 'B'))
-	{
-		for (int i = 0; i < 2; i++) {
-			remote_source[i] = grid.nbrs[remote][i];
-			remote_dest[i] = grid.nbrs[remote][i];
-		}
-
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[UP], grid.num_elements_recv_up, MPI_DOUBLE, remote_source[UP], MPI_ANY_TAG, grid.universe, &remote_req[2 + UP]));
-		CHECK_MPI_ERROR(MPI_Irecv(recvbuf[DOWN], grid.num_elements_recv_down, MPI_DOUBLE, remote_source[DOWN], MPI_ANY_TAG, grid.universe, &remote_req[2 + DOWN]));
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[UP], grid.num_elements_send_up, MPI_DOUBLE, remote_dest[UP], 0, grid.universe, &remote_req[UP]));
-		CHECK_MPI_ERROR(MPI_Isend(sendbuf[DOWN], grid.num_elements_send_down, MPI_DOUBLE, remote_dest[DOWN], 0, grid.universe, &remote_req[DOWN]));
-
-		MPI_Waitall(4, remote_req, remote_status);
-	}
-
 	// Unpack received data into ghost cells.
 	communication_update_recvbuf(grid, recvbuf, smc, ec);
 }

@@ -99,11 +99,11 @@ int main(int argc, char* argv[])
 
 	if (grid.domain_type == STRSEG)
 	{
-		grid = make_straight_segment_cart_grids(grid);
+		make_straight_cart_grid(&grid);
 	}
 	else if (grid.domain_type == BIF)
 	{
-		grid = make_bifucation_cart_grids(grid);
+		make_bifucation_cart_grids(&grid);
 	}
 
 	/// Now allocate memory for the structures representing the cells and the various members of those structures.
