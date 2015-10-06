@@ -2,16 +2,16 @@
 
 CC = mpixlcxx
 
-CFLAGS = $(ODEOPTION) -g $(WALL) -Iext/rksuite-1.0 -I/hpc/projects/packages/local.bgl/pkg/hdf5/version/include -L/hpc/projects/packages/local.bgl/pkg/hdf5/version/lib
+CFLAGS = $(ODEOPTION) -g -O3 -Iext/rksuite-1.0 -I/bgl/local/include -L/bgl/local/lib
 $(info CFLAGS is set to "${CFLAGS}")
 
 LIBRKSUITE = librksuite.a
 
-LIBS = -lm -lhdf5 -lhdf5_hl
+LIBS = -lm -lhdf5 
 EXE = coupledCellsModel
 
-# SRCS = $(shell ls src/*.cpp)
-SRCS = src/checkpoint.cpp src/debug_file.cpp src/koenigsberger_model.cpp src/topology.cpp src/update.cpp src/compute.cpp src/gather.cpp src/simulation_main.cpp src/solver_rk.cpp src/tsoukias_smc_multicell.cpp  src/writeHDF5.cpp
+SRCS = src/compute.cpp src/gather.cpp src/simulation_main.cpp src/time_profiling.cpp src/tsoukias_model.cpp src/writeHDF5.cpp src/debug_helpers.cpp src/koenigsberger_model.cpp src/solver_rk.cpp src/topology.cpp src/update.cpp
+
 OBJS = $(SRCS:.cpp=.o)
 
 .PHONY: all
@@ -19,8 +19,6 @@ all: $(EXE)
 
 $(EXE): $(OBJS) $(LIBRKSUITE)
 	$(CC) $(CFLAGS) $(OBJS) lib/$(LIBRKSUITE) $(LIBS) -o $(EXE)
-
-rksuite: $(LIBRKSUITE)
 
 $(LIBRKSUITE): ext/rksuite-1.0/rksuite.o
 	ar ru lib/$@ $^

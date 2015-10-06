@@ -2,6 +2,7 @@
 #define _COMPUTE_LIB_
 
 #include <mpi.h>
+#include <stdio.h>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -121,15 +122,13 @@ typedef struct
 	//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 	branch_tag,
 	/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
-	scheme, offset_P, offset_L, offset_R, flip_array[4],
+	offset_P, offset_L, offset_R, flip_array[4],
 	/// Number of elements being sent and received.
 	num_elements_send_up, num_elements_send_down, num_elements_send_left, num_elements_send_right,
 	num_elements_recv_up, num_elements_recv_down, num_elements_recv_left, num_elements_recv_right;
 
 	///Information for spatial variation in agonist.
 	double uniform_jplc, stimulus_onset_time;	/// the time when spatially varying agonist kicks in
-
-	//my_tree my_domain;
 
 	// MPI_COMM_WORLD, and branch communicatior.
 	MPI_Comm universe, cart_comm;
