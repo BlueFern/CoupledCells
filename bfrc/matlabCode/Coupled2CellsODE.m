@@ -1,0 +1,42 @@
+function dxdt = Coupled2CellsODE(t,x,JPLC,Vm_ht,Ca_ht,IP3_ht,Vm_hm_smc,Ca_hm_smc,IP3_hm_smc,Vm_hm_ec,Ca_hm_ec,IP3_hm_ec)
+
+dxdt = zeros(size(x));
+smc_Ca_1 = x(1); 
+smc_SR_1 = x(2);
+smc_Vm_1 = x(3);
+smc_w_1 = x(4);
+smc_IP3_1 = x(5);
+ec_Ca_1 = x(6);
+ec_SR_1 = x(7);
+ec_Vm_1 = x(8);
+ec_IP3_1 = x(9);
+smc_Ca_2 = x(10); 
+smc_SR_2 = x(11);
+smc_Vm_2 = x(12);
+smc_w_2 = x(13);
+smc_IP3_2 = x(14);
+ec_Ca_2 = x(15);
+ec_SR_2 = x(16);
+ec_Vm_2 = x(17);
+ec_IP3_2 = x(18);
+
+
+dxdt(1) = (0.23 * smc_IP3_1^2) / (1.00^2 + smc_IP3_1^2) - (2.025 * smc_Ca_1^2) / (smc_Ca_1^2 + 1.00^2)  + (55 * (smc_SR_1^2 * smc_Ca_1^4)) / ((2^2 + smc_SR_1^2) * (0.9^4 + smc_Ca_1^4)) - 0.24 * smc_Ca_1 * (1 + ((smc_Vm_1 - -100) / 250)) + 0.025 * smc_SR_1 - 0.00129 * (smc_Vm_1 - 100) / (1 + ((exp((-1 * (smc_Vm_1 - -24)) / 8.5)))) + 0.00316 * smc_Ca_1 * (smc_Vm_1 - -30) / (smc_Ca_1 + 0.5)  - Ca_ht*(smc_Ca_1 - ec_Ca_1) - Ca_hm_smc*(smc_Ca_1 - smc_Ca_2);
+dxdt(2) = (2.025 * smc_Ca_1^2) / (smc_Ca_1^2 + 1.00^2) - (55 * (smc_SR_1^2 * smc_Ca_1^4)) / ((2^2 + smc_SR_1^2) * (0.9^4 + smc_Ca_1^4)) - 0.025 * smc_SR_1;                                                                                                                                                                                                                                                   
+dxdt(3) = 1970 * (-0.0432 - 0.00134 * (smc_Vm_1 - -25) -  (2 * 0.00129 * (smc_Vm_1 - 100) / (1 + ((exp((-1 * (smc_Vm_1 - -24)) / 8.5))))) - 0.00316 * smc_Ca_1 * (smc_Vm_1 - -30) / (smc_Ca_1 + 0.5) - 0.0046 * smc_w_1 * (smc_Vm_1 - -94))  - Vm_ht*(smc_Vm_1 - ec_Vm_1) - Vm_hm_smc*(smc_Vm_1 - smc_Vm_2);                                                                                                                                           
+dxdt(4) = 45 * ((smc_Ca_1 + 0)^2 / ((smc_Ca_1 + 0)^2 + (0.13 * (exp(-1 * (smc_Vm_1 - -27) / 12)))) - smc_w_1);                                                                                                                                                                                                                                                                                            
+dxdt(5) = -0.1 * smc_IP3_1 - IP3_ht*(smc_IP3_1 - ec_IP3_1) - IP3_hm_smc*(smc_IP3_1 - smc_IP3_2);                                                                                                                                                                                                                                                                                                                                           
+dxdt(6) = (0.23 * ec_IP3_1^2) / (1^2 + ec_IP3_1^2) - (0.5 * ec_Ca_1^2) / (ec_Ca_1^2 + 1^2) + (5 * ec_SR_1^2 * ec_Ca_1^4) / ((ec_SR_1^2 + 2^2)*(ec_Ca_1^4 + 0.9^4))  - 0.24 * ec_Ca_1  + 0.025 * ec_SR_1  + (0.66*1e-3 * (50 - ec_Vm_1) * 0.5) * (1 + ((tanh((((log10(ec_Ca_1)) - -0.18) / 0.37)))))+ 0.029 - Ca_ht*(ec_Ca_1 - smc_Ca_1) - Ca_hm_ec*(ec_Ca_1 - ec_Ca_2);                                                                                      
+dxdt(7) = (0.5 * ec_Ca_1^2) / (ec_Ca_1^2 + 1^2) - (5 * ec_SR_1^2 * ec_Ca_1^4) / ((ec_SR_1^2 + 2^2)*(ec_Ca_1^4+0.9^4)) - 0.025 * ec_SR_1;                                                                                                                                                                                                                                                                        
+dxdt(8) = ((-1 / 25.8) * (6927 * (ec_Vm_1 - -80) * ((0.4 / 2) * (1 + (tanh( ((((( (log10( ec_Ca_1)) - -0.4) * (ec_Vm_1 - -80.8)) -53.3) / ((1.32e-3 * (ec_Vm_1 + (53.3*( (log10(ec_Ca_1))--0.4))--80.8)^2 )+0.3)))))) + (0.6 / 2) * (1 + (tanh((((log10( ec_Ca_1)) - -0.28) / 0.389))))) + 955 * (ec_Vm_1 - -31.1))) - Vm_ht*(ec_Vm_1 - smc_Vm_1) - Vm_hm_ec*(ec_Vm_1 - ec_Vm_2);                                                                 
+dxdt(9) = JPLC - 0.1 * ec_IP3_1 - IP3_ht*(ec_IP3_1 - smc_IP3_1) - IP3_hm_ec*(ec_IP3_1 - ec_IP3_2);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+dxdt(10) = (0.23 * smc_IP3_2^2) / (1.00^2 + smc_IP3_2^2) - (2.025 * smc_Ca_2^2) / (smc_Ca_2^2 + 1.00^2)  + (55 * (smc_SR_2^2 * smc_Ca_2^4)) / ((2^2 + smc_SR_2^2) * (0.9^4 + smc_Ca_2^4)) - 0.24 * smc_Ca_2 * (1 + ((smc_Vm_2 - -100) / 250)) + 0.025 * smc_SR_2 - 0.00129 * (smc_Vm_2 - 100) / (1 + ((exp((-1 * (smc_Vm_2 - -24)) / 8.5)))) + 0.00316 * smc_Ca_2 * (smc_Vm_2 - -30) / (smc_Ca_2 + 0.5)  - Ca_ht*(smc_Ca_2 - ec_Ca_2) - Ca_hm_smc*(smc_Ca_2 - smc_Ca_1);
+dxdt(11) = (2.025 * smc_Ca_2^2) / (smc_Ca_2^2 + 1.00^2) - (55 * (smc_SR_2^2 * smc_Ca_2^4)) / ((2^2 + smc_SR_2^2) * (0.9^4 + smc_Ca_2^4)) - 0.025 * smc_SR_2;                                                                                                                                                                                                                                                   
+dxdt(12) = 1970 * (-0.0432 - 0.00134 * (smc_Vm_2 - -25) -  (2 * 0.00129 * (smc_Vm_2 - 100) / (1 + ((exp((-1 * (smc_Vm_2 - -24)) / 8.5))))) - 0.00316 * smc_Ca_2 * (smc_Vm_2 - -30) / (smc_Ca_2 + 0.5) - 0.0046 * smc_w_2 * (smc_Vm_2 - -94))  - Vm_ht*(smc_Vm_2 - ec_Vm_2) - Vm_hm_smc*(smc_Vm_2 - smc_Vm_1);                                                                                                                                           
+dxdt(13) = 45 * ((smc_Ca_2 + 0)^2 / ((smc_Ca_2 + 0)^2 + (0.13 * (exp(-1 * (smc_Vm_2 - -27) / 12)))) - smc_w_2);                                                                                                                                                                                                                                                                                            
+dxdt(14) = -0.1 * smc_IP3_2 - IP3_ht*(smc_IP3_2 - ec_IP3_2) - IP3_hm_smc*(smc_IP3_2 - smc_IP3_1);                                                                                                                                                                                                                                                                                                                                           
+dxdt(15) = (0.23 * ec_IP3_2^2) / (1^2 + ec_IP3_2^2) - (0.5 * ec_Ca_2^2) / (ec_Ca_2^2 + 1^2) + (5 * ec_SR_2^2 * ec_Ca_2^4) / ((ec_SR_2^2 + 2^2)*(ec_Ca_2^4 + 0.9^4))  - 0.24 * ec_Ca_2  + 0.025 * ec_SR_2  + (0.66*1e-3 * (50 - ec_Vm_2) * 0.5) * (1 + ((tanh((((log10(ec_Ca_2)) - -0.18) / 0.37)))))+ 0.029 - Ca_ht*(ec_Ca_2 - smc_Ca_2) - Ca_hm_ec*(ec_Ca_2 - ec_Ca_1);                                                                                      
+dxdt(16) = (0.5 * ec_Ca_2^2) / (ec_Ca_2^2 + 1^2) - (5 * ec_SR_2^2 * ec_Ca_2^4) / ((ec_SR_2^2 + 2^2)*(ec_Ca_2^4 + 0.9^4)) - 0.025 * ec_SR_2;                                                                                                                                                                                                                                                                        
+dxdt(17) = ((-1 / 25.8) * (6927 * (ec_Vm_2 - -80) * ((0.4 / 2) * (1 + (tanh( ((((( (log10( ec_Ca_2)) - -0.4) * (ec_Vm_2 - -80.8)) -53.3) / ((1.32e-3 * (ec_Vm_2 + (53.3*( (log10(ec_Ca_2))--0.4))--80.8)^2 )+0.3)))))) + (0.6 / 2) * (1 + (tanh((((log10(ec_Ca_2)) - -0.28) / 0.389))))) + 955 * (ec_Vm_2 - -31.1))) - Vm_ht*(ec_Vm_2 - smc_Vm_2) - Vm_hm_ec*(ec_Vm_2 - ec_Vm_1);                                                                 
+dxdt(18) = JPLC - 0.1 * ec_IP3_2 - IP3_ht*(ec_IP3_2 - smc_IP3_2) - IP3_hm_ec*(ec_IP3_2 - ec_IP3_1);  
+                                                          
