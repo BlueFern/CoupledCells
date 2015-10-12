@@ -1,3 +1,4 @@
+import os
 import sys
 import h5py
 import vtk
@@ -56,8 +57,11 @@ for files in INPUT_FILES:
 ecAppend.Update()
 outputDataset = ecAppend.GetOutput()
 
+outputFileName = 'solution/jplc_input.vtu'
+print 'Writing file', os.path.abspath(outputFileName)
+
 jplcWriter = vtk.vtkXMLUnstructuredGridWriter()
-jplcWriter.SetFileName('solution/jplc_input.vtu')
+jplcWriter.SetFileName(outputFileName)
 if vtk.VTK_MAJOR_VERSION < 6:
     jplcWriter.SetInput(outputDataset)
 else:
