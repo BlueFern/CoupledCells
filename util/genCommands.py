@@ -1,6 +1,8 @@
 import argparse
 import math
 
+# The output from this script can be redirected to a file.
+
 if __name__ == "__main__":
 
     argParser = argparse.ArgumentParser(
@@ -12,12 +14,16 @@ if __name__ == "__main__":
     # The ceiling value for the number of steps per processor.
     stepPerProc = int(math.ceil(args.numSteps / float(args.numProcs)))
 
+    # For every processor calculate the start and end steps.
     for proc in range(args.numProcs):
         start = stepPerProc * proc
         adjustedStep = stepPerProc
+
+        # Make sure the last step is set to not overstep the total number of steps.
         if proc == args.numProcs - 1:
             adjustedStep = args.numSteps - start
+
         end = start + adjustedStep - 1
 
-        print 'time python2.7 ../scripts/bifurcation_ec_hdf5ToVTU.py ' + str(start) + ' ' + str(end)
-        print 'time python2.7 ../scripts/bifurcation_smc_hdf5ToVTU.py ' + str(start) + ' ' + str(end)
+        print 'python2.7 ../scripts/bifurcation_ec_hdf5ToVTU.py ' + str(start) + ' ' + str(end)
+        print 'python2.7 ../scripts/bifurcation_smc_hdf5ToVTU.py ' + str(start) + ' ' + str(end)
