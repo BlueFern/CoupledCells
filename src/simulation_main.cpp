@@ -1,7 +1,5 @@
-
 #include <stdlib.h>
 #include <cstring>
-
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
@@ -291,9 +289,9 @@ int main(int argc, char* argv[])
 #ifdef RK_SUITE
 	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, grid.solution_dir); //, my_IO_domain_info);
 #elif defined ARK_ODE
-	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
+	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir);
 #elif defined BOOST_ODEINT
-	odeint_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, check, grid.solution_dir, my_IO_domain_info);
+	odeint_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir);
 #else
 #error ODE solver not selected. Use -DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT during compilation
 #endif
