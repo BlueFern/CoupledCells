@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <cstring>
+
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
@@ -35,8 +36,23 @@ int main(int argc, char* argv[])
 	CHECK_MPI_ERROR(MPI_Comm_rank(grid.universe, &grid.universal_rank));
 	CHECK_MPI_ERROR(MPI_Comm_size(grid.universe, &grid.num_ranks));
 
+	if(grid.universal_rank == 0)
+	{
+		printf("Running with coupling case %d.\n", CASE);
+
+#ifdef RK_SUITE
+		printf("Running with RK_SUITE solver.\n");
+#elif defined ARK_ODE
+		printf("Running with ARK_ODE solver.\n");
+#elif defined BOOST_ODEINT
+		printf("Running with BOOST_ODEINT solver.\n");
+#else
+		fprintf(stderr, "No solver? How is this possible? Does not compute.\n");
+		MPI_Abort(grid.universe, 911);
+#endif
+	}
+
 	char filename[50];
-	// int error;
 
 	/// Time variables
 	double tfinal = 1e-2;
@@ -287,11 +303,17 @@ int main(int argc, char* argv[])
 	//printf("[%d] %s:%d\n", grid.universal_rank, __FILE__, __LINE__);
 
 #ifdef RK_SUITE
+
 	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, grid.solution_dir); //, my_IO_domain_info);
+
 #elif defined ARK_ODE
+
 	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir);
+
 #elif defined BOOST_ODEINT
+
 	odeint_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir);
+
 #else
 #error ODE solver not selected. Use -DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT during compilation
 #endif

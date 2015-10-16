@@ -1,6 +1,7 @@
-import sys
+import os
 import h5py
 import numpy
+import argparse
 import vtk
 
 """
@@ -14,19 +15,20 @@ The number of time steps to proces is to be specified as a command line argument
 """
 
 H5_FILE_BASE_NAME = 'solution/ec_data_t_'
-VTP_FILE_BASE_NAME = 'solution/ec_data_t_'
+VTU_FILE_BASE_NAME = 'solution/ec_data_t_'
 
 INPUT_EC_MESH_FILES = [
-'vtk/ec_mesh_parent.vtp',
-'vtk/ec_mesh_left_daughter.vtp',
-'vtk/ec_mesh_right_daughter.vtp'
+    'vtk/ec_mesh_parent.vtp',
+    'vtk/ec_mesh_left_daughter.vtp',
+    'vtk/ec_mesh_right_daughter.vtp'
 ]
+
 
 def read_array(h5_file_name, dataset_name):
     fid = h5py.h5f.open(h5_file_name)
     dset = h5py.h5d.open(fid, dataset_name)
     shape = dset.shape
-    rdata = numpy.zeros((shape[0], shape[1]), dtype = numpy.float64)
+    rdata = numpy.zeros((shape[0], shape[1]), dtype=numpy.float64)
     dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
 
     arr = rdata.ravel()
@@ -38,7 +40,8 @@ def read_array(h5_file_name, dataset_name):
 
     return array
 
-def run():
+
+def HDF5toVTK(start, end):
     INPUT_EC_MESHES = []
 
     # Read input EC meshes.
@@ -49,7 +52,7 @@ def run():
 
         INPUT_EC_MESHES += [reader.GetOutput()]
 
-    for time_step in range(int(sys.argv[1])):
+    for time_step in range(start, end + 1):
         append_filter = vtk.vtkAppendFilter()
 
         # PARENT.
@@ -94,7 +97,7 @@ def run():
         h5_file_left = H5_FILE_BASE_NAME + str(time_step) + '_b_2.h5'
         print "Processing file", h5_file_left
 
-        ca_array_left = read_array(h5_file_left,'/EC_Ca')
+        ca_array_left = read_array(h5_file_left, '/EC_Ca')
         ca_array_left.SetName('EC_Ca')
         mesh_left.GetCellData().AddArray(ca_array_left)
 
@@ -169,18 +172,23 @@ def run():
         append_filter.Update()
 
         # Write the result.
-        vtp_file = VTP_FILE_BASE_NAME + str(time_step) + '.vtu'
+        vtu_file = VTU_FILE_BASE_NAME + str(time_step) + '.vtu'
+        print 'Writing file', os.path.abspath(vtu_file)
+
         writer = vtk.vtkXMLUnstructuredGridWriter()
-        writer.SetFileName(vtp_file)
+        writer.SetFileName(vtu_file)
         if vtk.VTK_MAJOR_VERSION < 6:
             writer.SetInput(append_filter.GetOutput())
         else:
             writer.SetInputData(append_filter.GetOutput())
         writer.Update()
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print "Expected arguments: the number of time steps to process."
-    else:
-        run()
 
+if __name__ == "__main__":
+    argParser = argparse.ArgumentParser(
+        description='Fuse Coupled Cells simulation (bifurcation) data in HDF5 format with vessel geomtery data in VTK format and save the result as VTU data.')
+    argParser.add_argument('start', type=int, help='Start time')
+    argParser.add_argument('end', type=int, help='End time')
+    args = argParser.parse_args()
+
+    HDF5toVTK(args.start, args.end)

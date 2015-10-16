@@ -418,11 +418,12 @@ void coupling(double t, double y[], grid_parms grid, SMC_cell** smc,
 	}
 }
 
-int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
-		double t, double* y, double* f) {
+void compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t, double* y, double* f)
+{
 	int err;
 
 	map_solver_output_to_cells(grid, y, smc, ec);
+
 #if CELL_MODEL == TSK
 
 	tsoukias_smc(grid, smc);
@@ -442,16 +443,14 @@ int compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 
 	koenigsberger_smc_derivatives(f, grid, smc);
 	koenigsberger_ec_derivatives(t, f, grid, ec);
-#endif
 
-	return (err);
+#endif
 }
 
-int compute_implicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
-		double t, double* y, double* f) {
-	int err;
-
+void compute_implicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t, double* y, double* f)
+{
 	map_solver_output_to_cells(grid, y, smc, ec);
+
 #if CELL_MODEL == TSK
 
 	tsoukias_smc(grid, smc);
@@ -471,16 +470,14 @@ int compute_implicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance 
 
 	koenigsberger_smc_derivatives_implicit(f, grid, smc);
 	koenigsberger_ec_derivatives_implicit(t, f, grid, ec);
-#endif
 
-	return (err);
+#endif
 }
 
-int compute_explicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
-		double t, double* y, double* f) {
-	int err;
-
+void compute_explicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t, double* y, double* f)
+{
 	map_solver_output_to_cells(grid, y, smc, ec);
+
 #if CELL_MODEL == TSK
 
 	tsoukias_smc(grid, smc);
@@ -500,9 +497,8 @@ int compute_explicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance 
 
 	koenigsberger_smc_derivatives_explicit(f, grid, smc);
 	koenigsberger_ec_derivatives_explicit(t, f, grid, ec);
-#endif
 
-	return (err);
+#endif
 }
 
 #if 0

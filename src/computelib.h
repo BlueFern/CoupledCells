@@ -187,9 +187,9 @@ void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, EC_cell**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
-int compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
-int compute_implicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
-int compute_explicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
+void compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
+void compute_implicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
+void compute_explicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 void coupling(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
 
 // Solver wrapper functions.

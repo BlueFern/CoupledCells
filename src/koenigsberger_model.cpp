@@ -116,6 +116,24 @@ void koenigsberger_smc(grid_parms grid, SMC_cell** smc)
 	koenigsberger_smc_explicit(grid, smc);
 }
 
+void koenigsberger_smc_derivatives(double* f, grid_parms grid, SMC_cell** smc)
+{
+	koenigsberger_smc_derivatives_implicit(f, grid, smc);
+	koenigsberger_smc_derivatives_explicit(f, grid, smc);
+}
+
+void koenigsberger_ec(grid_parms grid, EC_cell** ec)
+{
+	koenigsberger_ec_implicit(grid, ec);
+	koenigsberger_ec_explicit(grid, ec);
+}
+
+void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid, EC_cell** ec)
+{
+	koenigsberger_ec_derivatives_implicit(t, f, grid, ec);
+	koenigsberger_ec_derivatives_explicit(t, f, grid, ec);
+}
+
 void koenigsberger_smc_implicit(grid_parms grid, SMC_cell** smc)
 {
 	// Evaluate single cell fluxes.
@@ -170,12 +188,6 @@ void koenigsberger_smc_explicit(grid_parms grid, SMC_cell** smc)
 	}
 }
 
-void koenigsberger_smc_derivatives(double* f, grid_parms grid, SMC_cell** smc)
-{
-	koenigsberger_smc_derivatives_implicit(f, grid, smc);
-	koenigsberger_smc_derivatives_explicit(f, grid, smc);
-}
-
 void koenigsberger_smc_derivatives_implicit(double* f, grid_parms grid, SMC_cell** smc)
 {
 	int k;
@@ -214,11 +226,6 @@ void koenigsberger_smc_derivatives_explicit(double* f, grid_parms grid, SMC_cell
 	}
 }
 
-void koenigsberger_ec(grid_parms grid, EC_cell** ec)
-{
-	koenigsberger_ec_implicit(grid, ec);
-	koenigsberger_ec_explicit(grid, ec);
-}
 void koenigsberger_ec_implicit(grid_parms grid, EC_cell** ec)
 {
 	// Evaluate single cell fluxes.
@@ -267,12 +274,6 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 
 		}
 	}
-}
-
-void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid, EC_cell** ec)
-{
-	koenigsberger_ec_derivatives_implicit(t, f, grid, ec);
-	koenigsberger_ec_derivatives_explicit(t, f, grid, ec);
 }
 
 void koenigsberger_ec_derivatives_implicit(double t, double* f, grid_parms grid, EC_cell** ec)
