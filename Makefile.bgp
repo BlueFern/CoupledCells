@@ -1,30 +1,67 @@
 # Set ODEOPTION on command line to (-DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT).
 
-CC = mpixlcxx
+CXX = mpixlcxx
+#CXX = mpicxx
 
-CFLAGS = $(ODEOPTION) -g -O3 -Iext/rksuite-1.0 -I/bgp/local/include -L/bgp/local/lib
-$(info CFLAGS is set to "${CFLAGS}")
+# CPPFLAGS --- preprocessor flags.
+# CXXFLAGS --- compiler flags.
+# LDFLAGS --- linker flags.
+
+CXXFLAGS = -g -O3
+$(info CXXFLAGS is set to "${CXXFLAGS}")
 
 LIBRKSUITE = librksuite.a
 
 LIBS = -lm -lhdf5 -lz
 EXE = coupledCellsModel
 
-SRCS = src/compute.cpp src/gather.cpp src/simulation_main.cpp src/time_profiling.cpp src/tsoukias_model.cpp src/writeHDF5.cpp src/debug_helpers.cpp src/koenigsberger_model.cpp src/solver_rk.cpp src/topology.cpp src/update.cpp
+EXTRA_LIB=
+
+# If RK_SUITE, compile with solver_rk.
+ifeq ($(ODEOPTION),RK_SUITE)
+SOLVER_SRC = src/solver_rk.cpp
+SOLVER_INC = -Iext/rksuite-1.0 -DRK_SUITE
+SOLVER_LD = lib/$(LIBRKSUITE)
+EXTRA_LIB=$(LIBRKSUITE)
+endif
+
+# If ARK_ODE, compile with solver_arkode.
+ifeq ($(ODEOPTION),ARK_ODE)
+SOLVER_SRC = src/solver_arkode
+SOLVER_INC = -DARK_ODE
+SOLVER_LD =
+endif
+
+# If BOOST_ODEINT, compile with solver_odeint.
+ifeq ($(ODEOPTION),BOOST_ODEINT)
+SOLVER_SRC = src/solver_odeint.cpp
+#SOLVER_INC = -DBOOST_ODEINT
+SOLVER_INC = -I/bgp/local/pkg/boost/1.59.0_gnu44/include -DBOOST_ODEINT
+#SOLVER_LD =
+SOLVER_LD = -L/bgp/local/pkg/boost/1.59.0_gnu44/lib
+endif
+
+SRCS = src/compute.cpp src/gather.cpp src/simulation_main.cpp src/time_profiling.cpp src/tsoukias_model.cpp src/writeHDF5.cpp src/debug_helpers.cpp src/koenigsberger_model.cpp src/topology.cpp src/update.cpp $(SOLVER_SRC)
+
+$(info SRCS is set to "${SRCS}")
+
+CPPFLAGS=-I/bgp/local/include $(SOLVER_INC)
+LD_FLAGS=-L/bgp/local/lib $(SOLVER_LD)
+
 OBJS = $(SRCS:.cpp=.o)
 
 .PHONY: all
 all: $(EXE)
 
-$(EXE): $(OBJS) $(LIBRKSUITE)
-	$(CC) $(CFLAGS) $(OBJS) lib/$(LIBRKSUITE) $(LIBS) -o $(EXE)
+$(EXE): $(OBJS) $(EXTRA_LIB)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(OBJS) $(LD_FLAGS) $(LIBS) -o $(EXE)
 
 $(LIBRKSUITE): ext/rksuite-1.0/rksuite.o
 	ar ru lib/$@ $^
 	ranlib lib/$@
 
 %.o: %.cpp
-	$(CC) -c $(CFLAGS) $< -o $@
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PHONY: clean
 clean:

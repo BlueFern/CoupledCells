@@ -302,9 +302,11 @@ int main(int argc, char* argv[])
 	//MPI_Barrier(MPI_COMM_WORLD);
 	//printf("[%d] %s:%d\n", grid.universal_rank, __FILE__, __LINE__);
 
+// TODO: Move yp to solver_rk.
+
 #ifdef RK_SUITE
 
-	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, grid.solution_dir); //, my_IO_domain_info);
+	rksuite_solver_CT(tnow, tfinal, interval, y, yp, grid.NEQ, TOL, thres, file_write_per_unit_time, grid.solution_dir);
 
 #elif defined ARK_ODE
 
