@@ -148,14 +148,13 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	flag = ARKodeInit(arkode_mem, fe, fi, tnow, y);
 	ark_check_flag(flag, (char *)"ARKodeInit", grid.universal_rank, 0);
 
-	// Uses a scaled, preconditioned GMRES (Generalized Minimal Residual) solver without restarts
+	// Uses a scaled, preconditioned GMRES (Generalised Minimal Residual) solver without restarts.
 	flag = ARKSpgmr(arkode_mem, PREC_RIGHT, 0);
 	flag = ARKBandPrecInit(arkode_mem, neq, 1, 1);
 #endif
 
 	flag = ARKodeSStolerances(arkode_mem, relTOL, absTOL);
 	ark_check_flag(flag, (char *)"ARKodeSVtolerances", grid.universal_rank, 0);
-
 
 	// Exchange SMC and EC variables in the ghost cells.
 	// Essential for restarts when data is loaded from a checkpoint.
