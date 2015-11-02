@@ -1,0 +1,14 @@
+
+#==================
+# AUTO coupledCells
+#==================
+
+cc = load('coupledCells')
+coupledCells = run(cc)
+
+save(coupledCells, 'coupledCells')
+
+# clean()
+# @pp coupledCells
+
+
