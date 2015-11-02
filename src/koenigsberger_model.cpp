@@ -31,9 +31,9 @@ double
 	  Gtot = 6927,   vKj = -80.0,  a1j = 53.3,
 	  a2j = 53.3,     bj = -80.8,  c1j = -0.4,
 	  m3b = 1.32e-3, m4b = 0.30,   m3s = -0.28,
-	  m4s = 0.389,   GRj = 955, vrestj = -31.10,
+	  m4s = 0.389,   GRj = 955, vrestj = -31.10;
 	/*Intracellular calcium buffering*/
-	  k6 = 100.00,  k7 = 300.00,  BT = 120.00;
+	  // k6 = 100.00,  k7 = 300.00,  BT = 120.00;
 
 /// Initial values found by running a sufficiently long simulation and recording state values
 /// after they have reached a steady state.
@@ -255,6 +255,8 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 			ec[i][j].fluxes[J_Extrusion] = Dj * ec[i][j].vars[ec_Ca];
 			//Jleak
 			ec[i][j].fluxes[J_Leak] = Lj * ec[i][j].vars[ec_SR];
+			//IP3 degradation
+			ec[i][j].fluxes[J_IP3_deg] = kj * ec[i][j].vars[ec_IP3];
 			//J_NonSelective Cation channels
 			ec[i][j].fluxes[J_NSC] = (Gcatj * (ECa - ec[i][j].vars[ec_Vm]) * 0.5)
 					* (1 + ((double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3cat) / m4cat)))));
@@ -264,11 +266,9 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 							* (1
 									+ (double) (tanh(
 											(double) ((((((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - c1j) * (ec[i][j].vars[ec_Vm] - bj)) - a1j)
-													/ ((m3b * (P2(ec[i][j].vars[ec_Vm]+(a2j*((double) (log10 ((double) (ec[i][j].vars[ec_Ca])))-c1j))-bj)))+m4b))))));
+													/ ((m3b * (P2(ec[i][j].vars[ec_Vm]+(a2j*((double) (log10 ((double) (ec[i][j].vars[ec_Ca]))) - c1j)) - bj))) + m4b))))));
 			//SK_channels
 			ec[i][j].fluxes[J_SK_Ca] = (0.6 / 2) * (1 + (double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3s) / m4s))));
-			//IP3 degradation
-			ec[i][j].fluxes[J_IP3_deg] = kj * ec[i][j].vars[ec_IP3];
 			//Grouping all other trivial Ca fluxes
 			ec[i][j].fluxes[J_trivial_Ca] = J0j;
 

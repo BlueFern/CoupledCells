@@ -20,7 +20,6 @@ ec_SR_2 = x(16);
 ec_Vm_2 = x(17);
 ec_IP3_2 = x(18);
 
-
 dxdt(1) = (0.23 * smc_IP3_1^2) / (1.00^2 + smc_IP3_1^2) - (2.025 * smc_Ca_1^2) / (smc_Ca_1^2 + 1.00^2)  + (55 * (smc_SR_1^2 * smc_Ca_1^4)) / ((2^2 + smc_SR_1^2) * (0.9^4 + smc_Ca_1^4)) - 0.24 * smc_Ca_1 * (1 + ((smc_Vm_1 - -100) / 250)) + 0.025 * smc_SR_1 - 0.00129 * (smc_Vm_1 - 100) / (1 + ((exp((-1 * (smc_Vm_1 - -24)) / 8.5)))) + 0.00316 * smc_Ca_1 * (smc_Vm_1 - -30) / (smc_Ca_1 + 0.5)  - Ca_ht*(smc_Ca_1 - ec_Ca_1) - Ca_hm_smc*(smc_Ca_1 - smc_Ca_2);
 dxdt(2) = (2.025 * smc_Ca_1^2) / (smc_Ca_1^2 + 1.00^2) - (55 * (smc_SR_1^2 * smc_Ca_1^4)) / ((2^2 + smc_SR_1^2) * (0.9^4 + smc_Ca_1^4)) - 0.025 * smc_SR_1;                                                                                                                                                                                                                                                   
 dxdt(3) = 1970 * (-0.0432 - 0.00134 * (smc_Vm_1 - -25) -  (2 * 0.00129 * (smc_Vm_1 - 100) / (1 + ((exp((-1 * (smc_Vm_1 - -24)) / 8.5))))) - 0.00316 * smc_Ca_1 * (smc_Vm_1 - -30) / (smc_Ca_1 + 0.5) - 0.0046 * smc_w_1 * (smc_Vm_1 - -94))  - Vm_ht*(smc_Vm_1 - ec_Vm_1) - Vm_hm_smc*(smc_Vm_1 - smc_Vm_2);                                                                                                                                           
