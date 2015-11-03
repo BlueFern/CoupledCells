@@ -14,11 +14,11 @@ NDIM = 9
 
 unames={1: 'smc_Ca', 2: 'smc_SR', 3: 'smc_Vm', 4: 'smc_w', 5: 'smc_IP3', 6: 'ec_Ca', 7: 'ec_ER', 8: 'ec_Vm', 9: 'ec_IP3'}
 parnames={1: 'J_PLC', 11: 'period'}
-NPR
+NPR=2000
 
 ICP=['J_PLC']
 
-UZSTOP={'J_PLC': [0.0, 1.0]}, NMX=1000
+UZSTOP={'J_PLC': [0.0, 1.0]}, NMX=10000
 
 IPS=1
 IRS=0

@@ -26,17 +26,6 @@
       DOUBLE PRECISION, INTENT(OUT) :: F(NDIM)
       DOUBLE PRECISION, INTENT(INOUT) :: DFDU(NDIM,NDIM),DFDP(NDIM,*)
 
-      DOUBLE PRECISION J_PLC
-      DOUBLE PRECISION smc_Ca, smc_SR, smc_Vm, smc_w, smc_IP3
-      DOUBLE PRECISION Jsmc_Na_Ca, Jsmc_VOCC, Jsmc_Na_K, Jsmc_Cl, Jsmc_K, Jsmc_IP3, Jsmc_SERCA, &
-            Jsmc_CICR, Jsmc_Extrusion, Jsmc_Leak, K_activation, Jsmc_IP3_deg
-      DOUBLE PRECISION ec_Ca, ec_ER, ec_Vm, ec_IP3
-      DOUBLE PRECISION Jec_IP3, Jec_SERCA, Jec_CICR, Jec_Extrusion, Jec_Leak, Jec_IP3_deg, &
-            Jec_NSC, Jec_BK_Ca, Jec_SK_Ca, Jec_Ktot, Jec_Residual, Jec_trivial_Ca
-
-      DOUBLE PRECISION Jsmc_hm_Ca, Jsmc_ht_Ca, Jsmc_hm_IP3, Jsmc_ht_IP3, Vmsmc_hm, Vmsmc_ht
-      DOUBLE PRECISION Jec_hm_Ca, Jec_ht_Ca, Jec_hm_IP3, Jec_ht_IP3, Vmec_hm, Vmec_ht, tmp
-
 ! Constants for homogenically coupled SMCs.
       DOUBLE PRECISION :: Fi = 0.23, Kri = 1.d0, GCai = 0.00129, vCa1 = 100.d0, vCa2 = -24.d0, &
             RCai = 8.50, GNaCai = 0.00316, cNaCai = 0.5, vNaCai = -30.d0, Bi = 2.025, cbi = 1.d0, &
@@ -51,7 +40,29 @@
             bj1 = -80.8, c1j = -0.4, m3b = 1.32e-3, m4b = 0.30, m3s = -0.28, m4s = 0.389, GRj = 955.d0, &
             vrestj = -31.10
 
+      DOUBLE PRECISION Jsmc_Na_Ca, Jsmc_VOCC, Jsmc_Na_K, Jsmc_Cl, Jsmc_K, Jsmc_IP3, Jsmc_SERCA, &
+            Jsmc_CICR, Jsmc_Extrusion, Jsmc_Leak, K_activation, Jsmc_IP3_deg
+
+      DOUBLE PRECISION Jec_IP3, Jec_SERCA, Jec_CICR, Jec_Extrusion, Jec_Leak, Jec_IP3_deg, &
+            Jec_NSC, Jec_BK_Ca, Jec_SK_Ca, Jec_Ktot, Jec_Residual, Jec_trivial_Ca
+
+      DOUBLE PRECISION Jsmc_hm_Ca, Jsmc_ht_Ca, Jsmc_hm_IP3, Jsmc_ht_IP3, Vmsmc_hm, Vmsmc_ht
+      DOUBLE PRECISION Jec_hm_Ca, Jec_ht_Ca, Jec_hm_IP3, Jec_ht_IP3, Vmec_hm, Vmec_ht
+
+      DOUBLE PRECISION smc_Ca, smc_SR, smc_Vm, smc_w, smc_IP3
+      DOUBLE PRECISION ec_Ca, ec_ER, ec_Vm, ec_IP3
+
+      DOUBLE PRECISION J_PLC
+      DOUBLE PRECISION Ca_ht, IP3_ht, Vm_ht
+      DOUBLE PRECISION Ca_hm, IP3_hm, Vm_hm
+
       J_PLC = PAR(1)
+      Ca_ht = PAR(2)
+      IP3_ht = PAR(3)
+      Vm_ht = PAR(4)
+!      Ca_hm = PAR(8)
+!      IP3_hm = PAR(10)
+!      Vm_hm = PAR(12)
 
       smc_Ca = U(1)
       smc_SR = U(2)
@@ -92,6 +103,22 @@
       Jec_Ktot = Gtot * (ec_Vm - vKj) * (Jec_BK_Ca + Jec_SK_Ca);
       Jec_Residual = GRj * (ec_Vm - vrestj);
       Jec_trivial_Ca = J0j;
+
+! Homo coupling
+      Jsmc_hm_Ca = 0.0d0
+      Jec_hm_Ca = 0.0d0
+      Jsmc_hm_IP3 = 0.0d0
+      Jec_hm_IP3 = 0.0d0
+      Vmsmc_hm = 0.0d0
+      Vmec_hm = 0.0d0
+
+! Hetero coupling
+      Jsmc_ht_Ca = -Ca_ht * (smc_Ca - ec_Ca)
+      Jec_ht_Ca = -Ca_ht * (ec_Ca - smc_Ca)
+      Jsmc_ht_IP3 = -IP3_ht * (smc_IP3 - ec_IP3)
+      Jec_ht_IP3 = -IP3_ht * (ec_IP3 - smc_IP3)
+      Vmsmc_ht = -Vm_ht * (smc_Vm - ec_Vm)
+      Vmec_ht = -Vm_ht * (ec_Vm - smc_Vm)
 
 ! SMC Ca
       F(1)= Jsmc_IP3 - Jsmc_SERCA + Jsmc_CICR - Jsmc_Extrusion + Jsmc_Leak- Jsmc_VOCC + Jsmc_Na_Ca + Jsmc_hm_Ca + Jsmc_ht_Ca;
@@ -137,7 +164,10 @@
       DOUBLE PRECISION, INTENT(IN) :: T
 
 ! Initialize the equation parameters
-       PAR(1)= 1.0e-3
+       PAR(1) = 0.d0
+       PAR(2) = 0.d0
+       PAR(3) = 0.05d0
+       PAR(4) = 50.d0
 
 ! Initialize the solution
        U(1)= 1.0e-3
