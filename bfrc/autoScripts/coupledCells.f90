@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
-!   aut.f90 :     Model AUTO-equations file
+!   coupledCells.f90 :     Coupled Cells Model with an SMC and EC Pair.
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 
@@ -112,7 +112,7 @@
       EC(JId_ec_trivial_Ca) = J0j;
       END SUBROUTINE EC_FLX
 
-      SUBROUTINE SMC_EC_DERIV(SMC,EC,CPL,CPL_OFFS,U,U_OFFS,PAR,F)
+      SUBROUTINE SMC_EC_DERIV(SMC,EC,CPL,CPL_OFFS,U,U_OFFS,PAR,F,F_OFFS)
 ! Compute all state variables.
       USE U_INDICES
       USE PAR_INDICES
@@ -128,31 +128,32 @@
       INTEGER, INTENT(IN) :: U_OFFS
       DOUBLE PRECISION, INTENT(IN) :: PAR(*)
       DOUBLE PRECISION, INTENT(OUT) :: F(*)
+      INTEGER, INTENT(IN) :: F_OFFS
 ! SMC Ca
-      F(UId_smc_Ca)= SMC(JId_smc_IP3) - SMC(JId_smc_SERCA) + SMC(JId_smc_CICR) - SMC(JId_smc_Extrusion) + SMC(JId_smc_Leak) - &
-            SMC(JId_smc_VOCC) + SMC(JId_smc_Na_Ca) + &
+      F(F_OFFS + UId_smc_Ca)= SMC(JId_smc_IP3) - SMC(JId_smc_SERCA) + SMC(JId_smc_CICR) - SMC(JId_smc_Extrusion) + &
+            SMC(JId_smc_Leak) - SMC(JId_smc_VOCC) + SMC(JId_smc_Na_Ca) + &
             CPL(CPL_OFFS + CPL_J_smc_hm_Ca) + CPL(CPL_OFFS + CPL_J_smc_ht_Ca);
 ! SMC Ca SR
-      F(UId_smc_SR)= SMC(JId_smc_SERCA) - SMC(JId_smc_CICR) - SMC(JId_smc_Leak);
+      F(F_OFFS + UId_smc_SR)= SMC(JId_smc_SERCA) - SMC(JId_smc_CICR) - SMC(JId_smc_Leak);
 ! SMC Vm
-      F(UId_smc_Vm) = gama * (-SMC(JId_smc_Na_K) - SMC(JId_smc_Cl) - (2.0d0 * SMC(JId_smc_VOCC)) - SMC(JId_smc_Na_Ca) - &
+      F(F_OFFS + UId_smc_Vm) = gama * (-SMC(JId_smc_Na_K) - SMC(JId_smc_Cl) - (2.0d0 * SMC(JId_smc_VOCC)) - SMC(JId_smc_Na_Ca) - &
             SMC(JId_smc_K)) + CPL(CPL_OFFS + CPL_Vm_smc_hm) + CPL(CPL_OFFS + CPL_Vm_smc_ht);
 ! SMC K
-      F(UId_smc_w) = lambda * (SMC(JId_K_activation) - U(U_OFFS + UId_smc_w));
+      F(F_OFFS + UId_smc_w) = lambda * (SMC(JId_K_activation) - U(U_OFFS + UId_smc_w));
 ! SMC IP3
-      F(UId_smc_IP3) = - SMC(JId_smc_IP3_deg) + &
+      F(F_OFFS + UId_smc_IP3) = - SMC(JId_smc_IP3_deg) + &
             CPL(CPL_OFFS + CPL_J_smc_hm_IP3) + CPL(CPL_OFFS + CPL_J_smc_ht_IP3);
 ! EC Ca
-      F(UId_ec_Ca) = EC(JId_ec_IP3) - EC(JId_ec_SERCA) + EC(JId_ec_CICR) - EC(JId_ec_Extrusion) + EC(JId_ec_Leak) + &
+      F(F_OFFS + UId_ec_Ca) = EC(JId_ec_IP3) - EC(JId_ec_SERCA) + EC(JId_ec_CICR) - EC(JId_ec_Extrusion) + EC(JId_ec_Leak) + &
             EC(JId_ec_NSC) + EC(JId_ec_trivial_Ca) + &
             CPL(CPL_OFFS + CPL_J_ec_hm_Ca) + CPL(CPL_OFFS + CPL_J_ec_ht_Ca);
 ! EC Ca ER
-      F(UId_ec_ER) = EC(JId_ec_SERCA) - EC(JId_ec_CICR) - EC(JId_ec_Leak);
+      F(F_OFFS + UId_ec_ER) = EC(JId_ec_SERCA) - EC(JId_ec_CICR) - EC(JId_ec_Leak);
 ! EC Vm
-      F(UId_ec_Vm) = ((-1.0d0 / Cmj) * (EC(JId_ec_Ktot) + EC(JId_ec_Residual))) + &
+      F(F_OFFS + UId_ec_Vm) = ((-1.0d0 / Cmj) * (EC(JId_ec_Ktot) + EC(JId_ec_Residual))) + &
             CPL(CPL_OFFS + CPL_VMm_ec_hm) + CPL(CPL_OFFS + CPL_Vm_ec_ht);
 ! EC IP3
-      F(UId_ec_IP3) = PAR(PId_J_PLC) - EC(JId_ec_IP3_deg) + &
+      F(F_OFFS + UId_ec_IP3) = PAR(PId_J_PLC) - EC(JId_ec_IP3_deg) + &
             CPL(CPL_OFFS + CPL_J_ec_hm_IP3) + CPL(CPL_OFFS + CPL_J_ec_ht_IP3);
       END SUBROUTINE
 
@@ -214,7 +215,7 @@
       CPL(CPL_Vm_ec_ht) = -PAR(PId_Vm_ht) * (U(UId_ec_Vm) - U(UId_smc_Vm))
 
 ! SMC & EC derivatives.
-      CALL SMC_EC_DERIV(SMC,EC,CPL,0*CPL_STRIDE,U,0*U_STRIDE,PAR,F)
+      CALL SMC_EC_DERIV(SMC,EC,CPL,0*CPL_STRIDE,U,0*U_STRIDE,PAR,F,0*U_STRIDE)
 
       END SUBROUTINE FUNC
 !----------------------------------------------------------------------
