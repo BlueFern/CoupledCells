@@ -15,12 +15,12 @@
       MODULE FLUX_INDICES
       IMPLICIT NONE
 ! Indices for SMC fluxes.
-      INTEGER, PARAMETER :: SMC_FLX_STRIDE = 12
+!     INTEGER, PARAMETER :: SMC_FLX_STRIDE = 12
       INTEGER, PARAMETER :: JId_smc_Na_Ca = 1, JId_smc_VOCC = 2, JId_smc_Na_K = 3, JId_smc_Cl = 4, JId_smc_K = 5, &
             JId_smc_IP3 = 6, JId_smc_SERCA = 7, JId_smc_CICR = 8, JId_smc_Extrusion = 9, JId_smc_Leak = 10, &
             JId_K_activation = 11, JId_smc_IP3_deg = 12
 ! Indices for EC fluxes.
-      INTEGER, PARAMETER :: EC_FLX_STRIDE = 12
+!     INTEGER, PARAMETER :: EC_FLX_STRIDE = 12
       INTEGER, PARAMETER :: JId_ec_IP3 = 1, JId_ec_SERCA = 2, JId_ec_CICR = 3, JId_ec_Extrusion = 4, JId_ec_Leak = 5, &
             JId_ec_IP3_deg = 6, JId_ec_NSC = 7, JId_ec_BK_Ca = 8, JId_ec_SK_Ca = 9, JId_ec_Ktot = 10, &
             JId_ec_Residual = 11, JId_ec_trivial_Ca = 12
@@ -61,52 +61,54 @@
             vrestj = -31.1d0
       END MODULE
 
-      SUBROUTINE SMC_FLX(NDIM,U,SMC)
+      SUBROUTINE SMC_FLX(U,U_OFFS,SMC)
 ! Compute SMC fluxes.
       USE U_INDICES
       USE FLUX_INDICES
       USE CONSTANTS
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: NDIM
-      DOUBLE PRECISION, INTENT(IN) :: U(NDIM)
+      DOUBLE PRECISION, INTENT(IN) :: U(*)
+      INTEGER, INTENT(IN) :: U_OFFS
       DOUBLE PRECISION, INTENT(INOUT) :: SMC(*)
-      SMC(JId_smc_Na_Ca) = GNaCai * ((U(UId_smc_Ca) / (U(UId_smc_Ca) + cNaCai)) * (U(UId_smc_Vm) - vNaCai));
-      SMC(JId_smc_VOCC) = GCai * (U(UId_smc_Vm) - vCa1) / (1.0 + (exp(-1.0 * (U(UId_smc_Vm) - vCa2) / RCai)));
+      SMC(JId_smc_Na_Ca) = GNaCai * ((U(U_OFFS + UId_smc_Ca) / (U(U_OFFS + UId_smc_Ca) + cNaCai)) * &
+            (U(U_OFFS + UId_smc_Vm) - vNaCai));
+      SMC(JId_smc_VOCC) = GCai * (U(U_OFFS + UId_smc_Vm) - vCa1) / (1.0 + (exp(-1.0 * (U(U_OFFS + UId_smc_Vm) - vCa2) / RCai)));
       SMC(JId_smc_Na_K) = FNaK;
-      SMC(JId_smc_Cl) = GCli * (U(UId_smc_Vm) - vCl);
-      SMC(JId_smc_K) = GKi * U(UId_smc_w) * (U(UId_smc_Vm) - vKi);
-      SMC(JId_smc_IP3) = Fi * (U(UId_smc_IP3)**2 / (Kri**2 + U(UId_smc_IP3)**2));
-      SMC(JId_smc_SERCA) = Bi * (U(UId_smc_Ca)**2 / (cbi**2 + U(UId_smc_Ca)**2));
-      SMC(JId_smc_CICR) = CICRi * (U(UId_smc_SR)**2 / &
-            (sci**2 + U(UId_smc_SR)**2)) * (U(UId_smc_Ca)**4 / (cci**4 + U(UId_smc_Ca)**4));
-      SMC(JId_smc_Extrusion) = Di * U(UId_smc_Ca) * (1.0 + ((U(UId_smc_Vm) - vdi) / Rdi));
-      SMC(JId_smc_Leak) = Li * U(UId_smc_SR);
-      SMC(JId_K_activation) = (U(UId_smc_Ca)**2 + cwi)**2 / & 
-            ((U(UId_smc_Ca) + cwi)**2 + (beta * (exp(-1.0 * (U(UId_smc_Vm) - vCa3) / RKi))));
-      SMC(JId_smc_IP3_deg) = ki * U(UId_smc_IP3);
+      SMC(JId_smc_Cl) = GCli * (U(U_OFFS + UId_smc_Vm) - vCl);
+      SMC(JId_smc_K) = GKi * U(U_OFFS + UId_smc_w) * (U(U_OFFS + UId_smc_Vm) - vKi);
+      SMC(JId_smc_IP3) = Fi * (U(U_OFFS + UId_smc_IP3)**2 / (Kri**2 + U(U_OFFS + UId_smc_IP3)**2));
+      SMC(JId_smc_SERCA) = Bi * (U(U_OFFS + UId_smc_Ca)**2 / (cbi**2 + U(U_OFFS + UId_smc_Ca)**2));
+      SMC(JId_smc_CICR) = CICRi * (U(U_OFFS + UId_smc_SR)**2 / &
+            (sci**2 + U(U_OFFS + UId_smc_SR)**2)) * (U(U_OFFS + UId_smc_Ca)**4 / (cci**4 + U(U_OFFS + UId_smc_Ca)**4));
+      SMC(JId_smc_Extrusion) = Di * U(U_OFFS + UId_smc_Ca) * (1.0 + ((U(U_OFFS + UId_smc_Vm) - vdi) / Rdi));
+      SMC(JId_smc_Leak) = Li * U(U_OFFS + UId_smc_SR);
+      SMC(JId_K_activation) = (U(U_OFFS + UId_smc_Ca)**2 + cwi)**2 / & 
+            ((U(U_OFFS + UId_smc_Ca) + cwi)**2 + (beta * (exp(-1.0 * (U(U_OFFS + UId_smc_Vm) - vCa3) / RKi))));
+      SMC(JId_smc_IP3_deg) = ki * U(U_OFFS + UId_smc_IP3);
       END SUBROUTINE SMC_FLX
 
-      SUBROUTINE EC_FLX(NDIM,U,EC)
+      SUBROUTINE EC_FLX(U,U_OFFS,EC)
 ! Compute EC fluxes
       USE U_INDICES
       USE FLUX_INDICES
       USE CONSTANTS
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: NDIM
-      DOUBLE PRECISION, INTENT(IN) :: U(NDIM)
+      DOUBLE PRECISION, INTENT(IN) :: U(*)
+      INTEGER, INTENT(IN) :: U_OFFS
       DOUBLE PRECISION, INTENT(INOUT) :: EC(*)
-      EC(JId_ec_IP3) = Fj * (U(UId_ec_IP3)**2 / (Krj**2 + U(UId_ec_IP3)**2));
-      EC(JId_ec_SERCA) = Bj * (U(UId_ec_Ca)**2 / (cbj**2 + U(UId_ec_Ca)**2));
-      EC(JId_ec_CICR) = CICRj * (U(UId_ec_ER)**2 / (scj**2 + U(UId_ec_ER)**2)) * (U(UId_ec_Ca)**4 / (ccj**4 + U(UId_ec_Ca)**4));
-      EC(JId_ec_Extrusion) = Dj * U(UId_ec_Ca);
-      EC(JId_ec_Leak) = Lj * U(UId_ec_ER);
-      EC(JId_ec_IP3_deg) = kj * U(UId_ec_IP3);
-      EC(JId_ec_NSC) = Gcatj * (ECa - U(UId_ec_Vm)) * 0.5 * (1.0 + tanh((log10(U(UId_ec_Ca)) - m3cat) / m4cat));
-      EC(JId_ec_BK_Ca) = (0.4 / 2.0) * (1.0 + tanh(((log10(U(UId_ec_Ca)) - c1j) * (U(UId_ec_Vm) - bj1) - a1j) / &
-            (m3b * (U(UId_ec_Vm) + a2j * (log10(U(UId_ec_Ca)) - c1j) - bj1)**2 + m4b)));
-      EC(JId_ec_SK_Ca) = (0.6 / 2.0) * (1.0 + tanh((log10(U(UId_ec_Ca)) - m3s) / m4s));
-      EC(JId_ec_Ktot) = Gtot * (U(UId_ec_Vm) - vKj) * (EC(JId_ec_BK_Ca) + EC(JId_ec_SK_Ca));
-      EC(JId_ec_Residual) = GRj * (U(UId_ec_Vm) - vrestj);
+      EC(JId_ec_IP3) = Fj * (U(U_OFFS + UId_ec_IP3)**2 / (Krj**2 + U(U_OFFS + UId_ec_IP3)**2));
+      EC(JId_ec_SERCA) = Bj * (U(U_OFFS + UId_ec_Ca)**2 / (cbj**2 + U(U_OFFS + UId_ec_Ca)**2));
+      EC(JId_ec_CICR) = CICRj * (U(U_OFFS + UId_ec_ER)**2 / (scj**2 + U(U_OFFS + UId_ec_ER)**2)) * &
+            (U(U_OFFS + UId_ec_Ca)**4 / (ccj**4 + U(U_OFFS + UId_ec_Ca)**4));
+      EC(JId_ec_Extrusion) = Dj * U(U_OFFS + UId_ec_Ca);
+      EC(JId_ec_Leak) = Lj * U(U_OFFS + UId_ec_ER);
+      EC(JId_ec_IP3_deg) = kj * U(U_OFFS + UId_ec_IP3);
+      EC(JId_ec_NSC) = Gcatj * (ECa - U(U_OFFS + UId_ec_Vm)) * 0.5 * (1.0 + tanh((log10(U(U_OFFS + UId_ec_Ca)) - m3cat) / m4cat));
+      EC(JId_ec_BK_Ca) = (0.4 / 2.0) * (1.0 + tanh(((log10(U(U_OFFS + UId_ec_Ca)) - c1j) * (U(U_OFFS + UId_ec_Vm) - bj1) - a1j) / &
+            (m3b * (U(U_OFFS + UId_ec_Vm) + a2j * (log10(U(U_OFFS + UId_ec_Ca)) - c1j) - bj1)**2 + m4b)));
+      EC(JId_ec_SK_Ca) = (0.6 / 2.0) * (1.0 + tanh((log10(U(U_OFFS + UId_ec_Ca)) - m3s) / m4s));
+      EC(JId_ec_Ktot) = Gtot * (U(U_OFFS + UId_ec_Vm) - vKj) * (EC(JId_ec_BK_Ca) + EC(JId_ec_SK_Ca));
+      EC(JId_ec_Residual) = GRj * (U(U_OFFS + UId_ec_Vm) - vrestj);
       EC(JId_ec_trivial_Ca) = J0j;
       END SUBROUTINE EC_FLX
 
@@ -127,31 +129,31 @@
       DOUBLE PRECISION, INTENT(IN) :: PAR(*)
       DOUBLE PRECISION, INTENT(OUT) :: F(*)
 ! SMC Ca
-      F(UId_smc_Ca)=  SMC(JId_smc_IP3) - SMC(JId_smc_SERCA) + SMC(JId_smc_CICR) - SMC(JId_smc_Extrusion) + SMC(JId_smc_Leak) - &
+      F(UId_smc_Ca)= SMC(JId_smc_IP3) - SMC(JId_smc_SERCA) + SMC(JId_smc_CICR) - SMC(JId_smc_Extrusion) + SMC(JId_smc_Leak) - &
             SMC(JId_smc_VOCC) + SMC(JId_smc_Na_Ca) + &
-            CPL(CPL_OFFS * CPL_STRIDE + CPL_J_smc_hm_Ca) + CPL(CPL_OFFS * CPL_STRIDE + CPL_J_smc_ht_Ca);
+            CPL(CPL_OFFS + CPL_J_smc_hm_Ca) + CPL(CPL_OFFS + CPL_J_smc_ht_Ca);
 ! SMC Ca SR
-      F(UId_smc_SR)=  SMC(JId_smc_SERCA) - SMC(JId_smc_CICR) - SMC(JId_smc_Leak);
+      F(UId_smc_SR)= SMC(JId_smc_SERCA) - SMC(JId_smc_CICR) - SMC(JId_smc_Leak);
 ! SMC Vm
-      F(UId_smc_Vm) = gama * (-SMC(JId_smc_Na_K) - SMC(JId_smc_Cl) - (2.0d0 *  SMC(JId_smc_VOCC)) -  SMC(JId_smc_Na_Ca) - &
-            SMC(JId_smc_K)) + CPL(CPL_OFFS * CPL_STRIDE + CPL_Vm_smc_hm) + CPL(CPL_OFFS * CPL_STRIDE + CPL_Vm_smc_ht);
+      F(UId_smc_Vm) = gama * (-SMC(JId_smc_Na_K) - SMC(JId_smc_Cl) - (2.0d0 * SMC(JId_smc_VOCC)) - SMC(JId_smc_Na_Ca) - &
+            SMC(JId_smc_K)) + CPL(CPL_OFFS + CPL_Vm_smc_hm) + CPL(CPL_OFFS + CPL_Vm_smc_ht);
 ! SMC K
-      F(UId_smc_w) = lambda * (SMC(JId_K_activation) - U(U_OFFS * U_STRIDE + UId_smc_w));
+      F(UId_smc_w) = lambda * (SMC(JId_K_activation) - U(U_OFFS + UId_smc_w));
 ! SMC IP3
       F(UId_smc_IP3) = - SMC(JId_smc_IP3_deg) + &
-            CPL(CPL_OFFS * CPL_STRIDE + CPL_J_smc_hm_IP3) +  CPL(CPL_OFFS * CPL_STRIDE + CPL_J_smc_ht_IP3);
+            CPL(CPL_OFFS + CPL_J_smc_hm_IP3) + CPL(CPL_OFFS + CPL_J_smc_ht_IP3);
 ! EC Ca
       F(UId_ec_Ca) = EC(JId_ec_IP3) - EC(JId_ec_SERCA) + EC(JId_ec_CICR) - EC(JId_ec_Extrusion) + EC(JId_ec_Leak) + &
             EC(JId_ec_NSC) + EC(JId_ec_trivial_Ca) + &
-            CPL(CPL_OFFS * CPL_STRIDE + CPL_J_ec_hm_Ca) + CPL(CPL_OFFS * CPL_STRIDE + CPL_J_ec_ht_Ca);
+            CPL(CPL_OFFS + CPL_J_ec_hm_Ca) + CPL(CPL_OFFS + CPL_J_ec_ht_Ca);
 ! EC Ca ER
       F(UId_ec_ER) = EC(JId_ec_SERCA) - EC(JId_ec_CICR) - EC(JId_ec_Leak);
 ! EC Vm
       F(UId_ec_Vm) = ((-1.0d0 / Cmj) * (EC(JId_ec_Ktot) + EC(JId_ec_Residual))) + &
-            CPL(CPL_OFFS * CPL_STRIDE + CPL_VMm_ec_hm) + CPL(CPL_OFFS * CPL_STRIDE + CPL_Vm_ec_ht);
+            CPL(CPL_OFFS + CPL_VMm_ec_hm) + CPL(CPL_OFFS + CPL_Vm_ec_ht);
 ! EC IP3
       F(UId_ec_IP3) = PAR(PId_J_PLC) - EC(JId_ec_IP3_deg) + &
-            CPL(CPL_OFFS * CPL_STRIDE + CPL_J_ec_hm_IP3) + CPL(CPL_OFFS * CPL_STRIDE + CPL_J_ec_ht_IP3);
+            CPL(CPL_OFFS + CPL_J_ec_hm_IP3) + CPL(CPL_OFFS + CPL_J_ec_ht_IP3);
       END SUBROUTINE
 
       SUBROUTINE FUNC(NDIM,U,ICP,PAR,IJAC,F,DFDU,DFDP)
@@ -184,12 +186,11 @@
 
       DOUBLE PRECISION :: SMC(11)
       DOUBLE PRECISION :: EC(12)
-
       DOUBLE PRECISION :: CPL(12)
 
 ! SMC & EC fluxes.
-      CALL SMC_FLX(NDIM,U,SMC)
-      CALL EC_FLX(NDIM,U,EC)
+      CALL SMC_FLX(U,0*U_STRIDE,SMC)
+      CALL EC_FLX(U,0*U_STRIDE,EC)
 
 ! Homo coupling.
       CPL(CPL_J_smc_hm_Ca) = PAR(PId_Ca_hm_smc) * 0.0d0
@@ -208,7 +209,7 @@
       CPL(CPL_Vm_ec_ht) = -PAR(PId_Vm_ht) * (U(UId_ec_Vm) - U(UId_smc_Vm))
 
 ! SMC & EC derivatives.
-      CALL SMC_EC_DERIV(SMC,EC,CPL,0,U,0,PAR,F)
+      CALL SMC_EC_DERIV(SMC,EC,CPL,0*CPL_STRIDE,U,0*U_STRIDE,PAR,F)
 
       END SUBROUTINE FUNC
 !----------------------------------------------------------------------
