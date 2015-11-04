@@ -232,14 +232,6 @@
       CPL(0 + CPL_Vm_ec_ht) = -PAR(PId_Vm_ht) * &
             (2 * U(UId_ec_Vm) - U(UId_smc_Vm) - U(U_STRIDE + UId_smc_Vm))
 
-! Not quite right.
-!      Jsmc_ht_Ca_1 = -Ca_ht * (smc_Ca_1 - ec_Ca_1)
-!      Jec_ht_Ca_1 = -Ca_ht * (ec_Ca_1 - smc_Ca_1)
-!      Jsmc_ht_IP3_1 = -IP3_ht * (smc_IP3_1 - ec_IP3_1)
-!      Jec_ht_IP3_1 = -IP3_ht * (ec_IP3_1 - smc_IP3_1)
-!      Vmsmc_ht_1 = -Vm_ht * (smc_Vm_1 - ec_Vm_1)
-!      Vmec_ht_1 = -Vm_ht * (ec_Vm_1 - smc_Vm_1)
-
 ! Hetero coupling 2
       CPL(CPL_STRIDE + CPL_J_smc_ht_Ca) = -PAR(PId_Ca_ht) * &
             (2 * U(U_STRIDE + UId_smc_Ca) - U(UId_ec_Ca) - U(U_STRIDE + UId_ec_Ca))
@@ -253,14 +245,6 @@
             (2 * U(U_STRIDE + UId_smc_Vm) - U(UId_ec_Vm) - U(U_STRIDE + UId_ec_Vm))
       CPL(CPL_STRIDE + CPL_Vm_ec_ht) = -PAR(PId_Vm_ht) * &
             (2 * U(U_STRIDE + UId_ec_Vm) - U(UId_smc_Vm) - U(U_STRIDE + UId_smc_Vm))
-
-! Not quite right.
-!      Jsmc_ht_Ca_2 = -Ca_ht * (smc_Ca_2 - ec_Ca_2)
-!      Jec_ht_Ca_2 = -Ca_ht * (ec_Ca_2 - smc_Ca_2)
-!      Jsmc_ht_IP3_2 = -IP3_ht * (smc_IP3_2 - ec_IP3_2)
-!      Jec_ht_IP3_2 = -IP3_ht * (ec_IP3_2 - smc_IP3_2)
-!      Vmsmc_ht_2 = -Vm_ht * (smc_Vm_2 - ec_Vm_2)
-!      Vmec_ht_2 = -Vm_ht * (ec_Vm_2 - smc_Vm_2)
 
 ! SMC & EC derivatives.
       CALL SMC_EC_DERIV(SMC1,EC1,CPL,0*CPL_STRIDE,U,0*U_STRIDE,PAR,F,0*U_STRIDE)
@@ -298,12 +282,12 @@
        PAR(PId_Vm_ht) = 50.d0
 
 ! Homo coupling ZERO.
-       PAR(PId_Ca_hm_smc) = 0.0d0
-       PAR(PId_Ca_hm_ec) = 0.0d0
-       PAR(PId_IP3_hm_smc) = 0.0d0
-       PAR(PId_IP3_hm_ec) = 0.0d0
-       PAR(PId_Vm_hm_smc) = 0.0d0
-       PAR(PId_Vm_hm_ec) = 0.0d0
+!       PAR(PId_Ca_hm_smc) = 0.0d0
+!       PAR(PId_Ca_hm_ec) = 0.0d0
+!       PAR(PId_IP3_hm_smc) = 0.0d0
+!       PAR(PId_IP3_hm_ec) = 0.0d0
+!       PAR(PId_Vm_hm_smc) = 0.0d0
+!       PAR(PId_Vm_hm_ec) = 0.0d0
 
 ! Homo coupling CASE 1.
        PAR(PId_Ca_hm_smc) = 0.05d0
