@@ -4,15 +4,13 @@
 #==================
 
 cc = load('coupledCells')
-print "\n***Finding steady state***\n"
+print "\n*** Finding steady state ***\n"
 fp = run(cc, IPS=-2)
 
-# Run forwards and backwards
-print "\n***Finding fixed points and codimension 1 bifurcations***\n"
+print "\n*** Finding fixed points and codimension 1 bifurcations ***\n"
 coupledCells = run(fp('EP2'), IPS=1, NMX=20000)
 
-# Run with IPS=2 to obtain periodic orbits originating from Hopf no.1
-print "\n***Finding periodic orbits from Hopf no.1***\n"
+print "\n*** Finding periodic orbits from Hopf no.1 ***\n"
 coupledCells = coupledCells + run(coupledCells('HB1'), IPS=2, ICP=['J_PLC', 'period'], ILP=0, NTST=200, NPR=2000, NMX=20000)
 
 save(coupledCells, 'coupledCells')

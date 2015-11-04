@@ -15,12 +15,12 @@
       MODULE FLUX_INDICES
       IMPLICIT NONE
 ! Indices for SMC fluxes.
-!     INTEGER, PARAMETER :: SMC_FLX_STRIDE = 12
+     INTEGER, PARAMETER :: SMC_FLX_STRIDE = 12
       INTEGER, PARAMETER :: JId_smc_Na_Ca = 1, JId_smc_VOCC = 2, JId_smc_Na_K = 3, JId_smc_Cl = 4, JId_smc_K = 5, &
             JId_smc_IP3 = 6, JId_smc_SERCA = 7, JId_smc_CICR = 8, JId_smc_Extrusion = 9, JId_smc_Leak = 10, &
             JId_K_activation = 11, JId_smc_IP3_deg = 12
 ! Indices for EC fluxes.
-!     INTEGER, PARAMETER :: EC_FLX_STRIDE = 12
+     INTEGER, PARAMETER :: EC_FLX_STRIDE = 12
       INTEGER, PARAMETER :: JId_ec_IP3 = 1, JId_ec_SERCA = 2, JId_ec_CICR = 3, JId_ec_Extrusion = 4, JId_ec_Leak = 5, &
             JId_ec_IP3_deg = 6, JId_ec_NSC = 7, JId_ec_BK_Ca = 8, JId_ec_SK_Ca = 9, JId_ec_Ktot = 10, &
             JId_ec_Residual = 11, JId_ec_trivial_Ca = 12
@@ -184,9 +184,14 @@
       DOUBLE PRECISION, INTENT(OUT) :: F(NDIM)
       DOUBLE PRECISION, INTENT(INOUT) :: DFDU(NDIM,NDIM),DFDP(NDIM,*)
 
-      DOUBLE PRECISION :: SMC(11)
-      DOUBLE PRECISION :: EC(12)
-      DOUBLE PRECISION :: CPL(12)
+      INTEGER :: NUM_PAIRS
+      DOUBLE PRECISION :: SMC(SMC_FLX_STRIDE)
+      DOUBLE PRECISION :: EC(EC_FLX_STRIDE)
+      DOUBLE PRECISION :: CPL(CPL_STRIDE)
+
+! TODO: This can be used for dynamic memory allocation for the SMC, EC & CPL arrays.
+! At the moment it's just sitting here and looking idle.
+      NUM_PAIRS = NDIM / U_STRIDE
 
 ! SMC & EC fluxes.
       CALL SMC_FLX(U,0*U_STRIDE,SMC)
@@ -234,11 +239,13 @@
       DOUBLE PRECISION, INTENT(INOUT) :: U(NDIM),PAR(*)
       DOUBLE PRECISION, INTENT(IN) :: T
 
-! Initialize the equation parameters
+! JPLC start.
        PAR(PId_J_PLC) = 0.d0
+! Hetero coupling.
        PAR(PId_Ca_ht) = 0.d0
        PAR(PId_IP3_ht) = 0.05d0
        PAR(PId_Vm_ht) = 50.d0
+! Homo coupling.
        PAR(PId_Ca_hm_smc) = 0.0d0
        PAR(PId_Ca_hm_ec) = 0.0d0
        PAR(PId_IP3_hm_smc) = 0.0d0
