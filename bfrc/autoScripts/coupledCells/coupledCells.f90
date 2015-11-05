@@ -199,12 +199,12 @@
       CALL EC_FLX(U,0*U_STRIDE,EC)
 
 ! Homo coupling.
-      CPL(CPL_J_smc_hm_Ca) = PAR(PId_Ca_hm_smc) * 0.0d0
-      CPL(CPL_J_ec_hm_Ca) = PAR(PId_Ca_hm_ec) * 0.0d0
-      CPL(CPL_J_smc_hm_IP3) = PAR(PId_IP3_hm_smc) * 0.0d0
-      CPL(CPL_J_ec_hm_IP3) = PAR(PId_IP3_hm_ec) * 0.0d0
-      CPL(CPL_Vm_smc_hm) = PAR(PId_Vm_hm_smc) * 0.0d0
-      CPL(CPL_VMm_ec_hm) = PAR(PId_Vm_hm_ec) * 0.0d0
+      CPL(CPL_J_smc_hm_Ca) = -PAR(PId_Ca_hm_smc) * 0.0d0
+      CPL(CPL_J_ec_hm_Ca) = -PAR(PId_Ca_hm_ec) * 0.0d0
+      CPL(CPL_J_smc_hm_IP3) = -PAR(PId_IP3_hm_smc) * 0.0d0
+      CPL(CPL_J_ec_hm_IP3) = -PAR(PId_IP3_hm_ec) * 0.0d0
+      CPL(CPL_Vm_smc_hm) = -PAR(PId_Vm_hm_smc) * 0.0d0
+      CPL(CPL_VMm_ec_hm) = -PAR(PId_Vm_hm_ec) * 0.0d0
 
 ! Hetero coupling.
       CPL(CPL_J_smc_ht_Ca) = -PAR(PId_Ca_ht) * (U(UId_smc_Ca) - U(UId_ec_Ca))
@@ -254,7 +254,7 @@
        PAR(PId_Vm_hm_smc) = 0.0d0
        PAR(PId_Vm_hm_ec) = 0.0d0
 
-! Initialize the solution
+! Initialize the solution.
        U = 1.0e-3
 
       END SUBROUTINE STPNT
