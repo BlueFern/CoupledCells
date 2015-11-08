@@ -57,18 +57,18 @@ void initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++) {
 		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells); j++) {
-			smc[i][j].vars[smc_Ca] = 0.0;
-			smc[i][j].vars[smc_SR] = 0.0;
-			smc[i][j].vars[smc_Vm] = 0.0;
-			smc[i][j].vars[smc_w] = 0.0;
-			smc[i][j].vars[smc_IP3] = 0.0;
+			smc[i][j].vars[smc_Ca] = 0.191516;
+			smc[i][j].vars[smc_SR] = 1.391122;
+			smc[i][j].vars[smc_Vm] = -66.454924;
+			smc[i][j].vars[smc_w] = 0.010423;
+			smc[i][j].vars[smc_IP3] = 0.750000;
 
 			for (int k = 1; k <= grid.num_fluxes_smc; k++) {
-				smc[i][j].fluxes[k - 1] = 0.0;
+				smc[i][j].fluxes[k - 1] = 0.1;
 			}
 			for (int k = 1; k <= grid.num_coupling_species_smc; k++) {
-				smc[i][j].homo_fluxes[k - 1] = 0.0;
-				smc[i][j].hetero_fluxes[k - 1] = 0.0;
+				smc[i][j].homo_fluxes[k - 1] = 0.1;
+				smc[i][j].hetero_fluxes[k - 1] = 0.1;
 			}
 		}
 	}
@@ -94,17 +94,17 @@ void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 	}
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++) {
 		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++) {
-			ec[i][j].vars[ec_Ca] = 0.0;
-			ec[i][j].vars[ec_SR] = 0.0;
-			ec[i][j].vars[ec_Vm] = 0.0;
-			ec[i][j].vars[ec_IP3] = 0.0;
+			ec[i][j].vars[ec_Ca] = 0.824913;
+			ec[i][j].vars[ec_SR] = 0.629951;
+			ec[i][j].vars[ec_Vm] = -66.815997;
+			ec[i][j].vars[ec_IP3] = 1.050000;
 
 			for (int k = 1; k <= grid.num_fluxes_ec; k++) {
-				ec[i][j].fluxes[k - 1] = 0.0;
+				ec[i][j].fluxes[k - 1] = 0.1;
 			}
 			for (int k = 1; k <= grid.num_coupling_species_ec; k++) {
-				ec[i][j].homo_fluxes[k - 1] = 0.0;
-				ec[i][j].hetero_fluxes[k - 1] = 0.0;
+				ec[i][j].homo_fluxes[k - 1] = 0.1;
+				ec[i][j].hetero_fluxes[k - 1] = 0.1;
 			}
 		}
 	}
@@ -118,8 +118,8 @@ void koenigsberger_smc(grid_parms grid, SMC_cell** smc)
 
 void koenigsberger_smc_derivatives(double* f, grid_parms grid, SMC_cell** smc)
 {
-	koenigsberger_smc_derivatives_implicit(f, grid, smc);
-	koenigsberger_smc_derivatives_explicit(f, grid, smc);
+	koenigsberger_smc_derivatives_implicit(f, grid, smc, false);
+	koenigsberger_smc_derivatives_explicit(f, grid, smc, false);
 }
 
 void koenigsberger_ec(grid_parms grid, EC_cell** ec)
@@ -130,8 +130,8 @@ void koenigsberger_ec(grid_parms grid, EC_cell** ec)
 
 void koenigsberger_ec_derivatives(double t, double* f, grid_parms grid, EC_cell** ec)
 {
-	koenigsberger_ec_derivatives_implicit(t, f, grid, ec);
-	koenigsberger_ec_derivatives_explicit(t, f, grid, ec);
+	koenigsberger_ec_derivatives_implicit(t, f, grid, ec, false);
+	koenigsberger_ec_derivatives_explicit(t, f, grid, ec, false);
 }
 
 void koenigsberger_smc_implicit(grid_parms grid, SMC_cell** smc)
@@ -188,7 +188,7 @@ void koenigsberger_smc_explicit(grid_parms grid, SMC_cell** smc)
 	}
 }
 
-void koenigsberger_smc_derivatives_implicit(double* f, grid_parms grid, SMC_cell** smc)
+void koenigsberger_smc_derivatives_implicit(double* f, grid_parms grid, SMC_cell** smc, bool both)
 {
 	int k;
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
@@ -201,11 +201,18 @@ void koenigsberger_smc_derivatives_implicit(double* f, grid_parms grid, SMC_cell
 			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = gama
 					* (-smc[i][j].fluxes[J_Na_K] - smc[i][j].fluxes[J_Cl] - (2 * smc[i][j].fluxes[J_VOCC]) - smc[i][j].fluxes[J_Na_Ca] - smc[i][j].fluxes[J_K])
 					+ smc[i][j].homo_fluxes[cpl_Vm] + smc[i][j].hetero_fluxes[cpl_Vm];
+			if (both)
+			{
+				f[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.0;
+				f[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.0;
+				f[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.0;
+				f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.0;
+			}
 		}
 	}
 }
 
-void koenigsberger_smc_derivatives_explicit(double* f, grid_parms grid, SMC_cell** smc)
+void koenigsberger_smc_derivatives_explicit(double* f, grid_parms grid, SMC_cell** smc, bool both)
 {
 	int k;
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
@@ -222,6 +229,12 @@ void koenigsberger_smc_derivatives_explicit(double* f, grid_parms grid, SMC_cell
 			f[k + ((j - 1) * grid.neq_smc) + smc_w] = lambda * (smc[i][j].fluxes[K_activation] - smc[i][j].vars[smc_w]);
 
 			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = -smc[i][j].fluxes[J_IP3_deg] + smc[i][j].homo_fluxes[cpl_IP3] + smc[i][j].hetero_fluxes[cpl_IP3];
+
+			if (both)
+			{
+				f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.0;
+			}
+
 		}
 	}
 }
@@ -276,7 +289,7 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 	}
 }
 
-void koenigsberger_ec_derivatives_implicit(double t, double* f, grid_parms grid, EC_cell** ec)
+void koenigsberger_ec_derivatives_implicit(double t, double* f, grid_parms grid, EC_cell** ec, bool both)
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 	for(int i = 1; i <= grid.num_ec_circumferentially; i++)
@@ -290,11 +303,21 @@ void koenigsberger_ec_derivatives_implicit(double t, double* f, grid_parms grid,
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
 					((-1 / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
+
+			if (both)
+			{
+				f[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.0;
+				f[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.0;
+
+				f[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.0;
+			}
+
+
 		}
 	}
 }
 
-void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid, EC_cell** ec)
+void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid, EC_cell** ec, bool both)
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 	for(int i = 1; i <= grid.num_ec_circumferentially; i++)
@@ -315,6 +338,12 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
 					ec[i][j].JPLC - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
+
+			if (both)
+			{
+				f[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.0;
+			}
+
 		}
 	}
 }

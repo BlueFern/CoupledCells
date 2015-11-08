@@ -44,7 +44,6 @@ int errcode = (fn); \
 #define local 0
 #define remote 1
 
-#define EXPLICIT_ONLY 0
 
 /**
  * Conductance / coupling coefficients.
@@ -191,6 +190,8 @@ void compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, dou
 void compute_implicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 void compute_explicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 void coupling(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
+void coupling_implicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
+void coupling_explicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
 
 // Solver wrapper functions.
 #ifdef RK_SUITE

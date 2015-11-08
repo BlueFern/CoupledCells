@@ -34,6 +34,7 @@ static int fi(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 {
 	N_VectorContent_Serial yContent = (N_VectorContent_Serial) y->content;
 	N_VectorContent_Serial yDotContent = (N_VectorContent_Serial) ydot->content;
+
 	compute_implicit(grid, smc, ec, cpl_cef, t, yContent->data, yDotContent->data);
 
 	return 0;  // Success.
@@ -43,6 +44,7 @@ static int fe(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 {
 	N_VectorContent_Serial yContent = (N_VectorContent_Serial) y->content;
 	N_VectorContent_Serial yDotContent = (N_VectorContent_Serial) ydot->content;
+
 	compute_explicit(grid, smc, ec, cpl_cef, t, yContent->data, yDotContent->data);
 
 	return 0;  // Success.
