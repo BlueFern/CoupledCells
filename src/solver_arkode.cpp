@@ -275,9 +275,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			write_count++;
 		}
 
-		// checkpoint_timing_data(grid, check, tnow, t_stamp, iteration, file_offset_for_timing_data);
-		initialize_t_stamp(&t_stamp);
-
 		/// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
 		iteration++;
 	}
