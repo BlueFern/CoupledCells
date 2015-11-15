@@ -1,6 +1,6 @@
 % Plot the "bifurcation diagram" of JPLC vs smc_Ca_1 and smc_Ca_2 for the 4 cases.
+% Solit line - first smc
 % Dotted line - second smc
-% Normal line - first smc
 % Both cells should be the same since they have the same JPLC values -
 % dotted line is a check
 
@@ -9,7 +9,6 @@
 clear;
 odeopts = odeset('RelTol', 1e-4, 'AbsTol', 1e-4, 'MaxStep', 0.1, 'Vectorized', 1);
 JPLC_range = 0:0.005:1;
-
 
 % Case 1
 Vm_ht = 50;
@@ -49,8 +48,6 @@ xlabel('J_{PLC}');
 ylabel('smc_{Ca}');
 title('Case 1');
 
-
-
 % Case 2
 Vm_ht = 50;
 Ca_ht = 0.05;
@@ -89,9 +86,6 @@ xlabel('J_{PLC}');
 ylabel('smc_{Ca}');
 title('Case 2');
 
-
-
-
 % Case 3
 Vm_ht = 50;
 Ca_ht = 0.05;
@@ -129,11 +123,6 @@ plot(JPLC_range, max_val_3_1, 'k', JPLC_range, min_val_3_1, 'k', JPLC_range, max
 xlabel('J_{PLC}');
 ylabel('smc_{Ca}');
 title('Case 3');
-
-
-
-
-
 
 % Case 4
 Vm_ht = 0;

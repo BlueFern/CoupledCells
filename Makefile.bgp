@@ -1,30 +1,71 @@
-# Set ODEOPTION on command line to (-DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT).
+# Set ODEOPTION on command line like this (ODEOPTION=RK_SUITE | ODEOPTION=ARK_ODE | ODEOPTION=BOOST_ODEINT).
 
-CC = mpixlcxx
+# To make HDF5 availble run: module load hdf5/1.8.9_gnu44 which will also pull gcc44 and the associated MPI compiler.
 
-CFLAGS = $(ODEOPTION) -g -O3 -Iext/rksuite-1.0 -I/bgp/local/include -L/bgp/local/lib
-$(info CFLAGS is set to "${CFLAGS}")
+# To make Boost available run: module load boost/1.59.0_gnu44 which will also pull gcc44 and the associated MPI compiler.
+
+# To make SUNDIALS available run: module load sundials/2.6.2_gnu44 which will also pull gcc44 and the associated MPI compiler.
+
+#CXX = mpixlcxx
+CXX = mpicxx
+
+# CPPFLAGS --- preprocessor flags.
+# CXXFLAGS --- compiler flags.
+# LDFLAGS --- linker flags.
+
+CXXFLAGS = -g -O3
+$(info CXXFLAGS is set to "${CXXFLAGS}")
 
 LIBRKSUITE = librksuite.a
 
-LIBS = -lm -lhdf5 -lz
+LIBS = -lhdf5 -lm -lz
 EXE = coupledCellsModel
 
-SRCS = src/compute.cpp src/gather.cpp src/simulation_main.cpp src/time_profiling.cpp src/tsoukias_model.cpp src/writeHDF5.cpp src/debug_helpers.cpp src/koenigsberger_model.cpp src/solver_rk.cpp src/topology.cpp src/update.cpp
+EXTRA_LIB =
+
+# If RK_SUITE, compile with solver_rk.
+ifeq ($(ODEOPTION),RK_SUITE)
+SOLVER_SRC = src/solver_rk.cpp
+SOLVER_INC = -Iext/rksuite-1.0 -DRK_SUITE
+SOLVER_LD = lib/$(LIBRKSUITE)
+EXTRA_LIB = $(LIBRKSUITE)
+endif
+
+# If ARK_ODE, compile with solver_arkode.
+ifeq ($(ODEOPTION),ARK_ODE)
+SOLVER_SRC = src/solver_arkode.cpp
+SOLVER_INC = -DARK_ODE -I$(SUNDIALSINC)
+SOLVER_LD = -L$(SUNDIALSLIB) -lsundials_arkode -lsundials_nvecserial $(SUNDIALS_EXTRA_LIBS)
+endif
+
+# If BOOST_ODEINT, compile with solver_odeint.
+ifeq ($(ODEOPTION),BOOST_ODEINT)
+SOLVER_SRC = src/solver_odeint.cpp
+SOLVER_INC = -I$(BOOSTINC) -DBOOST_ODEINT
+SOLVER_LD = -L$(BOOSTLIB)
+endif
+
+SRCS = src/compute.cpp src/gather.cpp src/simulation_main.cpp src/time_profiling.cpp src/tsoukias_model.cpp src/writeHDF5.cpp src/debug_helpers.cpp src/koenigsberger_model.cpp src/topology.cpp src/update.cpp $(SOLVER_SRC)
+
+$(info SRCS is set to "${SRCS}")
+
+CPPFLAGS=-I/bgp/local/include $(SOLVER_INC)
+LD_FLAGS=-L$(HDF5LIB) -L/bgp/local/lib $(SOLVER_LD)
+
 OBJS = $(SRCS:.cpp=.o)
 
 .PHONY: all
 all: $(EXE)
 
-$(EXE): $(OBJS) $(LIBRKSUITE)
-	$(CC) $(CFLAGS) $(OBJS) lib/$(LIBRKSUITE) $(LIBS) -o $(EXE)
+$(EXE): $(OBJS) $(EXTRA_LIB)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(OBJS) $(LD_FLAGS) $(LIBS) -o $(EXE)
 
 $(LIBRKSUITE): ext/rksuite-1.0/rksuite.o
 	ar ru lib/$@ $^
 	ranlib lib/$@
 
 %.o: %.cpp
-	$(CC) -c $(CFLAGS) $< -o $@
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PHONY: clean
 clean:

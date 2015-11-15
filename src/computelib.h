@@ -44,6 +44,7 @@ int errcode = (fn); \
 #define local 0
 #define remote 1
 
+
 /**
  * Conductance / coupling coefficients.
  */
@@ -185,18 +186,22 @@ void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, EC_cell**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
-int compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
+void compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
+void compute_implicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
+void compute_explicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
 void coupling(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
+void coupling_implicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
+void coupling_explicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
 
 // Solver wrapper functions.
 #ifdef RK_SUITE
 void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, char*); //, IO_domain_info*);
 #endif
 #ifdef ARK_ODE
-void arkode_solver(double, double, double, double*, int, double, double, int, checkpoint_handle*, char*, IO_domain_info*);
+void arkode_solver(double, double, double, double*, int, double, double, int, char*);
 #endif
 #ifdef BOOST_ODEINT
-void odeint_solver(double, double, double, double*, int, double, double, int, checkpoint_handle*, char*, IO_domain_info*);
+void odeint_solver(double, double, double, double*, int, double, double, int, char*);
 #endif
 
 int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);

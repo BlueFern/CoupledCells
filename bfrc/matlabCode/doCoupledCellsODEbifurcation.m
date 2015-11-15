@@ -37,8 +37,6 @@ xlabel('J_{PLC}');
 ylabel('smc_{Ca}');
 title('Case 1: Vm_{ht} = 50, Ca_{ht} = 0, IP3_{ht} = 0.05');
 
-
-
 % Case 2/3
 % Oscillations between JPLC = [0.2688, 0.5781]
 Vm_ht = 50;
@@ -66,9 +64,6 @@ plot(JPLC_range, max_val_2, 'r', JPLC_range, min_val_2, 'r');
 xlabel('J_{PLC}');
 ylabel('smc_{Ca}');
 title('Case 2/3: Vm_{ht} = 50, Ca_{ht} = 0.05, IP3_{ht} = 0.05');
-
-
-
 
 % Case 4
 % Oscillations between JPLC = [0.2939, 0.6534]

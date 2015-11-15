@@ -1,0 +1,72 @@
+############################
+# important primary settings
+############################
+
+# Problem Constants
+NDIM=18
+
+# Output Control
+unames={1: 'smc_Ca_1', 2: 'smc_SR_1', 3: 'smc_Vm_1', 4: 'smc_w_1', 5: 'smc_IP3_1', 6: 'ec_Ca_1', 7: 'ec_ER_1', 8: 'ec_Vm_1', 9: 'ec_IP3_1', 10: 'smc_Ca_2', 11: 'smc_SR_2', 12: 'smc_Vm_2', 13: 'smc_w_2', 14: 'smc_IP3_2', 15: 'ec_Ca_2', 16: 'ec_ER_2', 17: 'ec_Vm_2', 18: 'ec_IP3_2'}
+parnames={1: 'J_PLC', 2: 'Ca_ht', 3: 'IP3_ht', 4: 'Vm_ht', 5: 'Ca_hm_smc', 6: 'IP3_hm_smc', 7: 'Vm_hm_smc ', 8: 'Ca_hm_ec', 9: 'IP3_hm_ec', 10: 'Vm_hm_ec', 11: 'period'}
+NPR=20000
+
+# Free Parameters
+ICP=['J_PLC']
+
+# Limits
+UZSTOP={'J_PLC': [0.0, 1.0]}, 
+NMX=10000
+
+# Computation Constants
+IPS=1 ###
+IRS=0
+
+# Continuation Step Size
+DS=0.01, DSMIN=0.0001, DSMAX=0.06
+
+# Discretization Constants
+NTST=50
+
+IPLT=-1
+
+THL={'PERIOD': 0.0}
+
+################################
+# default secondary settings
+################################
+
+# Problem Constants
+#NPAR=36, JAC=0
+
+# Discretization Constants
+#NCOL=4, IAD=3
+
+# Tolerances
+#EPSL=1e-7, EPSU=1e-7, EPSS=1e-5, ITMX=9, NWTN=3, ITNW=5
+
+# Continuation Step Size
+#IADS=1, THL={'PERIOD': 0.0}, THU={}
+
+# Limits
+#STOP = []
+#RL0=-1.7976e+308, RL1=1.7976e+308, A0=-1.7976e+308, A1=1.7976e+308
+
+# Computation Constants
+#ILP=1, SP=[], ISP=2, ISW=1, MXBF=10, s='', dat='', U={}, PAR={}, TY=''
+
+# Output Control
+#e = '', sv='', IBR=0, LAB=0, IIS=3, IID=2, IPLT=0, UZR={}
+
+###################
+# inactive settings
+###################
+
+# Problem Constants
+#NBC=0, NINT=0
+
+################################
+# HomCont settings
+################################
+
+#NUNSTAB = -1, NSTAB = -1, IEQUIB = 1, ITWIST = 0, ISTART = 5
+#IREV = [], IFIXED = [], IPSI = []

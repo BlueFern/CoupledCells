@@ -65,8 +65,7 @@ void computeDerivatives(double t, double y[], double f[])
 // neq: redundant parameter.
 // path: redundant parameter.
 void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, double* yp,
-		int neq, double TOL, double* thres,
-		int file_write_per_unit_time, char* path)
+		int neq, double TOL, double* thres, int file_write_per_unit_time, char* path)
 {
 	RKSUITE rksuite;
 
@@ -149,7 +148,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 	// ITERATION loop to go from INITIAL time to FINAL time.
 	while(tnow <= tfinal)
 	{
-		// printf("[%d] line: %d, tnow: %f, %f, %f\n", grid.universal_rank, __LINE__, tnow, tend, tfinal);
 
 		double solver_start = MPI_Wtime();
 
@@ -160,7 +158,6 @@ void rksuite_solver_CT(double tnow, double tfinal, double interval, double *y, d
 			rksuite.ct(computeDerivatives, tnow, y, yp, cflag);
 
 			// report_RK_suite_error(cflag, tnow, grid.universal_rank);
-			// printf("\t[%d] line: %d, tnow: %f, %f, %f\n", grid.universal_rank, __LINE__, tnow, tend, tfinal);
 		}
 		while(tnow < tend);
 

@@ -1,0 +1,22 @@
+
+#==================
+# AUTO coupledCells4
+#==================
+
+cc = load('coupledCells4')
+print "\n*** Finding steady state ***\n"
+fp = run(cc, IPS=-2)
+
+print "\n*** Finding fixed points and codimension 1 bifurcations ***\n"
+coupledCells4 = run(fp('EP2'), IPS=1, NMX=20000)
+#coupledCells4 = coupledCells4 + run(fp('EP2'), IPS=1, NMX=20000, DS='-')
+
+print "\n*** Finding periodic orbits from Hopf no.1 ***\n"
+coupledCells4 = coupledCells4 + run(coupledCells4('HB1'), IPS=2, ICP=['J_PLC', 'PERIOD'], ILP=0, NTST=500, NPR=2000, NMX=2000)
+coupledCells4 = coupledCells4 + run(coupledCells4('HB2'), IPS=2, ICP=['J_PLC', 'PERIOD'], ILP=0, NTST=500, NPR=2000, NMX=200)
+
+save(coupledCells4, 'coupledCells4')
+
+clean()
+@pp coupledCells4
+
