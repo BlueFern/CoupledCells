@@ -282,20 +282,20 @@
        PAR(PId_Vm_ht) = 50.d0
 
 ! Homo coupling ZERO.
-       PAR(PId_Ca_hm_smc) = 0.0d0
-       PAR(PId_Ca_hm_ec) = 0.0d0
-       PAR(PId_IP3_hm_smc) = 0.0d0
-       PAR(PId_IP3_hm_ec) = 0.0d0
-       PAR(PId_Vm_hm_smc) = 0.0d0
-       PAR(PId_Vm_hm_ec) = 0.0d0
+!       PAR(PId_Ca_hm_smc) = 0.0d0
+!       PAR(PId_Ca_hm_ec) = 0.0d0
+!       PAR(PId_IP3_hm_smc) = 0.0d0
+!       PAR(PId_IP3_hm_ec) = 0.0d0
+!       PAR(PId_Vm_hm_smc) = 0.0d0
+!       PAR(PId_Vm_hm_ec) = 0.0d0
 
 ! Homo coupling CASE 1.
-!       PAR(PId_Ca_hm_smc) = 0.05d0
-!       PAR(PId_Ca_hm_ec) = 0.05d0
-!       PAR(PId_IP3_hm_smc) = 0.05d0
-!       PAR(PId_IP3_hm_ec) = 0.0d0
-!       PAR(PId_Vm_hm_smc) = 1000.0d0
-!       PAR(PId_Vm_hm_ec) = 1000.0d0
+        PAR(PId_Ca_hm_smc) = 0.05d0
+        PAR(PId_Ca_hm_ec) = 0.05d0
+        PAR(PId_IP3_hm_smc) = 0.05d0
+        PAR(PId_IP3_hm_ec) = 0.0d0
+        PAR(PId_Vm_hm_smc) = 1000.0d0
+        PAR(PId_Vm_hm_ec) = 1000.0d0
 
 ! Initialize the solution.
        U = 1.0e-3
