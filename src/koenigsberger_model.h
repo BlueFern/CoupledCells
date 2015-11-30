@@ -55,13 +55,13 @@ void koenigsberger_ec(grid_parms, EC_cell**);
 void koenigsberger_ec_derivatives(double, double*, grid_parms, EC_cell**);
 
 void koenigsberger_smc_implicit(grid_parms, SMC_cell**);
-void koenigsberger_smc_derivatives_implicit(double*, grid_parms, SMC_cell**, bool);
+void koenigsberger_smc_derivatives_implicit(double*, grid_parms, SMC_cell**);
 void koenigsberger_ec_implicit(grid_parms, EC_cell**);
-void koenigsberger_ec_derivatives_implicit(double, double*, grid_parms, EC_cell**, bool);
+void koenigsberger_ec_derivatives_implicit(double, double*, grid_parms, EC_cell**);
 
 void koenigsberger_smc_explicit(grid_parms, SMC_cell**);
-void koenigsberger_smc_derivatives_explicit(double*, grid_parms, SMC_cell**, bool);
+void koenigsberger_smc_derivatives_explicit(double*, grid_parms, SMC_cell**);
 void koenigsberger_ec_explicit(grid_parms, EC_cell**);
-void koenigsberger_ec_derivatives_explicit(double, double*, grid_parms, EC_cell**, bool);
+void koenigsberger_ec_derivatives_explicit(double, double*, grid_parms, EC_cell**);
 
 #endif /* KOENIGSBERGER_CONSTANTS_H_ */

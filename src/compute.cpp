@@ -530,8 +530,8 @@ void compute_implicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance
 
 	coupling_implicit(t, y, grid, smc, ec, cpl_cef);
 
-	koenigsberger_smc_derivatives_implicit(f, grid, smc, true);
-	koenigsberger_ec_derivatives_implicit(t, f, grid, ec, true);
+	koenigsberger_smc_derivatives_implicit(f, grid, smc);
+	koenigsberger_ec_derivatives_implicit(t, f, grid, ec);
 
 #endif
 }
@@ -557,8 +557,8 @@ void compute_explicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance
 
 	coupling_explicit(t, y, grid, smc, ec, cpl_cef);
 
-	koenigsberger_smc_derivatives_explicit(f, grid, smc, true);
-	koenigsberger_ec_derivatives_explicit(t, f, grid, ec, true);
+	koenigsberger_smc_derivatives_explicit(f, grid, smc);
+	koenigsberger_ec_derivatives_explicit(t, f, grid, ec);
 
 #endif
 }
