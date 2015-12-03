@@ -30,6 +30,10 @@ int errcode = (fn); \
 #define 		KNBGR			0
 #define 		TSK				1
 
+#define LEMON 0
+#define BENNETT 1
+#define MODEL LEMON
+
 #define UP 0
 #define DOWN 1
 #define LEFT 2
@@ -44,7 +48,20 @@ int errcode = (fn); \
 #define local 0
 #define remote 1
 
+#define PLOTTING 1
+#define EXPLICIT_ONLY 1
+#define OUTPUT_PLOTTING_SIZE 15 // 12 for BENNETT
+#define RANK 0
+#define EC_COL 3 // one more as it's 1 indexed in Koenigsberger, same for below.
+#define EC_ROW 3
+#define SMC_COL 1
+#define SMC_ROW 33
+extern FILE* var_file;
 
+extern double* plotttingBuffer;
+extern int bufferPos;
+
+#define FILENAME "PhyFiIP3_1quad_lemon.csv"
 /**
  * Conductance / coupling coefficients.
  */
@@ -161,7 +178,7 @@ typedef struct
 	double* fluxes;			    ///stores single cell fluxes
 	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
 	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
-	double JPLC;			    ///local agonsit concentration  on my GPCR receptor (an ith EC)
+	double JPLC;			    ///local agonist concentration  on my GPCR receptor (an ith EC)
 	conductance cpl_cef;
 } EC_cell;
 

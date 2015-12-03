@@ -14,6 +14,10 @@ grid_parms grid;
 
 int CASE = 1;
 
+FILE* var_file;
+double* plotttingBuffer;
+int bufferPos;
+
 /**
  * The following steps in the ::main function are necessary for setting up
  * the simulation.
@@ -35,6 +39,16 @@ int main(int argc, char* argv[])
 	/// - Reveal information of myself and size of MPI_COMM_WORLD
 	CHECK_MPI_ERROR(MPI_Comm_rank(grid.universe, &grid.universal_rank));
 	CHECK_MPI_ERROR(MPI_Comm_size(grid.universe, &grid.num_ranks));
+
+#if PLOTTING
+	if (grid.universal_rank == RANK)
+	{
+		var_file = fopen(FILENAME, "w");
+		double buf[OUTPUT_PLOTTING_SIZE];
+		plotttingBuffer = buf;
+		bufferPos = 0;
+	}
+#endif
 
 	if(grid.universal_rank == 0)
 	{
@@ -88,19 +102,24 @@ int main(int argc, char* argv[])
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
-	grid.stimulus_onset_time = 10.00;
+	grid.stimulus_onset_time = 50.00;
 
 	grid.num_smc_fundblk_circumferentially = 1;
 	grid.num_ec_fundblk_circumferentially = 5;
 	grid.num_smc_fundblk_axially = 13;
 	grid.num_ec_fundblk_axially = 1;
 	grid.num_ghost_cells = 2;
+
 	grid.num_fluxes_smc = 12;
-	grid.num_fluxes_ec = 12;
+	grid.num_fluxes_ec = 15; // For both Lemon and bennett models.
 	grid.num_coupling_species_smc = 3;
 	grid.num_coupling_species_ec = 3;
 	grid.neq_smc = 5;
-	grid.neq_ec = 4;
+#if MODEL == LEMON
+	grid.neq_ec = 6;
+#elif MODEL == BENNETT
+	grid.neq_ec = 4
+#endif
 
 	// File written every 1 second.
 	int file_write_per_unit_time = (int) (data_writing_frequency * int(1 / interval));
@@ -370,6 +389,13 @@ int main(int argc, char* argv[])
 	free(thres);
 	free(y);
 	free(yp);
+
+#if PLOTTING
+	if (grid.universal_rank == RANK)
+	{
+		fclose(var_file);
+	}
+#endif
 
 	MPI_Finalize();
 

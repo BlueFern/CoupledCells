@@ -10,6 +10,8 @@
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
+
+
 double
 	/* Constants for homogenically coupled SMCs. */
       Fi = 0.23,  Kri = 1.00,  GCai = 0.00129,  vCa1 = 100.00,
@@ -31,9 +33,19 @@ double
 	  Gtot = 6927,   vKj = -80.0,  a1j = 53.3,
 	  a2j = 53.3,     bj = -80.8,  c1j = -0.4,
 	  m3b = 1.32e-3, m4b = 0.30,   m3s = -0.28,
-	  m4s = 0.389,   GRj = 955, vrestj = -31.10;
+	  m4s = 0.389,   GRj = 955, vrestj = -31.10,
 	/*Intracellular calcium buffering*/
 	  // k6 = 100.00,  k7 = 300.00,  BT = 120.00;
+
+	// Lemon at al. Constants
+	kATP = 2, alpha_j = 1e-2, KCa = 0.4, R_PIP2_r = 10,
+	PIP2_tot = 2e4, K_Gprot_act = 0.017, delta = 1.234e-3,
+	G_prot_tot = 7.5e5, K_G_prot_deact = 0.15, N_a = 6.02252e23,
+	V_ec = 1.17e3, unitcon_a = 1e21,
+
+	// Bennett constants
+	r_IP3 = 5e-14, unitcon_b = 1e15, A_ec = 500, Gprot_ratio = 8.82;
+
 
 /// Initial values found by running a sufficiently long simulation and recording state values
 /// after they have reached a steady state.
@@ -51,18 +63,19 @@ void initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 1.391122;
 			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = -66.454924;
 			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.010423;
-			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.750000;
+			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.3;
 		}
 	}
 
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++) {
 		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells); j++) {
-			smc[i][j].vars[smc_Ca] = 0.191516;
-			smc[i][j].vars[smc_SR] = 1.391122;
-			smc[i][j].vars[smc_Vm] = -66.454924;
-			smc[i][j].vars[smc_w] = 0.010423;
-			smc[i][j].vars[smc_IP3] = 0.750000;
+			smc[i][j].vars[smc_Ca] = 0.0;
+			smc[i][j].vars[smc_SR] = 0.0;
+			smc[i][j].vars[smc_Vm] = 0.0;
+			smc[i][j].vars[smc_w] = 0.0;
+			smc[i][j].vars[smc_IP3] = 0.0;
 
+			// TODO: remove initialising fluxes for lemon model even when not used....
 			for (int k = 1; k <= grid.num_fluxes_smc; k++) {
 				smc[i][j].fluxes[k - 1] = 0.1;
 			}
@@ -86,19 +99,26 @@ void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
 				k = offset + 0;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.824913;
-			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.629951;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -66.815997;
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 1.050000;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.13;
+			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.32;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -35;
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.1;
+#if MODEL == LEMON
+			y[k + ((j - 1) * grid.neq_ec) + ec_PIP2] = 20000;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 14;
+#endif
 		}
 	}
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++) {
 		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++) {
-			ec[i][j].vars[ec_Ca] = 0.824913;
-			ec[i][j].vars[ec_SR] = 0.629951;
-			ec[i][j].vars[ec_Vm] = -66.815997;
-			ec[i][j].vars[ec_IP3] = 1.050000;
-
+			ec[i][j].vars[ec_Ca] = 0.0;
+			ec[i][j].vars[ec_SR] = 0.0;
+			ec[i][j].vars[ec_Vm] = 0.0;
+			ec[i][j].vars[ec_IP3] = 0.0;
+#if MODEL == LEMON
+			ec[i][j].vars[ec_PIP2] = 0.0;
+			ec[i][j].vars[ec_Gprot] = 0.0;
+#endif
 			for (int k = 1; k <= grid.num_fluxes_ec; k++) {
 				ec[i][j].fluxes[k - 1] = 0.1;
 			}
@@ -201,6 +221,13 @@ void koenigsberger_smc_derivatives_implicit(double* f, grid_parms grid, SMC_cell
 			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = gama
 					* (-smc[i][j].fluxes[J_Na_K] - smc[i][j].fluxes[J_Cl] - (2 * smc[i][j].fluxes[J_VOCC]) - smc[i][j].fluxes[J_Na_Ca] - smc[i][j].fluxes[J_K])
 					+ smc[i][j].homo_fluxes[cpl_Vm] + smc[i][j].hetero_fluxes[cpl_Vm];
+#if PLOTTING
+			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
+			{
+				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_Vm];
+			}
+#endif
+
 #if ! EXPLICIT_ONLY
 			f[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.0;
 			f[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.0;
@@ -228,6 +255,16 @@ void koenigsberger_smc_derivatives_explicit(double* f, grid_parms grid, SMC_cell
 			f[k + ((j - 1) * grid.neq_smc) + smc_w] = lambda * (smc[i][j].fluxes[K_activation] - smc[i][j].vars[smc_w]);
 
 			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = -smc[i][j].fluxes[J_IP3_deg] + smc[i][j].homo_fluxes[cpl_IP3] + smc[i][j].hetero_fluxes[cpl_IP3];
+
+#if PLOTTING
+			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
+			{
+				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_Ca];
+				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_SR];
+				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_w];
+				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_IP3];
+			}
+#endif
 
 #if ! EXPLICIT_ONLY
 			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.0;
@@ -283,6 +320,24 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 			//Grouping all other trivial Ca fluxes
 			ec[i][j].fluxes[J_trivial_Ca] = J0j;
 
+#if MODEL == LEMON // TODO: note: some of these are not techinically fluxes. Nor is K_activation (smc fluxes) - maybe new array slot..?
+
+			// Ratio of bound to total P2Y
+			ec[i][j].fluxes[L_P_P2Y] = ec[i][j].JPLC / (ec[i][j].JPLC + kATP); // TODO: Does this need to be calculated every time? is JPLC constant?
+
+			// Rate of PIP2 hydrolysis.
+			ec[i][j].fluxes[R_PIP2_H] = alpha_j * (ec[i][j].vars[ec_Ca] / (ec[i][j].vars[ec_Ca] + KCa)) * ec[i][j].vars[ec_Gprot];
+
+			// Induced IP3 influx
+			ec[i][j].fluxes[J_ind_I] = (ec[i][j].fluxes[R_PIP2_H] * ec[i][j].vars[ec_PIP2] * unitcon_a) / (N_a * V_ec);
+
+#elif MODEL == BENNETT
+
+			ec[i][j].fluxes[B_P_P2Y] = ec[i][j].JPLC / (ec[i][j].JPLC + kATP);
+			ec[i][j].fluxes[J_Gprot] = (delta + ec[i][j].fluxes[B_P_P2Y]) / (Gprot_ratio + delta + ec[i][j].fluxes[B_P_P2Y]);
+			ec[i][j].fluxes[J_ind_I] = r_IP3 * ec[i][j].fluxes[J_Gprot] * unitcon_b * A_ec / V_ec;
+#endif
+
 		}
 	}
 }
@@ -301,12 +356,21 @@ void koenigsberger_ec_derivatives_implicit(double t, double* f, grid_parms grid,
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
 					((-1 / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
+#if PLOTTING
+			if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
+			{
+				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Vm];
+			}
+#endif
 
-#if ! EXPLICIT_ONLY
+#if !EXPLICIT_ONLY
+
 			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.0;
 			f[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.0;
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.0;
+			f[k + ((j - 1) * grid.neq_ec) + ec_PIP2] = 0.0;
+			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 0.0;
 #endif
 
 		}
@@ -332,8 +396,53 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 			f[k + ((j - 1) * grid.neq_ec) + ec_SR] =
 					ec[i][j].fluxes[J_SERCA] - ec[i][j].fluxes[J_CICR] - ec[i][j].fluxes[J_Leak];
 
+#if MODEL == LEMON_MODEL
+
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
-					ec[i][j].JPLC - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
+						ec[i][j].fluxes[J_ind_I] - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
+
+			f[k + ((j - 1) * grid.neq_ec) + ec_PIP2] =
+						- (ec[i][j].fluxes[R_PIP2_H] + R_PIP2_r) * ec[i][j].vars[ec_PIP2]
+						- (ec[i][j].vars[ec_IP3] *  R_PIP2_r) + (R_PIP2_r * PIP2_tot);
+
+			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] =
+						(K_Gprot_act * (delta + ec[i][j].fluxes[L_P_P2Y]) * (G_prot_tot - ec[i][j].vars[ec_Gprot]))
+						- (K_G_prot_deact * ec[i][j].vars[ec_Gprot]);
+
+#elif MODEL == BENNETT
+
+			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
+									ec[i][j].fluxes[J_ind_I] - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
+
+#else
+			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
+						ec[i][j].JPLC - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
+
+#endif
+
+#if PLOTTING
+			if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
+			{
+				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Ca];
+				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_SR];
+				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_IP3];
+
+#if MODEL == LEMON_MODEL
+				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_PIP2];
+				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Gprot];
+
+				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[L_P_P2Y];
+				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[R_PIP2_H];
+				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_IP3_deg];
+				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_ind_I];
+#elif MODEL == BENNETT
+				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_ind_I];
+				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_Gprot];
+				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[B_P_P2Y];
+#endif
+			}
+
+#endif
 
 #if ! EXPLICIT_ONLY
 			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.0;

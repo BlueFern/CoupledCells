@@ -19,6 +19,9 @@
 #define     ec_SR               1
 #define     ec_Vm               2
 #define     ec_IP3              3
+// Lemon et al. specific
+#define 	ec_PIP2				4
+#define 	ec_Gprot 			5
 
 //Ionic currents common to both celltypes
 #define     J_IP3               0
@@ -41,6 +44,16 @@
 #define     J_Ktot              9
 #define     J_Residual          10
 #define     J_trivial_Ca        11
+
+// Lemon et al. specific
+#define		J_ind_I 			12
+#define 	L_P_P2Y 			13
+#define 	R_PIP2_H			14
+// Bennett et al. specific
+#define		J_ind_I 			12
+#define 	B_P_P2Y 			13
+#define 	J_Gprot 			14
+
 
 #define	    cpl_Ca		        0
 #define	    cpl_Vm		        1
