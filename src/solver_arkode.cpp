@@ -12,8 +12,6 @@
 #include "gather.h"
 #include "writeHDF5.h"
 
-#define EXPLICIT_ONLY 0
-
 extern conductance cpl_cef;
 extern SMC_cell** smc;
 extern EC_cell** ec;
@@ -216,6 +214,8 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		ec_buffer = allocate_EC_data_buffer(grid.num_ranks_branch, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
 		smc_buffer = allocate_SMC_data_buffer(grid.num_ranks_branch, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
 	}
+
+
 
 	t = tnow;
 	tout = tnow + interval;

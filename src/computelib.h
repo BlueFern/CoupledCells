@@ -18,6 +18,8 @@ int errcode = (fn); \
 	} \
 }
 
+#define EXPLICIT_ONLY 0
+
 /**
  * Helper functions for exponentiation to integer powers.
  * @{ */

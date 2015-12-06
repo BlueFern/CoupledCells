@@ -54,6 +54,9 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 	// Allocate displacements for MPI comms.
 	int *disp = (int*)checked_malloc((int)(grid->num_ranks_branch * sizeof(int)), SRC_LOC);
 
+	int chunk_size = grid->num_ec_axially * grid->num_ec_circumferentially * (grid->neq_ec + grid->num_coupling_species_ec);
+	double *recv_buffer = (double*)checked_malloc(grid->num_ranks_branch * chunk_size * sizeof(double), SRC_LOC);
+
 	// Allocate counts for MPI comms.
 	int *recv_count = (int*)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
 
@@ -64,84 +67,50 @@ void gather_EC_data(grid_parms *grid, ec_data_buffer *ec_buffer, EC_cell **ec)
 		// Compute displacement values.
 		for (int i = 0; i < grid->num_ranks_branch; i++)
 		{
-			disp[i] = i * ec_buffer->chunk_size;
-			recv_count[i] = ec_buffer->chunk_size;
+			disp[i] = i * chunk_size;
+			recv_count[i] = chunk_size;
 		}
 	}
 
 	// Allocate send buffer.
-	double* send_buffer = (double *)checked_malloc(sizeof(double) * ec_buffer->chunk_size, SRC_LOC);
+	double* send_buffer = (double *)checked_malloc(sizeof(double) * chunk_size, SRC_LOC);
 
-	/************* ec_Ca field data *************/
 	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
 	{
-		for(int j = 0; j < grid->num_ec_circumferentially; j++, p++)
+		for(int j = 0; j < grid->num_ec_circumferentially; j++, p += (grid->neq_ec + grid->num_coupling_species_ec))
 		{
 			send_buffer[p] = ec[j + 1][i + 1].vars[ec_Ca];
+			send_buffer[p + 1] = ec[j + 1][i + 1].vars[ec_IP3];
+			send_buffer[p + 2] = ec[j + 1][i + 1].vars[ec_SR];
+			send_buffer[p + 3] = ec[j + 1][i + 1].vars[ec_Vm];
+			send_buffer[p + 4] = ec[j + 1][i + 1].homo_fluxes[cpl_Ca];
+			send_buffer[p + 5] = ec[j + 1][i + 1].homo_fluxes[cpl_IP3];
+			send_buffer[p + 6] = ec[j + 1][i + 1].homo_fluxes[cpl_Vm];
 		}
 	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_Ca, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
 
-	/************* ec_cpl_Ca field data *************/
-	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
+
+
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, chunk_size, MPI_DOUBLE, recv_buffer, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
+
+	if(grid->rank_branch == 0)
 	{
-		for(int j = 0; j < grid->num_ec_circumferentially; j++, p++)
+		// write recv buffer elements to their appropriate locations in ec_buffer
+		for (int i = 0, j = 0; i < grid->num_ec_axially * grid->num_ec_circumferentially; i++)
 		{
-			send_buffer[p] = ec[j + 1][i + 1].homo_fluxes[cpl_Ca];
+			ec_buffer->_ec_Ca[i] = recv_buffer[j++];
+			ec_buffer->_ec_IP3[i] = recv_buffer[j++];
+			ec_buffer->_ec_SR[i] = recv_buffer[j++];
+			ec_buffer->_ec_Vm[i] = recv_buffer[j++];
+
+			ec_buffer->_ec_cpl_Ca[i] = recv_buffer[j++];
+			ec_buffer->_ec_cpl_IP3[i] = recv_buffer[j++];
+			ec_buffer->_ec_cpl_Vm[i] = recv_buffer[j++];
+
 		}
 	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_cpl_Ca, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
 
-	/************* ec_IP3 field data *************/
-	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
-	{
-		for(int j = 0; j < grid->num_ec_circumferentially; j++, p++)
-		{
-			send_buffer[p] = ec[j + 1][i + 1].vars[ec_IP3];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_IP3, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
-
-	/************* ec_cpl_IP3 field data *************/
-	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
-	{
-		for(int j = 0; j < grid->num_ec_circumferentially; j++, p++)
-		{
-			send_buffer[p] = ec[j + 1][i + 1].homo_fluxes[cpl_IP3];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_cpl_IP3, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
-
-	/************* ec_SR field data *************/
-	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
-	{
-		for(int j = 0; j < grid->num_ec_circumferentially; j++, p++)
-		{
-			send_buffer[p] = ec[j + 1][i + 1].vars[ec_SR];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_SR, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
-
-	/************* ec_Vm field data *************/
-	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
-	{
-		for(int j = 0; j < grid->num_ec_circumferentially; j++, p++)
-		{
-			send_buffer[p] = ec[j + 1][i + 1].vars[ec_Vm];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_Vm, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
-
-	/************* ec_cpl_Vm field data *************/
-	for(int i = 0, p = 0; i < grid->num_ec_axially; i++)
-	{
-		for(int j = 0; j < grid->num_ec_circumferentially; j++, p++)
-		{
-			send_buffer[p] = ec[j + 1][i + 1].homo_fluxes[cpl_Vm];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, ec_buffer->chunk_size, MPI_DOUBLE, ec_buffer->_ec_cpl_Vm, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
-
+	free(recv_buffer);
 	free(disp);
 	free(recv_count);
 	free(send_buffer);
@@ -202,6 +171,9 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 {
 	// printf("[%d] ++++++ Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
+	int chunk_size = grid->num_smc_axially * grid->num_smc_circumferentially * (grid->neq_smc + grid->num_coupling_species_smc);
+	double *recv_buffer = (double*)checked_malloc(grid->num_ranks_branch * chunk_size * sizeof(double), SRC_LOC);
+
 	// Allocate displacements for MPI comms.
 	int *disp = (int*)checked_malloc((int)(grid->num_ranks_branch * sizeof(int)), SRC_LOC);
 
@@ -215,95 +187,52 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 		// Compute displacement values.
 		for (int i = 0; i < grid->num_ranks_branch; i++)
 		{
-			disp[i] = i * smc_buffer->chunk_size;
-			recv_count[i] = smc_buffer->chunk_size;
+			disp[i] = i * chunk_size;
+			recv_count[i] = chunk_size;
 		}
 	}
 
 	// Allocate send buffer for values.
-	double* send_buffer = (double *)checked_malloc(sizeof(double) * smc_buffer->chunk_size, SRC_LOC);
+	double* send_buffer = (double *)checked_malloc(sizeof(double) * chunk_size, SRC_LOC);
 
-	/************* smc_Ca field data *************/
 	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
 	{
-		for(int j = 0; j < grid->num_smc_circumferentially; j++, p++)
+		for(int j = 0; j < grid->num_smc_circumferentially; j++, p += (grid->neq_smc + grid->num_coupling_species_smc))
 		{
 			send_buffer[p] = smc[j + 1][i + 1].vars[smc_Ca];
+			send_buffer[p + 1] = smc[j + 1][i + 1].vars[smc_IP3];
+			send_buffer[p + 2] = smc[j + 1][i + 1].vars[smc_SR];
+			send_buffer[p + 3] = smc[j + 1][i + 1].vars[smc_Vm];
+			send_buffer[p + 4] = smc[j + 1][i + 1].vars[smc_w];
+			send_buffer[p + 5] = smc[j + 1][i + 1].homo_fluxes[cpl_Ca];
+			send_buffer[p + 6] = smc[j + 1][i + 1].homo_fluxes[cpl_IP3];
+			send_buffer[p + 7] = smc[j + 1][i + 1].homo_fluxes[cpl_Vm];
 		}
 	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_Ca, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
 
-	/************* smc_cpl_Ca field data *************/
-	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
-	{
-		for(int j = 0; j < grid->num_smc_circumferentially; j++, p++)
-		{
-			send_buffer[p] = smc[j + 1][i + 1].homo_fluxes[cpl_Ca];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_cpl_Ca, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
+	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, chunk_size, MPI_DOUBLE, recv_buffer, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
 
-	/************* smc_IP3 field data *************/
-	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
+	if(grid->rank_branch == 0)
 	{
-		for(int j = 0; j < grid->num_smc_circumferentially; j++, p++)
+		// write recv buffer elements to their appropriate locations in ec_buffer
+		for (int i = 0, j = 0; i < grid->num_smc_axially * grid->num_smc_circumferentially; i++)
 		{
-			send_buffer[p] = smc[j + 1][i + 1].vars[smc_IP3];
+			smc_buffer->_smc_Ca[i] = recv_buffer[j++];
+			smc_buffer->_smc_IP3[i] = recv_buffer[j++];
+			smc_buffer->_smc_SR[i] = recv_buffer[j++];
+			smc_buffer->_smc_Vm[i] = recv_buffer[j++];
+			smc_buffer->_smc_W[i] = recv_buffer[j++];
+			smc_buffer->_smc_cpl_Ca[i] = recv_buffer[j++];
+			smc_buffer->_smc_cpl_IP3[i] = recv_buffer[j++];
+			smc_buffer->_smc_cpl_Vm[i] = recv_buffer[j++];
 		}
 	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_IP3, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
 
-	/************* smc_cpl_IP3 field data *************/
-	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
-	{
-		for(int j = 0; j < grid->num_smc_circumferentially; j++, p++)
-		{
-			send_buffer[p] = smc[j + 1][i + 1].homo_fluxes[cpl_IP3];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_cpl_IP3, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
-
-	/************* smc_Vm field data *************/
-	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
-	{
-		for(int j = 0; j < grid->num_smc_circumferentially; j++, p++)
-		{
-			send_buffer[p] = smc[j + 1][i + 1].vars[smc_Vm];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_Vm, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
-
-	/************* smc_cpl_Vm field data *************/
-	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
-	{
-		for(int j = 0; j < grid->num_smc_circumferentially; j++, p++)
-		{
-			send_buffer[p] = smc[j + 1][i + 1].homo_fluxes[cpl_Vm];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_cpl_Vm, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
-
-	/************* smc_SR field data *************/
-	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
-	{
-		for(int j = 0; j < grid->num_smc_circumferentially; j++, p++)
-		{
-			send_buffer[p] = smc[j + 1][i + 1].vars[smc_SR];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_SR, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
-
-	/************* smc_w field data *************/
-	for(int i = 0, p = 0; i < grid->num_smc_axially; i++)
-	{
-		for(int j = 0; j < grid->num_smc_circumferentially; j++, p++)
-		{
-			send_buffer[p] = smc[j + 1][i + 1].vars[smc_w];
-		}
-	}
-	CHECK_MPI_ERROR(MPI_Gatherv(send_buffer, smc_buffer->chunk_size, MPI_DOUBLE, smc_buffer->_smc_W, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
+	free(recv_buffer);
+	free(disp);
+	free(recv_count);
+	free(send_buffer);
 }
-
 /*
  * Collect JPLC for each cart grid into an array on the writing cores.
  */
