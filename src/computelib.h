@@ -120,10 +120,13 @@ typedef struct
 	///This is global and local MPI information
 	num_ranks, universal_rank, /// numtasks = total CPUs in MPI_COMM_WORLD,
 	num_ranks_branch, rank_branch, /// tasks = total CPUs in my-subdomain's comm (branch)
+	num_ranks_write_group, rank_write_group, /// for the variable number of writers.
 
 	//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right branch = 3.
 	//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 	branch_tag,
+	write_tag,
+	writersPerBranch,
 	/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
 	offset_P, offset_L, offset_R, flip_array[4],
 	/// Number of elements being sent and received.
@@ -134,7 +137,7 @@ typedef struct
 	double uniform_jplc, stimulus_onset_time;	/// the time when spatially varying agonist kicks in
 
 	// MPI_COMM_WORLD, and branch communicatior.
-	MPI_Comm universe, cart_comm;
+	MPI_Comm universe, cart_comm, write_group;
 
 	int smc_model, ec_model; // These are placeholders for the selection of model to be simulated in each cell.
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
@@ -200,7 +203,7 @@ void coupling_explicit(double, double*, grid_parms, SMC_cell**, EC_cell**, condu
 void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, char*); //, IO_domain_info*);
 #endif
 #ifdef ARK_ODE
-void arkode_solver(double, double, double, double*, int, double, double, int, char*);
+void arkode_solver(double, double, double, double*, int, double, double, int, char*, int);
 #endif
 #ifdef BOOST_ODEINT
 void odeint_solver(double, double, double, double*, int, double, double, int, char*);

@@ -101,240 +101,95 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 	// printf("[%d] <<<<<< Leaving %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 }
 
-void write_EC_data_HDF5(grid_parms* grid, ec_data_buffer *ec_buffer, int write_count, char* path)
+void write_EC_data_HDF5(grid_parms* grid, double *ec_buffer, int write_count, char* path)
 {
 	// printf("[%d] >>>>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	char filename[256];
-	int err = sprintf(filename, "%s/ec_data_t_%d_b_%d.h5", path, write_count, grid->branch_tag);
+	int err = sprintf(filename, "%s/ec_data_t_%d_b_%d_%d.h5", path, write_count, grid->branch_tag, grid->write_tag);
 
 	printf("[%d] Writing EC file: %s\n", grid->universal_rank, filename);
 
 	hid_t file_id;
 
 	hid_t space_id;
-	hid_t ec_Ca_id;
-	hid_t ec_cpl_Ca_id;
-	hid_t ec_IP3_id;
-	hid_t ec_cpl_IP3_id;
-	hid_t ec_Vm_id;
-	hid_t ec_cpl_Vm_id;
-	hid_t ec_SR_id;
+	hid_t node_x;
 
 	herr_t status;
 
 	// Create a HDF5 file.
 	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-	hsize_t dims[_2D] = {grid->num_ec_axially * grid->m, grid->num_ec_circumferentially * grid->n};
+	hsize_t dims[_2D] = {1, grid->num_ec_axially * grid->num_ec_circumferentially * (grid->num_coupling_species_ec + grid->neq_ec)};
 
 	// Create dataspace.
 	space_id = H5Screate_simple(_2D, dims, dims);
+	char str[16];
+	int offset = 0;
+	for (int node = 0; node < grid->num_ranks_write_group; node++)
+	{
 
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	ec_Ca_id = H5Dcreate(file_id, "/EC_Ca", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	ec_Ca_id = H5Dcreate(file_id, "/EC_Ca", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(ec_Ca_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_Ca);
-	CHECK(status, FAIL, __FUNCTION__);
+		sprintf(str, "/node_%d", node);
 
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	ec_cpl_Ca_id = H5Dcreate(file_id, "/EC_Ca_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	ec_cpl_Ca_id = H5Dcreate(file_id, "/EC_Ca_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(ec_cpl_Ca_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_cpl_Ca);
-	CHECK(status, FAIL, __FUNCTION__);
+		// Create dataset.
+	#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
+		node_x = H5Dcreate(file_id, str, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	#else
+		node_x = H5Dcreate(file_id, str, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
+	#endif
+		// Write dataset.
+		status = H5Dwrite(node_x, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ec_buffer[offset]);
+		CHECK(status, FAIL, __FUNCTION__);
 
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	ec_IP3_id = H5Dcreate(file_id, "/EC_IP3", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	ec_IP3_id = H5Dcreate(file_id, "/EC_IP3", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(ec_IP3_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_IP3);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	ec_cpl_IP3_id = H5Dcreate(file_id, "/EC_IP3_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	ec_cpl_IP3_id = H5Dcreate(file_id, "/EC_IP3_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(ec_cpl_IP3_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_cpl_IP3);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	ec_Vm_id = H5Dcreate(file_id, "/EC_Vm", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	ec_Vm_id = H5Dcreate(file_id, "/EC_Vm", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(ec_Vm_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_Vm);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	ec_cpl_Vm_id = H5Dcreate(file_id, "/EC_Vm_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	ec_cpl_Vm_id = H5Dcreate(file_id, "/EC_Vm_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(ec_cpl_Vm_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_cpl_Vm);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	ec_SR_id = H5Dcreate(file_id, "/EC_SR", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	ec_SR_id = H5Dcreate(file_id, "/EC_SR", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(ec_SR_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer->_ec_SR);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Close everything.
-	status = H5Dclose(ec_Ca_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(ec_SR_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(ec_Vm_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(ec_IP3_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(ec_cpl_Ca_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(ec_cpl_Vm_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(ec_cpl_IP3_id); CHECK(status, FAIL, __FUNCTION__);
-
+		status = H5Dclose(node_x); CHECK(status, FAIL, __FUNCTION__);
+		offset += grid->num_ec_axially * grid->num_ec_circumferentially * (grid->num_coupling_species_ec + grid->neq_ec);
+	}
 	status = H5Sclose(space_id); CHECK(status, FAIL, __FUNCTION__);
 	status = H5Fclose(file_id); CHECK(status, FAIL, __FUNCTION__);
+
 }
 
-void write_SMC_data_HDF5(grid_parms* grid, smc_data_buffer *smc_buffer, int write_count, char* path)
+void write_SMC_data_HDF5(grid_parms* grid, double *smc_buffer, int write_count, char* path)
 {
 	// printf("[%d] >>>>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	char filename[256];
-	int err = sprintf(filename, "%s/smc_data_t_%d_b_%d.h5", path, write_count, grid->branch_tag);
+	int err = sprintf(filename, "%s/smc_data_t_%d_b_%d_%d.h5", path, write_count, grid->branch_tag, grid->write_tag);
 
 	printf("[%d] Writing SMC file: %s\n", grid->universal_rank, filename);
 
 	hid_t file_id;
 
 	hid_t space_id;
-	hid_t smc_Ca_id;
-	hid_t smc_cpl_Ca_id;
-	hid_t smc_IP3_id;
-	hid_t smc_cpl_IP3_id;
-	hid_t smc_Vm_id;
-	hid_t smc_cpl_Vm_id;
-	hid_t smc_SR_id;
-	hid_t smc_W_id;
+	hid_t node_x;
 
 	herr_t status;
 
 	// Create a HDF5 file.
 	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
-	hsize_t dims[_2D] = {grid->num_smc_axially * grid->m, grid->num_smc_circumferentially * grid->n};
+	hsize_t dims[_2D] = {grid->num_smc_axially * grid->num_smc_circumferentially * (grid->num_coupling_species_smc + grid->neq_smc), 1};
 
 	// Create dataspace.
 	space_id = H5Screate_simple(_2D, dims, dims);
+	char str[16];
+	int offset = 0;
+	for (int node = 0; node < grid->num_ranks_write_group; node++)
+	{
 
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	smc_Ca_id = H5Dcreate(file_id, "/SMC_Ca", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	smc_Ca_id = H5Dcreate(file_id, "/SMC_Ca", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(smc_Ca_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_Ca);
-	CHECK(status, FAIL, __FUNCTION__);
+		sprintf(str, "/node_%d", node);
+		// Create dataset.
+	#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
+		node_x = H5Dcreate(file_id, str, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	#else
+		node_x = H5Dcreate(file_id, str, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
+	#endif
+		// Write dataset.
+		status = H5Dwrite(node_x, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &smc_buffer[offset]);
+		CHECK(status, FAIL, __FUNCTION__);
 
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	smc_cpl_Ca_id = H5Dcreate(file_id, "/SMC_Ca_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	smc_cpl_Ca_id = H5Dcreate(file_id, "/SMC_Ca_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(smc_cpl_Ca_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_cpl_Ca);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	smc_IP3_id = H5Dcreate(file_id, "/SMC_IP3", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	smc_IP3_id = H5Dcreate(file_id, "/SMC_IP3", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(smc_IP3_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_IP3);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	smc_cpl_IP3_id = H5Dcreate(file_id, "/SMC_IP3_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	smc_cpl_IP3_id = H5Dcreate(file_id, "/SMC_IP3_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(smc_cpl_IP3_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_cpl_IP3);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	smc_Vm_id = H5Dcreate(file_id, "/SMC_Vm", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	smc_Vm_id = H5Dcreate(file_id, "/SMC_Vm", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(smc_Vm_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_Vm);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	smc_cpl_Vm_id = H5Dcreate(file_id, "/SMC_Vm_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	smc_cpl_Vm_id = H5Dcreate(file_id, "/SMC_Vm_coupling", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(smc_cpl_Vm_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_cpl_Vm);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	smc_SR_id = H5Dcreate(file_id, "/SMC_SR", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	smc_SR_id = H5Dcreate(file_id, "/SMC_SR", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(smc_SR_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_SR);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Create dataset.
-#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	smc_W_id = H5Dcreate(file_id, "/SMC_w", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-#else
-	smc_W_id = H5Dcreate(file_id, "/SMC_w", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-#endif
-	// Write dataset.
-	status = H5Dwrite(smc_W_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer->_smc_W);
-	CHECK(status, FAIL, __FUNCTION__);
-
-	// Close everything.
-	status = H5Dclose(smc_Ca_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(smc_SR_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(smc_W_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(smc_Vm_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(smc_IP3_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(smc_cpl_Ca_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(smc_cpl_Vm_id); CHECK(status, FAIL, __FUNCTION__);
-	status = H5Dclose(smc_cpl_IP3_id); CHECK(status, FAIL, __FUNCTION__);
-
+		status = H5Dclose(node_x); CHECK(status, FAIL, __FUNCTION__);
+		offset += grid->num_smc_axially * grid->num_smc_circumferentially * (grid->num_coupling_species_smc + grid->neq_smc);
+	}
 	status = H5Sclose(space_id); CHECK(status, FAIL, __FUNCTION__);
 	status = H5Fclose(file_id); CHECK(status, FAIL, __FUNCTION__);
 }

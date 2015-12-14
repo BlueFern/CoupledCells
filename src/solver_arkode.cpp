@@ -124,7 +124,7 @@ void ark_check_flag(int cflag, char *funcname, int rank, double tnow)
 }
 
 void arkode_solver(double tnow, double tfinal, double interval, double *yInitial, int neq, double relTOL, double absTOL,
-		int file_write_per_unit_time, char* path)
+		int file_write_per_unit_time, char* path, int writersPerBranch)
 {
 	int iteration = 0;
 	int write_count = 0;
@@ -200,21 +200,18 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
 
 	// Data buffers for collecting and writing HDF5 output.
-	ec_data_buffer *ec_buffer;
-	smc_data_buffer *smc_buffer;
+	double *ec_buffer;
+	double *smc_buffer;
+
+	int ec_chunk_size = grid.num_ec_axially * grid.num_ec_circumferentially * (grid.num_coupling_species_ec + grid.neq_ec);
+	int smc_chunk_size = grid.num_smc_axially * grid.num_smc_circumferentially * (grid.num_coupling_species_smc + grid.neq_smc);
 
 	// Allocate the EC and SMC buffers.
-	if(grid.rank_branch == 0)
+	if(grid.rank_write_group == 0)
 	{
-		ec_buffer = allocate_EC_data_buffer(grid.num_ranks_branch, grid.num_ec_axially * grid.num_ec_circumferentially, 1);
-		smc_buffer = allocate_SMC_data_buffer(grid.num_ranks_branch, grid.num_smc_axially * grid.num_smc_circumferentially, 1);
+		ec_buffer = (double*)checked_malloc(grid.num_ranks_write_group * ec_chunk_size * sizeof(double), SRC_LOC);
+		smc_buffer = (double*)checked_malloc(grid.num_ranks_write_group * smc_chunk_size * sizeof(double), SRC_LOC);
 	}
-	else
-	{
-		ec_buffer = allocate_EC_data_buffer(grid.num_ranks_branch, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
-		smc_buffer = allocate_SMC_data_buffer(grid.num_ranks_branch, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
-	}
-
 
 
 	t = tnow;
@@ -257,7 +254,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			t_stamp.aggregate_smc_gather += MPI_Wtime() - smc_gather;
 
 			double ec_write = MPI_Wtime();
-			if(grid.rank_branch == 0)
+			if(grid.rank_write_group == 0)
 			{
 				// Write state variables to HDF5.
 				write_EC_data_HDF5(&grid, ec_buffer, write_count, path);
@@ -265,7 +262,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			t_stamp.aggregate_ec_write += MPI_Wtime() - ec_write;
 
 			double smc_write = MPI_Wtime();
-			if(grid.rank_branch == 0)
+			if(grid.rank_write_group == 0)
 			{
 				// Write state variables to HDF5.
 				write_SMC_data_HDF5(&grid, smc_buffer, write_count, path);
@@ -275,20 +272,8 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			write_count++;
 		}
 
-		/// Increment the iteration as rksuite has finished solving between bounds tnow <= t <= tend.
+		/// Increment the iteration as arkode has finished solving between bounds tnow <= t <= tend.
 		iteration++;
-	}
-
-	// Release the EC and SMC buffers used for writing to HDF5.
-	if(grid.rank_branch == 0)
-	{
-		free_EC_data_buffer(ec_buffer, 1);
-		free_SMC_data_buffer(smc_buffer, 1);
-	}
-	else
-	{
-		free_EC_data_buffer(ec_buffer, 0);
-		free_SMC_data_buffer(smc_buffer, 0);
 	}
 
 	// Prepare time profiling data.

@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
 	double tfinal = 1e-2;
 	double interval = 1e-2;
 	double data_writing_frequency = 10.00;
+	int writersPerBranch = 1;
 
 	// Read command line input
 	// t - T_END for the simulation
@@ -78,6 +79,8 @@ int main(int argc, char* argv[])
 					data_writing_frequency = atof(argv[i + 1]);
 				} else if (argv[i][1] == 'i') {
 					interval = atof(argv[i + 1]);
+				} else if (argv[i][1] == 'd') {
+					writersPerBranch = atoi(argv[i + 1]);
 				}
 			}
 		}
@@ -88,7 +91,7 @@ int main(int argc, char* argv[])
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
-	grid.stimulus_onset_time = 10.00;
+	grid.stimulus_onset_time = 5.00;
 
 	grid.num_smc_fundblk_circumferentially = 1;
 	grid.num_ec_fundblk_circumferentially = 5;
@@ -119,6 +122,20 @@ int main(int argc, char* argv[])
 	{
 		make_bifucation_cart_grids(&grid);
 	}
+
+
+	if (grid.num_ranks_branch < writersPerBranch)
+	{
+		MPI_Abort(MPI_COMM_WORLD, 911); // Too many writers per branch
+	}
+
+	int color = (int) grid.rank_branch /  ((float) grid.num_ranks_branch / (float) writersPerBranch);
+	CHECK_MPI_ERROR(MPI_Comm_split(grid.cart_comm, color, 0, &grid.write_group));
+	CHECK_MPI_ERROR(MPI_Comm_rank(grid.write_group, &grid.rank_write_group));
+	CHECK_MPI_ERROR(MPI_Comm_size(grid.write_group, &grid.num_ranks_write_group));
+	grid.write_tag = color;
+	grid.writersPerBranch = writersPerBranch;
+
 
 	/// Now allocate memory for the structures representing the cells and the various members of those structures.
 	/// Each of the two cell grids have two additional rows and two additional columns as ghost cells.
@@ -310,7 +327,7 @@ int main(int argc, char* argv[])
 
 #elif defined ARK_ODE
 
-	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir);
+	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir, writersPerBranch);
 
 #elif defined BOOST_ODEINT
 
