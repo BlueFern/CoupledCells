@@ -61,7 +61,7 @@ extern FILE* var_file;
 extern double* plotttingBuffer;
 extern int bufferPos;
 
-#define FILENAME "PhyFiIP3_1quad_lemon.csv"
+#define FILENAME "PhyFiIP3_1quad_lemon_newer.csv"
 /**
  * Conductance / coupling coefficients.
  */

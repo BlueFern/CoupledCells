@@ -38,10 +38,10 @@ double
 	  // k6 = 100.00,  k7 = 300.00,  BT = 120.00;
 
 	// Lemon at al. Constants
-	kATP = 2, alpha_j = 1e-2, KCa = 0.4, R_PIP2_r = 10,
-	PIP2_tot = 2e4, K_Gprot_act = 0.017, delta = 1.234e-3,
-	G_prot_tot = 7.5e5, K_G_prot_deact = 0.15, N_a = 6.02252e23,
-	V_ec = 1.17e3, unitcon_a = 1e21,
+	kATP = 2, alpha_j = 2.781e-5, KCa = 0.4, R_PIP2_r = 10,
+	PIP2_tot = 4e7, K_Gprot_act = 0.017, delta = 1.234e-3,
+	G_prot_tot = 1e5, K_G_prot_deact = 0.15, N_a = 6.02252e23,
+	V_ec = 1.17e3, unitcon_a = 1e21, PIP2_C = 5e7, kDeg = 1.25,
 
 	// Bennett constants
 	r_IP3 = 5e-14, unitcon_b = 1e15, A_ec = 500, Gprot_ratio = 8.82;
@@ -99,12 +99,12 @@ void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
 				k = offset + 0;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.13;
-			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.32;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.85;
+			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.6;
 			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -35;
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.1;
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.01;
 #if MODEL == LEMON
-			y[k + ((j - 1) * grid.neq_ec) + ec_PIP2] = 20000;
+			y[k + ((j - 1) * grid.neq_ec) + ec_PIP2] = 4e7;
 			y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 14;
 #endif
 		}
@@ -304,7 +304,7 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 			//Jleak
 			ec[i][j].fluxes[J_Leak] = Lj * ec[i][j].vars[ec_SR];
 			//IP3 degradation
-			ec[i][j].fluxes[J_IP3_deg] = kj * ec[i][j].vars[ec_IP3];
+			ec[i][j].fluxes[J_IP3_deg] = kDeg * ec[i][j].vars[ec_IP3];
 			//J_NonSelective Cation channels
 			ec[i][j].fluxes[J_NSC] = (Gcatj * (ECa - ec[i][j].vars[ec_Vm]) * 0.5)
 					* (1 + ((double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3cat) / m4cat)))));
@@ -400,10 +400,11 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
 						ec[i][j].fluxes[J_ind_I] - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
-
+#if 1
 			f[k + ((j - 1) * grid.neq_ec) + ec_PIP2] =
 						- (ec[i][j].fluxes[R_PIP2_H] + R_PIP2_r) * ec[i][j].vars[ec_PIP2]
 						- (ec[i][j].vars[ec_IP3] *  R_PIP2_r) + (R_PIP2_r * PIP2_tot);
+#endif
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] =
 						(K_Gprot_act * (delta + ec[i][j].fluxes[L_P_P2Y]) * (G_prot_tot - ec[i][j].vars[ec_Gprot]))

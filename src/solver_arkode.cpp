@@ -243,7 +243,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
 		t_stamp.aggregate_comm += MPI_Wtime() - comms_0_start;
 
-		if((iteration % file_write_per_unit_time) == 0)
+		if((iteration % file_write_per_unit_time) == 9999)
 		{
 			// Collect state variable data on writers.
 
