@@ -11,7 +11,7 @@ replace the ATP values with what we have in the HDF5 file.
 """
 
 INPUT_FILES = [
-["vtk/ec_mesh_parent.vtp", 'solution/jplc_0.h5']
+["vtk/ec_mesh_parent.vtp", 'solution/jplc_1.h5']
 ]
 
 ecAppend = vtk.vtkAppendFilter()
@@ -44,12 +44,19 @@ for files in INPUT_FILES:
         jplcArray.InsertNextValue(val)
 
     ec_mesh.GetCellData().SetScalars(jplcArray)
-    ecAppend.AddInput(ec_mesh)
+
+    if vtk.VTK_MAJOR_VERSION < 6:
+        ecAppend.AddInput(ec_mesh)
+    else:
+        ecAppend.AddInputData(ec_mesh)
 
 ecAppend.Update()
 outputDataset = ecAppend.GetOutput()
 
 jplcWriter = vtk.vtkXMLUnstructuredGridWriter()
 jplcWriter.SetFileName('solution/jplc_input.vtu')
-jplcWriter.SetInput(outputDataset)
+if vtk.VTK_MAJOR_VERSION < 6:
+    jplcWriter.SetInput(outputDataset)
+else:
+    jplcWriter.SetInputData(outputDataset)
 jplcWriter.Update()

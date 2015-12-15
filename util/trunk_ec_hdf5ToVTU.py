@@ -1,6 +1,7 @@
 import sys
 import h5py
 import numpy
+import argparse
 import vtk
 
 """
@@ -36,7 +37,7 @@ def read_array(h5_file_name, dataset_name):
 
     return array
 
-def run():
+def HDF5toVTK(start, end):
     INPUT_EC_MESHES = []
 
     # Read input EC meshes.
@@ -46,14 +47,14 @@ def run():
 
     INPUT_EC_MESHES += [reader.GetOutput()]
 
-    for time_step in range(int(sys.argv[1])):
+    for time_step in range(start, end + 1):
         append_filter = vtk.vtkAppendFilter()
 
         # PARENT.
         mesh_parent = vtk.vtkPolyData()
         mesh_parent.DeepCopy(INPUT_EC_MESHES[0])
 
-        h5_file_parent = H5_FILE_BASE_NAME + str(time_step) + '_b_0.h5'
+        h5_file_parent = H5_FILE_BASE_NAME + str(time_step) + '_b_1.h5'
         print "Processing file", h5_file_parent
 
         ca_array_parent = read_array(h5_file_parent, '/EC_Ca')
@@ -85,19 +86,28 @@ def run():
         mesh_parent.GetCellData().AddArray(sr_array_parent)
 
         # Append parent.
-        append_filter.AddInput(mesh_parent)
+        if vtk.VTK_MAJOR_VERSION < 6:
+            append_filter.AddInput(mesh_parent)
+        else:
+            append_filter.AddInputData(mesh_parent)
         append_filter.Update()
 
         # Write the result.
         vtp_file = VTP_FILE_BASE_NAME + str(time_step) + '.vtu'
         writer = vtk.vtkXMLUnstructuredGridWriter()
         writer.SetFileName(vtp_file)
-        writer.SetInput(append_filter.GetOutput())
+        if vtk.VTK_MAJOR_VERSION < 6:
+            writer.SetInput(append_filter.GetOutput())
+        else:
+            writer.SetInputData(append_filter.GetOutput())
         writer.Update()
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print "Expected arguments: the number of time steps to process."
-    else:
-        run()
+    argParser = argparse.ArgumentParser(
+        description='Fuse Coupled Cells simulation (bifurcation) data in HDF5 format with vessel geomtery data in VTK format and save the result as VTU data.')
+    argParser.add_argument('start', type=int, help='Start time')
+    argParser.add_argument('end', type=int, help='End time')
+    args = argParser.parse_args()
+
+    HDF5toVTK(args.start, args.end)
 

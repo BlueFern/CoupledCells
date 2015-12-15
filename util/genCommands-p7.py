@@ -11,19 +11,20 @@ if __name__ == "__main__":
     argParser.add_argument('numSteps', type=int, help='Number of steps to be divided between the specified number of processors.')
     args = argParser.parse_args()
 
-    # The ceiling value for the number of steps per processor.
-    stepPerProc = int(math.ceil(args.numSteps / float(args.numProcs)))
+    # The floor value for the number of steps per processor.
+    stepPerProc = int(math.floor(args.numSteps / float(args.numProcs)))
 
-    # For every processor calculate the start and end steps.
+    print 'python /hpc/scratch/bloodflo/Simulations/Angled/scripts/bifurcation_jplc_hdf5ToVTU.py'
+
     for proc in range(args.numProcs):
+
         start = stepPerProc * proc
         adjustedStep = stepPerProc
-
-        # Make sure the last step is set to not overstep the total number of steps.
         if proc == args.numProcs - 1:
             adjustedStep = args.numSteps - start
 
         end = start + adjustedStep - 1
 
-        print 'python2.7 ../scripts/bifurcation_ec_hdf5ToVTU.py ' + str(start) + ' ' + str(end)
-        print 'python2.7 ../scripts/bifurcation_smc_hdf5ToVTU.py ' + str(start) + ' ' + str(end)
+        print 'python /hpc/scratch/bloodflo/Simulations/Angled/scripts/bifurcation_ec_hdf5ToVTU.py ' + str(start) + ' ' + str(end)
+        print 'python /hpc/scratch/bloodflo/Simulations/Angled/scripts/bifurcation_smc_hdf5ToVTU.py ' + str(start) + ' ' + str(end)
+
