@@ -23,7 +23,6 @@ INPUT_SMC_MESH_FILES = [
     'vtk/smc_mesh_right_daughter.vtp'
 ]
 
-
 attributes = ['SMC_Ca', 'SMC_Ca_coupling', 'SMC_IP3', 'SMC_IP3_coupling', 'SMC_Vm', 'SMC_Vm_coupling', 'SMC_SR', 'SMC_w']
 
 
@@ -43,7 +42,7 @@ def read_array(arrays, h5_file_name, dataset_name, branch):
         i += 1
 
 
-def HDF5toVTK(start, end, writers, nodes_per_writer):
+def HDF5toVTK(start, end, writers):
 
     INPUT_SMC_MESHES = []
 
@@ -79,8 +78,8 @@ def HDF5toVTK(start, end, writers, nodes_per_writer):
         for i in range(writers):
             h5_file_parent = h5_file_parent[:-4] + str(i) + h5_file_parent[-3:]
             
-            for j in range(nodes_per_writer):
-                read_array(arrays, h5_file_parent,'/node_' + str(j), branch)
+            
+            read_array(arrays, h5_file_parent,"data", branch)
                 
         for i in range(len(attributes)):
             mesh_parent.GetCellData().AddArray(arrays[branch][i])
@@ -97,8 +96,8 @@ def HDF5toVTK(start, end, writers, nodes_per_writer):
         for i in range(writers):
             h5_file_left = h5_file_left[:-4] + str(i) + h5_file_left[-3:]
             
-            for j in range(nodes_per_writer):
-                read_array(arrays, h5_file_left,'/node_' + str(j), branch)
+
+            read_array(arrays, h5_file_left,"data", branch)
             
         for i in range(len(attributes)):
             mesh_left.GetCellData().AddArray(arrays[branch][i])
@@ -114,8 +113,8 @@ def HDF5toVTK(start, end, writers, nodes_per_writer):
         for i in range(writers):
             h5_file_right = h5_file_right[:-4] + str(i) + h5_file_right[-3:]
             
-            for j in range(nodes_per_writer):
-                read_array(arrays, h5_file_right,'/node_' + str(j), branch)
+
+            read_array(arrays, h5_file_right, "data", branch)
                 
         for i in range(len(attributes)):
             mesh_right.GetCellData().AddArray(arrays[branch][i])
@@ -153,9 +152,7 @@ if __name__ == "__main__":
     argParser.add_argument('start', type=int, help='Start time')
     argParser.add_argument('end', type=int, help='End time')
     argParser.add_argument('writers', type=int, help='Number of writers per branch')
-    argParser.add_argument('quads', type=int, help='Quads per write group')
-
 
     args = argParser.parse_args()    
 
-    HDF5toVTK(args.start, args.end, args.writers, args.quads)
+    HDF5toVTK(args.start, args.end, args.writers)

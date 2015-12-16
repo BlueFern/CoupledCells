@@ -120,30 +120,24 @@ void write_EC_data_HDF5(grid_parms* grid, double *ec_buffer, int write_count, ch
 	// Create a HDF5 file.
 	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-	hsize_t dims[_2D] = {1, grid->num_ec_axially * grid->num_ec_circumferentially * (grid->num_coupling_species_ec + grid->neq_ec)};
+	hsize_t dims[_2D] = {1, grid->num_ec_axially * grid->num_ec_circumferentially * (grid->num_coupling_species_ec + grid->neq_ec) * grid->num_ranks_write_group};
 
 	// Create dataspace.
 	space_id = H5Screate_simple(_2D, dims, dims);
-	char str[16];
-	int offset = 0;
-	for (int node = 0; node < grid->num_ranks_write_group; node++)
-	{
 
-		sprintf(str, "/node_%d", node);
+	// Create dataset that contains all the data. The script to convert to vtu assumes this format.
+#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
+	node_x = H5Dcreate(file_id, "data", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+#else
+	node_x = H5Dcreate(file_id, "data", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
+#endif
+	// Write dataset.
+	status = H5Dwrite(node_x, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ec_buffer);
+	CHECK(status, FAIL, __FUNCTION__);
 
-		// Create dataset.
-	#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-		node_x = H5Dcreate(file_id, str, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-	#else
-		node_x = H5Dcreate(file_id, str, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-	#endif
-		// Write dataset.
-		status = H5Dwrite(node_x, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ec_buffer[offset]);
-		CHECK(status, FAIL, __FUNCTION__);
+	status = H5Dclose(node_x); CHECK(status, FAIL, __FUNCTION__);
 
-		status = H5Dclose(node_x); CHECK(status, FAIL, __FUNCTION__);
-		offset += grid->num_ec_axially * grid->num_ec_circumferentially * (grid->num_coupling_species_ec + grid->neq_ec);
-	}
+
 	status = H5Sclose(space_id); CHECK(status, FAIL, __FUNCTION__);
 	status = H5Fclose(file_id); CHECK(status, FAIL, __FUNCTION__);
 
@@ -167,29 +161,23 @@ void write_SMC_data_HDF5(grid_parms* grid, double *smc_buffer, int write_count, 
 
 	// Create a HDF5 file.
 	file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-	hsize_t dims[_2D] = {grid->num_smc_axially * grid->num_smc_circumferentially * (grid->num_coupling_species_smc + grid->neq_smc), 1};
+	hsize_t dims[_2D] = {1,grid->num_smc_axially * grid->num_smc_circumferentially * (grid->num_coupling_species_smc + grid->neq_smc) * grid->num_ranks_write_group};
 
 	// Create dataspace.
 	space_id = H5Screate_simple(_2D, dims, dims);
-	char str[16];
-	int offset = 0;
-	for (int node = 0; node < grid->num_ranks_write_group; node++)
-	{
 
-		sprintf(str, "/node_%d", node);
-		// Create dataset.
-	#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-		node_x = H5Dcreate(file_id, str, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-	#else
-		node_x = H5Dcreate(file_id, str, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
-	#endif
-		// Write dataset.
-		status = H5Dwrite(node_x, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &smc_buffer[offset]);
-		CHECK(status, FAIL, __FUNCTION__);
+	// Create dataset that contains all the data. The script to convert to vtu assumes this format.
+#if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
+	node_x = H5Dcreate(file_id, "data", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+#else
+	node_x = H5Dcreate(file_id, "data", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
+#endif
+	// Write dataset.
+	status = H5Dwrite(node_x, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, smc_buffer);
+	CHECK(status, FAIL, __FUNCTION__);
 
-		status = H5Dclose(node_x); CHECK(status, FAIL, __FUNCTION__);
-		offset += grid->num_smc_axially * grid->num_smc_circumferentially * (grid->num_coupling_species_smc + grid->neq_smc);
-	}
+	status = H5Dclose(node_x); CHECK(status, FAIL, __FUNCTION__);
+
 	status = H5Sclose(space_id); CHECK(status, FAIL, __FUNCTION__);
 	status = H5Fclose(file_id); CHECK(status, FAIL, __FUNCTION__);
 }

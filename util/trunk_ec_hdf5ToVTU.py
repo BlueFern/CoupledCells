@@ -20,21 +20,23 @@ INPUT_EC_MESH_FILES = [
 'vtk/ec_mesh_parent.vtp',
 ]
 
-def read_array(h5_file_name, dataset_name):
+attributes = ['EC_Ca', 'EC_Ca_coupling', 'EC_IP3', 'EC_IP3_coupling', 'EC_Vm', 'EC_Vm_coupling', 'EC_SR']
+
+    
+def read_array(arrays, h5_file_name, dataset_name):
     fid = h5py.h5f.open(h5_file_name)
+    
     dset = h5py.h5d.open(fid, dataset_name)
     shape = dset.shape
-    rdata = numpy.zeros((shape[0], shape[1]), dtype = numpy.float64)
+    rdata = numpy.zeros((shape[0], shape[1]), dtype=numpy.float64)
     dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
 
     arr = rdata.ravel()
 
-    array = vtk.vtkDoubleArray()
-
+    i = 0
     for val in arr:
-        array.InsertNextValue(val)
-
-    return array
+        arrays[i % len(attributes)].InsertNextValue(val)
+        i += 1
 
 def run():
     INPUT_EC_MESHES = []
@@ -46,43 +48,30 @@ def run():
 
     INPUT_EC_MESHES += [reader.GetOutput()]
 
-    for time_step in range(int(sys.argv[1])):
+    for time_step in range(int(sys.argv[1]), int(sys.argv[2])):
+        
+        array = []
+        for att in attributes:
+            array.append(vtk.vtkDoubleArray())
+            array[-1].SetName(att)
+                
         append_filter = vtk.vtkAppendFilter()
 
         # PARENT.
         mesh_parent = vtk.vtkPolyData()
         mesh_parent.DeepCopy(INPUT_EC_MESHES[0])
 
-        h5_file_parent = H5_FILE_BASE_NAME + str(time_step) + '_b_0.h5'
+        h5_file_parent = H5_FILE_BASE_NAME + str(time_step) + '_b_1_' + 'x' + '.h5'
         print "Processing file", h5_file_parent
 
-        ca_array_parent = read_array(h5_file_parent, '/EC_Ca')
-        ca_array_parent.SetName('EC_Ca')
-        mesh_parent.GetCellData().AddArray(ca_array_parent)
 
-        ca_cpl_array_parent = read_array(h5_file_parent, '/EC_Ca_coupling')
-        ca_cpl_array_parent.SetName('EC_Ca_coupling')
-        mesh_parent.GetCellData().AddArray(ca_cpl_array_parent)
-
-        ip3_array_parent = read_array(h5_file_parent, '/EC_IP3')
-        ip3_array_parent.SetName('EC_IP3')
-        mesh_parent.GetCellData().AddArray(ip3_array_parent)
-
-        ip3_cpl_array_parent = read_array(h5_file_parent, '/EC_IP3_coupling')
-        ip3_cpl_array_parent.SetName('EC_IP3_coupling')
-        mesh_parent.GetCellData().AddArray(ip3_cpl_array_parent)
-
-        vm_array_parent = read_array(h5_file_parent, '/EC_Vm')
-        vm_array_parent.SetName('EC_Vm')
-        mesh_parent.GetCellData().AddArray(vm_array_parent)
-
-        vm_cpl_array_parent = read_array(h5_file_parent, '/EC_Vm_coupling')
-        vm_cpl_array_parent.SetName('EC_Vm_coupling')
-        mesh_parent.GetCellData().AddArray(vm_cpl_array_parent)
-
-        sr_array_parent = read_array(h5_file_parent, '/EC_SR')
-        sr_array_parent.SetName('EC_SR')
-        mesh_parent.GetCellData().AddArray(sr_array_parent)
+        for i in range(int(sys.argv[3])):
+            h5_file_parent = h5_file_parent[:-4] + str(i) + h5_file_parent[-3:]
+            
+            read_array(array, h5_file_parent, "data")
+                
+        for i in range(len(attributes)):
+            mesh_parent.GetCellData().AddArray(array[i])
 
         # Append parent.
         append_filter.AddInput(mesh_parent)
@@ -96,8 +85,8 @@ def run():
         writer.Update()
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print "Expected arguments: the number of time steps to process."
+    if len(sys.argv) != 4:
+        print "Expected arguments: the number of time steps to process and the number of writers"
     else:
         run()
 

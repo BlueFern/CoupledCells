@@ -28,7 +28,7 @@ void gather_EC_data(grid_parms *grid, double *ec_buffer, EC_cell **ec)
 		}
 	}
 
-	// Allocate send buffer.
+	// Allocate send buffer for all attributes for each cell.
 	double* send_buffer = (double *)checked_malloc(sizeof(double) * chunk_size, SRC_LOC);
 
 	int p = 0;
@@ -80,7 +80,7 @@ void gather_SMC_data(grid_parms *grid, double *smc_buffer, SMC_cell **smc)
 		}
 	}
 
-	// Allocate send buffer for values.
+	// Allocate send buffer for all attributes for each cell.
 	double* send_buffer = (double *)checked_malloc(sizeof(double) * chunk_size, SRC_LOC);
 
 	int p = 0;

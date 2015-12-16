@@ -126,7 +126,7 @@ typedef struct
 	//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 	branch_tag,
 	write_tag,
-	writersPerBranch,
+	//writers_per_branch,
 	/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
 	offset_P, offset_L, offset_R, flip_array[4],
 	/// Number of elements being sent and received.
