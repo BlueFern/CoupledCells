@@ -213,12 +213,11 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		smc_buffer = (double*)checked_malloc(grid.num_ranks_write_group * smc_chunk_size * sizeof(double), SRC_LOC);
 	}
 
-
 	t = tnow;
 	tout = tnow + interval;
 
 	// ITERATION loop to go from INITIAL time to FINAL time.
-	while (tfinal - t > 1.0e-15)
+	while (tfinal - t > 1.0e-5)
 	{
 		double solver_start = MPI_Wtime();
 
@@ -230,6 +229,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		}
 
 		flag = ARKode(arkode_mem, tout, y, &t, ARK_NORMAL);  // Call integrator.
+
 		ark_check_flag(flag, (char *)"ARKode", grid.universal_rank, tnow);
 
 		tout += interval;
@@ -271,7 +271,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 
 			write_count++;
 		}
-
 		/// Increment the iteration as arkode has finished solving between bounds tnow <= t <= tend.
 		iteration++;
 	}
