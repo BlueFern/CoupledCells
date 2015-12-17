@@ -11,6 +11,8 @@ How to Compile
 
 The project depends on MPI and Sundials libraries.
 
+    make -f Makefile.bgp ODEOPTION=ARK_ODE
+
 Configure the project with CMake and specify the *out-of-source* build
 directory. CMake can be run in GUI or CLI modes. In the current BlueGene/P build
 environment CMake should be launched in the following manner in order to specify
