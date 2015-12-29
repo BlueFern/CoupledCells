@@ -39,7 +39,7 @@ double
 
 	// Lemon at al. Constants
 	kATP = 2, alpha_j = 2.781e-5, KCa = 0.4, R_PIP2_r = 10,
-	PIP2_tot = 4e7, K_Gprot_act = 0.017, delta = 1.234e-3,
+	PIP2_tot = 4e7, K_G_prot_act = 0.017, delta = 1.234e-3,
 	G_prot_tot = 1e5, K_G_prot_deact = 0.15, N_a = 6.02252e23,
 	V_ec = 1.17e3, unitcon_a = 1e21, PIP2_C = 5e7, kDeg = 1.25,
 
@@ -59,11 +59,11 @@ void initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 				k = ((i - 1) * grid.neq_smc_axially);
 			else if (i == 1)
 				k = 0;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.191516;
-			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 1.391122;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = -66.454924;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.203;
+			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 1.376;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = -67;
 			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.010423;
-			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.3;
+			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.7835;
 		}
 	}
 
@@ -100,12 +100,12 @@ void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 			else if (i == 1)
 				k = offset + 0;
 			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.85;
-			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.6;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -35;
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.01;
+			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.57;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -65;
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 1.097;
 #if MODEL == LEMON
-			y[k + ((j - 1) * grid.neq_ec) + ec_PIP2] = 4e7;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 14;
+			y[k + ((j - 1) * grid.neq_ec) + ec_PIP2] = 3.989e7;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 1470.305;
 #endif
 		}
 	}
@@ -384,6 +384,7 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 	{
 		for(int j = 1; j <= grid.num_ec_axially; j++)
 		{
+
 			if (i > 1)
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
@@ -407,7 +408,7 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 #endif
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] =
-						(K_Gprot_act * (delta + ec[i][j].fluxes[L_P_P2Y]) * (G_prot_tot - ec[i][j].vars[ec_Gprot]))
+						(K_G_prot_act * (delta + ec[i][j].fluxes[L_P_P2Y]) * (G_prot_tot - ec[i][j].vars[ec_Gprot]))
 						- (K_G_prot_deact * ec[i][j].vars[ec_Gprot]);
 
 #elif MODEL == BENNETT
@@ -436,6 +437,7 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[R_PIP2_H];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_IP3_deg];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_ind_I];
+
 #elif MODEL == BENNETT
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_ind_I];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_Gprot];

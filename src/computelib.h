@@ -30,10 +30,6 @@ int errcode = (fn); \
 #define 		KNBGR			0
 #define 		TSK				1
 
-#define LEMON 0
-#define BENNETT 1
-#define MODEL LEMON
-
 #define UP 0
 #define DOWN 1
 #define LEFT 2
@@ -47,6 +43,10 @@ int errcode = (fn); \
 
 #define local 0
 #define remote 1
+
+#define LEMON 0
+#define BENNETT 1
+#define MODEL LEMON
 
 #define PLOTTING 1
 #define EXPLICIT_ONLY 1
