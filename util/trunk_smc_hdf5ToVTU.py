@@ -61,12 +61,12 @@ def run():
         mesh_parent = vtk.vtkPolyData()
         mesh_parent.DeepCopy(INPUT_SMC_MESHES[0])
 
-        h5_file_parent = H5_FILE_BASE_NAME + str(time_step) + '_b_1_' + 'x' + '.h5'
-        print "Processing file", h5_file_parent
+        h5_file_parent_base = H5_FILE_BASE_NAME + str(time_step) + '_b_1_' + 'x' + '.h5'
+        print "Processing file", h5_file_parent_base
 
 
         for i in range(1, int(sys.argv[3]) - 1):
-            h5_file_parent = h5_file_parent[:-4] + str(i) + h5_file_parent[-3:]
+            h5_file_parent = h5_file_parent_base[:-4] + str(i) + h5_file_parent_base[-3:]
             
             read_array(array, h5_file_parent, "data")
                 

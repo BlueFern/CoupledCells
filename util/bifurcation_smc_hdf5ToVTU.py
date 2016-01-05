@@ -70,15 +70,13 @@ def HDF5toVTK(start, end, writers):
         mesh_parent.DeepCopy(INPUT_SMC_MESHES[0])
         
 
-        h5_file_parent = H5_FILE_BASE_NAME + str(time_step) + '_b_1_' + 'x' + '.h5'
+        h5_file_parent_base = H5_FILE_BASE_NAME + str(time_step) + '_b_1_' + 'x' + '.h5'
         
-        print "Processing file", h5_file_parent
+        print "Processing file", h5_file_parent_base
         
         
         for i in range(writers):
-            h5_file_parent = h5_file_parent[:-4] + str(i) + h5_file_parent[-3:]
-            
-            
+            h5_file_parent = h5_file_parent_base[:-4] + str(i) + h5_file_parent_base[-3:]
             read_array(arrays, h5_file_parent,"data", branch)
                 
         for i in range(len(attributes)):
@@ -90,13 +88,11 @@ def HDF5toVTK(start, end, writers):
         mesh_left = vtk.vtkPolyData()
         mesh_left.DeepCopy(INPUT_SMC_MESHES[1])
 
-        h5_file_left = H5_FILE_BASE_NAME + str(time_step) + '_b_2_' + 'x' + '.h5'
-        print "Processing file", h5_file_left
+        h5_file_left_base = H5_FILE_BASE_NAME + str(time_step) + '_b_2_' + 'x' + '.h5'
+        print "Processing file", h5_file_left_base
         
         for i in range(writers):
-            h5_file_left = h5_file_left[:-4] + str(i) + h5_file_left[-3:]
-            
-
+            h5_file_left = h5_file_left_base[:-4] + str(i) + h5_file_left_base[-3:]
             read_array(arrays, h5_file_left,"data", branch)
             
         for i in range(len(attributes)):
@@ -107,13 +103,11 @@ def HDF5toVTK(start, end, writers):
         mesh_right = vtk.vtkPolyData()
         mesh_right.DeepCopy(INPUT_SMC_MESHES[2])
 
-        h5_file_right = H5_FILE_BASE_NAME + str(time_step) + '_b_3_' + 'x' + '.h5'
-        print "Processing file", h5_file_right
+        h5_file_right_base = H5_FILE_BASE_NAME + str(time_step) + '_b_3_' + 'x' + '.h5'
+        print "Processing file", h5_file_right_base
         
         for i in range(writers):
-            h5_file_right = h5_file_right[:-4] + str(i) + h5_file_right[-3:]
-            
-
+            h5_file_right = h5_file_right_base[:-4] + str(i) + h5_file_right_base[-3:]
             read_array(arrays, h5_file_right, "data", branch)
                 
         for i in range(len(attributes)):
