@@ -307,32 +307,77 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 	return (err);
 }
 
+// Assigns the corner cells the values of the adjacent (same row) cell.
+void copy_smc_corner_coupling_species(grid_parms* grid, SMC_cell** smc, int species)
+{
+	smc[0][0].vars[species] = smc[1][1].vars[species];
+	smc[grid->num_smc_circumferentially + 1][0].vars[species] = smc[grid->num_smc_circumferentially][0].vars[species];
+	smc[0][grid->num_smc_axially + 1].vars[species] = smc[1][grid->num_smc_axially + 1].vars[species];
+	smc[grid->num_smc_circumferentially + 1][grid->num_smc_axially + 1].vars[species] = smc[grid->num_smc_circumferentially][grid->num_smc_axially + 1].vars[species];
+}
+
+// Assigns the corner cells the values of the adjacent (same row) cell.
+void copy_ec_corner_coupling_species(grid_parms* grid, EC_cell** ec, int species)
+{
+	ec[0][0].vars[species] = ec[1][1].vars[species];
+	ec[grid->num_ec_circumferentially + 1][0].vars[species] = ec[grid->num_ec_circumferentially][0].vars[species];
+	ec[0][grid->num_ec_axially + 1].vars[species] = ec[1][grid->num_ec_axially + 1].vars[species];
+	ec[grid->num_ec_circumferentially + 1][grid->num_ec_axially + 1].vars[species] = ec[grid->num_ec_circumferentially][grid->num_ec_axially + 1].vars[species];
+}
+
+
 void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef)
 {
 	int i, j, k, l;
 
+	copy_smc_corner_coupling_species(&grid, smc, smc_Vm);
+	copy_ec_corner_coupling_species(&grid, ec, ec_Vm);
+
+
 ////******************** HOMOCELLULAR COUPLING *********************/
+	int offset = 0;
 	for (i = 1; i <= grid.num_smc_circumferentially; i++) {
+
 		for (j = 1; j <= grid.num_smc_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
-			smc[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_smc
-					* ((smc[i][j].vars[smc_Vm] - smc[i][up].vars[smc_Vm])
-					+ (smc[i][j].vars[smc_Vm] - smc[i][down].vars[smc_Vm])
-					+ (smc[i][j].vars[smc_Vm] - smc[left][j].vars[smc_Vm])
-					+ (smc[i][j].vars[smc_Vm] - smc[right][j].vars[smc_Vm]));
+			smc[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_smc * (
+					(cpl_cef.smc_diffusion[0] * (smc[i][j].vars[smc_Vm] - smc[i][up].vars[smc_Vm])) + // Top.
+					(cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Vm] - smc[i][down].vars[smc_Vm])) + // Bottom.
+
+					(cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Vm] - smc[left][j - offset].vars[smc_Vm])) + // Top left.
+					(cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Vm] - smc[left][j - offset + 1].vars[smc_Vm])) + // Bottom Left.
+					(cpl_cef.smc_diffusion[4] * (smc[i][j].vars[smc_Vm] - smc[right][j - offset].vars[smc_Vm])) + // Top Right.
+					(cpl_cef.smc_diffusion[5] * (smc[i][j].vars[smc_Vm] - smc[right][j - offset + 1].vars[smc_Vm]))); // Bottom right.
+		offset = 1 - offset;
+
 
 		}	//end j
 	}	//end i
 
 	for (i = 1; i <= grid.num_ec_circumferentially; i++) {
+		// Every second row needs a small offset to see the correct cells above and below.
+		// On daughter branches the EC brick pattern is inverted (for a correct tessellation)
+		if (grid.branch_tag != P)
+		{
+			offset = 0;
+		}
+		else
+		{
+			offset = 1;
+		}
+
 		for (j = 1; j <= grid.num_ec_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
+			ec[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_ec * (
+					(cpl_cef.ec_diffusion[0] * (ec[i][j].vars[ec_Vm] - ec[i - offset][up].vars[ec_Vm])) + // Top left.
+					(cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Vm] - ec[i - offset + 1][up].vars[ec_Vm])) + // Top right.
+					(cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Vm] - ec[i - offset][down].vars[ec_Vm])) + // Bottom left.
+					(cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Vm] - ec[i - offset + 1][down].vars[ec_Vm])) + // Bottom right.
 
-			ec[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_ec
-					* ((ec[i][j].vars[ec_Vm] - ec[i][up].vars[ec_Vm])
-					+ (ec[i][j].vars[ec_Vm] - ec[i][down].vars[ec_Vm])
-					+ (ec[i][j].vars[ec_Vm] - ec[left][j].vars[ec_Vm])
-					+ (ec[i][j].vars[ec_Vm] - ec[right][j].vars[ec_Vm]));
+					(cpl_cef.ec_diffusion[4] * (ec[i][j].vars[ec_Vm] - ec[left][j].vars[ec_Vm])) + // Left.
+					(cpl_cef.ec_diffusion[5] * (ec[i][j].vars[ec_Vm] - ec[right][j].vars[ec_Vm]))); // Right.
+
+			offset = 1 - offset; // Flip between 0 and 1.
 
 		}	//end j
 	}	//end i
@@ -387,38 +432,67 @@ void coupling_explicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 {
 	int i, j, k, l;
 
+	copy_smc_corner_coupling_species(&grid, smc, smc_Ca);
+	copy_smc_corner_coupling_species(&grid, smc, smc_IP3);
+	copy_ec_corner_coupling_species(&grid, ec, ec_Ca);
+	copy_ec_corner_coupling_species(&grid, ec, ec_IP3);
+
+
 ////******************** HOMOCELLULAR COUPLING *********************/
+	int offset = 0;
 	for (i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (j = 1; j <= grid.num_smc_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
-			smc[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc
-					* ((smc[i][j].vars[smc_Ca] - smc[i][up].vars[smc_Ca])
-					+ (smc[i][j].vars[smc_Ca] - smc[i][down].vars[smc_Ca])
-					+ (smc[i][j].vars[smc_Ca] - smc[left][j].vars[smc_Ca])
-					+ (smc[i][j].vars[smc_Ca] - smc[right][j].vars[smc_Ca]));
-
-			smc[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_smc
-					* ((smc[i][j].vars[smc_IP3] - smc[i][up].vars[smc_IP3])
-					+ (smc[i][j].vars[smc_IP3] - smc[i][down].vars[smc_IP3])
-					+ (smc[i][j].vars[smc_IP3] - smc[left][j].vars[smc_IP3])
-					+ (smc[i][j].vars[smc_IP3] - smc[right][j].vars[smc_IP3]));
+			smc[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc * (
+					(cpl_cef.smc_diffusion[0] * (smc[i][j].vars[smc_Ca] - smc[i][up].vars[smc_Ca])) + // Top.
+					(cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Ca] - smc[i][down].vars[smc_Ca])) + // Bottom.
+					(cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Ca] - smc[left][j - offset].vars[smc_Ca])) + // Top left.
+					(cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Ca] - smc[left][j - offset + 1].vars[smc_Ca])) + // Bottom left.
+					(cpl_cef.smc_diffusion[4] * (smc[i][j].vars[smc_Ca] - smc[right][j - offset].vars[smc_Ca])) + // Top right.
+					(cpl_cef.smc_diffusion[5] * (smc[i][j].vars[smc_Ca] - smc[right][j - offset + 1].vars[smc_Ca]))); // Bottom right.
+			// Identical logic/process for IP3 instead of Ca.
+			smc[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_smc * (
+					(cpl_cef.smc_diffusion[0] * (smc[i][j].vars[smc_IP3] - smc[i][up].vars[smc_IP3])) +
+					(cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_IP3] - smc[i][down].vars[smc_IP3])) +
+					(cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_IP3] - smc[left][j - offset].vars[smc_IP3])) +
+					(cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_IP3] - smc[left][j - offset + 1].vars[smc_IP3])) +
+					(cpl_cef.smc_diffusion[4] * (smc[i][j].vars[smc_IP3] - smc[right][j - offset].vars[smc_IP3])) +
+					(cpl_cef.smc_diffusion[5] * (smc[i][j].vars[smc_IP3] - smc[right][j - offset + 1].vars[smc_IP3])));
+		offset = 1 - offset; // Flip between 0 and 1.
 		}	//end j
 	}	//end i
 
 	for (i = 1; i <= grid.num_ec_circumferentially; i++) {
+		// Every second row needs a small offset to see the correct cells above and below.
+		// On daughter branches the EC brick pattern is inverted (for a correct tessellation)
+		if (grid.branch_tag != P)
+		{
+			offset = 0;
+		}
+		else
+		{
+			offset = 1;
+		}
+
 		for (j = 1; j <= grid.num_ec_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
-			ec[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec
-					* ((ec[i][j].vars[ec_Ca] - ec[i][up].vars[ec_Ca])
-					+ (ec[i][j].vars[ec_Ca] - ec[i][down].vars[ec_Ca])
-					+ (ec[i][j].vars[ec_Ca] - ec[left][j].vars[ec_Ca])
-					+ (ec[i][j].vars[ec_Ca] - ec[right][j].vars[ec_Ca]));
+			ec[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec * (
+					(cpl_cef.ec_diffusion[0] * (ec[i][j].vars[ec_Ca] - ec[i - offset][up].vars[ec_Ca])) + // Top left.
+					(cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Ca] - ec[i - offset + 1][up].vars[ec_Ca])) + // Top right.
+					(cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Ca] - ec[i - offset][down].vars[ec_Ca])) + // Bottom left.
+					(cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Ca] - ec[i - offset + 1][down].vars[ec_Ca])) + // Bottom right.
+					(cpl_cef.ec_diffusion[4] * (ec[i][j].vars[ec_Ca] - ec[left][j].vars[ec_Ca])) +
+					(cpl_cef.ec_diffusion[5] * (ec[i][j].vars[ec_Ca] - ec[right][j].vars[ec_Ca])));
 
-			ec[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_ec
-					* ((ec[i][j].vars[ec_IP3] - ec[i][up].vars[ec_IP3])
-					+ (ec[i][j].vars[ec_IP3] - ec[i][down].vars[ec_IP3])
-					+ (ec[i][j].vars[ec_IP3] - ec[left][j].vars[ec_IP3])
-					+ (ec[i][j].vars[ec_IP3] - ec[right][j].vars[ec_IP3]));
+			// Identical logic/process for IP3 instead of Ca.
+			ec[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_ec * (
+					(cpl_cef.ec_diffusion[0] * (ec[i][j].vars[ec_IP3] - ec[i - offset][up].vars[ec_IP3])) +
+					(cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_IP3] - ec[i - offset + 1][up].vars[ec_IP3])) +
+					(cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_IP3] - ec[i - offset][down].vars[ec_IP3])) +
+					(cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_IP3] - ec[i - offset + 1][down].vars[ec_IP3])) +
+					(cpl_cef.ec_diffusion[4] * (ec[i][j].vars[ec_IP3] - ec[left][j].vars[ec_IP3])) +
+					(cpl_cef.ec_diffusion[5] * (ec[i][j].vars[ec_IP3] - ec[right][j].vars[ec_IP3])));
+			offset = 1 - offset; // Flip between 0 and 1.
 
 		}	//end j
 	}	//end i

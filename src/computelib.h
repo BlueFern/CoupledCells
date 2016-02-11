@@ -64,6 +64,8 @@ struct conductance
 			Ca_ht_ec,	///< Heterocellular Ca coupling between ECs.
 			IP3_ht_smc,	///< Heterocellular IP3 coupling between SMCs.
 			IP3_ht_ec;	///< Heterocellular IP3 coupling between ECs.
+	double ec_diffusion[6] = {0.5, 0.5, 0.5, 0.5, 1.0, 1.0};
+	double smc_diffusion[6] = {1.0, 1.0, 0.5, 0.5, 0.5, 0.5};
 };
 
 #define DOMAIN_NUM 0
@@ -197,6 +199,8 @@ void compute_explicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, do
 void coupling(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
 void coupling_implicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
 void coupling_explicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
+void copy_smc_corner_coupling_species(grid_parms*, SMC_cell**, int);
+void copy_ec_corner_coupling_species(grid_parms*, SMC_cell**, int);
 
 // Solver wrapper functions.
 #ifdef RK_SUITE
