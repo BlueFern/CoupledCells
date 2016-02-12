@@ -26,6 +26,20 @@ void* checked_malloc(size_t bytes, const char* errmsg)
 
 void set_coupling_parms(int CASE, conductance* cpl_cef)
 {
+	cpl_cef->ec_diffusion[0] = 0.5;
+	cpl_cef->ec_diffusion[1] = 0.5;
+	cpl_cef->ec_diffusion[2] = 0.5;
+	cpl_cef->ec_diffusion[3] = 0.5;
+	cpl_cef->ec_diffusion[4] = 1.0;
+	cpl_cef->ec_diffusion[5] = 1.0;
+
+	cpl_cef->smc_diffusion[0] = 1.0;
+	cpl_cef->smc_diffusion[1] = 1.0;
+	cpl_cef->smc_diffusion[2] = 0.5;
+	cpl_cef->smc_diffusion[3] = 0.5;
+	cpl_cef->smc_diffusion[4] = 0.5;
+	cpl_cef->smc_diffusion[5] = 0.5;
+
 	if(CASE == 1)
 	{
 		cpl_cef->Vm_hm_smc = 1000.00;
@@ -329,6 +343,7 @@ void copy_ec_corner_coupling_species(grid_parms* grid, EC_cell** ec, int species
 void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef)
 {
 	int i, j, k, l;
+
 
 	copy_smc_corner_coupling_species(&grid, smc, smc_Vm);
 	copy_ec_corner_coupling_species(&grid, ec, ec_Vm);
