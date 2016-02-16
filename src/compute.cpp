@@ -26,19 +26,19 @@ void* checked_malloc(size_t bytes, const char* errmsg)
 
 void set_coupling_parms(int CASE, conductance* cpl_cef)
 {
-	cpl_cef->ec_diffusion[0] = 0.5;
-	cpl_cef->ec_diffusion[1] = 0.5;
-	cpl_cef->ec_diffusion[2] = 0.5;
-	cpl_cef->ec_diffusion[3] = 0.5;
-	cpl_cef->ec_diffusion[4] = 1.0;
-	cpl_cef->ec_diffusion[5] = 1.0;
+	cpl_cef->ec_diffusion[0] = 0.87;
+	cpl_cef->ec_diffusion[1] = 0.87;
+	cpl_cef->ec_diffusion[2] = 0.87;
+	cpl_cef->ec_diffusion[3] = 0.87;
+	cpl_cef->ec_diffusion[4] = 0.26;
+	cpl_cef->ec_diffusion[5] = 0.26;
 
-	cpl_cef->smc_diffusion[0] = 1.0;
-	cpl_cef->smc_diffusion[1] = 1.0;
-	cpl_cef->smc_diffusion[2] = 0.5;
-	cpl_cef->smc_diffusion[3] = 0.5;
-	cpl_cef->smc_diffusion[4] = 0.5;
-	cpl_cef->smc_diffusion[5] = 0.5;
+	cpl_cef->smc_diffusion[0] = 0.2;
+	cpl_cef->smc_diffusion[1] = 0.2;
+	cpl_cef->smc_diffusion[2] = 0.9;
+	cpl_cef->smc_diffusion[3] = 0.9;
+	cpl_cef->smc_diffusion[4] = 0.9;
+	cpl_cef->smc_diffusion[5] = 0.9;
 
 	if(CASE == 1)
 	{
