@@ -103,8 +103,8 @@ def main():
         
         writer = vtkXMLPolyDataWriter()
         writer.SetInputData(newPolyData)
-        writer.SetFileName("solution/new_" + files[i][9:-4] + ".vtp")
-        print "solution/new_" + files[i][9:-4] + ".vtp"
+        writer.SetFileName(sys.argv[1] + "/new_" + files[i][9:-4] + ".vtp")
+        print sys.argv[1] + "/new_" + files[i][9:-4] + ".vtp"
         writer.Update()
 
 
