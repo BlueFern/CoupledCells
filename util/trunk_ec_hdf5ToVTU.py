@@ -20,7 +20,7 @@ INPUT_EC_MESH_FILES = [
 'vtk/ec_mesh_parent.vtp',
 ]
 
-attributes = ['EC_Ca', 'EC_Ca_coupling', 'EC_IP3', 'EC_IP3_coupling', 'EC_Vm', 'EC_Vm_coupling', 'EC_SR']
+attributes = ['EC_Ca', 'EC_Ca_coupling', 'EC_IP3', 'EC_IP3_coupling', 'EC_SR', 'EC_Vm', 'EC_Vm_coupling']
 
     
 def read_array(arrays, h5_file_name, dataset_name):
