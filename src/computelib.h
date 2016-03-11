@@ -46,11 +46,11 @@ int errcode = (fn); \
 
 #define LEMON 0
 #define BENNETT 1
-#define MODEL LEMON
+#define MODEL 2
 
 #define PLOTTING 1
 #define EXPLICIT_ONLY 1
-#define OUTPUT_PLOTTING_SIZE 15 // 12 for BENNETT
+#define OUTPUT_PLOTTING_SIZE 9 // 12 for BENNETT, 15 for lemon, 9 for original?
 #define RANK 0
 #define EC_COL 3 // one more as it's 1 indexed in Koenigsberger, same for below.
 #define EC_ROW 3
@@ -61,7 +61,7 @@ extern FILE* var_file;
 extern double* plotttingBuffer;
 extern int bufferPos;
 
-#define FILENAME "PhyFiIP3_1quad_lemon_newer.csv"
+#define FILENAME "PhyFiIP3_1quad_original_newer.csv"
 /**
  * Conductance / coupling coefficients.
  */

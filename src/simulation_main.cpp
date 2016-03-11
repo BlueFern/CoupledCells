@@ -111,14 +111,20 @@ int main(int argc, char* argv[])
 	grid.num_ghost_cells = 2;
 
 	grid.num_fluxes_smc = 12;
+#if MODEL == LEMON || MODEL == BENNETT
 	grid.num_fluxes_ec = 15; // For both Lemon and bennett models.
+#else
+	grid.num_fluxes_ec = 12;
+#endif
 	grid.num_coupling_species_smc = 3;
 	grid.num_coupling_species_ec = 3;
 	grid.neq_smc = 5;
 #if MODEL == LEMON
 	grid.neq_ec = 6;
 #elif MODEL == BENNETT
-	grid.neq_ec = 4
+	grid.neq_ec = 4;
+#else
+	grid.neq_ec = 4;
 #endif
 
 	// File written every 1 second.
