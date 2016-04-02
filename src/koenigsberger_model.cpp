@@ -105,7 +105,6 @@ void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -66.7;
 			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 1.057;
 #if MODEL == LEMON
-			y[k + ((j - 1) * grid.neq_ec) + ec_PIP2] = 3.989e7;
 			y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 1470.305;
 #endif
 		}
@@ -117,7 +116,6 @@ void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 			ec[i][j].vars[ec_Vm] = 0.0;
 			ec[i][j].vars[ec_IP3] = 0.0;
 #if MODEL == LEMON
-			ec[i][j].vars[ec_PIP2] = 0.0;
 			ec[i][j].vars[ec_Gprot] = 0.0;
 #endif
 			for (int k = 1; k <= grid.num_fluxes_ec; k++) {
@@ -222,7 +220,7 @@ void koenigsberger_smc_derivatives_implicit(double* f, grid_parms grid, SMC_cell
 			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = gama
 					* (-smc[i][j].fluxes[J_Na_K] - smc[i][j].fluxes[J_Cl] - (2 * smc[i][j].fluxes[J_VOCC]) - smc[i][j].fluxes[J_Na_Ca] - smc[i][j].fluxes[J_K])
 					+ smc[i][j].homo_fluxes[cpl_Vm] + smc[i][j].hetero_fluxes[cpl_Vm];
-#if PLOTTING
+#if PLOTTING && EXPLICIT_ONLY
 			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
 			{
 				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_Vm];
@@ -257,7 +255,7 @@ void koenigsberger_smc_derivatives_explicit(double* f, grid_parms grid, SMC_cell
 
 			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = -smc[i][j].fluxes[J_IP3_deg] + smc[i][j].homo_fluxes[cpl_IP3] + smc[i][j].hetero_fluxes[cpl_IP3];
 
-#if PLOTTING
+#if PLOTTING && EXPLICIT_ONLY
 			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
 			{
 				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_Ca];
@@ -304,8 +302,13 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 			ec[i][j].fluxes[J_Extrusion] = Dj * ec[i][j].vars[ec_Ca];
 			//Jleak
 			ec[i][j].fluxes[J_Leak] = Lj * ec[i][j].vars[ec_SR];
+
 			//IP3 degradation
-			ec[i][j].fluxes[J_IP3_deg] = ki * ec[i][j].vars[ec_IP3]; //TODO 0.1 for bennett, 1.25 for lemon??
+#if MODEL == LEMON
+			ec[i][j].fluxes[J_IP3_deg] = kDeg * ec[i][j].vars[ec_IP3];
+#else
+			ec[i][j].fluxes[J_IP3_deg] = ki * ec[i][j].vars[ec_IP3];
+#endif
 			//J_NonSelective Cation channels
 			ec[i][j].fluxes[J_NSC] = (Gcatj * (ECa - ec[i][j].vars[ec_Vm]) * 0.5)
 					* (1 + ((double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3cat) / m4cat)))));
@@ -357,7 +360,7 @@ void koenigsberger_ec_derivatives_implicit(double t, double* f, grid_parms grid,
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
 					((-1 / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
-#if PLOTTING
+#if PLOTTING && EXPLICIT_ONLY
 			if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
 			{
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Vm];
@@ -368,9 +371,7 @@ void koenigsberger_ec_derivatives_implicit(double t, double* f, grid_parms grid,
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.0;
 			f[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.0;
-
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.0;
-			f[k + ((j - 1) * grid.neq_ec) + ec_PIP2] = 0.0;
 			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 0.0;
 #endif
 
@@ -402,7 +403,8 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
 						ec[i][j].fluxes[J_ind_I] - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
-#if 1
+
+#if 0 // Old d[PIP2]/dt equation. Replaced with constant [PIP2].
 			f[k + ((j - 1) * grid.neq_ec) + ec_PIP2] =
 						- (ec[i][j].fluxes[R_PIP2_H] + R_PIP2_r) * cons_PIP2
 						- (ec[i][j].vars[ec_IP3] *  R_PIP2_r) + (R_PIP2_r * PIP2_tot);
@@ -423,7 +425,7 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 
 #endif
 
-#if PLOTTING
+#if PLOTTING && EXPLICIT_ONLY
 			if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
 			{
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Ca];
@@ -431,9 +433,7 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_IP3];
 
 #if MODEL == LEMON_MODEL
-				plotttingBuffer[bufferPos++] = cons_PIP2;
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Gprot];
-
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[L_P_P2Y];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[R_PIP2_H];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_IP3_deg];

@@ -296,7 +296,6 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 				ec[i][j].vars[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
 				ec[i][j].vars[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
 #if MODEL == LEMON
-				ec[i][j].vars[ec_PIP2] = y[k + ((j - 1) * grid.neq_ec) + ec_PIP2];
 				ec[i][j].vars[ec_Gprot] = y[k + ((j - 1) * grid.neq_ec) + ec_Gprot];
 #endif
 			}

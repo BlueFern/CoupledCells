@@ -40,9 +40,10 @@ int main(int argc, char* argv[])
 	CHECK_MPI_ERROR(MPI_Comm_rank(grid.universe, &grid.universal_rank));
 	CHECK_MPI_ERROR(MPI_Comm_size(grid.universe, &grid.num_ranks));
 
-#if PLOTTING
+#if PLOTTING && EXPLICIT_ONLY
 	if (grid.universal_rank == RANK)
 	{
+		printf("\nWriting to %s\n\n", FILENAME);
 		var_file = fopen(FILENAME, "w");
 		double buf[OUTPUT_PLOTTING_SIZE];
 		plotttingBuffer = buf;
@@ -102,7 +103,7 @@ int main(int argc, char* argv[])
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
-	grid.stimulus_onset_time = 50.00;
+	grid.stimulus_onset_time = 10.00;
 
 	grid.num_smc_fundblk_circumferentially = 1;
 	grid.num_ec_fundblk_circumferentially = 5;
@@ -111,16 +112,19 @@ int main(int argc, char* argv[])
 	grid.num_ghost_cells = 2;
 
 	grid.num_fluxes_smc = 12;
+
 #if MODEL == LEMON || MODEL == BENNETT
 	grid.num_fluxes_ec = 15; // For both Lemon and bennett models.
 #else
 	grid.num_fluxes_ec = 12;
 #endif
+
 	grid.num_coupling_species_smc = 3;
 	grid.num_coupling_species_ec = 3;
 	grid.neq_smc = 5;
+
 #if MODEL == LEMON
-	grid.neq_ec = 6;
+	grid.neq_ec = 5;
 #elif MODEL == BENNETT
 	grid.neq_ec = 4;
 #else
@@ -396,7 +400,7 @@ int main(int argc, char* argv[])
 	free(y);
 	free(yp);
 
-#if PLOTTING
+#if PLOTTING && EXPLICIT_ONLY
 	if (grid.universal_rank == RANK)
 	{
 		fclose(var_file);
