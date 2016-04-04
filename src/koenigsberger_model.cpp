@@ -399,7 +399,7 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 			f[k + ((j - 1) * grid.neq_ec) + ec_SR] =
 					ec[i][j].fluxes[J_SERCA] - ec[i][j].fluxes[J_CICR] - ec[i][j].fluxes[J_Leak];
 
-#if MODEL == LEMON_MODEL
+#if MODEL == LEMON
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
 						ec[i][j].fluxes[J_ind_I] - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
@@ -432,7 +432,7 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_SR];
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_IP3];
 
-#if MODEL == LEMON_MODEL
+#if MODEL == LEMON
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Gprot];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[L_P_P2Y];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[R_PIP2_H];
