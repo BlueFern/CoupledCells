@@ -6,23 +6,41 @@ between arterial geometry, the transport of information via ionic
 species through the gap junctions along arterial wall and the onset of
 atherosclerotic plaques.
 
+Code Dependencies
+-----------------
+
+The project depends on MPI and SUNDIALS libraries.
+
+In addition, the Python scripts for converting the simulations output from HDF5 format
+to VTK (VTU) format require VTK with Python bindings.
+
+
 How to Compile
 --------------
 
-The project depends on MPI and Sundials libraries.
+The project files can be generated with CMake. The project has been previously compiled and tested
+on Linux machines with CMake and Eclipse. Configure the project with CMake and specify the *out-of-source* build
+directory. CMake can be run in GUI or CLI modes.
 
-    make -f Makefile.bgp ODEOPTION=ARK_ODE
+The desired ODE solver should be chosen in the CMake interface. There are three options available:
 
-Configure the project with CMake and specify the *out-of-source* build
-directory. CMake can be run in GUI or CLI modes. In the current BlueGene/P build
-environment CMake should be launched in the following manner in order to specify
-the MPI compiler and the location of the Sundials library:
+ODEOPTION=RK_SUITE, ODEOPTION=ARK_ODE, or ODEOPTION=BOOST_ODEINT.
 
-    CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
+It is recommended to use the ARK_ODE solver, which is a parte of the SUNDIALS library.
 
 After the the project has been configured, it can be opened and compiled with
 the target IDE, or in the case of Unix Makefile configuration simply run make in
 the build directory. The generated executable is called *coupledCellsModel*.
+
+There are two makefiles for compiling the project on BlueGene/L and BlueGene/P. For the BlueGene/L build, the
+Makefile.bgp can be used as follows:
+
+    make -f Makefile.bgp ODEOPTION=ARK_ODE
+
+In the current BlueGene/P build environment CMake should be launched in the following manner in order to 
+specify the MPI compiler and the location of the Sundials library:
+
+    CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
 
 How to Run
 ----------
@@ -68,44 +86,54 @@ second, the arguments would look like this:
 
     coupledCellsModel -f config.txt -S solution -T profiling -t 500.00 -w 1000 -i 1e-2
 
+#TODO: Provide a load-leveller script example.
+
 Input Files
 -----------
 
 The *files* subdirectory of the current working directory must contain the input
-ATP .txt files 'parent_atp.txt', 'left_daughter_atp.txt', and 'right_daughter_atp.txt'
+ATP files in TXT format: `parent_atp.txt`, `left_daughter_atp.txt`, and `right_daughter_atp.txt`
 for a simulation involving a bifurcation. Only 'parent_atp.txt' is required for a simulation
-involving only a trunk. Details on creating these files can be found in the [DBiharMesher](https://github.com/BlueFern/DBiharMesher) repository.
+involving only a trunk. Details on creating these files can be found in the
+[DBiharMesher](https://github.com/BlueFern/DBiharMesher) repository.
 
 Output Files and Conversion
 ---------------------------
 
-Once the simulation completes the solution directory will contain a number of hdf5 files for both ECs
-and SMCs. To visualise the results these files should be converted to .vtu. Scripts to convert EC and 
-SMC output for both trunk and bifurcation simulations are provided in the util directory. These sripts 
-write to the solution directory and all expect start and stop timestep parameters (between which timesteps 
-to convert). An example of such a conversion for a bifurcation simulation run for 100 physiological seconds
-for both cell types would be the two commands:
+Once the simulation completes the solution directory will contain a number of HDF5-format files for
+both ECs and SMCs. To visualise the results these files should be converted to the VTK's VTU format.
+The scripts to convert EC and SMC output for both trunk and bifurcation simulations are provided in
+the util directory. These sripts write to the solution directory and expect start and stop timestep
+parameters (between which timesteps to convert). An example of such a conversion for a bifurcation
+simulation run for 100 physiological seconds for both cell types would be the two commands:
 
 	python /path/to/util/bifurcation_smc_hdf5ToVTU.py 0 100
 	python /path/to/util/bifurcation_ec_hdf5ToVTU.py 0 100
 
-A 'jplc\_\*\_.h5' file is written out for each branch of a simulation, intended only to verify the input ATP files
-where correctly read in. It is converted using 'bifurcation_jplc_hdf5ToVTU.py' or 'trunk_jplc_hdf5ToVTU.py'.
+A `jplc_*_.h5` file is written out for each branch of a simulation, intended for verifying the
+input ATP files where read in correctly. These output files also allo to verify the mesh
+dimensions and the corresponding ATP file are in agreement. The output `jplc_*_.h5` are
+converted to VTU format using either `bifurcation_jplc_hdf5ToVTU.py` or `trunk_jplc_hdf5ToVTU.py`
+scripts, depending on the type of the input mesh.
 
-For these conversions to take place, the subdirectory *vtk* of the current working directory must exist and 
-contain .vtp files for each branch of the mesh used in the simulation. Again, for details on creating these files 
-see the [DBiharMesher](https://github.com/BlueFern/DBiharMesher) repository.
+For these conversions the subdirectory `vtk` of the current working directory must exist and 
+contain `*.vtp' files for each branch of the mesh configuration used in the simulation. Again,
+for details on creating these files see the [DBiharMesher](https://github.com/BlueFern/DBiharMesher)
+repository.
 
-The script 'genCommands.py' is provided for parallel conversions - it simply prints out a number of calls
-to the conversion scripts (expected to be redirected to a file). It should be copied into the working
-directory and modified according to the geometry of the simulation, (and so whether 'trunk\_\*\_hdf5ToVTU.py' or 
-'bifurcation\_\*\_hdf5ToVTU.py' is called) and the path to these scripts.
+#TODO: The following needs verification. Also, we should use command-line arguments for this `genCommands.py` script.
+
+The script `genCommands.py` is provided (where?) for parallel conversions --- it simply prints out a number of calls
+to the conversion scripts, where these calls can be redirected to a file. It should be copied into the working
+directory and modified according to the geometry of the mesh, (and so whether `trunk_*_hdf5ToVTU.py` or 
+`bifurcation_*_hdf5ToVTU.py` is called) and the path to these scripts.
 
 Project Documentation
 ---------------------
 
-The documentation for the project is *work in progress*. Currently two types of
+The documentation for the project is very much *work in progress*. Currently two types of
 documentation can be generated:
+
  1. Doxygen API documentation (if Doxygen is installed on the system).
  1. Sphinx high-level project documentation (if Sphinx and Doxylink are
  installed on the system). See [Sphinx documentation pages](http://sphinx-doc.org)

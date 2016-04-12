@@ -1,4 +1,4 @@
-# Set ODEOPTION on command line like this (ODEOPTION=RK_SUITE | ODEOPTION=ARK_ODE | ODEOPTION=BOOST_ODEINT).
+# Set ODEOPTION on the make command line like this (ODEOPTION=RK_SUITE | ODEOPTION=ARK_ODE | ODEOPTION=BOOST_ODEINT).
 
 # To make HDF5 availble run: module load hdf5/1.8.9_gnu44 which will also pull gcc44 and the associated MPI compiler.
 
