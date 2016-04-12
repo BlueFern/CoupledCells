@@ -73,7 +73,7 @@ if(${ODE_SOLVER} STREQUAL "RK_suite")
 elseif(${ODE_SOLVER} STREQUAL "SUNDIALS_arkode")
 	message(STATUS "Selected ODE solver: system SUNDIALS arkode")
 	
-	# Passe preprocessor macro definition to the compiler.
+	# Pass preprocessor macro definition to the compiler.
 	add_definitions(-DARK_ODE)
 	
 	# Find SUNDIALS
@@ -90,7 +90,7 @@ elseif(${ODE_SOLVER} STREQUAL "SUNDIALS_arkode")
 elseif(${ODE_SOLVER} STREQUAL "BOOST_odeint")
 	message(STATUS "Selected ODE solver: system Boost odeint")
 	
-	# Passe preprocessor macro definition to the compiler.
+	# Pass preprocessor macro definition to the compiler.
 	add_definitions(-DBOOST_ODEINT)
 	
 	# Find Boost
