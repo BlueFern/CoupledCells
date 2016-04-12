@@ -74,7 +74,7 @@ Input Files
 The *files* subdirectory of the current working directory must contain the input
 ATP .txt files 'parent_atp.txt', 'left_daughter_atp.txt', and 'right_daughter_atp.txt'
 for a simulation involving a bifurcation. Only 'parent_atp.txt' is required for a simulation
-involving only a trunk.
+involving only a trunk. Details on creating these files can be found in the [DBiharMesher](https://github.com/BlueFern/DBiharMesher) repository.
 
 Output Files and Conversion
 ---------------------------
@@ -93,7 +93,8 @@ A 'jplc\_\*\_.h5' file is written out for each branch of a simulation, intended 
 where correctly read in. It is converted using 'bifurcation_jplc_hdf5ToVTU.py' or 'trunk_jplc_hdf5ToVTU.py'.
 
 For these conversions to take place, the subdirectory *vtk* of the current working directory must exist and 
-contain .vtp files for each branch of the mesh used in the simulation.
+contain .vtp files for each branch of the mesh used in the simulation. Again, for details on creating these files 
+see the [DBiharMesher](https://github.com/BlueFern/DBiharMesher) repository.
 
 The script 'genCommands.py' is provided for parallel conversions - it simply prints out a number of calls
 to the conversion scripts (expected to be redirected to a file). It should be copied into the working
@@ -110,6 +111,3 @@ documentation can be generated:
  installed on the system). See [Sphinx documentation pages](http://sphinx-doc.org)
  and [Doxylink documentation pages](https://pypi.python.org/pypi/sphinxcontrib-doxylink)
  for details.
-
-
-
