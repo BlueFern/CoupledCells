@@ -71,8 +71,34 @@ second, the arguments would look like this:
 Input Files
 -----------
 
-The input files which contain the subdomain geometry mapped to UV quads/MPI
-cores shoud be in the *files* subdirectory of the current working directory.
+The *files* subdirectory of the current working directory must contain the input
+ATP .txt files 'parent_atp.txt', 'left_daughter_atp.txt', and 'right_daughter_atp.txt'
+for a simulation involving a bifurcation. Only 'parent_atp.txt' is required for a simulation
+involving only a trunk.
+
+Output Files and Conversion
+---------------------------
+
+Once the simulation completes the solution directory will contain a number of hdf5 files for both ECs
+and SMCs. To visualise the results these files should be converted to .vtu. Scripts to convert EC and 
+SMC output for both trunk and bifurcation simulations are provided in the util directory. These sripts 
+write to the solution directory and all expect start and stop timestep parameters (between which timesteps 
+to convert). An example of such a conversion for a bifurcation simulation run for 100 physiological seconds
+for both cell types would be the two commands:
+
+	python /path/to/util/bifurcation_smc_hdf5ToVTU.py 0 100
+	python /path/to/util/bifurcation_ec_hdf5ToVTU.py 0 100
+
+A 'jplc\_\*\_.h5' file is written out for each branch of a simulation, intended only to verify the input ATP files
+where correctly read in. It is converted using 'bifurcation_jplc_hdf5ToVTU.py' or 'trunk_jplc_hdf5ToVTU.py'.
+
+For these conversions to take place, the subdirectory *vtk* of the current working directory must exist and 
+contain .vtp files for each branch of the mesh used in the simulation.
+
+The script 'genCommands.py' is provided for parallel conversions - it simply prints out a number of calls
+to the conversion scripts (expected to be redirected to a file). It should be copied into the working
+directory and modified according to the geometry of the simulation, (and so whether 'trunk\_\*\_hdf5ToVTU.py' or 
+'bifurcation\_\*\_hdf5ToVTU.py' is called) and the path to these scripts.
 
 Project Documentation
 ---------------------
