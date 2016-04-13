@@ -20,6 +20,20 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 # Unable to run without MPI.
+if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
+        # AIX (fitzroy) needs some help
+        set(POE "/usr/lpp/ppe.poe")
+        if(EXISTS "${POE}/include" AND EXISTS "${POE}/lib")
+                set(MPI_INCLUDE_PATH "${POE}/include")
+                set(MPI_LIBRARIES "${POE}/lib/libmpi_r.a;${POE}/lib/libvtd_r.a")
+                set(MPI_C_INCLUDE_PATH "${MPI_INCLUDE_PATH}")
+                set(MPI_C_LIBRARIES "${MPI_LIBRARIES}")
+                set(MPI_CXX_INCLUDE_PATH "${MPI_INCLUDE_PATH}")
+                set(MPI_CXX_LIBRARIES "${MPI_LIBRARIES}")
+                message(STATUS "Setting MPI_CXX_INCLUDE_PATH=${MPI_CXX_INCLUDE_PATH}")
+                message(STATUS "Setting MPI_CXX_LIBRARIES=${MPI_CXX_LIBRARIES}")
+        endif()
+endif()
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
@@ -59,7 +73,7 @@ if(${ODE_SOLVER} STREQUAL "RK_suite")
 elseif(${ODE_SOLVER} STREQUAL "SUNDIALS_arkode")
 	message(STATUS "Selected ODE solver: system SUNDIALS arkode")
 	
-	# Passe preprocessor macro definition to the compiler.
+	# Pass preprocessor macro definition to the compiler.
 	add_definitions(-DARK_ODE)
 	
 	# Find SUNDIALS
@@ -76,7 +90,7 @@ elseif(${ODE_SOLVER} STREQUAL "SUNDIALS_arkode")
 elseif(${ODE_SOLVER} STREQUAL "BOOST_odeint")
 	message(STATUS "Selected ODE solver: system Boost odeint")
 	
-	# Passe preprocessor macro definition to the compiler.
+	# Pass preprocessor macro definition to the compiler.
 	add_definitions(-DBOOST_ODEINT)
 	
 	# Find Boost
