@@ -12,8 +12,6 @@ EC_cell **ec;
 double **sendbuf, **recvbuf;
 grid_parms grid;
 
-int CASE = 1;
-
 FILE* var_file;
 double* plotttingBuffer;
 int bufferPos;
@@ -51,23 +49,8 @@ int main(int argc, char* argv[])
 	}
 #endif
 
-	if(grid.universal_rank == 0)
-	{
-		printf("Running with coupling case %d.\n", CASE);
-
-#ifdef RK_SUITE
-		printf("Running with RK_SUITE solver.\n");
-#elif defined ARK_ODE
-		printf("Running with ARK_ODE solver.\n");
-#elif defined BOOST_ODEINT
-		printf("Running with BOOST_ODEINT solver.\n");
-#else
-		fprintf(stderr, "No solver? How is this possible? Does not compute.\n");
-		MPI_Abort(grid.universe, 911);
-#endif
-	}
-
 	char filename[50];
+	int coupling_case = 1;
 
 	/// Time variables
 	double tfinal = 1e-2;
@@ -83,6 +66,8 @@ int main(int argc, char* argv[])
 			if (argv[i][0] == '-') {
 				if (argv[i][1] == 'f') {
 					sprintf(grid.config_file, "%s", argv[i + 1]);
+				} else if (argv[i][1] == 'C') {
+					coupling_case = atoi(argv[i + 1]);
 				} else if (argv[i][1] == 'S') {
 					sprintf(grid.solution_dir, "%s", argv[i + 1]);
 				} else if (argv[i][1] == 'T') {
@@ -96,6 +81,22 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
+	}
+
+	if(grid.universal_rank == 0)
+	{
+		printf("Running with coupling case %d.\n", coupling_case);
+
+#ifdef RK_SUITE
+		printf("Running with RK_SUITE solver.\n");
+#elif defined ARK_ODE
+		printf("Running with ARK_ODE solver.\n");
+#elif defined BOOST_ODEINT
+		printf("Running with BOOST_ODEINT solver.\n");
+#else
+		fprintf(stderr, "No solver? How is this possible? Does not compute.\n");
+		MPI_Abort(grid.universe, 911);
+#endif
 	}
 
 	//grid.NO_path = 0;
@@ -319,7 +320,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Initialising the coupling coefficients to be used in the ODEs.
-	set_coupling_parms(CASE, &cpl_cef);
+	set_coupling_parms(coupling_case, &cpl_cef);
 
 	// Debug output.
 	dump_rank_info(cpl_cef, grid);
