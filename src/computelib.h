@@ -44,18 +44,13 @@ int errcode = (fn); \
 #define local 0
 #define remote 1
 
-// Number of elements to plot for each model (as well as flags).
-#define LEMON 14
-#define BENNETT 12
-#define ORIGINAL 9
-
-#define MODEL ORIGINAL
-#define FILENAME "PhyFiIP3_plotting_original.csv"
-
+#define FILENAME "PhyFiIP3_plotting.csv"
 
 #define PLOTTING 1
 #define EXPLICIT_ONLY 1
-#define OUTPUT_PLOTTING_SIZE MODEL
+
+// Number of elements to plot for Lemon model
+#define OUTPUT_PLOTTING_SIZE 14
 #define RANK 0
 #define EC_COL 3
 #define EC_ROW 3

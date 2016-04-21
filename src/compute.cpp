@@ -252,7 +252,6 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 				smc[i][j].vars[smc_Vm] = y[k + ((j - 1) * grid.neq_smc) + smc_Vm];
 				smc[i][j].vars[smc_w] = y[k + ((j - 1) * grid.neq_smc) + smc_w];
 				smc[i][j].vars[smc_IP3] =y[k + ((j - 1) * grid.neq_smc) + smc_IP3];
-
 			}
 		}
 		break;
@@ -295,9 +294,7 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 				ec[i][j].vars[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
 				ec[i][j].vars[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
 				ec[i][j].vars[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
-#if MODEL == LEMON
 				ec[i][j].vars[ec_Gprot] = y[k + ((j - 1) * grid.neq_ec) + ec_Gprot];
-#endif
 			}
 		}
 		break;
@@ -507,14 +504,14 @@ void compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 
 	coupling(t, y, grid, smc, ec, cpl_cef);
 
-#if PLOTTING
+#if PLOTTING && EXPLICIT_ONLY
 	bufferPos = 0;
 #endif
 
 	koenigsberger_smc_derivatives(f, grid, smc);
 	koenigsberger_ec_derivatives(t, f, grid, ec);
 
-#if PLOTTING
+#if PLOTTING && EXPLICIT_ONLY
 
 	if (grid.universal_rank == RANK)
 	{
@@ -620,5 +617,3 @@ void average(double* table, int size, double *value) {
 	*value = *value / (double) (size);
 }
 #endif
-
-

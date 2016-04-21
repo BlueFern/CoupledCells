@@ -10,8 +10,6 @@
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
-
-
 double
 	/* Constants for homogenically coupled SMCs. */
       Fi = 0.23,  Kri = 1.00,  GCai = 0.00129,  vCa1 = 100.00,
@@ -42,10 +40,7 @@ double
 	PIP2_tot = 4e7, K_G_prot_act = 0.017, delta = 1.234e-3,
 	G_prot_tot = 1e5, K_G_prot_deact = 0.15, N_a = 6.02252e23,
 	V_ec = 1.17e3, unitcon_a = 1e21, PIP2_C = 5e7, kDeg = 1.25,
-	cons_PIP2 = 3.989e7,
-
-	// Bennett constants
-	r_IP3 = 5e-14, unitcon_b = 1e15, A_ec = 500, Gprot_ratio = 8.82;
+	cons_PIP2 = 3.989e7;
 
 
 /// Initial values found by running a sufficiently long simulation and recording state values
@@ -104,9 +99,7 @@ void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.63;
 			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -66.7;
 			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 1.057;
-#if MODEL == LEMON
 			y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 1470.305;
-#endif
 		}
 	}
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++) {
@@ -115,9 +108,8 @@ void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 			ec[i][j].vars[ec_SR] = 0.0;
 			ec[i][j].vars[ec_Vm] = 0.0;
 			ec[i][j].vars[ec_IP3] = 0.0;
-#if MODEL == LEMON
 			ec[i][j].vars[ec_Gprot] = 0.0;
-#endif
+
 			for (int k = 1; k <= grid.num_fluxes_ec; k++) {
 				ec[i][j].fluxes[k - 1] = 0.1;
 			}
@@ -220,6 +212,7 @@ void koenigsberger_smc_derivatives_implicit(double* f, grid_parms grid, SMC_cell
 			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = gama
 					* (-smc[i][j].fluxes[J_Na_K] - smc[i][j].fluxes[J_Cl] - (2 * smc[i][j].fluxes[J_VOCC]) - smc[i][j].fluxes[J_Na_Ca] - smc[i][j].fluxes[J_K])
 					+ smc[i][j].homo_fluxes[cpl_Vm] + smc[i][j].hetero_fluxes[cpl_Vm];
+
 #if PLOTTING && EXPLICIT_ONLY
 			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
 			{
@@ -304,11 +297,8 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 			ec[i][j].fluxes[J_Leak] = Lj * ec[i][j].vars[ec_SR];
 
 			//IP3 degradation
-#if MODEL == LEMON
 			ec[i][j].fluxes[J_IP3_deg] = kDeg * ec[i][j].vars[ec_IP3];
-#else
-			ec[i][j].fluxes[J_IP3_deg] = ki * ec[i][j].vars[ec_IP3];
-#endif
+
 			//J_NonSelective Cation channels
 			ec[i][j].fluxes[J_NSC] = (Gcatj * (ECa - ec[i][j].vars[ec_Vm]) * 0.5)
 					* (1 + ((double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3cat) / m4cat)))));
@@ -324,8 +314,6 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 			//Grouping all other trivial Ca fluxes
 			ec[i][j].fluxes[J_trivial_Ca] = J0j;
 
-#if MODEL == LEMON // TODO: note: some of these are not techinically fluxes. Nor is K_activation (smc fluxes) - maybe new array slot..?
-
 			// Ratio of bound to total P2Y
 			ec[i][j].fluxes[L_P_P2Y] = ec[i][j].JPLC / (ec[i][j].JPLC + kATP); // TODO: Does this need to be calculated every time? is JPLC constant?
 
@@ -334,13 +322,6 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 
 			// Induced IP3 influx
 			ec[i][j].fluxes[J_ind_I] = (ec[i][j].fluxes[R_PIP2_H] * cons_PIP2 * unitcon_a) / (N_a * V_ec);
-
-#elif MODEL == BENNETT
-
-			ec[i][j].fluxes[B_P_P2Y] = ec[i][j].JPLC / (ec[i][j].JPLC + kATP);
-			ec[i][j].fluxes[J_Gprot] = (delta + ec[i][j].fluxes[B_P_P2Y]) / (Gprot_ratio + delta + ec[i][j].fluxes[B_P_P2Y]);
-			ec[i][j].fluxes[J_ind_I] = r_IP3 * ec[i][j].fluxes[J_Gprot] * unitcon_b * A_ec / V_ec;
-#endif
 
 		}
 	}
@@ -374,7 +355,6 @@ void koenigsberger_ec_derivatives_implicit(double t, double* f, grid_parms grid,
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.0;
 			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 0.0;
 #endif
-
 		}
 	}
 }
@@ -386,7 +366,6 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 	{
 		for(int j = 1; j <= grid.num_ec_axially; j++)
 		{
-
 			if (i > 1)
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
@@ -399,31 +378,13 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 			f[k + ((j - 1) * grid.neq_ec) + ec_SR] =
 					ec[i][j].fluxes[J_SERCA] - ec[i][j].fluxes[J_CICR] - ec[i][j].fluxes[J_Leak];
 
-#if MODEL == LEMON
-
 			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
 						ec[i][j].fluxes[J_ind_I] - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
 
-#if 0 // Old d[PIP2]/dt equation. Replaced with constant [PIP2].
-			f[k + ((j - 1) * grid.neq_ec) + ec_PIP2] =
-						- (ec[i][j].fluxes[R_PIP2_H] + R_PIP2_r) * cons_PIP2
-						- (ec[i][j].vars[ec_IP3] *  R_PIP2_r) + (R_PIP2_r * PIP2_tot);
-#endif
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] =
 						(K_G_prot_act * (delta + ec[i][j].fluxes[L_P_P2Y]) * (G_prot_tot - ec[i][j].vars[ec_Gprot]))
 						- (K_G_prot_deact * ec[i][j].vars[ec_Gprot]);
-
-#elif MODEL == BENNETT
-
-			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
-									ec[i][j].fluxes[J_ind_I] - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
-
-#else
-			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] =
-						ec[i][j].JPLC - ec[i][j].fluxes[J_IP3_deg] + ec[i][j].homo_fluxes[cpl_IP3] + ec[i][j].hetero_fluxes[cpl_IP3];
-
-#endif
 
 #if PLOTTING && EXPLICIT_ONLY
 			if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
@@ -432,20 +393,12 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, grid_parms grid,
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_SR];
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_IP3];
 
-#if MODEL == LEMON
 				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Gprot];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[L_P_P2Y];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[R_PIP2_H];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_IP3_deg];
 				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_ind_I];
-
-#elif MODEL == BENNETT
-				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_Gprot];
-				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[B_P_P2Y];
-				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_ind_I];
-#endif
 			}
-
 #endif
 
 #if ! EXPLICIT_ONLY

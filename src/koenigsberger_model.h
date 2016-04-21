@@ -21,7 +21,6 @@
 #define     ec_IP3              3
 // Lemon et al. specific
 #define 	ec_Gprot 			4
-//#define 	ec_PIP2				5
 
 //Ionic currents common to both celltypes
 #define     J_IP3               0
