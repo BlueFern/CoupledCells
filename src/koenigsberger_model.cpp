@@ -6,7 +6,7 @@
  */
 
 #include <math.h>
-
+#include <cstdlib>
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
@@ -48,6 +48,7 @@ double
 void initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 {
 	int k = 0, offset;
+	srand(grid.universal_rank);
 
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
@@ -55,11 +56,11 @@ void initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 				k = ((i - 1) * grid.neq_smc_axially);
 			else if (i == 1)
 				k = 0;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.203;
-			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = 1.376;
-			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = -66.4;
-			y[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.010423;
-			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.7835;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = (float)rand() / (float)(RAND_MAX / 0.1) + 0.15;
+			y[k + ((j - 1) * grid.neq_smc) + smc_SR] = (float)rand() / (float)(RAND_MAX / 0.2) + 1.3;
+			y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = (float)rand() / (float)(RAND_MAX / 5.0) - 68.0;
+			y[k + ((j - 1) * grid.neq_smc) + smc_w] = (float)rand() / (float)(RAND_MAX / 0.005) + 0.01;
+			y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = (float)rand() / (float)(RAND_MAX / 0.2) + 0.6;
 		}
 	}
 
@@ -88,6 +89,7 @@ void initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
+	srand(grid.universal_rank);
 
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
@@ -95,11 +97,11 @@ void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 				k = offset + ((i - 1) * grid.neq_ec_axially);
 			else if (i == 1)
 				k = offset + 0;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.825;
-			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.63;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = -66.7;
-			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 1.057;
-			y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 1470.305;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = (float)rand() / (float)(RAND_MAX / 0.2) + 0.7;
+			y[k + ((j - 1) * grid.neq_ec) + ec_SR] = (float)rand() / (float)(RAND_MAX / 0.2) + 0.5;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = (float)rand() / (float)(RAND_MAX / 5.0) - 68.0;
+			y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = (float)rand() / (float)(RAND_MAX / 0.2) + 1.0;
+			y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = (float)rand() / (float)(RAND_MAX / 50.0) + 1450;
 		}
 	}
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++) {
