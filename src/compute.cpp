@@ -31,8 +31,8 @@ void set_coupling_parms(int CASE, conductance* cpl_cef)
 		cpl_cef->Vm_hm_smc = 1000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
-		cpl_cef->Ca_hm_smc = 0.05;
-		cpl_cef->Ca_hm_ec = 0.05;
+		cpl_cef->Ca_hm_smc = 0.02;
+		cpl_cef->Ca_hm_ec = 0.02;
 
 		cpl_cef->IP3_hm_smc = 0.05;
 		cpl_cef->IP3_hm_ec = 0.00;
@@ -294,6 +294,7 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 				ec[i][j].vars[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
 				ec[i][j].vars[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
 				ec[i][j].vars[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
+				ec[i][j].vars[ec_Gprot] = y[k + ((j - 1) * grid.neq_ec) + ec_Gprot];
 			}
 		}
 		break;
@@ -503,8 +504,25 @@ void compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 
 	coupling(t, y, grid, smc, ec, cpl_cef);
 
+#if PLOTTING && EXPLICIT_ONLY
+	bufferPos = 0;
+#endif
+
 	koenigsberger_smc_derivatives(f, grid, smc);
 	koenigsberger_ec_derivatives(t, f, grid, ec);
+
+#if PLOTTING && EXPLICIT_ONLY
+
+	if (grid.universal_rank == RANK)
+	{
+		for (int i = 0; i < OUTPUT_PLOTTING_SIZE; i++)
+		{
+			fprintf(var_file, "%f,", plotttingBuffer[i]);
+		}
+		fprintf(var_file, "%f\n", t);
+	}
+#endif
+
 
 #endif
 }
@@ -599,5 +617,3 @@ void average(double* table, int size, double *value) {
 	*value = *value / (double) (size);
 }
 #endif
-
-

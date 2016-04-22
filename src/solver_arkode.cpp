@@ -12,7 +12,6 @@
 #include "gather.h"
 #include "writeHDF5.h"
 
-#define EXPLICIT_ONLY 0
 
 extern conductance cpl_cef;
 extern SMC_cell** smc;
