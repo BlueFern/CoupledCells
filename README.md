@@ -26,7 +26,7 @@ The desired ODE solver should be chosen in the CMake interface. There are three 
 
 ODEOPTION=RK_SUITE, ODEOPTION=ARK_ODE, or ODEOPTION=BOOST_ODEINT.
 
-It is recommended to use the ARK_ODE solver, which is a parte of the SUNDIALS library.
+It is recommended to use the ARK_ODE solver, which is a part of the SUNDIALS library.
 
 After the the project has been configured, it can be opened and compiled with
 the target IDE, or in the case of Unix Makefile configuration simply run make in
@@ -75,7 +75,7 @@ this:
     0,1,12,112,-1,-1,-1,32,3;
 
 * **S** - Location of the generated output files.
-* **T** - Location of the pofiling output files.
+* **T** - Location of the profiling output files.
 * **t** - Duration of the simulation in seconds.
 * **w** - How often to write checkpont data in seconds.
 * **i** - Delta in milliseconds specifying the frequency of exchanging data betwen
