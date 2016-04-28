@@ -31,8 +31,8 @@ void set_coupling_parms(int CASE, conductance* cpl_cef)
 		cpl_cef->Vm_hm_smc = 1000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
-		cpl_cef->Ca_hm_smc = 0.01;
-		cpl_cef->Ca_hm_ec = 0.01;
+		cpl_cef->Ca_hm_smc = 0.1;
+		cpl_cef->Ca_hm_ec = 0.1;
 
 		cpl_cef->IP3_hm_smc = 0.05;
 		cpl_cef->IP3_hm_ec = 0.00;
