@@ -19,8 +19,10 @@ How to Compile
 --------------
 
 The project files can be generated with CMake. The project has been previously compiled and tested
-on Linux machines with CMake and Eclipse. Configure the project with CMake and specify the *out-of-source* build
-directory. CMake can be run in GUI or CLI modes.
+on Linux machines with CMake and Eclipse. Configure the project with CMake and specify the 
+*out-of-source* build directory. CMake can be run in GUI or command-line modes.
+
+CMake in the command-line mode:
 
 ```bash
 cd CoupledCells
@@ -104,7 +106,7 @@ second, the arguments would look like this:
 
     coupledCellsModel -f config.txt -S solution -T profiling -t 500.00 -w 1000 -i 1e-2
 
-#TODO: Provide a load-leveller script example.
+#TODO: Provide a load-leveler script example.
 
 Input Files
 -----------
