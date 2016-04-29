@@ -33,12 +33,12 @@ cmake ..
 
 The desired ODE solver should be chosen in the CMake interface. There are three options available:
 
-ODE_SOLVER=RK_SUITE, ODE_SOLVER=ARK_ODE, or ODE_SOLVER=BOOST_ODEINT.
+ODE_SOLVER=RK_suite, ODE_SOLVER=SUNDIALS_arkode, or ODE_SOLVER=BOOST_odeint.
 
-It is recommended to use the ARK_ODE solver, which is a part of the SUNDIALS library:
+It is recommended to use the SUNDIALS_arkode solver, which is a part of the SUNDIALS library:
 
 ```bash
-cmake -D ODE_SOLVER=ARK_ODE ..
+cmake -D ODE_SOLVER=SUNDIALS_arkode ..
 ```
 
 After the the project has been configured, it can be opened and compiled with
@@ -48,17 +48,23 @@ the build directory. The generated executable is called *coupledCellsModel*.
 There are two makefiles for compiling the project on BlueGene/L and BlueGene/P. For the BlueGene/L 
 build, the Makefile.bgp can be used as follows:
 
-    make -f Makefile.bgp ODEOPTION=ARK_ODE
+```bash
+make -f Makefile.bgp ODEOPTION=ARK_ODE
+```
 
 In the current BlueGene/P build environment CMake should be launched in the following manner in order to 
 specify the MPI compiler and the location of the Sundials library:
 
-    CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
+```bash
+CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
+```
 
 How to Run
 ----------
 
-    coupledCellsModel -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>"
+```bash
+coupledCellsModel -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>"
+```
 
  where the command-line have the following meaning:
 
