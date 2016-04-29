@@ -79,6 +79,8 @@ struct conductance
 			Ca_ht_ec,	///< Heterocellular Ca coupling between ECs.
 			IP3_ht_smc,	///< Heterocellular IP3 coupling between SMCs.
 			IP3_ht_ec;	///< Heterocellular IP3 coupling between ECs.
+	double ec_diffusion[4];
+	double smc_diffusion[4];
 };
 
 #define DOMAIN_NUM 0
