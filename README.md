@@ -22,18 +22,29 @@ The project files can be generated with CMake. The project has been previously c
 on Linux machines with CMake and Eclipse. Configure the project with CMake and specify the *out-of-source* build
 directory. CMake can be run in GUI or CLI modes.
 
+```bash
+cd CoupledCells
+mkdir build
+cd build
+cmake ..
+```
+
 The desired ODE solver should be chosen in the CMake interface. There are three options available:
 
-ODEOPTION=RK_SUITE, ODEOPTION=ARK_ODE, or ODEOPTION=BOOST_ODEINT.
+ODE_SOLVER=RK_SUITE, ODE_SOLVER=ARK_ODE, or ODE_SOLVER=BOOST_ODEINT.
 
-It is recommended to use the ARK_ODE solver, which is a part of the SUNDIALS library.
+It is recommended to use the ARK_ODE solver, which is a part of the SUNDIALS library:
+
+```bash
+cmake -D ODE_SOLVER=ARK_ODE ..
+```
 
 After the the project has been configured, it can be opened and compiled with
 the target IDE, or in the case of Unix Makefile configuration simply run make in
 the build directory. The generated executable is called *coupledCellsModel*.
 
-There are two makefiles for compiling the project on BlueGene/L and BlueGene/P. For the BlueGene/L build, the
-Makefile.bgp can be used as follows:
+There are two makefiles for compiling the project on BlueGene/L and BlueGene/P. For the BlueGene/L 
+build, the Makefile.bgp can be used as follows:
 
     make -f Makefile.bgp ODEOPTION=ARK_ODE
 
@@ -65,14 +76,21 @@ How to Run
     * Element 7: Required number of ECs axially per core.
     * Element 8: Required number of SMCs circumferentially per core.
 
-For example, for a fist subdomain of type BIF, with 12 cores along the axial
-direction, 112 cores in the cirfumferrential direction, with no parent or child
-subdomains, and with 32 ECs and 3 SMCs in the axial and cirfumferrential
+The total number of processes (MPI ranks) required to run a simulation should match the number of 
+quads in the axial direction times the number of quads in the circumferential direction. 
+Note that for BIF elements, the required number of processes is three times (3x) the product of 
+(Element 2)*(Element 3) for that element since there there three branches in this case. 
+
+For example, for a first subdomain of type BIF, with 12 cores along the axial
+direction, 112 cores in the circumferential direction, with no parent or child
+subdomains, and with 32 ECs and 3 SMCs in the axial and circumferential
 directions respectively, the config file will look like
 this:
 
     1;
     0,1,12,112,-1,-1,-1,32,3;
+
+and the total number of processes will be 3*12*112 = 4032.
 
 * **S** - Location of the generated output files.
 * **T** - Location of the profiling output files.
