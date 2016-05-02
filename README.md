@@ -9,7 +9,11 @@ atherosclerotic plaques.
 Code Dependencies
 -----------------
 
-The project depends on MPI and SUNDIALS libraries.
+The project depends on:
+
+ * MPI
+ * HDF5 (https://www.hdfgroup.org/HDF5/release/obtainsrc.html)
+ * SUNDIALS (http://computation.llnl.gov/projects/sundials-suite-nonlinear-differential-algebraic-equation-solvers/sundials-software)
 
 In addition, the Python scripts for converting the simulations output from HDF5 format
 to VTK (VTU) format require VTK with Python bindings.
