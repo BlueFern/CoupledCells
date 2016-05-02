@@ -26,7 +26,7 @@ IF(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 
 ELSE(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 	SET(SUNDIALS_FOUND NO)
-	message(FATAL_ERROR "Cannot find SUNDIALS! Set SUNDIAL_DIR to point to the top directory")
+	message(FATAL_ERROR "Cannot find SUNDIALS! Set SUNDIALS_DIR to the top installation directory of SUNDIALS")
 ENDIF(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 
 include(FindPackageHandleStandardArgs)
