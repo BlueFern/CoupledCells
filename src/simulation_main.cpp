@@ -12,7 +12,9 @@ EC_cell **ec;
 double **sendbuf, **recvbuf;
 grid_parms grid;
 
-int CASE = 1;
+FILE* var_file;
+double* plotttingBuffer;
+int bufferPos;
 
 /**
  * The following steps in the ::main function are necessary for setting up
@@ -36,23 +38,19 @@ int main(int argc, char* argv[])
 	CHECK_MPI_ERROR(MPI_Comm_rank(grid.universe, &grid.universal_rank));
 	CHECK_MPI_ERROR(MPI_Comm_size(grid.universe, &grid.num_ranks));
 
-	if(grid.universal_rank == 0)
+#if PLOTTING && EXPLICIT_ONLY
+	if (grid.universal_rank == RANK)
 	{
-		printf("Running with coupling case %d.\n", CASE);
-
-#ifdef RK_SUITE
-		printf("Running with RK_SUITE solver.\n");
-#elif defined ARK_ODE
-		printf("Running with ARK_ODE solver.\n");
-#elif defined BOOST_ODEINT
-		printf("Running with BOOST_ODEINT solver.\n");
-#else
-		fprintf(stderr, "No solver? How is this possible? Does not compute.\n");
-		MPI_Abort(grid.universe, 911);
-#endif
+		printf("\nWriting to %s\n\n", FILENAME);
+		var_file = fopen(FILENAME, "w");
+		double buf[OUTPUT_PLOTTING_SIZE];
+		plotttingBuffer = buf;
+		bufferPos = 0;
 	}
+#endif
 
 	char filename[50];
+	int coupling_case = 1;
 
 	/// Time variables
 	double tfinal = 1e-2;
@@ -68,6 +66,8 @@ int main(int argc, char* argv[])
 			if (argv[i][0] == '-') {
 				if (argv[i][1] == 'f') {
 					sprintf(grid.config_file, "%s", argv[i + 1]);
+				} else if (argv[i][1] == 'C') {
+					coupling_case = atoi(argv[i + 1]);
 				} else if (argv[i][1] == 'S') {
 					sprintf(grid.solution_dir, "%s", argv[i + 1]);
 				} else if (argv[i][1] == 'T') {
@@ -83,24 +83,43 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	if(grid.universal_rank == 0)
+	{
+		printf("Running with coupling case %d.\n", coupling_case);
+
+#ifdef RK_SUITE
+		printf("Running with RK_SUITE solver.\n");
+#elif defined ARK_ODE
+		printf("Running with ARK_ODE solver.\n");
+#elif defined BOOST_ODEINT
+		printf("Running with BOOST_ODEINT solver.\n");
+#else
+		fprintf(stderr, "No solver? How is this possible? Does not compute.\n");
+		MPI_Abort(grid.universe, 911);
+#endif
+	}
+
 	//grid.NO_path = 0;
 	//grid.cGMP_path = 0;
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
-	grid.stimulus_onset_time = 10.00;
+	grid.stimulus_onset_time = 0.00;
 
 	grid.num_smc_fundblk_circumferentially = 1;
 	grid.num_ec_fundblk_circumferentially = 5;
 	grid.num_smc_fundblk_axially = 13;
 	grid.num_ec_fundblk_axially = 1;
 	grid.num_ghost_cells = 2;
+
 	grid.num_fluxes_smc = 12;
-	grid.num_fluxes_ec = 12;
+	grid.num_fluxes_ec = 15;
+
 	grid.num_coupling_species_smc = 3;
 	grid.num_coupling_species_ec = 3;
 	grid.neq_smc = 5;
-	grid.neq_ec = 4;
+	grid.neq_ec = 5;
+
 
 	// File written every 1 second.
 	int file_write_per_unit_time = (int) (data_writing_frequency * int(1 / interval));
@@ -290,7 +309,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Initialising the coupling coefficients to be used in the ODEs.
-	set_coupling_parms(CASE, &cpl_cef);
+	set_coupling_parms(coupling_case, &cpl_cef);
 
 	// Debug output.
 	dump_rank_info(cpl_cef, grid);
@@ -370,6 +389,13 @@ int main(int argc, char* argv[])
 	free(thres);
 	free(y);
 	free(yp);
+
+#if PLOTTING && EXPLICIT_ONLY
+	if (grid.universal_rank == RANK)
+	{
+		fclose(var_file);
+	}
+#endif
 
 	MPI_Finalize();
 

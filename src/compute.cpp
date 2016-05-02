@@ -26,13 +26,26 @@ void* checked_malloc(size_t bytes, const char* errmsg)
 
 void set_coupling_parms(int CASE, conductance* cpl_cef)
 {
+	// These values are honestly just trial and error guesses at what makes nice waves...
+	// Really need to have a think about what they should be.
+	cpl_cef->ec_diffusion[0] = 0.15;
+	cpl_cef->ec_diffusion[1] = 0.15;
+	cpl_cef->ec_diffusion[2] = 0.35;
+	cpl_cef->ec_diffusion[3] = 0.35;
+
+	cpl_cef->smc_diffusion[0] = 0.35;
+	cpl_cef->smc_diffusion[1] = 0.35;
+	cpl_cef->smc_diffusion[2] = 0.15;
+	cpl_cef->smc_diffusion[3] = 0.15;
+
+
 	if(CASE == 1)
 	{
 		cpl_cef->Vm_hm_smc = 1000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
-		cpl_cef->Ca_hm_smc = 0.05;
-		cpl_cef->Ca_hm_ec = 0.05;
+		cpl_cef->Ca_hm_smc = 0.4;
+		cpl_cef->Ca_hm_ec = 0.4;
 
 		cpl_cef->IP3_hm_smc = 0.05;
 		cpl_cef->IP3_hm_ec = 0.00;
@@ -51,8 +64,8 @@ void set_coupling_parms(int CASE, conductance* cpl_cef)
 		cpl_cef->Vm_hm_smc = 1000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
-		cpl_cef->Ca_hm_smc = 0.05;
-		cpl_cef->Ca_hm_ec = 0.05;
+		cpl_cef->Ca_hm_smc = 0.01;
+		cpl_cef->Ca_hm_ec = 0.01;
 
 		cpl_cef->IP3_hm_smc = 0.05;
 		cpl_cef->IP3_hm_ec = 0.00;
@@ -294,6 +307,7 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 				ec[i][j].vars[ec_SR] = y[k + ((j - 1) * grid.neq_ec) + ec_SR];
 				ec[i][j].vars[ec_Vm] = y[k + ((j - 1) * grid.neq_ec) + ec_Vm];
 				ec[i][j].vars[ec_IP3] = y[k + ((j - 1) * grid.neq_ec) + ec_IP3];
+				ec[i][j].vars[ec_Gprot] = y[k + ((j - 1) * grid.neq_ec) + ec_Gprot];
 			}
 		}
 		break;
@@ -316,10 +330,10 @@ void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 		for (j = 1; j <= grid.num_smc_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 			smc[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_smc
-					* ((smc[i][j].vars[smc_Vm] - smc[i][up].vars[smc_Vm])
-					+ (smc[i][j].vars[smc_Vm] - smc[i][down].vars[smc_Vm])
-					+ (smc[i][j].vars[smc_Vm] - smc[left][j].vars[smc_Vm])
-					+ (smc[i][j].vars[smc_Vm] - smc[right][j].vars[smc_Vm]));
+					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_Vm] - smc[i][up].vars[smc_Vm]))
+					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Vm] - smc[i][down].vars[smc_Vm]))
+					+ (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Vm] - smc[left][j].vars[smc_Vm]))
+					+ (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Vm] - smc[right][j].vars[smc_Vm])));
 
 		}	//end j
 	}	//end i
@@ -329,10 +343,10 @@ void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 
 			ec[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_ec
-					* ((ec[i][j].vars[ec_Vm] - ec[i][up].vars[ec_Vm])
-					+ (ec[i][j].vars[ec_Vm] - ec[i][down].vars[ec_Vm])
-					+ (ec[i][j].vars[ec_Vm] - ec[left][j].vars[ec_Vm])
-					+ (ec[i][j].vars[ec_Vm] - ec[right][j].vars[ec_Vm]));
+					* (cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_Vm] - ec[i][up].vars[ec_Vm]))
+					+ (cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Vm] - ec[i][down].vars[ec_Vm]))
+					+ (cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Vm] - ec[left][j].vars[ec_Vm]))
+					+ (cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Vm] - ec[right][j].vars[ec_Vm])));
 
 		}	//end j
 	}	//end i
@@ -392,16 +406,16 @@ void coupling_explicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 		for (j = 1; j <= grid.num_smc_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 			smc[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc
-					* ((smc[i][j].vars[smc_Ca] - smc[i][up].vars[smc_Ca])
-					+ (smc[i][j].vars[smc_Ca] - smc[i][down].vars[smc_Ca])
-					+ (smc[i][j].vars[smc_Ca] - smc[left][j].vars[smc_Ca])
-					+ (smc[i][j].vars[smc_Ca] - smc[right][j].vars[smc_Ca]));
+					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_Ca] - smc[i][up].vars[smc_Ca]))
+					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Ca] - smc[i][down].vars[smc_Ca]))
+					+ (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Ca] - smc[left][j].vars[smc_Ca]))
+					+ (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Ca] - smc[right][j].vars[smc_Ca])));
 
 			smc[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_smc
-					* ((smc[i][j].vars[smc_IP3] - smc[i][up].vars[smc_IP3])
-					+ (smc[i][j].vars[smc_IP3] - smc[i][down].vars[smc_IP3])
-					+ (smc[i][j].vars[smc_IP3] - smc[left][j].vars[smc_IP3])
-					+ (smc[i][j].vars[smc_IP3] - smc[right][j].vars[smc_IP3]));
+					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_IP3] - smc[i][up].vars[smc_IP3]))
+					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_IP3] - smc[i][down].vars[smc_IP3]))
+					+ (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_IP3] - smc[left][j].vars[smc_IP3]))
+					+ (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_IP3] - smc[right][j].vars[smc_IP3])));
 		}	//end j
 	}	//end i
 
@@ -409,16 +423,16 @@ void coupling_explicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 		for (j = 1; j <= grid.num_ec_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 			ec[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec
-					* ((ec[i][j].vars[ec_Ca] - ec[i][up].vars[ec_Ca])
-					+ (ec[i][j].vars[ec_Ca] - ec[i][down].vars[ec_Ca])
-					+ (ec[i][j].vars[ec_Ca] - ec[left][j].vars[ec_Ca])
-					+ (ec[i][j].vars[ec_Ca] - ec[right][j].vars[ec_Ca]));
+					* cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_Ca] - ec[i][up].vars[ec_Ca])
+					+ cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Ca] - ec[i][down].vars[ec_Ca])
+					+ cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Ca] - ec[left][j].vars[ec_Ca])
+					+ cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Ca] - ec[right][j].vars[ec_Ca]));
 
 			ec[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_ec
-					* ((ec[i][j].vars[ec_IP3] - ec[i][up].vars[ec_IP3])
-					+ (ec[i][j].vars[ec_IP3] - ec[i][down].vars[ec_IP3])
-					+ (ec[i][j].vars[ec_IP3] - ec[left][j].vars[ec_IP3])
-					+ (ec[i][j].vars[ec_IP3] - ec[right][j].vars[ec_IP3]));
+					* cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_IP3] - ec[i][up].vars[ec_IP3])
+					+ cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_IP3] - ec[i][down].vars[ec_IP3])
+					+ cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_IP3] - ec[left][j].vars[ec_IP3])
+					+ cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_IP3] - ec[right][j].vars[ec_IP3]));
 
 		}	//end j
 	}	//end i
@@ -503,8 +517,25 @@ void compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 
 	coupling(t, y, grid, smc, ec, cpl_cef);
 
+#if PLOTTING && EXPLICIT_ONLY
+	bufferPos = 0;
+#endif
+
 	koenigsberger_smc_derivatives(f, grid, smc);
 	koenigsberger_ec_derivatives(t, f, grid, ec);
+
+#if PLOTTING && EXPLICIT_ONLY
+
+	if (grid.universal_rank == RANK)
+	{
+		for (int i = 0; i < OUTPUT_PLOTTING_SIZE; i++)
+		{
+			fprintf(var_file, "%f,", plotttingBuffer[i]);
+		}
+		fprintf(var_file, "%f\n", t);
+	}
+#endif
+
 
 #endif
 }
@@ -599,5 +630,3 @@ void average(double* table, int size, double *value) {
 	*value = *value / (double) (size);
 }
 #endif
-
-

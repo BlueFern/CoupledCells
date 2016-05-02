@@ -116,7 +116,28 @@ second, the arguments would look like this:
 
     coupledCellsModel -f config.txt -S solution -T profiling -t 500.00 -w 1000 -i 1e-2
 
-#TODO: Provide a load-leveler script example.
+The following in an example of a load-leveller script to run a 100 physiological second
+simulation with a 1008 quad/core bifurcation mesh.
+
+	#!/bin/ksh
+	#
+	# MPI LoadLeveler Job file for BG/P
+	#
+	# @ group                = UC
+	# @ account_no           = bfcs00321
+	# @ job_type             = bluegene
+	# @ bg_connection        = prefer_torus
+	# @ output               = $(job_name).$(jobid).out
+	# @ error                = $(job_name).$(jobid).err
+
+	# @ bg_size              = 256
+	# @ class                = bgp
+	# @ wall_clock_limit     = 04:00:00
+	# @ job_name             = CC_1008
+	
+	# @ queue
+	
+	mpirun -mode VN -np 1008 -verbose 2 -env BG_COREDUMP_BINARY='*' -cwd `pwd` -exe `pwd`/coupledCellsModel -args "-f config.txt -S solution -T profiling -t 100.00 -w 1.0 -i 1e-2"
 
 Input Files
 -----------
@@ -151,12 +172,60 @@ contain `*.vtp' files for each branch of the mesh configuration used in the simu
 for details on creating these files see the [DBiharMesher](https://github.com/BlueFern/DBiharMesher)
 repository.
 
-#TODO: The following needs verification. Also, we should use command-line arguments for this `genCommands.py` script.
+The script `genCommands.py` is provided in the util directory for parallel conversions --- it simply prints 
+out a number of calls to the conversion scripts, where these calls can be redirected to a file. 
+It should be copied into the working directory and modified according to the geometry of the mesh, (and so whether `trunk_*_hdf5ToVTU.py` or `bifurcation_*_hdf5ToVTU.py` is called) and the path to these scripts. It expects the
+number of tasks being used and the total number of timesteps to process as arguments. `genCommands.py` is 
+currently being used in conjunction with a load-leveller script, an example of which follows:
 
-The script `genCommands.py` is provided (where?) for parallel conversions --- it simply prints out a number of calls
-to the conversion scripts, where these calls can be redirected to a file. It should be copied into the working
-directory and modified according to the geometry of the mesh, (and so whether `trunk_*_hdf5ToVTU.py` or 
-`bifurcation_*_hdf5ToVTU.py` is called) and the path to these scripts.
+	# Example multiple Serial LoadLeveler Jobs file on multiple nodes.
+	
+	# @ shell              = /bin/bash
+	# @ job_name           = hdf52vtu
+	
+	# This type of job is parallel even though your executable is serial, batcher is a MPI parallel program.
+	# @ job_type           = parallel
+	# @ wall_clock_limit   = 00:30:00
+	# @ class              = p7linux_dev
+	# @ group              = UC
+	# @ account_no         = bfcs00321
+	
+	# Use the unlimited options for blocking to run tasks accross nodes.
+	# @ blocking           = unlimited
+	
+	# Total_tasks needs to be more than 1.
+	# @ total_tasks        = 8
+	
+	# Affinity options to improve performance.
+	# @ task_affinity      = core(1)
+	# @ rset               = rset_mcm_affinity
+	# @ mcm_affinity_options = mcm_mem_pref
+	
+	# @ output             = $(job_name).$(schedd_host).$(jobid).out
+	# @ error              = $(job_name).$(schedd_host).$(jobid).err
+	# @ environment = COPY_ALL
+	# @ queue
+	
+	# All commands that follow will be run as part of the job.
+	# Display name of host running serial job.
+	hostname
+	
+	# Display current time.
+	date
+	
+	# Filename with commands to parse to batcher.
+	export INPUT_FILE="batcher_input_cmds"-$LOADL_STEP_ID
+	echo $INPUT_FILE
+	
+	module purge
+	module load vtk
+	
+	# Create the Input Command file for batcher if using the create_input_command.sh script.
+	python ./genCommands-p7.py 8 100 >> $INPUT_FILE
+	
+	# Do not modify the following command, it will launch your serial jobs with batcher.
+	poe batcher $INPUT_FILE
+
 
 Project Documentation
 ---------------------
