@@ -67,7 +67,7 @@ How to Run
 ----------
 
 ```bash
-coupledCellsModel -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>"
+coupledCellsModel -args -f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>
 ```
 
  where the command-line have the following meaning:
