@@ -1,3 +1,4 @@
+configure_file(c1_fitzroy.ll.in c1_fitzroy.ll)
 
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c1/config.txt DESTINATION "./")
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c1/files DESTINATION "./")
