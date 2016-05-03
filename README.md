@@ -67,10 +67,15 @@ How to Run
 ----------
 
 ```bash
-coupledCellsModel -args -f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>
+mpiexec -n <numProcs> coupledCellsModel -f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>
 ```
 
- where the command-line have the following meaning:
+On IBM systems, one should execute
+```bash
+poe coupledCellsModel -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>"
+```
+
+The command-line have the following meaning:
 
 * **f** - Configuration file. Each file must start with a line stating the total
   number of domains. Each line in the config file must be terminated with a ';'.
