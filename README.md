@@ -9,7 +9,11 @@ atherosclerotic plaques.
 Code Dependencies
 -----------------
 
-The project depends on MPI and SUNDIALS libraries.
+The project depends on:
+
+ * MPI
+ * HDF5 (https://www.hdfgroup.org/HDF5/release/obtainsrc.html)
+ * SUNDIALS (http://computation.llnl.gov/projects/sundials-suite-nonlinear-differential-algebraic-equation-solvers/sundials-software)
 
 In addition, the Python scripts for converting the simulations output from HDF5 format
 to VTK (VTU) format require VTK with Python bindings.
@@ -19,33 +23,52 @@ How to Compile
 --------------
 
 The project files can be generated with CMake. The project has been previously compiled and tested
-on Linux machines with CMake and Eclipse. Configure the project with CMake and specify the *out-of-source* build
-directory. CMake can be run in GUI or CLI modes.
+on Linux machines with CMake and Eclipse. Configure the project with CMake and specify the 
+*out-of-source* build directory. CMake can be run in GUI or command-line modes.
+
+CMake in the command-line mode:
+
+```bash
+cd CoupledCells
+mkdir build
+cd build
+cmake ..
+```
 
 The desired ODE solver should be chosen in the CMake interface. There are three options available:
 
-ODEOPTION=RK_SUITE, ODEOPTION=ARK_ODE, or ODEOPTION=BOOST_ODEINT.
+ODE_SOLVER=RK_suite, ODE_SOLVER=SUNDIALS_arkode, or ODE_SOLVER=BOOST_odeint.
 
-It is recommended to use the ARK_ODE solver, which is a part of the SUNDIALS library.
+It is recommended to use the SUNDIALS_arkode solver, which is a part of the SUNDIALS library:
+
+```bash
+cmake -D ODE_SOLVER=SUNDIALS_arkode ..
+```
 
 After the the project has been configured, it can be opened and compiled with
 the target IDE, or in the case of Unix Makefile configuration simply run make in
 the build directory. The generated executable is called *coupledCellsModel*.
 
-There are two makefiles for compiling the project on BlueGene/L and BlueGene/P. For the BlueGene/L build, the
-Makefile.bgp can be used as follows:
+There are two makefiles for compiling the project on BlueGene/L and BlueGene/P. For the BlueGene/L 
+build, the Makefile.bgp can be used as follows:
 
-    make -f Makefile.bgp ODEOPTION=ARK_ODE
+```bash
+make -f Makefile.bgp ODEOPTION=ARK_ODE
+```
 
 In the current BlueGene/P build environment CMake should be launched in the following manner in order to 
 specify the MPI compiler and the location of the Sundials library:
 
-    CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
+```bash
+CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
+```
 
 How to Run
 ----------
 
-    coupledCellsModel -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>"
+```bash
+coupledCellsModel -args -f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>
+```
 
  where the command-line have the following meaning:
 
@@ -65,14 +88,21 @@ How to Run
     * Element 7: Required number of ECs axially per core.
     * Element 8: Required number of SMCs circumferentially per core.
 
-For example, for a fist subdomain of type BIF, with 12 cores along the axial
-direction, 112 cores in the cirfumferrential direction, with no parent or child
-subdomains, and with 32 ECs and 3 SMCs in the axial and cirfumferrential
+The total number of processes (MPI ranks) required to run a simulation should match the number of 
+quads in the axial direction times the number of quads in the circumferential direction. 
+Note that for BIF elements, the required number of processes is three times (3x) the product of 
+(Element 2)*(Element 3) for that element since there there three branches in this case. 
+
+For example, for a first subdomain of type BIF, with 12 cores along the axial
+direction, 112 cores in the circumferential direction, with no parent or child
+subdomains, and with 32 ECs and 3 SMCs in the axial and circumferential
 directions respectively, the config file will look like
 this:
 
     1;
     0,1,12,112,-1,-1,-1,32,3;
+
+and the total number of processes will be 3*12*112 = 4032.
 
 * **S** - Location of the generated output files.
 * **T** - Location of the profiling output files.
@@ -108,8 +138,6 @@ simulation with a 1008 quad/core bifurcation mesh.
 	# @ queue
 	
 	mpirun -mode VN -np 1008 -verbose 2 -env BG_COREDUMP_BINARY='*' -cwd `pwd` -exe `pwd`/coupledCellsModel -args "-f config.txt -S solution -T profiling -t 100.00 -w 1.0 -i 1e-2"
-
-
 
 Input Files
 -----------

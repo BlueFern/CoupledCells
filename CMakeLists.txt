@@ -194,3 +194,7 @@ if(SPHINX_FOUND)
     COMMENT "Building HTML documentation with Sphinx" VERBATIM)
 endif(SPHINX_FOUND)
 
+# CTest
+enable_testing()
+
+add_subdirectory(tests)
