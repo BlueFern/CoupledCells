@@ -25,6 +25,7 @@ exe=@CMAKE_BINARY_DIR@/coupledCellsModel
 # On the compute nodes /home is /gpfs_external/filesets/nesi/home
 exe=`echo $exe | perl -ne "s#home#gpfs_external/filesets/nesi/home#;print;"`
 
+cmd="poe $exe -args \"-f config.txt -S solution -T profiling -t 10.0 -w 1.0 -i 1.e-2\""
 echo "running..."
-echo "poe $exe -args \"-f config.txt -S solution -T profiling -t 10.0 -w 1.0 -i 1.e-2\""
-poe $exe -args "-f config.txt -S solution -T profiling -t 10.0 -w 1.0 -i 1.e-2"
+echo "$cmd"
+$cmd
