@@ -7,7 +7,6 @@ add_custom_target(profiling_c1 ALL COMMAND ${CMAKE_COMMAND} -E make_directory "p
 add_test(NAME c1
 	     COMMAND "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" "1"
 	     "${CMAKE_BINARY_DIR}/coupledCellsModel" 
-	     -args 
 	     -f config.txt 
 	     -S solution
 	     -T profiling
