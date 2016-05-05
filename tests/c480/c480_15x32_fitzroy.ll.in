@@ -1,6 +1,6 @@
 # @ shell = /bin/bash
 #
-# @ job_name = c480_4x64
+# @ job_name = c480_15x32
 #
 # @ job_type = parallel
 #
@@ -15,8 +15,8 @@
 # @ error                = $(job_name).$(schedd_host).$(jobid).e
 # @ notification         = never
 # @ class                = General
-# @ node = 4
-# @ tasks_per_node = 64
+# @ node = 15
+# @ tasks_per_node = 32
 #
 # @ queue
 
