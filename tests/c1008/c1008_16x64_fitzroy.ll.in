@@ -1,10 +1,10 @@
 # @ shell = /bin/bash
 #
-# @ job_name = c480_8x32
+# @ job_name = c1008_16x64
 #
 # @ job_type = parallel
 #
-# @ wall_clock_limit     = 1:00:00
+# @ wall_clock_limit     = 2:00:00
 #
 # @ account_no = nesi00269
 #
@@ -15,8 +15,8 @@
 # @ error                = $(job_name).$(schedd_host).$(jobid).e
 # @ notification         = never
 # @ class                = General
-# @ node = 8
-# @ tasks_per_node = 32
+# @ node = 16
+# @ tasks_per_node = 64
 #
 # @ queue
 

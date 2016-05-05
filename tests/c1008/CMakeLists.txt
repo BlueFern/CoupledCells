@@ -1,5 +1,4 @@
-configure_file(c1008_4x64_fitzroy.ll.in c1008_4x64_fitzroy.ll)
-configure_file(c1008_8x32_fitzroy.ll.in c1008_8x32_fitzroy.ll)
+configure_file(c1008_16x64_fitzroy.ll.in c1008_16x64_fitzroy.ll)
 
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c1008/config.txt DESTINATION "./")
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c1008/files DESTINATION "./")
