@@ -1,6 +1,6 @@
 # @ shell = /bin/bash
 #
-# @ job_name = c256f_8x32
+# @ job_name = c480_8x32
 #
 # @ job_type = parallel
 #
