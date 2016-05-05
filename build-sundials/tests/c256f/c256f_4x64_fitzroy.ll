@@ -1,10 +1,10 @@
 # @ shell = /bin/bash
 #
-# @ job_name = c256f
+# @ job_name = c256f_4x64
 #
 # @ job_type = parallel
 #
-# @ wall_clock_limit     = 2:00:00
+# @ wall_clock_limit     = 1:00:00
 #
 # @ account_no = nesi00269
 #
@@ -15,8 +15,8 @@
 # @ error                = $(job_name).$(schedd_host).$(jobid).e
 # @ notification         = never
 # @ class                = General
-# @ node = 8
-# @ tasks_per_node = 32
+# @ node = 4
+# @ tasks_per_node = 64
 #
 # @ queue
 
@@ -25,7 +25,7 @@ exe=/home/pletzera/CoupledCells/build-sundials/coupledCellsModel
 # On the compute nodes /home is /gpfs_external/filesets/nesi/home
 exe=`echo $exe | perl -ne "s#home#gpfs_external/filesets/nesi/home#;print;"`
 
-cmd="poe $exe -args \"-f config.txt -S solution -T profiling -t 100.0 -w 1.0 -i 1.e-2\""
+cmd="time poe $exe -args \"-f config.txt -S solution -T profiling -t 100.0 -w 1.0 -i 1.e-2\""
 echo "running..."
 echo "$cmd"
 $cmd
