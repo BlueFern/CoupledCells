@@ -16,7 +16,7 @@
 # @ notification         = never
 # @ class                = General
 # @ node = 16
-# @ tasks_per_node = 64
+# @ total_tasks = 1008
 #
 # @ queue
 
