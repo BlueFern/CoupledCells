@@ -108,6 +108,27 @@ elseif(${ODE_SOLVER} STREQUAL "BOOST_odeint")
 
 endif(${ODE_SOLVER} STREQUAL "RK_suite")
 
+# Optionally turn on performance monitoring with TAU on AIX
+# if ${TAU_MAKEFILE} is set
+if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX" AND (NOT "${TAU_MAKEFILE}" STREQUAL ""))
+    get_filename_component(TAU_LIBRARY_DIR "${TAU_MAKEFILE}" DIRECTORY)
+    get_filename_component(TAU_DIR "${TAU_LIBRARY_DIR}" DIRECTORY)
+    set(ENV{TAU_MAKEFILE} "${TAU_MAKEFILE}")
+    set(ENV{PATH} "${TAU_DIR}/bin:$ENV{PATH}")
+    message(STATUS "**********************************************************")
+    #message("PATH: $ENV{PATH}")
+    message(STATUS "Please set the follwing prior to typing 'make':")
+    message(STATUS "export PATH=${TAU_DIR}/bin:$PATH")
+    message(STATUS "export TAU_MAKEFILE=$ENV{TAU_MAKEFILE}")
+    message(STATUS "**********************************************************")
+    set(CMAKE_C_COMPILER "tau_cc.sh")
+    set(CMAKE_C_FLAGS "-optVerbose -O2 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
+    set(CMAKE_CXX_COMPILER "tau_cxx.sh")
+    set(CMAKE_CXX_FLAGS "-optVerbose -O2 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
+    set(CMAKE_Fortran_COMPILER "tau_f90.sh") 
+    set(CMAKE_Fortran_FLAGS "-optVerbose ${CMAKE_Fortran_FLAGS} -qstrict -qfixed -O2 -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
+endif()
+
 file(GLOB HDRs src/*.h)
 
 set (SRCs 
