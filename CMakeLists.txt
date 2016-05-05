@@ -49,8 +49,6 @@ find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 set(CMAKE_C_COMPILER "${MPI_C_COMPILER}")
 set(CMAKE_CXX_COMPILER "${MPI_CXX_COMPILER}")
-message("C compiler flags: ${CMAKE_C_FLAGS}")
-message("C++ compiler flags: ${CMAKE_CXX_FLAGS}")
 
 # Unable to run without HDF5.
 find_package(HDF5 REQUIRED)
