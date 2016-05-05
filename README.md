@@ -45,6 +45,13 @@ It is recommended to use the SUNDIALS_arkode solver, which is a part of the SUND
 cmake -D ODE_SOLVER=SUNDIALS_arkode ..
 ```
 
+On some platforms, you may need to tell CoupledCell where the SUNDIALS include files and 
+libraries are located:
+
+```bash
+cmake -DODE_SOLVER=SUNDIALS_arkode -DSUNDIALS_DIR=<sundials_dir> ..
+```
+
 After the the project has been configured, it can be opened and compiled with
 the target IDE, or in the case of Unix Makefile configuration simply run make in
 the build directory. The generated executable is called *coupledCellsModel*.
@@ -56,12 +63,36 @@ build, the Makefile.bgp can be used as follows:
 make -f Makefile.bgp ODEOPTION=ARK_ODE
 ```
 
+### BlueGene/P
+
 In the current BlueGene/P build environment CMake should be launched in the following manner in order to 
 specify the MPI compiler and the location of the Sundials library:
 
 ```bash
 CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
 ```
+### Fitzroy
+
+cmake -DODE_SOLVER=SUNDIALS_arkode -DSUNDIALS_DIR=/opt/niwa/sundials/AIX/2.6.2-double/ ../CoupledCells/.
+
+
+Compiling with TAU instrumentation enabled
+------------------------------------------
+
+On platforms that have the Tuning and Analysis Utilities (TAU) installed, it is possible to compile with the 
+TAU compilers by setting the TAU_MAKEFILE variable to point to the location of the TAU Makefile to be used. 
+For instance on Fitzroy:
+
+```bash
+module load tau
+cmake -DTAU_MAKEFILE=$TAU_MAKEFILE [other_options] ../CoupledCells/.
+```
+The "module load tau" command will set the environment variable TAU_MAKEFILE. 
+Make sure to have the TAU compilers (tau_cxx.sh) in your PATH.
+
+
+Then type "make" and run the code normally as indicated below. The exucutable will produce files called profile.X.Y.Z, which can 
+be analysed with the paraprof utility. 
 
 How to Run
 ----------
