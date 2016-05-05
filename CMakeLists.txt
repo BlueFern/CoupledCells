@@ -10,6 +10,11 @@ set(PROJECT_VERSION_MINOR 0)
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 set(PROJECT_DESCRIPTION "Large-scale simulation of chemical species transport in coupled arterial cells.")
 
+# Build type defaults to Release unless specified
+if (NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE "Release")
+endif (NOT CMAKE_BUILD_TYPE)
+
 # Add local CMake directory to CMake module path to load project-specific modules. 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
 
@@ -32,10 +37,14 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
                 set(MPI_CXX_LIBRARIES "${MPI_LIBRARIES}")
                 message(STATUS "Setting MPI_CXX_INCLUDE_PATH=${MPI_CXX_INCLUDE_PATH}")
                 message(STATUS "Setting MPI_CXX_LIBRARIES=${MPI_CXX_LIBRARIES}")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -q64")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -q64")
-        endif()
-endif()
+		if (CMAKE_BUILD_TYPE STREQUAL "Release")
+		        set(ADD_FLAGS "-q64 -O3 -qstrict -qmaxmem=-1 -qtune=pwr6 -qarch=pwr6 -qcache=auto -qhot -qsimd -qipa")
+		        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ADD_FLAGS}")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ADD_FLAGS}")
+			set(CMAKE_Fortran_FLAGS "${CMAKE_CXX_FLAGS} ${ADD_FLAGS}")
+		endif (CMAKE_BUILD_TYPE STREQUAL "Release")
+        endif(EXISTS "${POE}/include" AND EXISTS "${POE}/lib")
+endif(${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 set(CMAKE_C_COMPILER "${MPI_C_COMPILER}")
@@ -158,6 +167,8 @@ target_link_libraries(coupledCellsModel
 	${MPI_LIBRARIES}
 	${HDF5_LIBRARIES}
 	${ODE_SOLVER_LIBS})
+
+message(STATUS "C++ compiler flags: ${CMAKE_CXX_FLAGS}")
 
 find_package(Doxygen)
 
