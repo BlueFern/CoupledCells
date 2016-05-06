@@ -17,3 +17,6 @@ add_test(NAME c1
 
 add_test(NAME c1_compare_results
          COMMAND "sh" "c1_compare_results.sh")
+set_tests_properties(c1_compare_results
+                     PROPERTIES FAIL_REGULAR_EXPRESSION 
+                     "[0-9][ ]*differences found")
