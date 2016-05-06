@@ -1,4 +1,5 @@
 configure_file(c480_15x32_fitzroy.ll.in c480_15x32_fitzroy.ll)
+configure_file(c480_bgp.ll.in c480_bgp.ll)
 
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c480/config.txt DESTINATION "./")
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c480/files DESTINATION "./")

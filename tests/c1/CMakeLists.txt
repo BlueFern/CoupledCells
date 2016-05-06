@@ -1,4 +1,5 @@
 configure_file(c1_fitzroy.ll.in c1_fitzroy.ll)
+configure_file(c1_bgp.ll.in c1_bgp.ll)
 configure_file(c1_compare_results.sh.in c1_compare_results.sh)
 
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c1/config.txt DESTINATION "./")
