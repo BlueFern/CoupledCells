@@ -65,15 +65,18 @@ make -f Makefile.bgp ODEOPTION=ARK_ODE
 
 ### BlueGene/P
 
-In the current BlueGene/P build environment CMake should be launched in the following manner in order to 
-specify the MPI compiler and the location of the Sundials library:
+In the current BlueGene/P build environment CMake should be launched in the following 
+manner in order to specify the MPI compiler and the location of the Sundials library:
 
 ```bash
-CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
+CXX=mpixlcxx CC=mpixlc ccmake -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0 <src_dir>
 ```
+
+where <src_dir> is the the top source directory.
+
 ### Fitzroy
 
-cmake -DODE_SOLVER=SUNDIALS_arkode -DSUNDIALS_DIR=/opt/niwa/sundials/AIX/2.6.2-double/ ../CoupledCells/.
+cmake -DODE_SOLVER=SUNDIALS_arkode -DSUNDIALS_DIR=/opt/niwa/sundials/AIX/2.6.2-double/ <src_dir>
 
 
 Compiling with TAU instrumentation enabled
@@ -85,14 +88,26 @@ For instance on Fitzroy:
 
 ```bash
 module load tau
-cmake -DTAU_MAKEFILE=$TAU_MAKEFILE [other_options] ../CoupledCells/.
+cmake -DTAU_MAKEFILE=$TAU_MAKEFILE [other_options] <src_dir>
 ```
 The "module load tau" command will set the environment variable TAU_MAKEFILE. 
 Make sure to have the TAU compilers (tau_cxx.sh) in your PATH.
 
 
-Then type "make" and run the code normally as indicated below. The exucutable will produce files called profile.X.Y.Z, which can 
-be analysed with the paraprof utility. 
+Then type "make" and run the code normally as indicated below. The executable will 
+produce files called profile.X.Y.Z, which can be analysed with the paraprof utility. 
+
+Testing CoupledCellModel
+------------------------
+
+The tests directory contains a series of tests. Users should write batch submission 
+scripts using "XXX_fitzroy.ll" as a model and submit these. Upon completion of the 
+tests, users can compare the results against reference test results using:
+
+```bash
+cmake [options] -DREF_RESULTS_DIR=<reference_test_results_dir> <src_dir>
+ctest
+```
 
 How to Run
 ----------
