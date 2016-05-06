@@ -143,10 +143,10 @@ endif()
 
 # Allow the user to set directory where reference results are stored so
 # we can run ctest on the results
-set(HAVE_REF_RESULTS OFF)
+set(HAVE_REF_RESULTS "NO")
 if(NOT ${REF_RESULTS_DIR} STREQUAL "" AND (EXISTS ${REF_RESULTS_DIR}))
         message(STATUS "Reference test results directory set to ${REF_RESULTS_DIR}")
-        set(HAVE_REF_RESULTS ON)      
+        set(HAVE_REF_RESULTS "YES")      
 endif()
 
 file(GLOB HDRs src/*.h)
