@@ -1,4 +1,5 @@
 configure_file(c1_fitzroy.ll.in c1_fitzroy.ll)
+configure_file(c1_compare_results.sh.in c1_compare_results.sh)
 
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c1/config.txt DESTINATION "./")
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c1/files DESTINATION "./")
@@ -13,3 +14,6 @@ add_test(NAME c1
 	     -t 10.0 
 	     -w 1.0 
 	     -i 1.e-2)
+
+add_test(NAME c1_compare_results
+         COMMAND "sh" "c1_compare_results.sh")
