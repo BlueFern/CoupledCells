@@ -10,6 +10,11 @@ set(PROJECT_VERSION_MINOR 0)
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 set(PROJECT_DESCRIPTION "Large-scale simulation of chemical species transport in coupled arterial cells.")
 
+# Build type defaults to Release unless specified
+if (NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE "Release")
+endif (NOT CMAKE_BUILD_TYPE)
+
 # Add local CMake directory to CMake module path to load project-specific modules. 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
 
@@ -32,10 +37,18 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
                 set(MPI_CXX_LIBRARIES "${MPI_LIBRARIES}")
                 message(STATUS "Setting MPI_CXX_INCLUDE_PATH=${MPI_CXX_INCLUDE_PATH}")
                 message(STATUS "Setting MPI_CXX_LIBRARIES=${MPI_CXX_LIBRARIES}")
-        endif()
-endif()
+		if (CMAKE_BUILD_TYPE STREQUAL "Release")
+		        set(ADD_FLAGS "-q64 -O3 -qstrict -qmaxmem=-1 -qtune=pwr6 -qarch=pwr6 -qcache=auto -qhot -qsimd -qipa")
+		        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ADD_FLAGS}")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ADD_FLAGS}")
+			set(CMAKE_Fortran_FLAGS "${CMAKE_CXX_FLAGS} ${ADD_FLAGS}")
+		endif (CMAKE_BUILD_TYPE STREQUAL "Release")
+        endif(EXISTS "${POE}/include" AND EXISTS "${POE}/lib")
+endif(${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
+set(CMAKE_C_COMPILER "${MPI_C_COMPILER}")
+set(CMAKE_CXX_COMPILER "${MPI_CXX_COMPILER}")
 
 # Unable to run without HDF5.
 find_package(HDF5 REQUIRED)
@@ -102,6 +115,40 @@ elseif(${ODE_SOLVER} STREQUAL "BOOST_odeint")
 
 endif(${ODE_SOLVER} STREQUAL "RK_suite")
 
+# Optionally turn on performance monitoring with TAU on AIX
+# if ${TAU_MAKEFILE} is set
+if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX" AND (NOT "${TAU_MAKEFILE}" STREQUAL ""))
+        get_filename_component(TAU_LIBRARY_DIR "${TAU_MAKEFILE}" DIRECTORY)
+        get_filename_component(TAU_DIR "${TAU_LIBRARY_DIR}" DIRECTORY)
+        set(ENV{TAU_MAKEFILE} "${TAU_MAKEFILE}")
+        set(ENV{PATH} "${TAU_DIR}/bin:$ENV{PATH}")
+        message(STATUS "**********************************************************")
+        message(STATUS "Please set the follwing prior to typing 'make':")
+        message(STATUS "export PATH=${TAU_DIR}/bin:$PATH")
+        message(STATUS "export TAU_MAKEFILE=$ENV{TAU_MAKEFILE}")
+        message(STATUS "**********************************************************")
+        set(CMAKE_C_COMPILER "tau_cc.sh")
+        set(CMAKE_C_FLAGS 
+            "-optVerbose -O2 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
+        set(CMAKE_CXX_COMPILER "tau_cxx.sh")
+        set(CMAKE_CXX_FLAGS 
+            "-optVerbose -O2 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
+        set(CMAKE_Fortran_COMPILER "tau_f90.sh") 
+        set(CMAKE_Fortran_FLAGS 
+            "-optVerbose ${CMAKE_Fortran_FLAGS} -qstrict -qfixed -O2 -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
+    
+        # POE MPI libraries interfere with TAU
+        set(MPI_LIBRARIES "")
+endif()
+
+# Allow the user to set directory where reference results are stored so
+# we can run ctest on the results
+set(HAVE_REF_RESULTS "NO")
+if(NOT ${REF_RESULTS_DIR} STREQUAL "" AND (EXISTS ${REF_RESULTS_DIR}))
+        message(STATUS "Reference test results directory set to ${REF_RESULTS_DIR}")
+        set(HAVE_REF_RESULTS "YES")      
+endif()
+
 file(GLOB HDRs src/*.h)
 
 set (SRCs 
@@ -131,6 +178,8 @@ target_link_libraries(coupledCellsModel
 	${MPI_LIBRARIES}
 	${HDF5_LIBRARIES}
 	${ODE_SOLVER_LIBS})
+
+message(STATUS "C++ compiler flags: ${CMAKE_CXX_FLAGS}")
 
 find_package(Doxygen)
 

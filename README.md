@@ -35,19 +35,38 @@ cd build
 cmake ..
 ```
 
-The desired ODE solver should be chosen in the CMake interface. There are three options available:
+cmake (or its GUI version ccmake) takes the source directory as argument.
 
-ODE_SOLVER=RK_suite, ODE_SOLVER=SUNDIALS_arkode, or ODE_SOLVER=BOOST_odeint.
+The desired ODE solver should be chosen in the CMake interface. There are three options 
+available:
 
-It is recommended to use the SUNDIALS_arkode solver, which is a part of the SUNDIALS library:
+ * ODE_SOLVER=RK_suite, 
+ * ODE_SOLVER=SUNDIALS_arkode
+ * ODE_SOLVER=BOOST_odeint
+
+It is recommended to use the SUNDIALS_arkode solver, which is a part of the SUNDIALS 
+library:
 
 ```bash
-cmake -D ODE_SOLVER=SUNDIALS_arkode ..
+cmake -DODE_SOLVER=SUNDIALS_arkode <src_dir>
+```
+where <src_dir> is the top source directory.
+
+On some platforms, you may need to tell CoupledCell where the SUNDIALS include files and 
+libraries are located:
+
+```bash
+cmake -DODE_SOLVER=SUNDIALS_arkode -DSUNDIALS_DIR=<sundials_dir> <src_dir>
 ```
 
 After the the project has been configured, it can be opened and compiled with
-the target IDE, or in the case of Unix Makefile configuration simply run make in
-the build directory. The generated executable is called *coupledCellsModel*.
+the target IDE, or in the case of Unix Makefile configuration simply run 
+
+```bash
+make 
+```
+
+in the build directory. The generated executable is called *coupledCellsModel*.
 
 There are two makefiles for compiling the project on BlueGene/L and BlueGene/P. For the BlueGene/L 
 build, the Makefile.bgp can be used as follows:
@@ -56,21 +75,65 @@ build, the Makefile.bgp can be used as follows:
 make -f Makefile.bgp ODEOPTION=ARK_ODE
 ```
 
-In the current BlueGene/P build environment CMake should be launched in the following manner in order to 
-specify the MPI compiler and the location of the Sundials library:
+### BlueGene/P
+
+In the current BlueGene/P build environment CMake should be launched in the following 
+manner in order to specify the MPI compiler and the location of the Sundials library:
 
 ```bash
-CXX=mpixlcxx CC=mpixlc ccmake ../CoupledCells/. -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0
+CXX=mpixlcxx CC=mpixlc ccmake -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0 <src_dir>
+```
+
+### Fitzroy
+
+cmake -DODE_SOLVER=SUNDIALS_arkode -DSUNDIALS_DIR=/opt/niwa/sundials/AIX/2.6.2-double/ <src_dir>
+
+Compiling with TAU instrumentation enabled
+------------------------------------------
+
+On platforms that have the Tuning and Analysis Utilities (TAU) installed, it is possible 
+to compile with the TAU compilers by setting the TAU_MAKEFILE variable to point to the 
+location of the TAU Makefile to be used. 
+
+For instance on Fitzroy:
+
+```bash
+module load tau
+cmake -DTAU_MAKEFILE=$TAU_MAKEFILE [other_options] <src_dir>
+```
+
+The "module load tau" command will set the environment variable TAU_MAKEFILE. 
+Make sure to have the TAU compilers (tau_cxx.sh) in your PATH.
+
+
+Then type "make" and run the code normally as indicated below. The executable will 
+produce files called profile.X.Y.Z, which can be analysed with the paraprof utility. 
+
+Testing CoupledCellModel
+------------------------
+
+The tests directory contains a series of tests. Users should write batch submission 
+scripts using "XXX_fitzroy.ll" as a model and submit these. Upon completion of the 
+tests, users can compare the results against reference test results using:
+
+```bash
+cmake [options] -DREF_RESULTS_DIR=<reference_test_results_dir> <src_dir>
+ctest
 ```
 
 How to Run
 ----------
 
 ```bash
-coupledCellsModel -args -f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>
+mpiexec -n <numProcs> coupledCellsModel -f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>
 ```
 
- where the command-line have the following meaning:
+On IBM systems, one should execute
+```bash
+poe coupledCellsModel -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>"
+```
+
+The command-line have the following meaning:
 
 * **f** - Configuration file. Each file must start with a line stating the total
   number of domains. Each line in the config file must be terminated with a ';'.
