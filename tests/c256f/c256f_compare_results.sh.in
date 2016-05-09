@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+
+if [ "@REF_RESULTS_DIR@" != "" ]; then
+
+    for f in solution/*.h5; do
+        echo "Comparing $f against @REF_RESULTS_DIR@/c256f/$f"
+        h5diff -r --delta=1.e-6 $f @REF_RESULTS_DIR@/c256f/$f
+    done
+
+fi
