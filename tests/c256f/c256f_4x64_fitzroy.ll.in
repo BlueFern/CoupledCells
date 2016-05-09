@@ -14,10 +14,14 @@
 # @ error                = $(job_name).$(schedd_host).$(jobid).e
 # @ notification         = never
 # @ class                = General
-# @ node = 4
-# @ tasks_per_node = 64
+#
+# @ node                 = 4
+# @ tasks_per_node       = 64
 #
 # @ queue
+
+export TAU_TRACE=1
+export TAU_TRACK_MESSAGE=1
 
 exe=@CMAKE_BINARY_DIR@/coupledCellsModel
 
