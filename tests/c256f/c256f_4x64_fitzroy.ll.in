@@ -9,7 +9,6 @@
 # @ account_no = nesi00269
 #
 # @ network.MPI = sn_all,not_shared,US
-# @ task_affinity = core(2)
 #
 # @ output               = $(job_name).$(schedd_host).$(jobid).o
 # @ error                = $(job_name).$(schedd_host).$(jobid).e
