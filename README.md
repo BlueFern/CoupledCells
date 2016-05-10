@@ -50,7 +50,7 @@ library:
 ```bash
 cmake -DODE_SOLVER=SUNDIALS_arkode <src_dir>
 ```
-where <src_dir> is the top source directory.
+where src_dir is the top source directory.
 
 On some platforms, you may need to tell CoupledCell where the SUNDIALS include files and 
 libraries are located:
@@ -165,7 +165,7 @@ this:
     1;
     0,1,12,112,-1,-1,-1,32,3;
 
-and the total number of processes will be 3*12*112 = 4032.
+and the total number of processes will be 3 x 12 x 112 = 4032.
 
 * **S** - Location of the generated output files.
 * **T** - Location of the profiling output files.
