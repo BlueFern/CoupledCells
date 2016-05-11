@@ -1,4 +1,5 @@
 #include <malloc.h>
+#include <stdlib.h> // malloc
 
 #include "computelib.h"
 #include "koenigsberger_model.h"

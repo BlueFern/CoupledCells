@@ -1,0 +1,24 @@
+#!/bin/ksh
+#
+# MPI LoadLeveler Job file for BG/P
+#
+# @ group                = UC
+# @ account_no           = bfcs00321
+# @ job_type             = bluegene
+# @ bg_connection        = prefer_torus
+# @ output               = $(job_name).$(jobid).out
+# @ error                = $(job_name).$(jobid).err
+# @ notification         = always
+
+# @ bg_size              = 1
+# @ class                = bgp
+# @ wall_clock_limit     = 00:10:00
+# @ job_name             = synCfd_60
+
+# @ queue
+
+exe="@CMAKE_BINARY_DIR@/coupledCellsModel"
+mpirun -mode VN -np 1 -verbose 2 -env BG_COREDUMP_BINARY='*' -cwd `pwd` \
+       -exe $exe -args "-f config.txt -S solution -T profiling -t 10.00 -w 1.0 -i 1e-2"
+
+

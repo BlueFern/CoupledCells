@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <malloc.h>
 #include <assert.h>
+#include <stdlib.h> // free
 
 #include "computelib.h"
 #include "koenigsberger_model.h"
