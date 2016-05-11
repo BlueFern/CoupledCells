@@ -28,15 +28,15 @@ void set_coupling_parms(int CASE, conductance* cpl_cef)
 {
 	// These values are honestly just trial and error guesses at what makes nice waves...
 	// Really need to have a think about what they should be.
-	cpl_cef->ec_diffusion[0] = 0.15;
-	cpl_cef->ec_diffusion[1] = 0.15;
-	cpl_cef->ec_diffusion[2] = 0.35;
-	cpl_cef->ec_diffusion[3] = 0.35;
+	cpl_cef->ec_diffusion[0] = 1;
+	cpl_cef->ec_diffusion[1] = 1;
+	cpl_cef->ec_diffusion[2] = 1;
+	cpl_cef->ec_diffusion[3] = 1;
 
-	cpl_cef->smc_diffusion[0] = 0.35;
-	cpl_cef->smc_diffusion[1] = 0.35;
-	cpl_cef->smc_diffusion[2] = 0.15;
-	cpl_cef->smc_diffusion[3] = 0.15;
+	cpl_cef->smc_diffusion[0] = 1;
+	cpl_cef->smc_diffusion[1] = 1;
+	cpl_cef->smc_diffusion[2] = 1;
+	cpl_cef->smc_diffusion[3] = 1;
 
 
 	if(CASE == 1)
@@ -44,8 +44,8 @@ void set_coupling_parms(int CASE, conductance* cpl_cef)
 		cpl_cef->Vm_hm_smc = 1000.00;
 		cpl_cef->Vm_hm_ec = 1000.00;
 
-		cpl_cef->Ca_hm_smc = 0.4;
-		cpl_cef->Ca_hm_ec = 0.4;
+		cpl_cef->Ca_hm_smc = 0.1;
+		cpl_cef->Ca_hm_ec = 0.1;
 
 		cpl_cef->IP3_hm_smc = 0.05;
 		cpl_cef->IP3_hm_ec = 0.00;

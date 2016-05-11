@@ -46,7 +46,7 @@ int errcode = (fn); \
 
 #define FILENAME "PhyFiIP3_plotting.csv"
 
-#define PLOTTING 1
+#define PLOTTING 0
 #define EXPLICIT_ONLY 1
 
 // Number of elements to plot for Lemon model
