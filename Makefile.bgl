@@ -1,4 +1,7 @@
-# Set ODEOPTION on command line to (-DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT).
+# WARNING: This makefile is obsolete and most likely won't let the code to be compiled correctly on BlueGene/L.
+#          Please refer to the Makefile.bgp for figuring out what needs to be changed in this makefile.
+
+# Set ODEOPTION on the make command line to (-DRK_SUITE | -DARK_ODE | -DBOOST_ODEINT).
 
 CC = mpixlcxx
 

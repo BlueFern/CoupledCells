@@ -11,7 +11,7 @@ IF(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 
 	SET(SUNDIALS_FOUND YES)
 	SET(SUNDIALS_INCLUDES ${SUNDIALS_DIR})
-	find_path (SUNDIALS_INCLUDE_DIR sundials_config.h HINTS "${SUNDIALS_DIR}" PATH_SUFFIXES include/sundials NO_DEFAULT_PATH)
+	find_path (SUNDIALS_INCLUDE_DIR HINTS ${SUNDIALS_DIR}/include NAMES arkode/arkode.h NO_DEFAULT_PATH)
 	list(APPEND SUNDIALS_INCLUDES ${SUNDIALS_INCLUDE_DIR})
 
 	foreach(SUNDIALS_LIB ${SUNDIALS_LIB_NAMES})
@@ -26,7 +26,7 @@ IF(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 
 ELSE(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 	SET(SUNDIALS_FOUND NO)
-	message(FATAL_ERROR "Can not find SUNDIALS!")
+	message(FATAL_ERROR "Cannot find SUNDIALS! Set SUNDIALS_DIR to the top installation directory of SUNDIALS")
 ENDIF(EXISTS ${SUNDIALS_DIR}/include/sundials/sundials_config.h)
 
 include(FindPackageHandleStandardArgs)

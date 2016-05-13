@@ -44,6 +44,23 @@ int errcode = (fn); \
 #define local 0
 #define remote 1
 
+#define FILENAME "PhyFiIP3_plotting.csv"
+
+#define PLOTTING 0
+#define EXPLICIT_ONLY 1
+
+// Number of elements to plot for Lemon model
+#define OUTPUT_PLOTTING_SIZE 14
+#define RANK 0
+#define EC_COL 3
+#define EC_ROW 3
+#define SMC_COL 1
+#define SMC_ROW 33
+extern FILE* var_file;
+
+extern double* plotttingBuffer;
+extern int bufferPos;
+
 
 /**
  * Conductance / coupling coefficients.
@@ -62,6 +79,8 @@ struct conductance
 			Ca_ht_ec,	///< Heterocellular Ca coupling between ECs.
 			IP3_ht_smc,	///< Heterocellular IP3 coupling between SMCs.
 			IP3_ht_ec;	///< Heterocellular IP3 coupling between ECs.
+	double ec_diffusion[4];
+	double smc_diffusion[4];
 };
 
 #define DOMAIN_NUM 0
@@ -161,7 +180,7 @@ typedef struct
 	double* fluxes;			    ///stores single cell fluxes
 	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
 	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
-	double JPLC;			    ///local agonsit concentration  on my GPCR receptor (an ith EC)
+	double JPLC;			    ///local agonist concentration  on my GPCR receptor (an ith EC)
 	conductance cpl_cef;
 } EC_cell;
 
