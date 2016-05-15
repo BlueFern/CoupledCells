@@ -24,21 +24,18 @@ How to Compile
 
 The project files can be generated with CMake. The project has been previously compiled and tested
 on Linux machines with CMake and Eclipse. Configure the project with CMake and specify the 
-*out-of-source* build directory. CMake can be run in GUI or command-line modes.
+*out-of-source* build directory. CMake can be run in GUI (ccmake or cmake-gui) or command-line modes
+(cmake).
 
 CMake in the command-line mode:
 
 ```bash
-cd CoupledCells
-mkdir build
-cd build
-cmake ..
+cmake -DODE_SOLVER=<ode_choice> <src_dir> 
 ```
 
-cmake (or its GUI version ccmake) takes the source directory as argument.
+where src_dir is the path to the top source directory.
 
-The desired ODE solver should be chosen in the CMake interface. There are three options 
-available:
+The desired ODE solver should be chosen among three options:
 
  * ODE_SOLVER=RK_suite, 
  * ODE_SOLVER=SUNDIALS_arkode
@@ -50,9 +47,8 @@ library:
 ```bash
 cmake -DODE_SOLVER=SUNDIALS_arkode <src_dir>
 ```
-where src_dir is the top source directory.
 
-On some platforms, you may need to tell CoupledCell where the SUNDIALS include files and 
+You may need to tell CoupledCell where the SUNDIALS include files and 
 libraries are located:
 
 ```bash
@@ -99,7 +95,7 @@ For instance on Fitzroy:
 
 ```bash
 module load tau
-cmake -DTAU_MAKEFILE=$TAU_MAKEFILE [other_options] <src_dir>
+cmake -DTAU_MAKEFILE=$TAU_MAKEFILE [options] <src_dir>
 ```
 
 The "module load tau" command will set the environment variable TAU_MAKEFILE. 
