@@ -58,8 +58,8 @@
 #define	    cpl_Vm		        1
 #define	    cpl_IP3		        2
 
-void initialize_koeingsberger_smc(grid_parms, double*, SMC_cell**);
-void initialize_koeingsberger_ec(grid_parms, double*, EC_cell**);
+void initialize_koenigsberger_smc(grid_parms, double*, SMC_cell**);
+void initialize_koenigsberger_ec(grid_parms, double*, EC_cell**);
 
 void koenigsberger_smc(grid_parms, SMC_cell**);
 void koenigsberger_smc_derivatives(double*, grid_parms, SMC_cell**);
