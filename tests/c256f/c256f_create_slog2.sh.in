@@ -1,0 +1,27 @@
+# @ shell = /bin/bash
+#
+# @ job_name = c256f_create_slog2
+#
+# @ job_type = serial
+#
+# @ wall_clock_limit     = 1:00:00
+#
+# @ account_no = nesi00269
+#
+#
+# @ output               = $(job_name).$(schedd_host).$(jobid).o
+# @ error                = $(job_name).$(schedd_host).$(jobid).e
+# @ notification         = never
+# @ class                = General
+#
+# @ queue
+
+export PATH=/opt/niwa/tau/AIX/2.25.1/ibm64/bin/:$PATH
+
+cmd="tau_treemerge.pl"
+echo "executing $cmd"
+time $cmd
+
+cmd="tau2slog2 tau.trc tau.edf -o c256f.slog2"
+echo "executing $cmd"
+time $cmd
