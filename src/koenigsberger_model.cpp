@@ -286,44 +286,53 @@ void koenigsberger_ec_explicit(grid_parms grid, EC_cell** ec)
 	// Evaluate single cell fluxes.
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
+
+			double* flxs = ec[i][j].fluxes;
+			const double* vars = ec[i][j].vars;
+			const double vEc_Ca = vars[ec_Ca];
+			const double vEc_Vm = vars[ec_Vm];
+			const double vEc_SR = vars[ec_SR];
+			const double vEc_IP3 = vars[ec_IP3];
+			const double log10_ec_Ca = log10(vEc_Ca);
+
 			//JIP3
-			ec[i][j].fluxes[J_IP3] = (Fj * P2(ec[i][j].vars[ec_IP3])) / (P2(Krj) + P2(ec[i][j].vars[ec_IP3]));
+			flxs[J_IP3] = (Fj * P2(vEc_IP3)) / (P2(Krj) + P2(vEc_IP3));
 			//JSRuptake
-			ec[i][j].fluxes[J_SERCA] = (Bj * P2(ec[i][j].vars[ec_Ca])) / (P2(ec[i][j].vars[ec_Ca]) + P2(cbj));
+			flxs[J_SERCA] = (Bj * P2(vEc_Ca)) / (P2(vEc_Ca) + P2(cbj));
 			//Jcicr
-			ec[i][j].fluxes[J_CICR] = (CICRj * P2(ec[i][j].vars[ec_SR]) * P4(ec[i][j].vars[ec_Ca]))
-					/ ((P2(ec[i][j].vars[ec_SR]) + P2(scj))*(P4(ec[i][j].vars[ec_Ca])+P4(ccj)));
+			flxs[J_CICR] = (CICRj * P2(vEc_SR) * P4(vEc_Ca))
+					/ ((P2(vEc_SR) + P2(scj))*(P4(vEc_Ca)+P4(ccj)));
 			//Jextrusion
-			ec[i][j].fluxes[J_Extrusion] = Dj * ec[i][j].vars[ec_Ca];
+			flxs[J_Extrusion] = Dj * vEc_Ca;
 			//Jleak
-			ec[i][j].fluxes[J_Leak] = Lj * ec[i][j].vars[ec_SR];
+			flxs[J_Leak] = Lj * vEc_SR;
 
 			//IP3 degradation
-			ec[i][j].fluxes[J_IP3_deg] = kDeg * ec[i][j].vars[ec_IP3];
+			flxs[J_IP3_deg] = kDeg * vEc_IP3;
 
 			//J_NonSelective Cation channels
-			ec[i][j].fluxes[J_NSC] = (Gcatj * (ECa - ec[i][j].vars[ec_Vm]) * 0.5)
-					* (1 + ((double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3cat) / m4cat)))));
+			flxs[J_NSC] = (Gcatj * (ECa - vEc_Vm) * 0.5)
+					* (1 + ((double) (tanh((double) ((log10_ec_Ca - m3cat) / m4cat)))));
 			//BK_channels
-			ec[i][j].fluxes[J_BK_Ca] =
+			flxs[J_BK_Ca] =
 					(0.4 / 2)
 							* (1
 									+ (double) (tanh(
-											(double) ((((((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - c1j) * (ec[i][j].vars[ec_Vm] - bj)) - a1j)
-													/ ((m3b * (P2(ec[i][j].vars[ec_Vm]+(a2j*((double) (log10 ((double) (ec[i][j].vars[ec_Ca]))) - c1j)) - bj))) + m4b))))));
+											(double) (((((log10_ec_Ca - c1j) * (vEc_Vm - bj)) - a1j)
+													/ ((m3b * (P2(vEc_Vm+(a2j*(log10_ec_Ca - c1j)) - bj))) + m4b))))));
 			//SK_channels
-			ec[i][j].fluxes[J_SK_Ca] = (0.6 / 2) * (1 + (double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3s) / m4s))));
+			flxs[J_SK_Ca] = (0.6 / 2) * (1 + (double) (tanh((double) ((log10_ec_Ca - m3s) / m4s))));
 			//Grouping all other trivial Ca fluxes
-			ec[i][j].fluxes[J_trivial_Ca] = J0j;
+			flxs[J_trivial_Ca] = J0j;
 
 			// Ratio of bound to total P2Y
-			ec[i][j].fluxes[L_P_P2Y] = ec[i][j].JPLC / (ec[i][j].JPLC + kATP); // TODO: Does this need to be calculated every time? is JPLC constant?
+			flxs[L_P_P2Y] = ec[i][j].JPLC / (ec[i][j].JPLC + kATP); // TODO: Does this need to be calculated every time? is JPLC constant?
 
 			// Rate of PIP2 hydrolysis.
-			ec[i][j].fluxes[R_PIP2_H] = alpha_j * (ec[i][j].vars[ec_Ca] / (ec[i][j].vars[ec_Ca] + KCa)) * ec[i][j].vars[ec_Gprot];
+			flxs[R_PIP2_H] = alpha_j * (vEc_Ca / (vEc_Ca + KCa)) * ec[i][j].vars[ec_Gprot];
 
 			// Induced IP3 influx
-			ec[i][j].fluxes[J_ind_I] = (ec[i][j].fluxes[R_PIP2_H] * cons_PIP2 * unitcon_a) / (N_a * V_ec);
+			flxs[J_ind_I] = (flxs[R_PIP2_H] * cons_PIP2 * unitcon_a) / (N_a * V_ec);
 
 		}
 	}
