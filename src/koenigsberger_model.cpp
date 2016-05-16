@@ -173,30 +173,37 @@ void koenigsberger_smc_explicit(grid_parms grid, SMC_cell** smc)
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
 
+			double* flxs = smc[i][j].fluxes;
+			const double* vars = smc[i][j].vars;
+			const double vSmc_IP3 = vars[smc_IP3];
+			const double vSmc_Ca = vars[smc_Ca];
+			const double vSmc_SR = vars[smc_SR];
+			const double vSmc_Vm = vars[smc_Vm];
+
 			//JIP3
-			smc[i][j].fluxes[J_IP3] = (Fi * P2(smc[i][j].vars[smc_IP3])) / (P2(Kri) + P2(smc[i][j].vars[smc_IP3]));
+			flxs[J_IP3] = (Fi * P2(vSmc_IP3)) / (P2(Kri) + P2(vSmc_IP3));
 			//JSRuptake
-			smc[i][j].fluxes[J_SERCA] = (Bi * P2(smc[i][j].vars[smc_Ca])) / (P2(
-					smc[i][j].vars[smc_Ca]) + P2(cbi));
+			flxs[J_SERCA] = (Bi * P2(vSmc_Ca)) / (P2(
+					vSmc_Ca) + P2(cbi));
 			//Jcicr
-			smc[i][j].fluxes[J_CICR] = (CICRi * (P2(smc[i][j].vars[smc_SR]) * P4(
-					smc[i][j].vars[smc_Ca]))) / ((P2(sci) + P2(smc[i][j].vars[smc_SR]))
+			flxs[J_CICR] = (CICRi * (P2(vSmc_SR) * P4(
+					vSmc_Ca))) / ((P2(sci) + P2(vSmc_SR))
 			* (P4(cci)+ P4(
-							smc[i][j].vars[smc_Ca])));
+							vSmc_Ca)));
 			//Jextrusion
-			smc[i][j].fluxes[J_Extrusion] = Di * smc[i][j].vars[smc_Ca] * (1 + ((smc[i][j].vars[smc_Vm] - vdi) / Rdi));
+			flxs[J_Extrusion] = Di * vSmc_Ca * (1. + ((vSmc_Vm - vdi) / Rdi));
 
 			//Jleak
-			smc[i][j].fluxes[J_Leak] = Li * smc[i][j].vars[smc_SR];
+			flxs[J_Leak] = Li * vSmc_SR;
 			//Jvocc
-			smc[i][j].fluxes[J_VOCC] = GCai * (smc[i][j].vars[smc_Vm] - vCa1) / (1 + ((double) (exp(((-1) * (smc[i][j].vars[smc_Vm] - vCa2)) / RCai))));
+			flxs[J_VOCC] = GCai * (vSmc_Vm - vCa1) / (1. + (exp(-(vSmc_Vm - vCa2) / RCai)));
 			//J Na/Ca
-			smc[i][j].fluxes[J_Na_Ca] = GNaCai * smc[i][j].vars[smc_Ca] * (smc[i][j].vars[smc_Vm] - vNaCai) / (smc[i][j].vars[smc_Ca] + cNaCai);
+			flxs[J_Na_Ca] = GNaCai * vSmc_Ca * (vSmc_Vm - vNaCai) / (vSmc_Ca + cNaCai);
 			//Kactivation
-			smc[i][j].fluxes[K_activation] = P2(smc[i][j].vars[smc_Ca] + cwi) / (P2(
-					smc[i][j].vars[smc_Ca] + cwi) + (beta * ((double) exp((-1) * (smc[i][j].vars[smc_Vm] - vCa3) / RKi))));
+			flxs[K_activation] = P2(vSmc_Ca + cwi) / (P2(
+					vSmc_Ca + cwi) + beta * exp(-(vSmc_Vm - vCa3) / RKi));
 			//Jdegradation
-			smc[i][j].fluxes[J_IP3_deg] = ki * smc[i][j].vars[smc_IP3];
+			flxs[J_IP3_deg] = ki * vSmc_IP3;
 		}
 	}
 }
