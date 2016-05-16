@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 	grid.smc_model = KNBGR;
 	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
-	grid.stimulus_onset_time = 0.00;
+	grid.stimulus_onset_time = 5.00;
 
 	grid.num_smc_fundblk_circumferentially = 1;
 	grid.num_ec_fundblk_circumferentially = 5;
