@@ -45,7 +45,7 @@ double
 
 /// Initial values found by running a sufficiently long simulation and recording state values
 /// after they have reached a steady state.
-void initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
+void initialize_koenigsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 {
 	int k = 0, offset;
 	srand(grid.universal_rank);
@@ -86,7 +86,7 @@ void initialize_koeingsberger_smc(grid_parms grid, double* y, SMC_cell** smc)
 
 /// Initial values found by running a sufficiently long simulation and recording state values
 /// after they have reached a steady state.
-void initialize_koeingsberger_ec(grid_parms grid, double* y, EC_cell** ec)
+void initialize_koenigsberger_ec(grid_parms grid, double* y, EC_cell** ec)
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 	srand(grid.universal_rank);

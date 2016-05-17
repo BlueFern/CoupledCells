@@ -296,8 +296,8 @@ int main(int argc, char* argv[])
 
 	/// Initialise state variables and coupling data values.
 
-	initialize_koeingsberger_smc(grid, y, smc);
-	initialize_koeingsberger_ec(grid, y, ec);
+	initialize_koenigsberger_smc(grid, y, smc);
+	initialize_koenigsberger_ec(grid, y, ec);
 
 	// Reverse mapping from state vector to cells.
 	// Essential for restarts, when data is loaded from a checkpoint.

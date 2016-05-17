@@ -2,6 +2,7 @@ configure_file(c256f_4x64_fitzroy.ll.in c256f_4x64_fitzroy.ll)
 configure_file(c256f_8x32_fitzroy.ll.in c256f_8x32_fitzroy.ll)
 configure_file(c256f_bgp.ll.in c256f_bgp.ll)
 configure_file(c256f_compare_results.sh.in c256f_compare_results.sh)
+configure_file(c256f_create_slog2.sh.in c256f_create_slog2.sh)
 
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c256f/config.txt DESTINATION "./")
 file(COPY ${CMAKE_SOURCE_DIR}/tests/c256f/files DESTINATION "./")

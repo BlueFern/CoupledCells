@@ -1,0 +1,82 @@
+Reading Profile files in profile.*
+
+NODE 0;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0            2       24,721           1           1   24721430 .TAU application
+100.0            5       24,719           1        1882   24719117 int main(int, char **) 
+ 95.4        1,902       23,595           1       96325   23595076 void arkode_solver(double, double, double, double *, int, double, double, int, char *) 
+ 86.6          116       21,406       94264       94264        227 int f(realtype, N_Vector, N_Vector, void *) 
+ 86.1        1,666       21,289       94264      565584        226 void compute(grid_parms, SMC_cell **, EC_cell **, conductance, double, double *, double *) 
+ 26.8          157        6,622       94264      188528         70 void koenigsberger_smc(grid_parms, SMC_cell **) 
+ 25.1          140        6,217       94264      188528         66 void koenigsberger_ec(grid_parms, EC_cell **) 
+ 23.9        5,915        5,915       94264           0         63 void koenigsberger_ec_explicit(grid_parms, EC_cell **) 
+ 18.7          161        4,620       94264      188528         49 void coupling(double, double *, grid_parms, SMC_cell **, EC_cell **, conductance) 
+ 18.0        4,458        4,458       94264           0         47 void koenigsberger_smc_explicit(grid_parms, SMC_cell **) 
+ 10.0        2,473        2,473       94264           0         26 void coupling_explicit(double, double *, grid_parms, SMC_cell **, EC_cell **, conductance) 
+  8.1        2,006        2,006       94264           0         21 void koenigsberger_smc_implicit(grid_parms, SMC_cell **) 
+  8.0        1,984        1,984       94264           0         21 void coupling_implicit(double, double *, grid_parms, SMC_cell **, EC_cell **, conductance) 
+  4.6          163        1,141       94264      188528         12 void koenigsberger_smc_derivatives(double *, grid_parms, SMC_cell **) 
+  4.1        1,005        1,005           1           0    1005407 MPI_Finalize() 
+  2.5          143          610       94264      188528          6 void koenigsberger_ec_derivatives(double, double *, grid_parms, EC_cell **) 
+  2.3          578          578       94264           0          6 void koenigsberger_smc_derivatives_explicit(double *, grid_parms, SMC_cell **) 
+  1.7          410          410       94265           0          4 int map_solver_output_to_cells(grid_parms, double *, SMC_cell **, EC_cell **) 
+  1.6          398          398       94264           0          4 void koenigsberger_smc_derivatives_implicit(double *, grid_parms, SMC_cell **) 
+  1.1          268          268       94264           0          3 void koenigsberger_ec_derivatives_explicit(double, double *, grid_parms, EC_cell **) 
+  0.8          198          198       94264           0          2 void koenigsberger_ec_derivatives_implicit(double, double *, grid_parms, EC_cell **) 
+  0.7          161          161       94264           0          2 void koenigsberger_ec_implicit(grid_parms, EC_cell **) 
+  0.5          118          118          11           0      10736 void write_EC_data_HDF5(grid_parms *, ec_data_buffer *, int, char *) 
+  0.3           84           84          11           0       7664 void write_SMC_data_HDF5(grid_parms *, smc_data_buffer *, int, char *) 
+  0.2           47           48           1           6      48111 void dump_rank_info(conductance, grid_parms) 
+  0.2           44           44           1           0      44280 MPI_Init() 
+  0.1           30           30           1           0      30248 void write_HDF5_JPLC(grid_parms *, double *, char *) 
+  0.1            7           30        1002       17034         30 void communication_async_send_recv(grid_parms, double **, double **, SMC_cell **, EC_cell **) 
+  0.1        0.008           21           1           6      21692 void dump_time_profiling(grid_parms, time_stamps *) 
+  0.1           21           21           6          36       3614 void dump_time_field(char *, grid_parms, double) 
+  0.1           14           14           2          10       7126 void read_init_ATP(grid_parms *, EC_cell **) 
+  0.0            8            8        6016           0          1 MPI_Isend() 
+  0.0            5            5           1           2       5931 void read_config_file(grid_parms *) 
+  0.0            5            5        6016           0          1 MPI_Irecv() 
+  0.0            3            3        1002           0          4 void communication_update_sendbuf(grid_parms, double **, SMC_cell **, EC_cell **) 
+  0.0            2            2        2005           0          1 MPI_Waitall() 
+  0.0            2            2        1002           0          2 void communication_update_recvbuf(grid_parms, double **, SMC_cell **, EC_cell **) 
+  0.0        0.993        0.993        1992           0          0 void *checked_malloc(size_t, const char *) 
+  0.0         0.81         0.81         173           0          5 MPI_Gatherv() 
+  0.0        0.294        0.558          11         121         51 void gather_SMC_data(grid_parms *, smc_data_buffer *, SMC_cell **) 
+  0.0        0.428        0.428        1003           0          0 void ark_check_flag(int, char *, int, double) 
+  0.0        0.426        0.426        1003           0          0 void determine_source_destination(grid_parms, int *, int *) 
+  0.0        0.095        0.307          11         110         28 void gather_EC_data(grid_parms *, ec_data_buffer *, EC_cell **) 
+  0.0        0.156        0.156           1           0        156 void initialize_koeingsberger_smc(grid_parms, double *, SMC_cell **) 
+  0.0        0.061        0.061           1           0         61 void initialize_koeingsberger_ec(grid_parms, double *, EC_cell **) 
+  0.0        0.016        0.057           1           6         57 void make_straight_cart_grid(grid_parms *) 
+  0.0        0.018        0.049           1          10         49 void communication_update_recv_size(grid_parms *) 
+  0.0        0.037        0.037           7           0          5 MPI_Gather() 
+  0.0        0.033        0.033           1           0         33 MPI_Cart_create() 
+  0.0         0.02         0.02           2           0         10 MPI_Scatterv() 
+  0.0        0.003        0.008           1           8          8 ec_data_buffer *allocate_EC_data_buffer(int, int, int) 
+  0.0        0.003        0.008           1           9          8 smc_data_buffer *allocate_SMC_data_buffer(int, int, int) 
+  0.0        0.003        0.008           1           4          8 void gather_JPLC(grid_parms *, double *, EC_cell **) 
+  0.0        0.006        0.006           2           0          3 MPI_Cart_shift() 
+  0.0        0.003        0.003           1           0          3 void free_SMC_data_buffer(smc_data_buffer *, int) 
+  0.0        0.003        0.003           2           0          2 MPI_Barrier() 
+  0.0        0.002        0.002           1           0          2 void free_EC_data_buffer(ec_data_buffer *, int) 
+  0.0        0.002        0.002           1           0          2 MPI_Cart_coords() 
+  0.0        0.001        0.001           2           0          0 MPI_Comm_rank() 
+  0.0        0.001        0.001           1           0          1 void set_coupling_parms(int, conductance *) 
+  0.0        0.001        0.001           1           0          1 void set_task_parameters(grid_parms *) 
+  0.0        0.001        0.001           2           0          0 MPI_Comm_size() 
+  0.0            0            0           1           0          0 void initialize_t_stamp(time_stamps *) 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 0, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+       180       1664          4       1098      577.2  Message size for gather
+         2        640        640        640          0  Message size for scatter
+         2       1664       1106       1385        279  [GROUP=MAX_MARKER] Message size for gather
+         1       1106       1106       1106          0  [GROUP=MAX_MARKER] Message size for gather : void dump_rank_info(conductance, grid_parms) => MPI_Gatherv() 
+         1       1664       1664       1664          0  [GROUP=MAX_MARKER] Message size for gather : void gather_SMC_data(grid_parms *, smc_data_buffer *, SMC_cell **) => MPI_Gatherv() 
+---------------------------------------------------------------------------------------
