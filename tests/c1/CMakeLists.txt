@@ -14,7 +14,8 @@ add_test(NAME c1
 	     -T profiling
 	     -t 10.0 
 	     -w 1.0 
-	     -i 1.e-2)
+	     -i 1.e-2
+	     -R 1)
 
 # success is defined as the absence of the regular expression
 # "[1-9][0-9]*[ ]*differences found" in the output
