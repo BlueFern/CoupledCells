@@ -121,12 +121,12 @@ How to Run
 ----------
 
 ```bash
-mpiexec -n <numProcs> coupledCellsModel -f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>
+mpiexec -n <numProcs> coupledCellsModel -f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta> -C <couplingCase> -R <randomInitialConditions>
 ```
 
 On IBM systems, one should execute
 ```bash
-poe coupledCellsModel -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta>"
+poe coupledCellsModel -args "-f <configFile> -S <solutionDirectory> -T <profilingDirectory> -t <duration> -w <checkpointFrequency> -i <delta> -C <couplingCase> -R <randomInitialConditions>"
 ```
 
 The command-line have the following meaning:
@@ -169,14 +169,16 @@ and the total number of processes will be 3 x 12 x 112 = 4032.
 * **w** - How often to write checkpont data in seconds.
 * **i** - Delta in milliseconds specifying the frequency of exchanging data betwen
   UV quads/MIP processes.
+* **C** - The coupling case to be used.
+* **R** - Boolean (0 or 1) specifying if random initial conditions should be used or not. Off by default.
 
 For example, to run a simulation for 500 seconds, with checkpoints written every
-second, the arguments would look like this:
+second, using coupling case 1 and without random initial conditions, the arguments would look like this:
 
-    coupledCellsModel -f config.txt -S solution -T profiling -t 500.00 -w 1000 -i 1e-2
+    coupledCellsModel -f config.txt -S solution -T profiling -t 500.00 -w 1000 -i 1e-2 -C 1 -R 0
 
 The following in an example of a load-leveller script to run a 100 physiological second
-simulation with a 1008 quad/core bifurcation mesh.
+simulation with a 1008 quad/core bifurcation mesh using coupling case 1 and without random initial conditions.
 
 	#!/bin/ksh
 	#
@@ -196,7 +198,7 @@ simulation with a 1008 quad/core bifurcation mesh.
 	
 	# @ queue
 	
-	mpirun -mode VN -np 1008 -verbose 2 -env BG_COREDUMP_BINARY='*' -cwd `pwd` -exe `pwd`/coupledCellsModel -args "-f config.txt -S solution -T profiling -t 100.00 -w 1.0 -i 1e-2"
+	mpirun -mode VN -np 1008 -verbose 2 -env BG_COREDUMP_BINARY='*' -cwd `pwd` -exe `pwd`/coupledCellsModel -args "-f config.txt -S solution -T profiling -t 100.00 -w 1.0 -i 1e-2 -C 1 -R 0"
 
 Input Files
 -----------

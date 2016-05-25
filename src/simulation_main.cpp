@@ -56,6 +56,7 @@ int main(int argc, char* argv[])
 	double tfinal = 1e-2;
 	double interval = 1e-2;
 	double data_writing_frequency = 10.00;
+	grid.random = 0;
 
 	// Read command line input
 	// t - T_END for the simulation
@@ -68,6 +69,8 @@ int main(int argc, char* argv[])
 					sprintf(grid.config_file, "%s", argv[i + 1]);
 				} else if (argv[i][1] == 'C') {
 					coupling_case = atoi(argv[i + 1]);
+				} else if (argv[i][1] == 'R') {
+					grid.random = atoi(argv[i + 1]);
 				} else if (argv[i][1] == 'S') {
 					sprintf(grid.solution_dir, "%s", argv[i + 1]);
 				} else if (argv[i][1] == 'T') {

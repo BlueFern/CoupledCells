@@ -157,6 +157,7 @@ typedef struct
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
 
 	char solution_dir[1024], time_profiling_dir[1024], config_file[1024];
+	bool random;
 } grid_parms;
 
 typedef struct
