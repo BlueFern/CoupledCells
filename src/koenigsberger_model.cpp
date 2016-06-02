@@ -59,11 +59,11 @@ void initialize_koenigsberger_smc(const grid_parms& grid, double* y, SMC_cell** 
 
 			if (grid.random)
 			{
-				y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = (float)rand() / (float)(RAND_MAX / 0.1) + 0.15;
-				y[k + ((j - 1) * grid.neq_smc) + smc_SR] = (float)rand() / (float)(RAND_MAX / 0.2) + 1.3;
-				y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = (float)rand() / (float)(RAND_MAX / 5.0) - 68.0;
-				y[k + ((j - 1) * grid.neq_smc) + smc_w] = (float)rand() / (float)(RAND_MAX / 0.005) + 0.01;
-				y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = (float)rand() / (float)(RAND_MAX / 0.2) + 0.6;
+				y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = (double)rand() / (double)(RAND_MAX / 0.1) + 0.15;
+				y[k + ((j - 1) * grid.neq_smc) + smc_SR] = (double)rand() / (double)(RAND_MAX / 0.2) + 1.3;
+				y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = (double)rand() / (double)(RAND_MAX / 5.0) - 68.0;
+				y[k + ((j - 1) * grid.neq_smc) + smc_w] = (double)rand() / (double)(RAND_MAX / 0.005) + 0.01;
+				y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = (double)rand() / (double)(RAND_MAX / 0.2) + 0.6;
 			}
 			else
 			{
@@ -113,11 +113,11 @@ void initialize_koenigsberger_ec(const grid_parms& grid, double* y, EC_cell** ec
 
 			if (grid.random)
 			{
-				y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = (float)rand() / (float)(RAND_MAX / 0.3) + 0.7;
-				y[k + ((j - 1) * grid.neq_ec) + ec_SR] = (float)rand() / (float)(RAND_MAX / 0.2) + 0.5;
-				y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = (float)rand() / (float)(RAND_MAX / 5.0) - 68.0;
-				y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = (float)rand() / (float)(RAND_MAX / 0.1) + 0.9;
-				y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = (float)rand() / (float)(RAND_MAX / 50.0) + 1450;
+				y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = (double)rand() / (double)(RAND_MAX / 0.3) + 0.7;
+				y[k + ((j - 1) * grid.neq_ec) + ec_SR] = (double)rand() / (double)(RAND_MAX / 0.2) + 0.5;
+				y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = (double)rand() / (double)(RAND_MAX / 5.0) - 68.0;
+				y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = (double)rand() / (double)(RAND_MAX / 0.1) + 0.9;
+				y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = (double)rand() / (double)(RAND_MAX / 50.0) + 1450;
 			}
 			else
 			{
