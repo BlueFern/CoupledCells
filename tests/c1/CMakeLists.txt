@@ -15,7 +15,8 @@ add_test(NAME c1
 	     -t 10.0 
 	     -w 1.0 
 	     -i 1.e-2
-	     -R 1)
+	     -C 1
+	     -R 0)
 
 # success is defined as the absence of the regular expression
 # "[1-9][0-9]*[ ]*differences found" in the output
