@@ -175,21 +175,28 @@ void koenigsberger_ec_derivatives(double t, double* f, const grid_parms& grid, E
 
 void koenigsberger_smc_implicit(const grid_parms& grid, SMC_cell** smc)
 {
+        const int na = grid.num_smc_axially;
+        const int nc = grid.num_smc_circumferentially;
 	// Evaluate single cell fluxes.
-	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_smc_axially; j++) {
+#pragma omp parallel for
+	for (int ij = 0; ij < na * nc; ij++) {
+	        int i = ij / na + 1;
+                int j = ij % na + 1;
 
-			//Jvocc
-			smc[i][j].fluxes[J_VOCC] = GCai * (smc[i][j].vars[smc_Vm] - vCa1) / (1 + ((double) (exp(((-1) * (smc[i][j].vars[smc_Vm] - vCa2)) / RCai))));
-			//J Na/Ca
-			smc[i][j].fluxes[J_Na_Ca] = GNaCai * smc[i][j].vars[smc_Ca] * (smc[i][j].vars[smc_Vm] - vNaCai) / (smc[i][j].vars[smc_Ca] + cNaCai);
-			//JNa/K
-			smc[i][j].fluxes[J_Na_K] = FNaK;
-			//J Cl
-			smc[i][j].fluxes[J_Cl] = GCli * (smc[i][j].vars[smc_Vm] - vCl);
-			//JK
-			smc[i][j].fluxes[J_K] = GKi * smc[i][j].vars[smc_w] * (smc[i][j].vars[smc_Vm] - vKi);
-		}
+                double* flxs = smc[i][j].fluxes;
+                const double vSmc_Vm = smc[i][j].vars[smc_Vm];
+                const double vSmc_Ca = smc[i][j].vars[smc_Ca];
+
+		//Jvocc
+		flxs[J_VOCC] = GCai * (vSmc_Vm - vCa1) / (1. + exp(-(vSmc_Vm - vCa2) / RCai));
+		//J Na/Ca
+		flxs[J_Na_Ca] = GNaCai * vSmc_Ca * (vSmc_Vm - vNaCai) / (vSmc_Ca + cNaCai);
+		//JNa/K
+		flxs[J_Na_K] = FNaK;
+		//J Cl
+		flxs[J_Cl] = GCli * (vSmc_Vm - vCl);
+		//JK
+		flxs[J_K] = GKi * smc[i][j].vars[smc_w] * (vSmc_Vm - vKi);
 	}
 }
 
