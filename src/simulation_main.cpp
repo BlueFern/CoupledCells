@@ -4,6 +4,10 @@
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
+#ifdef HAVE_OPENMP
+#include <omp.h>
+#endif
+
 void read_config_file(grid_parms* grid);
 
 conductance cpl_cef;
@@ -47,6 +51,16 @@ int main(int argc, char* argv[])
 		plotttingBuffer = buf;
 		bufferPos = 0;
 	}
+#endif
+
+#ifdef HAVE_OPENMP
+#pragma omp parallel
+ {
+        int thread_id = omp_get_thread_num();
+        int num_threads = omp_get_num_threads();
+        if (thread_id == 0)
+	        printf("Running with %d thread(s)\n", num_threads);
+ }
 #endif
 
 	char filename[50];

@@ -1,4 +1,9 @@
 configure_file(c1_fitzroy.ll.in c1_fitzroy.ll)
+configure_file(c1_fitzroy_2th.ll.in c1_fitzroy_2th.ll)
+configure_file(c1_fitzroy_4th.ll.in c1_fitzroy_4th.ll)
+configure_file(c1_fitzroy_8th.ll.in c1_fitzroy_8th.ll)
+configure_file(c1_fitzroy_16th.ll.in c1_fitzroy_16th.ll)
+configure_file(c1_fitzroy_32th.ll.in c1_fitzroy_32th.ll)
 configure_file(c1_bgp.ll.in c1_bgp.ll)
 configure_file(c1_compare_results.sh.in c1_compare_results.sh)
 
