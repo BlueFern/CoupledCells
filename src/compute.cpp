@@ -365,21 +365,17 @@ void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 	k = 0;
 	l = 0;
 
-	for (i = 1; i <= grid.num_smc_circumferentially; i++)
-	{
-		l = 1;
-		for (j = 1; j <= grid.num_smc_axially; j++)
+#pragma omp parallel for private(i, j, k, l)
+        for (int ij = 0; ij < grid.num_smc_circumferentially * grid.num_smc_axially; ij++) {
+	        i = ij / grid.num_smc_axially + 1;
+                j = ij % grid.num_smc_axially + 1;
+		l = (j - 1) / grid.num_smc_fundblk_axially + 1;
+		double dummy_smc[3] = { 0.0, 0.0, 0.0 };
+		for (k = 1 + (i - 1) * 5; k <= i * 5; k++)
 		{
-			double dummy_smc[3] = { 0.0, 0.0, 0.0 };
-			for (k = 1 + (i - 1) * 5; k <= i * 5; k++)
-			{
-				dummy_smc[cpl_Vm] = dummy_smc[cpl_Vm] + (smc[i][j].vars[smc_Vm] - ec[k][l].vars[ec_Vm]);
-			}
-			if ((j % grid.num_smc_fundblk_axially) == 0) {
-				l++;
-			}
-			smc[i][j].hetero_fluxes[cpl_Vm] = -cpl_cef.Vm_ht_smc * dummy_smc[cpl_Vm];
+		      dummy_smc[cpl_Vm] = dummy_smc[cpl_Vm] + (smc[i][j].vars[smc_Vm] - ec[k][l].vars[ec_Vm]);
 		}
+		smc[i][j].hetero_fluxes[cpl_Vm] = -cpl_cef.Vm_ht_smc * dummy_smc[cpl_Vm];
 	}
 
 	i = 0;
