@@ -403,42 +403,46 @@ void coupling_explicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 	int i, j, k, l;
 
 ////******************** HOMOCELLULAR COUPLING *********************/
-	for (i = 1; i <= grid.num_smc_circumferentially; i++) {
-		for (j = 1; j <= grid.num_smc_axially; j++) {
-			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
-			smc[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc
+#pragma omp parallel for private(i, j)
+	for (int ij = 0; ij < grid.num_smc_circumferentially * grid.num_smc_axially; ij++) {
+	        i = ij / grid.num_smc_axially + 1;
+                j = ij % grid.num_smc_axially + 1;
+
+		int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
+		smc[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc
 					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_Ca] - smc[i][up].vars[smc_Ca]))
 					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Ca] - smc[i][down].vars[smc_Ca]))
 					+ (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Ca] - smc[left][j].vars[smc_Ca]))
 					+ (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Ca] - smc[right][j].vars[smc_Ca])));
 
-			smc[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_smc
+		smc[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_smc
 					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_IP3] - smc[i][up].vars[smc_IP3]))
 					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_IP3] - smc[i][down].vars[smc_IP3]))
 					+ (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_IP3] - smc[left][j].vars[smc_IP3]))
 					+ (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_IP3] - smc[right][j].vars[smc_IP3])));
-		}	//end j
-	}	//end i
+	}	//end ij
 
-	for (i = 1; i <= grid.num_ec_circumferentially; i++) {
-		for (j = 1; j <= grid.num_ec_axially; j++) {
-			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
-			ec[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec
+#pragma omp parallel for private(i, j)
+	for (int ij = 0; ij < grid.num_ec_circumferentially * grid.num_ec_axially; ij++) {
+                i = ij / grid.num_ec_axially + 1;
+                j = ij % grid.num_ec_axially + 1;
+			
+                int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
+		ec[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec
 					* cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_Ca] - ec[i][up].vars[ec_Ca])
 					+ cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Ca] - ec[i][down].vars[ec_Ca])
 					+ cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Ca] - ec[left][j].vars[ec_Ca])
 					+ cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Ca] - ec[right][j].vars[ec_Ca]));
 
-			ec[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_ec
+		ec[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_ec
 					* cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_IP3] - ec[i][up].vars[ec_IP3])
 					+ cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_IP3] - ec[i][down].vars[ec_IP3])
 					+ cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_IP3] - ec[left][j].vars[ec_IP3])
 					+ cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_IP3] - ec[right][j].vars[ec_IP3]));
 
-		}	//end j
-	}	//end i
+	}	//end ij
 
-////******************** HETROCELLULAR COUPLING *********************/
+////******************** HETEROCELLULAR COUPLING *********************/
 	int offset_smc_circumferentially, offset_ec_axially;
 
 	i = 0; // x dim.
