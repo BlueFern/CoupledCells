@@ -268,18 +268,17 @@ void koenigsberger_smc_derivatives_implicit(double* f, const grid_parms& grid, S
 
 void koenigsberger_smc_derivatives_explicit(double* f, const grid_parms& grid, SMC_cell** smc)
 {
-	int k;
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
-			k = (i - 1) * grid.neq_smc_axially;
-			f[k + ((j - 1) * grid.neq_smc) + smc_Ca] = smc[i][j].fluxes[J_IP3] - smc[i][j].fluxes[J_SERCA] + smc[i][j].fluxes[J_CICR] - smc[i][j].fluxes[J_Extrusion]
+			int ktot = (i - 1) * grid.neq_smc_axially + (j - 1) * grid.neq_smc;
+			f[ktot + smc_Ca] = smc[i][j].fluxes[J_IP3] - smc[i][j].fluxes[J_SERCA] + smc[i][j].fluxes[J_CICR] - smc[i][j].fluxes[J_Extrusion]
 					+ smc[i][j].fluxes[J_Leak] - smc[i][j].fluxes[J_VOCC] + smc[i][j].fluxes[J_Na_Ca] + smc[i][j].homo_fluxes[cpl_Ca] + smc[i][j].hetero_fluxes[cpl_Ca];
 
-			f[k + ((j - 1) * grid.neq_smc) + smc_SR] = smc[i][j].fluxes[J_SERCA] - smc[i][j].fluxes[J_CICR] - smc[i][j].fluxes[J_Leak];
+			f[ktot + smc_SR] = smc[i][j].fluxes[J_SERCA] - smc[i][j].fluxes[J_CICR] - smc[i][j].fluxes[J_Leak];
 
-			f[k + ((j - 1) * grid.neq_smc) + smc_w] = lambda * (smc[i][j].fluxes[K_activation] - smc[i][j].vars[smc_w]);
+			f[ktot + smc_w] = lambda * (smc[i][j].fluxes[K_activation] - smc[i][j].vars[smc_w]);
 
-			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = -smc[i][j].fluxes[J_IP3_deg] + smc[i][j].homo_fluxes[cpl_IP3] + smc[i][j].hetero_fluxes[cpl_IP3];
+			f[ktot + smc_IP3] = -smc[i][j].fluxes[J_IP3_deg] + smc[i][j].homo_fluxes[cpl_IP3] + smc[i][j].hetero_fluxes[cpl_IP3];
 
 #if PLOTTING && EXPLICIT_ONLY
 			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
@@ -292,7 +291,7 @@ void koenigsberger_smc_derivatives_explicit(double* f, const grid_parms& grid, S
 #endif
 
 #if ! EXPLICIT_ONLY
-			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.0;
+			f[ktot + smc_Vm] = 0.0;
 #endif
 
 		}
