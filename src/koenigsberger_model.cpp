@@ -369,36 +369,37 @@ void koenigsberger_ec_explicit(const grid_parms& grid, EC_cell** ec)
 	}
 }
 
-void koenigsberger_ec_derivatives_implicit(double t, double* f, const grid_parms& grid, EC_cell** ec)
+void koenigsberger_ec_derivatives_implicit(double t, double* __restrict__ f, 
+                                           const grid_parms& grid, EC_cell** ec)
 {
-	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
-	for(int i = 1; i <= grid.num_ec_circumferentially; i++)
+	int offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
+        for (int ij = 0; ij < grid.num_ec_circumferentially *  grid.num_ec_axially; ij++) 
 	{
-		for(int j = 1; j <= grid.num_ec_axially; j++)
-		{
-                        k = offset + (i - 1) * grid.neq_ec_axially;
+	        int i = ij / grid.num_ec_axially + 1;
+                int j = ij % grid.num_ec_axially + 1;
+                int ktot = offset + (i - 1) * grid.neq_ec_axially;
+                ktot += (j - 1) * grid.neq_ec;
 
-			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
-					((-1 / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
+		f[ktot + ec_Vm] =
+		      ((-1. / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
 #if PLOTTING && EXPLICIT_ONLY
-			if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
-			{
-				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Vm];
-			}
+		if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
+		{
+			plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Vm];
+	        }
 #endif
 
 #if !EXPLICIT_ONLY
 
-			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.0;
-			f[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.0;
-			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.0;
-			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 0.0;
+	       f[ktot + ec_Ca] = 0.0;
+	       f[ktot + ec_SR] = 0.0;
+	       f[ktot + ec_IP3] = 0.0;
+	       f[ktot + ec_Gprot] = 0.0;
 #endif
-		}
 	}
 }
 
-void koenigsberger_ec_derivatives_explicit(double t, double* f, const grid_parms& grid, EC_cell** ec)
+void koenigsberger_ec_derivatives_explicit(double t, double* __restrict__ f, const grid_parms& grid, EC_cell** ec)
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 	for(int i = 1; i <= grid.num_ec_circumferentially; i++)
