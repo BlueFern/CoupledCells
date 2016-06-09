@@ -149,7 +149,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX" AND (NOT "${TAU_MAKEFILE}" STREQUAL ""))
             "-optVerbose -O2 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
         set(CMAKE_CXX_COMPILER "tau_cxx.sh")
         set(CMAKE_CXX_FLAGS 
-            "-optVerbose -O2 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
+            "-optVerbose -O3 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6 -qreport -qhot -qsimd")
         set(CMAKE_Fortran_COMPILER "tau_f90.sh") 
         set(CMAKE_Fortran_FLAGS 
             "-optVerbose ${CMAKE_Fortran_FLAGS} -qstrict -qfixed -O2 -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
