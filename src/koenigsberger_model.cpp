@@ -10,7 +10,7 @@
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
-double
+const double
 	/* Constants for homogenically coupled SMCs. */
       Fi = 0.23,  Kri = 1.00,  GCai = 0.00129,  vCa1 = 100.00,
 	  vCa2 = -24.00,  RCai = 8.50,  GNaCai = 0.00316,  cNaCai = 0.5,
@@ -249,10 +249,7 @@ void koenigsberger_smc_derivatives_implicit(double* f, const grid_parms& grid, S
 	int k;
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
-			if (i > 1)
-				k = ((i - 1) * grid.neq_smc_axially);
-			else if (i == 1)
-				k = 0;
+                        k = (i - 1) * grid.neq_smc_axially;
 
 			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = gama
 					* (-smc[i][j].fluxes[J_Na_K] - smc[i][j].fluxes[J_Cl] - (2 * smc[i][j].fluxes[J_VOCC]) - smc[i][j].fluxes[J_Na_Ca] - smc[i][j].fluxes[J_K])

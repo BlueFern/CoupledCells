@@ -51,7 +51,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
        endif()
        if (CMAKE_BUILD_TYPE STREQUAL "Report")
-               set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize -ftree-vectorizer-verbose=2")
+               set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ftree-vectorize -fopt-info-vec-missed -fopt-info-inline-missed")
        endif() 
 endif()
 
