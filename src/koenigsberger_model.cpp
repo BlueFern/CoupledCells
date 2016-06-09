@@ -52,10 +52,7 @@ void initialize_koenigsberger_smc(const grid_parms& grid, double* y, SMC_cell** 
 
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
-			if (i > 1)
-				k = ((i - 1) * grid.neq_smc_axially);
-			else if (i == 1)
-				k = 0;
+			k = (i - 1) * grid.neq_smc_axially;
 
 			if (grid.random)
 			{
@@ -106,10 +103,7 @@ void initialize_koenigsberger_ec(const grid_parms& grid, double* y, EC_cell** ec
 
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
-			if (i > 1)
-				k = offset + ((i - 1) * grid.neq_ec_axially);
-			else if (i == 1)
-				k = offset + 0;
+			k = offset + (i - 1) * grid.neq_ec_axially;
 
 			if (grid.random)
 			{
@@ -277,10 +271,7 @@ void koenigsberger_smc_derivatives_explicit(double* f, const grid_parms& grid, S
 	int k;
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
-			if (i > 1)
-				k = ((i - 1) * grid.neq_smc_axially);
-			else if (i == 1)
-				k = 0;
+			k = (i - 1) * grid.neq_smc_axially;
 			f[k + ((j - 1) * grid.neq_smc) + smc_Ca] = smc[i][j].fluxes[J_IP3] - smc[i][j].fluxes[J_SERCA] + smc[i][j].fluxes[J_CICR] - smc[i][j].fluxes[J_Extrusion]
 					+ smc[i][j].fluxes[J_Leak] - smc[i][j].fluxes[J_VOCC] + smc[i][j].fluxes[J_Na_Ca] + smc[i][j].homo_fluxes[cpl_Ca] + smc[i][j].hetero_fluxes[cpl_Ca];
 
@@ -385,10 +376,7 @@ void koenigsberger_ec_derivatives_implicit(double t, double* f, const grid_parms
 	{
 		for(int j = 1; j <= grid.num_ec_axially; j++)
 		{
-			if (i > 1)
-				k = offset + ((i - 1) * grid.neq_ec_axially);
-			else if (i == 1)
-				k = offset + 0;
+                        k = offset + (i - 1) * grid.neq_ec_axially;
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
 					((-1 / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
@@ -417,10 +405,7 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, const grid_parms
 	{
 		for(int j = 1; j <= grid.num_ec_axially; j++)
 		{
-			if (i > 1)
-				k = offset + ((i - 1) * grid.neq_ec_axially);
-			else if (i == 1)
-				k = offset + 0;
+			k = offset + (i - 1) * grid.neq_ec_axially;
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] =
 					ec[i][j].fluxes[J_IP3] - ec[i][j].fluxes[J_SERCA] + ec[i][j].fluxes[J_CICR] - ec[i][j].fluxes[J_Extrusion]
