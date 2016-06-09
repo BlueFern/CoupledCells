@@ -24,7 +24,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	include_directories(/usr/include/malloc/)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-# Unable to run without MPI.
 if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
         # AIX (fitzroy) needs some help
         set(POE "/usr/lpp/ppe.poe")
@@ -46,6 +45,17 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
 		endif (CMAKE_BUILD_TYPE STREQUAL "Release")
         endif(EXISTS "${POE}/include" AND EXISTS "${POE}/lib")
 endif(${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+       if (CMAKE_BUILD_TYPE STREQUAL "gprof")
+               set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+       endif()
+       if (CMAKE_BUILD_TYPE STREQUAL "Report")
+               set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize -ftree-vectorizer-verbose=2")
+       endif() 
+endif()
+
+# Unable to run without MPI.
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 set(CMAKE_C_COMPILER "${MPI_C_COMPILER}")
