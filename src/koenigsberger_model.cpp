@@ -376,8 +376,7 @@ void koenigsberger_ec_derivatives_implicit(double t, double* __restrict__ f,
 	{
 	        int i = ij / grid.num_ec_axially + 1;
                 int j = ij % grid.num_ec_axially + 1;
-                int ktot = offset + (i - 1) * grid.neq_ec_axially;
-                ktot += (j - 1) * grid.neq_ec;
+                int ktot = offset + (i - 1) * grid.neq_ec_axially + (j - 1) * grid.neq_ec;
 
 		f[ktot + ec_Vm] =
 		      ((-1. / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
