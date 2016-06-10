@@ -45,7 +45,7 @@ const double
 
 /// Initial values found by running a sufficiently long simulation and recording state values
 /// after they have reached a steady state.
-void initialize_koenigsberger_smc(const grid_parms& grid, double* y, SMC_cell** __restrict__ smc)
+void initialize_koenigsberger_smc(const grid_parms& grid, double* __restrict__ y, SMC_cell** __restrict__ smc)
 {
 	int k = 0, offset;
 	srand(grid.universal_rank);
@@ -74,22 +74,23 @@ void initialize_koenigsberger_smc(const grid_parms& grid, double* y, SMC_cell** 
 		}
 	}
 
-	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++) {
-		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells); j++) {
-			smc[i][j].vars[smc_Ca] = 0.0;
-			smc[i][j].vars[smc_SR] = 0.0;
-			smc[i][j].vars[smc_Vm] = 0.0;
-			smc[i][j].vars[smc_w] = 0.0;
-			smc[i][j].vars[smc_IP3] = 0.0;
+#pragma omp for simd assert
+        for (int ij = 0; ij < (grid.num_smc_circumferentially + grid.num_ghost_cells) * (grid.num_smc_axially + grid.num_ghost_cells); ij++) {
+	        int i = ij / (grid.num_smc_axially + grid.num_ghost_cells);
+                int j = ij % (grid.num_smc_axially + grid.num_ghost_cells);
+		smc[i][j].vars[smc_Ca] = 0.0;
+	        smc[i][j].vars[smc_SR] = 0.0;
+		smc[i][j].vars[smc_Vm] = 0.0;
+	        smc[i][j].vars[smc_w] = 0.0;
+		smc[i][j].vars[smc_IP3] = 0.0;
 
-			// TODO: remove initialising fluxes for lemon model even when not used....
-			for (int k = 0; k < grid.num_fluxes_smc; k++) {
-				smc[i][j].fluxes[k] = 0.1;
-			}
-			for (int k = 0; k < grid.num_coupling_species_smc; k++) {
-				smc[i][j].homo_fluxes[k] = 0.1;
-				smc[i][j].hetero_fluxes[k] = 0.1;
-			}
+		// TODO: remove initialising fluxes for lemon model even when not used....
+		for (int k = 0; k < grid.num_fluxes_smc; k++) {
+			smc[i][j].fluxes[k] = 0.1;
+		}
+		for (int k = 0; k < grid.num_coupling_species_smc; k++) {
+			smc[i][j].homo_fluxes[k] = 0.1;
+			smc[i][j].hetero_fluxes[k] = 0.1;
 		}
 	}
 }
@@ -202,6 +203,7 @@ void koenigsberger_smc_explicit(const grid_parms& grid, SMC_cell** __restrict__ 
         const int na = grid.num_smc_axially;
         const int nc = grid.num_smc_circumferentially;
 	// Evaluate single cell fluxes.
+#pragma ivdep
 #pragma omp parallel for
 	for (int ij = 0; ij < na * nc; ij++) {
 	        int i = ij / na + 1;
@@ -244,6 +246,7 @@ void koenigsberger_smc_explicit(const grid_parms& grid, SMC_cell** __restrict__ 
 void koenigsberger_smc_derivatives_implicit(double* __restrict__ f, 
                                             const grid_parms& grid, SMC_cell** __restrict__ smc)
 {
+#pragma ivdep
         for(int ij = 0; ij < grid.num_smc_circumferentially * grid.num_smc_axially; ij++) {
 	        int i = ij / grid.num_smc_axially + 1;
                 int j = ij % grid.num_smc_axially + 1;
@@ -273,7 +276,8 @@ void koenigsberger_smc_derivatives_implicit(double* __restrict__ f,
 	}
 }
 
-void koenigsberger_smc_derivatives_explicit(double* f, const grid_parms& grid, SMC_cell** __restrict__ smc)
+void koenigsberger_smc_derivatives_explicit(double* __restrict__ f, 
+                                            const grid_parms& grid, SMC_cell** __restrict__ smc)
 {
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
