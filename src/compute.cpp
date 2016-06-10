@@ -383,26 +383,37 @@ void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 	}
 }
 
-void coupling_explicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef)
+void coupling_explicit(double t, double y[], 
+                       const grid_parms& grid, 
+                       SMC_cell** __restrict__ smc, 
+                       EC_cell** __restrict__ ec, conductance cpl_cef)
 {
 ////******************** HOMOCELLULAR COUPLING *********************/
+#pragma ivdep
 #pragma omp parallel for
 	for (int ij = 0; ij < grid.num_smc_circumferentially * grid.num_smc_axially; ij++) {
 	        int i = ij / grid.num_smc_axially + 1;
                 int j = ij % grid.num_smc_axially + 1;
-
 		int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
-		smc[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc
-					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_Ca] - smc[i][up].vars[smc_Ca]))
-					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Ca] - smc[i][down].vars[smc_Ca]))
-					+ (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Ca] - smc[left][j].vars[smc_Ca]))
-					+ (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Ca] - smc[right][j].vars[smc_Ca])));
 
-		smc[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_smc
-					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_IP3] - smc[i][up].vars[smc_IP3]))
-					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_IP3] - smc[i][down].vars[smc_IP3]))
-					+ (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_IP3] - smc[left][j].vars[smc_IP3]))
-					+ (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_IP3] - smc[right][j].vars[smc_IP3])));
+                const double* __restrict__ vars = smc[i][j].vars;
+                const double* __restrict__ upVars = smc[i][up].vars;
+                const double* __restrict__ downVars = smc[i][down].vars;
+                const double* __restrict__ leftVars = smc[left][j].vars;
+                const double* __restrict__ rightVars = smc[right][j].vars;
+                double* __restrict__ homo_fluxes = smc[i][j].homo_fluxes;
+
+		homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc
+		                        * (cpl_cef.smc_diffusion[0] * ((vars[smc_Ca] - upVars[smc_Ca]))
+					+ (cpl_cef.smc_diffusion[1] * (vars[smc_Ca] - downVars[smc_Ca]))
+					+ (cpl_cef.smc_diffusion[2] * (vars[smc_Ca] - leftVars[smc_Ca]))
+					+ (cpl_cef.smc_diffusion[3] * (vars[smc_Ca] - rightVars[smc_Ca])));
+
+		homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_smc
+					* (cpl_cef.smc_diffusion[0] * ((vars[smc_IP3] - upVars[smc_IP3]))
+					+ (cpl_cef.smc_diffusion[1] * (vars[smc_IP3] - downVars[smc_IP3]))
+					+ (cpl_cef.smc_diffusion[2] * (vars[smc_IP3] - leftVars[smc_IP3]))
+					+ (cpl_cef.smc_diffusion[3] * (vars[smc_IP3] - rightVars[smc_IP3])));
 	}	//end ij
 
 #pragma omp parallel for

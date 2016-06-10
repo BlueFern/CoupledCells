@@ -73,24 +73,30 @@ void initialize_koenigsberger_smc(const grid_parms& grid, double* __restrict__ y
 
 		}
 	}
-
-#pragma omp for simd assert
-        for (int ij = 0; ij < (grid.num_smc_circumferentially + grid.num_ghost_cells) * (grid.num_smc_axially + grid.num_ghost_cells); ij++) {
-	        int i = ij / (grid.num_smc_axially + grid.num_ghost_cells);
-                int j = ij % (grid.num_smc_axially + grid.num_ghost_cells);
-		smc[i][j].vars[smc_Ca] = 0.0;
-	        smc[i][j].vars[smc_SR] = 0.0;
-		smc[i][j].vars[smc_Vm] = 0.0;
-	        smc[i][j].vars[smc_w] = 0.0;
-		smc[i][j].vars[smc_IP3] = 0.0;
+#pragma ivdep
+#pragma omp for simd collapse(2)
+	int nc = grid.num_smc_circumferentially + grid.num_ghost_cells;
+        int na = grid.num_smc_axially + grid.num_ghost_cells;
+        for (int ij = 0; ij < nc * na; ij++) {
+	        int i = ij / na;
+                int j = ij % na;
+                double* __restrict__ vars = smc[i][j].vars;
+                double* __restrict__ fluxes = smc[i][j].fluxes;
+                double* __restrict__ homo_fluxes = smc[i][j].homo_fluxes;
+                double* __restrict__ hetero_fluxes = smc[i][j].hetero_fluxes;
+		vars[smc_Ca] = 0.0;
+	        vars[smc_SR] = 0.0;
+		vars[smc_Vm] = 0.0;
+	        vars[smc_w] = 0.0;
+		vars[smc_IP3] = 0.0;
 
 		// TODO: remove initialising fluxes for lemon model even when not used....
 		for (int k = 0; k < grid.num_fluxes_smc; k++) {
-			smc[i][j].fluxes[k] = 0.1;
+			fluxes[k] = 0.1;
 		}
 		for (int k = 0; k < grid.num_coupling_species_smc; k++) {
-			smc[i][j].homo_fluxes[k] = 0.1;
-			smc[i][j].hetero_fluxes[k] = 0.1;
+			homo_fluxes[k] = 0.1;
+			hetero_fluxes[k] = 0.1;
 		}
 	}
 }
