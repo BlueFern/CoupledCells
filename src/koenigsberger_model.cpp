@@ -244,14 +244,18 @@ void koenigsberger_smc_explicit(const grid_parms& grid, SMC_cell** __restrict__ 
 void koenigsberger_smc_derivatives_implicit(double* __restrict__ f, 
                                             const grid_parms& grid, SMC_cell** __restrict__ smc)
 {
-	int k;
-	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
-		for (int j = 1; j <= grid.num_smc_axially; j++) {
-                        k = (i - 1) * grid.neq_smc_axially;
+        for(int ij = 0; ij < grid.num_smc_circumferentially * grid.num_smc_axially; ij++) {
+	        int i = ij / grid.num_smc_axially + 1;
+                int j = ij % grid.num_smc_axially + 1;
+                int k = (i - 1) * grid.neq_smc_axially;
+                int ktot = k + (j - 1) * grid.neq_smc;
+                const double* flxs = smc[i][j].fluxes;
+                const double* homo_flxs = smc[i][j].homo_fluxes;
+                const double* hetero_flxs = smc[i][j].hetero_fluxes;
 
-			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = gama
-					* (-smc[i][j].fluxes[J_Na_K] - smc[i][j].fluxes[J_Cl] - (2 * smc[i][j].fluxes[J_VOCC]) - smc[i][j].fluxes[J_Na_Ca] - smc[i][j].fluxes[J_K])
-					+ smc[i][j].homo_fluxes[cpl_Vm] + smc[i][j].hetero_fluxes[cpl_Vm];
+		f[ktot + smc_Vm] = gama
+					* (-flxs[J_Na_K] - flxs[J_Cl] - (2 * flxs[J_VOCC]) - flxs[J_Na_Ca] - flxs[J_K])
+					+ homo_flxs[cpl_Vm] + hetero_flxs[cpl_Vm];
 
 #if PLOTTING && EXPLICIT_ONLY
 			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
@@ -261,12 +265,11 @@ void koenigsberger_smc_derivatives_implicit(double* __restrict__ f,
 #endif
 
 #if ! EXPLICIT_ONLY
-			f[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.0;
-			f[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.0;
-			f[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.0;
-			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.0;
+			f[ktot + smc_Ca] = 0.0;
+			f[ktot + smc_SR] = 0.0;
+			f[ktot + smc_w] = 0.0;
+			f[ktot + smc_IP3] = 0.0;
 #endif
-		}
 	}
 }
 
