@@ -45,7 +45,7 @@ const double
 
 /// Initial values found by running a sufficiently long simulation and recording state values
 /// after they have reached a steady state.
-void initialize_koenigsberger_smc(const grid_parms& grid, double* y, SMC_cell** smc)
+void initialize_koenigsberger_smc(const grid_parms& grid, double* y, SMC_cell** __restrict__ smc)
 {
 	int k = 0, offset;
 	srand(grid.universal_rank);
@@ -83,12 +83,12 @@ void initialize_koenigsberger_smc(const grid_parms& grid, double* y, SMC_cell** 
 			smc[i][j].vars[smc_IP3] = 0.0;
 
 			// TODO: remove initialising fluxes for lemon model even when not used....
-			for (int k = 1; k <= grid.num_fluxes_smc; k++) {
-				smc[i][j].fluxes[k - 1] = 0.1;
+			for (int k = 0; k < grid.num_fluxes_smc; k++) {
+				smc[i][j].fluxes[k] = 0.1;
 			}
-			for (int k = 1; k <= grid.num_coupling_species_smc; k++) {
-				smc[i][j].homo_fluxes[k - 1] = 0.1;
-				smc[i][j].hetero_fluxes[k - 1] = 0.1;
+			for (int k = 0; k < grid.num_coupling_species_smc; k++) {
+				smc[i][j].homo_fluxes[k] = 0.1;
+				smc[i][j].hetero_fluxes[k] = 0.1;
 			}
 		}
 	}
@@ -96,7 +96,7 @@ void initialize_koenigsberger_smc(const grid_parms& grid, double* y, SMC_cell** 
 
 /// Initial values found by running a sufficiently long simulation and recording state values
 /// after they have reached a steady state.
-void initialize_koenigsberger_ec(const grid_parms& grid, double* y, EC_cell** ec)
+void initialize_koenigsberger_ec(const grid_parms& grid, double* y, EC_cell** __restrict__ ec)
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 	srand(grid.universal_rank);
@@ -132,42 +132,45 @@ void initialize_koenigsberger_ec(const grid_parms& grid, double* y, EC_cell** ec
 			ec[i][j].vars[ec_IP3] = 0.0;
 			ec[i][j].vars[ec_Gprot] = 0.0;
 
-			for (int k = 1; k <= grid.num_fluxes_ec; k++) {
-				ec[i][j].fluxes[k - 1] = 0.1;
+			for (int k = 0; k < grid.num_fluxes_ec; k++) {
+				ec[i][j].fluxes[k] = 0.1;
 			}
-			for (int k = 1; k <= grid.num_coupling_species_ec; k++) {
-				ec[i][j].homo_fluxes[k - 1] = 0.1;
-				ec[i][j].hetero_fluxes[k - 1] = 0.1;
+			for (int k = 0; k < grid.num_coupling_species_ec; k++) {
+				ec[i][j].homo_fluxes[k] = 0.1;
+				ec[i][j].hetero_fluxes[k] = 0.1;
 			}
 		}
 	}
 }
 
-void koenigsberger_smc(const grid_parms& grid, SMC_cell** smc)
+void koenigsberger_smc(const grid_parms& grid, SMC_cell** __restrict__ smc)
 {
 	koenigsberger_smc_implicit(grid, smc);
 	koenigsberger_smc_explicit(grid, smc);
 }
 
-void koenigsberger_smc_derivatives(double* f, const grid_parms& grid, SMC_cell** smc)
+void koenigsberger_smc_derivatives(double* __restrict__ f, 
+                                   const grid_parms& grid, SMC_cell** __restrict__ smc)
 {
 	koenigsberger_smc_derivatives_implicit(f, grid, smc);
 	koenigsberger_smc_derivatives_explicit(f, grid, smc);
 }
 
-void koenigsberger_ec(const grid_parms& grid, EC_cell** ec)
+void koenigsberger_ec(const grid_parms& grid, EC_cell** __restrict__ ec)
 {
 	koenigsberger_ec_implicit(grid, ec);
 	koenigsberger_ec_explicit(grid, ec);
 }
 
-void koenigsberger_ec_derivatives(double t, double* f, const grid_parms& grid, EC_cell** ec)
+void koenigsberger_ec_derivatives(double t, 
+                                  double* __restrict__ f, const grid_parms& grid, 
+                                  EC_cell** __restrict__ ec)
 {
 	koenigsberger_ec_derivatives_implicit(t, f, grid, ec);
 	koenigsberger_ec_derivatives_explicit(t, f, grid, ec);
 }
 
-void koenigsberger_smc_implicit(const grid_parms& grid, SMC_cell** smc)
+void koenigsberger_smc_implicit(const grid_parms& grid, SMC_cell** __restrict__ smc)
 {
         const int na = grid.num_smc_axially;
         const int nc = grid.num_smc_circumferentially;
@@ -194,7 +197,7 @@ void koenigsberger_smc_implicit(const grid_parms& grid, SMC_cell** smc)
 	}
 }
 
-void koenigsberger_smc_explicit(const grid_parms& grid, SMC_cell** smc)
+void koenigsberger_smc_explicit(const grid_parms& grid, SMC_cell** __restrict__ smc)
 {
         const int na = grid.num_smc_axially;
         const int nc = grid.num_smc_circumferentially;
@@ -238,7 +241,8 @@ void koenigsberger_smc_explicit(const grid_parms& grid, SMC_cell** smc)
 	}
 }
 
-void koenigsberger_smc_derivatives_implicit(double* f, const grid_parms& grid, SMC_cell** smc)
+void koenigsberger_smc_derivatives_implicit(double* __restrict__ f, 
+                                            const grid_parms& grid, SMC_cell** __restrict__ smc)
 {
 	int k;
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
@@ -266,7 +270,7 @@ void koenigsberger_smc_derivatives_implicit(double* f, const grid_parms& grid, S
 	}
 }
 
-void koenigsberger_smc_derivatives_explicit(double* f, const grid_parms& grid, SMC_cell** smc)
+void koenigsberger_smc_derivatives_explicit(double* f, const grid_parms& grid, SMC_cell** __restrict__ smc)
 {
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
@@ -298,7 +302,7 @@ void koenigsberger_smc_derivatives_explicit(double* f, const grid_parms& grid, S
 	}
 }
 
-void koenigsberger_ec_implicit(const grid_parms& grid, EC_cell** ec)
+void koenigsberger_ec_implicit(const grid_parms& grid, EC_cell** __restrict__ ec)
 {
 	// Evaluate single cell fluxes.
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
@@ -311,7 +315,7 @@ void koenigsberger_ec_implicit(const grid_parms& grid, EC_cell** ec)
 	}
 }
 
-void koenigsberger_ec_explicit(const grid_parms& grid, EC_cell** ec)
+void koenigsberger_ec_explicit(const grid_parms& grid, EC_cell** __restrict__ ec)
 {
         const int na = grid.num_ec_axially;
         const int nc = grid.num_ec_circumferentially;
@@ -369,7 +373,7 @@ void koenigsberger_ec_explicit(const grid_parms& grid, EC_cell** ec)
 }
 
 void koenigsberger_ec_derivatives_implicit(double t, double* __restrict__ f, 
-                                           const grid_parms& grid, EC_cell** ec)
+                                           const grid_parms& grid, EC_cell** __restrict__ ec)
 {
 	int offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
         for (int ij = 0; ij < grid.num_ec_circumferentially *  grid.num_ec_axially; ij++) 
