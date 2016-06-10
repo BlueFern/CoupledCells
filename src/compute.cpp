@@ -420,19 +420,26 @@ void coupling_explicit(double t, double y[],
 	for (int ij = 0; ij < grid.num_ec_circumferentially * grid.num_ec_axially; ij++) {
                 int i = ij / grid.num_ec_axially + 1;
                 int j = ij % grid.num_ec_axially + 1;
-			
                 int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
-		ec[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec
-					* cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_Ca] - ec[i][up].vars[ec_Ca])
-					+ cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Ca] - ec[i][down].vars[ec_Ca])
-					+ cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Ca] - ec[left][j].vars[ec_Ca])
-					+ cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Ca] - ec[right][j].vars[ec_Ca]));
 
-		ec[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_ec
-					* cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_IP3] - ec[i][up].vars[ec_IP3])
-					+ cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_IP3] - ec[i][down].vars[ec_IP3])
-					+ cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_IP3] - ec[left][j].vars[ec_IP3])
-					+ cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_IP3] - ec[right][j].vars[ec_IP3]));
+		const double* __restrict__ vars = ec[i][j].vars;
+		const double* __restrict__ upVars = ec[i][up].vars;
+                const double* __restrict__ downVars = ec[i][down].vars;
+                const double* __restrict__ leftVars = ec[left][j].vars;
+                const double* __restrict__ rightVars = ec[right][j].vars;
+                double* __restrict__ homo_fluxes = ec[i][j].homo_fluxes;
+
+		homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec
+					* cpl_cef.ec_diffusion[0] * ((vars[ec_Ca] - upVars[ec_Ca])
+					+ cpl_cef.ec_diffusion[1] * (vars[ec_Ca] - downVars[ec_Ca])
+					+ cpl_cef.ec_diffusion[2] * (vars[ec_Ca] - leftVars[ec_Ca])
+					+ cpl_cef.ec_diffusion[3] * (vars[ec_Ca] - rightVars[ec_Ca]));
+
+		homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_ec
+					* cpl_cef.ec_diffusion[0] * ((vars[ec_IP3] - upVars[ec_IP3])
+					+ cpl_cef.ec_diffusion[1] * (vars[ec_IP3] - downVars[ec_IP3])
+					+ cpl_cef.ec_diffusion[2] * (vars[ec_IP3] - leftVars[ec_IP3])
+					+ cpl_cef.ec_diffusion[3] * (vars[ec_IP3] - rightVars[ec_IP3]));
 
 	}	//end ij
 
