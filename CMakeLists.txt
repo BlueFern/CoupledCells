@@ -61,10 +61,15 @@ include_directories(${MPI_CXX_INCLUDE_PATH})
 set(CMAKE_C_COMPILER "${MPI_C_COMPILER}")
 set(CMAKE_CXX_COMPILER "${MPI_CXX_COMPILER}")
 
+option(ENABLE_OPENMP "Turn OpenMP on/off" OFF)
+if (ENABLE_OPENMP)
 find_package(OpenMP)
-if (OPENMP_FOUND)
-        add_definitions(-DHAVE_OPENMP)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        if (OPENMP_FOUND)
+                add_definitions(-DHAVE_OPENMP)
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+                message(STATUS "c++ flags: ${CMAKE_CXX_FLAGS}")
+                message(STATUS "openmp flags: ${OpenMP_CXX_FLAGS}")
+        endif()
 endif()
 
 # Unable to run without HDF5.
