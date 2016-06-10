@@ -445,12 +445,15 @@ void coupling_explicit(double t, double y[],
 	        int j = ij % grid.num_smc_axially + 1; // y dim
                 int l = (j - 1) / grid.num_smc_fundblk_axially + 1;
 	        double dummy_smc[3] = { 0.0, 0.0, 0.0 };
+                const double* __restrict__ smcIJVars = smc[i][j].vars;
+                double* __restrict__ hetero_fluxes = smc[i][j].hetero_fluxes;
 		for (int k = 1 + (i - 1) * 5; k <= i * 5; k++) {
-		        dummy_smc[cpl_Ca] = dummy_smc[cpl_Ca] + (smc[i][j].vars[smc_Ca] - ec[k][l].vars[ec_Ca]);
-			dummy_smc[cpl_IP3] = dummy_smc[cpl_IP3] + (smc[i][j].vars[smc_IP3] - ec[k][l].vars[ec_IP3]);
+                        const double* __restrict__ ecKLVars = ec[k][l].vars;
+		        dummy_smc[cpl_Ca] = dummy_smc[cpl_Ca] + (smcIJVars[smc_Ca] - ecKLVars[ec_Ca]);
+			dummy_smc[cpl_IP3] = dummy_smc[cpl_IP3] + (smcIJVars[smc_IP3] - ecKLVars[ec_IP3]);
 		}
-		smc[i][j].hetero_fluxes[cpl_Ca] = -cpl_cef.Ca_ht_smc * dummy_smc[cpl_Ca];
-		smc[i][j].hetero_fluxes[cpl_IP3] = -cpl_cef.IP3_ht_smc * dummy_smc[cpl_IP3];
+		hetero_fluxes[cpl_Ca] = -cpl_cef.Ca_ht_smc * dummy_smc[cpl_Ca];
+		hetero_fluxes[cpl_IP3] = -cpl_cef.IP3_ht_smc * dummy_smc[cpl_IP3];
 	}
 
 #pragma omp parallel for
@@ -458,13 +461,16 @@ void coupling_explicit(double t, double y[],
 	        int i = ij / grid.num_ec_axially + 1;
                 int j = ij % grid.num_ec_axially + 1;
 		int k = (i - 1) / 5 + 1;
+                const double* __restrict__ ecIJVars = ec[i][j].vars;
+                double* __restrict__ hetero_fluxes = ec[i][j].hetero_fluxes;
 		double dummy_ec[3] = { 0.0, 0.0, 0.0 };
 		for (int l = 1 + (j - 1) * 13; l <= j * 13; l++) {
-		        dummy_ec[cpl_Ca] = dummy_ec[cpl_Ca] + (ec[i][j].vars[ec_Ca] - smc[k][l].vars[smc_Ca]);
-			dummy_ec[cpl_IP3] = dummy_ec[cpl_IP3] + (ec[i][j].vars[ec_IP3] - smc[k][l].vars[smc_IP3]);
+		        const double* __restrict__ smcKLVars = smc[k][l].vars;
+		        dummy_ec[cpl_Ca] = dummy_ec[cpl_Ca] + (ecIJVars[ec_Ca] - smcKLVars[smc_Ca]);
+			dummy_ec[cpl_IP3] = dummy_ec[cpl_IP3] + (ecIJVars[ec_IP3] - smcKLVars[smc_IP3]);
 		}
-		ec[i][j].hetero_fluxes[cpl_Ca] = -cpl_cef.Ca_ht_ec * dummy_ec[cpl_Ca];
-	        ec[i][j].hetero_fluxes[cpl_IP3] = -cpl_cef.IP3_ht_ec * dummy_ec[cpl_IP3];
+		hetero_fluxes[cpl_Ca] = -cpl_cef.Ca_ht_ec * dummy_ec[cpl_Ca];
+	        hetero_fluxes[cpl_IP3] = -cpl_cef.IP3_ht_ec * dummy_ec[cpl_IP3];
 	}
 }
 
