@@ -325,33 +325,58 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef)
 {
 ////******************** HOMOCELLULAR COUPLING *********************/
+#pragma ivdep
 #pragma omp parallel for
         for (int ij = 0; ij < grid.num_smc_circumferentially * grid.num_smc_axially; ij++) {
 	        int i = ij / grid.num_smc_axially + 1;
                 int j = ij % grid.num_smc_axially + 1;
-
 		const double vSmc_Vm = smc[i][j].vars[smc_Vm];
 		int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
-		smc[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_smc
-			  * (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_Vm] - smc[i][up].vars[smc_Vm]))
-			  + (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Vm] - smc[i][down].vars[smc_Vm]))
-			  + (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Vm] - smc[left][j].vars[smc_Vm]))
-			  + (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Vm] - smc[right][j].vars[smc_Vm])));
+                const double* __restrict__ vars = smc[i][j].vars;
+                const double* __restrict__ upVars = smc[i][up].vars;
+                const double* __restrict__ downVars = smc[i][down].vars;
+                const double* __restrict__ leftVars = smc[left][j].vars;
+                const double* __restrict__ rightVars = smc[right][j].vars;
+                const double var = vars[smc_Vm];
+                const double upVar = upVars[smc_Vm];
+                const double downVar = downVars[smc_Vm];
+                const double leftVar =  leftVars[smc_Vm];
+                const double rightVar = rightVars[smc_Vm];
+                const double* __restrict__ diffusion = cpl_cef.smc_diffusion;
+                double* __restrict__ homo_fluxes = smc[i][j].homo_fluxes;
+
+		homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_smc
+			  * (diffusion[0] * (var - upVar)
+			  +  diffusion[1] * (var - downVar)
+			  +  diffusion[2] * (var - leftVar)
+			  +  diffusion[3] * (var - rightVar));
 
 	}	//end ij
 
+#pragma ivdep
 #pragma omp parallel for
         for (int ij = 0; ij < grid.num_ec_circumferentially * grid.num_ec_axially; ij++) {
                 int i = ij / grid.num_ec_axially + 1;
                 int j = ij % grid.num_ec_axially + 1;
-
 		int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
+                const double* __restrict__ vars =  ec[i][j].vars;
+                const double* __restrict__ upVars = ec[i][up].vars;
+                const double* __restrict__ downVars = ec[i][down].vars;
+                const double* __restrict__ leftVars = ec[left][j].vars;
+                const double* __restrict__ rightVars = ec[right][j].vars;
+                const double var = vars[ec_Vm];
+                const double upVar = upVars[ec_Vm];
+                const double downVar = downVars[ec_Vm];
+                const double leftVar = leftVars[ec_Vm];
+                const double rightVar = rightVars[ec_Vm];
+                const double* __restrict__ diffusion = cpl_cef.ec_diffusion;
+                double* __restrict__ homo_fluxes = ec[i][j].homo_fluxes;
 
 		ec[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_ec
-			  * (cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_Vm] - ec[i][up].vars[ec_Vm]))
-			  + (cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Vm] - ec[i][down].vars[ec_Vm]))
-			  + (cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Vm] - ec[left][j].vars[ec_Vm]))
-			  + (cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Vm] - ec[right][j].vars[ec_Vm])));
+			  * (diffusion[0] * (var - upVar)
+			  +  diffusion[1] * (var - downVar)
+			  +  diffusion[2] * (var - leftVar)
+			  +  diffusion[3] * (var - rightVar));
 
 	}	//end ij
 
@@ -363,9 +388,11 @@ void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 	        int i = ij / grid.num_smc_axially + 1; // x dim
                 int j = ij % grid.num_smc_axially + 1; // y dim
 		int l = (j - 1) / grid.num_smc_fundblk_axially + 1;
+                const double smcIJ = smc[i][j].vars[smc_Vm];
 		double dummy_smc[3] = { 0.0, 0.0, 0.0 };
+#pragma ivdep
 		for (int k = 1 + (i - 1) * 5; k <= i * 5; k++) {
-		      dummy_smc[cpl_Vm] = dummy_smc[cpl_Vm] + (smc[i][j].vars[smc_Vm] - ec[k][l].vars[ec_Vm]);
+		      dummy_smc[cpl_Vm] = dummy_smc[cpl_Vm] + (smcIJ - ec[k][l].vars[ec_Vm]);
 		}
 		smc[i][j].hetero_fluxes[cpl_Vm] = -cpl_cef.Vm_ht_smc * dummy_smc[cpl_Vm];
 	}
@@ -375,9 +402,11 @@ void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 	        int i = ij / grid.num_ec_axially + 1;
 		int j = ij % grid.num_ec_axially + 1;
                 int k = (i - 1) / 5 + 1;
+                const double ecIJ = ec[i][j].vars[ec_Vm];
 		double dummy_ec[3] = { 0.0, 0.0, 0.0 };
+#pragma ivdep
 		for (int l = 1 + (j - 1) * 13; l <= j * 13; l++) {
-		     dummy_ec[cpl_Vm] = dummy_ec[cpl_Vm] + (ec[i][j].vars[ec_Vm] - smc[k][l].vars[smc_Vm]);
+		     dummy_ec[cpl_Vm] = dummy_ec[cpl_Vm] + (ecIJ - smc[k][l].vars[smc_Vm]);
 		}
 		ec[i][j].hetero_fluxes[cpl_Vm] = -cpl_cef.Vm_ht_ec * dummy_ec[cpl_Vm];
 	}
