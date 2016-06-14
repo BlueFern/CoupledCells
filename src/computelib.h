@@ -167,7 +167,6 @@ typedef struct
 	double* fluxes;			    ///stores single cell fluxes
 	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
 	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
-	conductance cpl_cef;
 } SMC_cell;
 
 typedef struct
@@ -177,7 +176,6 @@ typedef struct
 	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
 	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
 	double JPLC;			    ///local agonist concentration  on my GPCR receptor (an ith EC)
-	conductance cpl_cef;
 } EC_cell;
 
 typedef struct
