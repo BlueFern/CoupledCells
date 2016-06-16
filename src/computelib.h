@@ -56,6 +56,16 @@ int errcode = (fn); \
 #define EC_ROW 3
 #define SMC_COL 1
 #define SMC_ROW 33
+
+// Number of variables and fluxes
+#define NUM_VARS_EC 5
+#define NUM_FLUXES_EC 15
+#define NUM_COUPLING_SPECIES_EC 3
+
+#define NUM_VARS_SMC 5
+#define NUM_FLUXES_SMC 12
+#define NUM_COUPLING_SPECIES_SMC 3
+
 extern FILE* var_file;
 
 extern double* plotttingBuffer;
@@ -162,19 +172,19 @@ typedef struct
 
 typedef struct
 {
-	double *vars;		///storage for the state variables corresponding to an SMC.
+	double vars[NUM_VARS_SMC];		///storage for the state variables corresponding to an SMC.
+	double fluxes[NUM_FLUXES_SMC];			    ///stores single cell fluxes
+	double homo_fluxes[NUM_COUPLING_SPECIES_SMC];			    ///stores homogeneous coupling fluxes
+	double hetero_fluxes[NUM_COUPLING_SPECIES_SMC];			    ///stores heterogeneous coupling fluxes
 	double NO, NE, I_stim;		///specific to Tsoukias model
-	double* fluxes;			    ///stores single cell fluxes
-	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
-	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
 } SMC_cell;
 
 typedef struct
 {
-	double *vars;		///storage for the state variables corresponding to an SMC.
-	double* fluxes;			    ///stores single cell fluxes
-	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
-	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
+	double vars[NUM_VARS_EC];		///storage for the state variables corresponding to an SMC.
+	double fluxes[NUM_FLUXES_EC];			    ///stores single cell fluxes
+	double homo_fluxes[NUM_COUPLING_SPECIES_EC];			    ///stores homogeneous coupling fluxes
+	double hetero_fluxes[NUM_COUPLING_SPECIES_EC];			    ///stores heterogeneous coupling fluxes
 	double JPLC;			    ///local agonist concentration  on my GPCR receptor (an ith EC)
 } EC_cell;
 
