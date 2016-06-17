@@ -11,8 +11,8 @@
 void read_config_file(grid_parms* grid);
 
 conductance cpl_cef;
-SMC_cell **smc;
-EC_cell **ec;
+//SMC_cell **smc;
+//EC_cell **ec;
 double **sendbuf, **recvbuf;
 grid_parms grid;
 
@@ -174,17 +174,21 @@ int main(int argc, char* argv[])
 \endverbatim
 */
 
-	smc = (SMC_cell**) checked_malloc((grid.num_smc_circumferentially + grid.num_ghost_cells) * sizeof(SMC_cell*), SRC_LOC);
+	SMC_cell** smc = (SMC_cell**) checked_malloc((grid.num_smc_circumferentially + grid.num_ghost_cells) * sizeof(SMC_cell*), SRC_LOC);
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
 	{
 		smc[i] = (SMC_cell*) checked_malloc((grid.num_smc_axially + grid.num_ghost_cells) * sizeof(SMC_cell), SRC_LOC);
 	}
 
-	ec = (EC_cell**) checked_malloc((grid.num_ec_circumferentially + grid.num_ghost_cells) * sizeof(EC_cell*), SRC_LOC);
+	EC_cell** ec = (EC_cell**) checked_malloc((grid.num_ec_circumferentially + grid.num_ghost_cells) * sizeof(EC_cell*), SRC_LOC);
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++)
 	{
 		ec[i] = (EC_cell*) checked_malloc((grid.num_ec_axially + grid.num_ghost_cells) * sizeof(EC_cell), SRC_LOC);
 	}
+
+	All_cell all_cell;
+	all_cell.smc = smc;
+	all_cell.ec = ec;
 
 	/// Allocating memory for coupling data to be sent and received through MPI.
 	/// sendbuf and recvbuf are 2D arrays with up, down, left and right directions as their first dimension.
@@ -321,7 +325,7 @@ int main(int argc, char* argv[])
 
 #elif defined ARK_ODE
 
-	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir);
+	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir, all_cell);
 
 #elif defined BOOST_ODEINT
 

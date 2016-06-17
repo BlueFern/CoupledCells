@@ -22,6 +22,9 @@ extern time_stamps t_stamp;
 
 static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 {
+	All_cell* all_cell = static_cast<All_cell*>(user_data);
+	SMC_cell** smc = all_cell->smc;
+	EC_cell** ec = all_cell->ec;
 	N_VectorContent_Serial yContent = (N_VectorContent_Serial) y->content;
 	N_VectorContent_Serial yDotContent = (N_VectorContent_Serial) ydot->content;
 	compute(grid, smc, ec, cpl_cef, t, yContent->data, yDotContent->data);
@@ -31,6 +34,9 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 
 static int fi(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 {
+	All_cell* all_cell = static_cast<All_cell*>(user_data);
+	SMC_cell** smc = all_cell->smc;
+	EC_cell** ec = all_cell->ec;
 	N_VectorContent_Serial yContent = (N_VectorContent_Serial) y->content;
 	N_VectorContent_Serial yDotContent = (N_VectorContent_Serial) ydot->content;
 
@@ -41,6 +47,9 @@ static int fi(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 
 static int fe(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 {
+	All_cell* all_cell = static_cast<All_cell*>(user_data);
+	SMC_cell** smc = all_cell->smc;
+	EC_cell** ec = all_cell->ec;
 	N_VectorContent_Serial yContent = (N_VectorContent_Serial) y->content;
 	N_VectorContent_Serial yDotContent = (N_VectorContent_Serial) ydot->content;
 
@@ -125,8 +134,11 @@ void ark_check_flag(int cflag, char *funcname, int rank, double tnow)
 }
 
 void arkode_solver(double tnow, double tfinal, double interval, double *yInitial, int neq, double relTOL, double absTOL,
-		int file_write_per_unit_time, char* path)
+		int file_write_per_unit_time, char* path, All_cell& all_cell)
 {
+	EC_cell** ec = all_cell.ec;
+	SMC_cell** smc = all_cell.smc;
+
 	int iteration = 0;
 	int write_count = 0;
 	initialize_t_stamp(&t_stamp);
@@ -156,6 +168,9 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 
 	flag = ARKodeSStolerances(arkode_mem, relTOL, absTOL);
 	ark_check_flag(flag, (char *)"ARKodeSVtolerances", grid.universal_rank, 0);
+
+	flag = ARKodeSetUserData(arkode_mem, &all_cell);
+	ark_check_flag(flag, (char *)"ARKodeSetUserData", grid.universal_rank, 0);
 
 	// Exchange SMC and EC variables in the ghost cells.
 	// Essential for restarts when data is loaded from a checkpoint.

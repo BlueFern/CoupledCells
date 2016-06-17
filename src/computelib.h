@@ -188,6 +188,12 @@ typedef struct
 	double JPLC;			    ///local agonist concentration  on my GPCR receptor (an ith EC)
 } EC_cell;
 
+typedef struct 
+{
+    EC_cell** ec;
+    SMC_cell** smc;
+} All_cell;
+
 typedef struct
 {
 	double aggregate_compute, aggregate_comm;
@@ -221,7 +227,7 @@ void coupling_explicit(double, double*, const grid_parms&, SMC_cell**, EC_cell**
 void rksuite_solver_CT(double, double, double, double*, double*, int, double, double*, int, char*); //, IO_domain_info*);
 #endif
 #ifdef ARK_ODE
-void arkode_solver(double, double, double, double*, int, double, double, int, char*);
+void arkode_solver(double, double, double, double*, int, double, double, int, char*, All_cell&);
 #endif
 #ifdef BOOST_ODEINT
 void odeint_solver(double, double, double, double*, int, double, double, int, char*);
