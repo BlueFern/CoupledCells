@@ -3,6 +3,7 @@
 
 #include <mpi.h>
 #include <stdio.h>
+#include <vector>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -187,6 +188,26 @@ typedef struct
 	double hetero_fluxes[NUM_COUPLING_SPECIES_EC];			    ///stores heterogeneous coupling fluxes
 	double JPLC;			    ///local agonist concentration  on my GPCR receptor (an ith EC)
 } EC_cell;
+
+template <class T>
+class Cell_array {
+public:
+	Cell_array() {
+		_nc = 0;
+		_na = 0;
+	}
+	void allocate(int nc, int na) {
+		_nc = nc;
+		_na = na;
+		this->data.resize(_nc * _na);
+	}
+	inline T* __restrict__ operator[](int i) {
+		return &this->data[i*_na];
+	}
+private:
+	std::vector<T> data;
+	int _nc, _na;
+};
 
 typedef struct 
 {

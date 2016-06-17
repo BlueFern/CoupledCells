@@ -11,8 +11,6 @@
 void read_config_file(grid_parms* grid);
 
 conductance cpl_cef;
-//SMC_cell **smc;
-//EC_cell **ec;
 double **sendbuf, **recvbuf;
 grid_parms grid;
 
