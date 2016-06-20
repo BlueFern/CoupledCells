@@ -435,17 +435,19 @@ void coupling_explicit(double t, double y[],
                 const double* __restrict__ rightVars = smc[right][j].vars;
                 double* __restrict__ homo_fluxes = smc[i][j].homo_fluxes;
 
+		double var = vars[smc_Ca];
 		homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc
-		                        * (cpl_cef.smc_diffusion[0] * ((vars[smc_Ca] - upVars[smc_Ca]))
-					+ (cpl_cef.smc_diffusion[1] * (vars[smc_Ca] - downVars[smc_Ca]))
-					+ (cpl_cef.smc_diffusion[2] * (vars[smc_Ca] - leftVars[smc_Ca]))
-					+ (cpl_cef.smc_diffusion[3] * (vars[smc_Ca] - rightVars[smc_Ca])));
+		                        * (cpl_cef.smc_diffusion[0] * ((var - upVars[smc_Ca]))
+					+ (cpl_cef.smc_diffusion[1] * (var - downVars[smc_Ca]))
+					+ (cpl_cef.smc_diffusion[2] * (var - leftVars[smc_Ca]))
+					+ (cpl_cef.smc_diffusion[3] * (var - rightVars[smc_Ca])));
 
+		var = vars[smc_IP3];
 		homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_smc
-					* (cpl_cef.smc_diffusion[0] * ((vars[smc_IP3] - upVars[smc_IP3]))
-					+ (cpl_cef.smc_diffusion[1] * (vars[smc_IP3] - downVars[smc_IP3]))
-					+ (cpl_cef.smc_diffusion[2] * (vars[smc_IP3] - leftVars[smc_IP3]))
-					+ (cpl_cef.smc_diffusion[3] * (vars[smc_IP3] - rightVars[smc_IP3])));
+					* (cpl_cef.smc_diffusion[0] * ((var - upVars[smc_IP3]))
+					+ (cpl_cef.smc_diffusion[1] * (var - downVars[smc_IP3]))
+					+ (cpl_cef.smc_diffusion[2] * (var - leftVars[smc_IP3]))
+					+ (cpl_cef.smc_diffusion[3] * (var - rightVars[smc_IP3])));
 
                 // Heterocellular coupling 
 
@@ -479,17 +481,19 @@ void coupling_explicit(double t, double y[],
                 const double* __restrict__ rightVars = ec[right][j].vars;
                 double* __restrict__ homo_fluxes = ec[i][j].homo_fluxes;
 
+		double var = vars[ec_Ca];
 		homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec
-					* cpl_cef.ec_diffusion[0] * ((vars[ec_Ca] - upVars[ec_Ca])
-					+ cpl_cef.ec_diffusion[1] * (vars[ec_Ca] - downVars[ec_Ca])
-					+ cpl_cef.ec_diffusion[2] * (vars[ec_Ca] - leftVars[ec_Ca])
-					+ cpl_cef.ec_diffusion[3] * (vars[ec_Ca] - rightVars[ec_Ca]));
+					* cpl_cef.ec_diffusion[0] * ((var - upVars[ec_Ca])
+					+ cpl_cef.ec_diffusion[1] * (var - downVars[ec_Ca])
+					+ cpl_cef.ec_diffusion[2] * (var - leftVars[ec_Ca])
+					+ cpl_cef.ec_diffusion[3] * (var - rightVars[ec_Ca]));
 
+		var = vars[ec_IP3];
 		homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_ec
-					* cpl_cef.ec_diffusion[0] * ((vars[ec_IP3] - upVars[ec_IP3])
-					+ cpl_cef.ec_diffusion[1] * (vars[ec_IP3] - downVars[ec_IP3])
-					+ cpl_cef.ec_diffusion[2] * (vars[ec_IP3] - leftVars[ec_IP3])
-					+ cpl_cef.ec_diffusion[3] * (vars[ec_IP3] - rightVars[ec_IP3]));
+					* cpl_cef.ec_diffusion[0] * ((var - upVars[ec_IP3])
+					+ cpl_cef.ec_diffusion[1] * (var - downVars[ec_IP3])
+					+ cpl_cef.ec_diffusion[2] * (var - leftVars[ec_IP3])
+					+ cpl_cef.ec_diffusion[3] * (var - rightVars[ec_IP3]));
 
                 // Heterocellular coupling
 
