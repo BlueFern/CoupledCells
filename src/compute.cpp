@@ -210,7 +210,7 @@ void set_coupling_parms(int CASE, conductance* cpl_cef)
 
 // TODO: Move the Tsoukias code to the appropriate location.
 // Mapping from state variable vector to cells.
-int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_cell** ec)
+int map_solver_output_to_cells(const grid_parms& grid, double* y, SMC_cell** smc, EC_cell** ec)
 {
 	int err = 0;
 	switch (grid.smc_model)
@@ -322,7 +322,7 @@ int map_solver_output_to_cells(grid_parms grid, double* y, SMC_cell** smc, EC_ce
 	return (err);
 }
 
-void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef)
+void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef)
 {
 	int i, j, k, l;
 
@@ -398,7 +398,7 @@ void coupling_implicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 	}
 }
 
-void coupling_explicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef)
+void coupling_explicit(double t, double y[], const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef)
 {
 	int i, j, k, l;
 
@@ -488,14 +488,14 @@ void coupling_explicit(double t, double y[], grid_parms grid, SMC_cell** smc, EC
 	}
 }
 
-void coupling(double t, double y[], grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef)
+void coupling(double t, double y[], const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef)
 {
 	coupling_implicit(t, y, grid, smc, ec, cpl_cef);
 	coupling_explicit(t, y, grid, smc, ec, cpl_cef);
 }
 
 
-void compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t, double* y, double* f)
+void compute(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef, double t, double* y, double* f)
 {
 	int err;
 
@@ -541,7 +541,7 @@ void compute(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef,
 #endif
 }
 
-void compute_implicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t, double* y, double* f)
+void compute_implicit(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef, double t, double* y, double* f)
 {
 	map_solver_output_to_cells(grid, y, smc, ec);
 
@@ -568,7 +568,7 @@ void compute_implicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance
 #endif
 }
 
-void compute_explicit(grid_parms grid, SMC_cell** smc, EC_cell** ec, conductance cpl_cef, double t, double* y, double* f)
+void compute_explicit(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef, double t, double* y, double* f)
 {
 	map_solver_output_to_cells(grid, y, smc, ec);
 

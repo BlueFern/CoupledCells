@@ -209,12 +209,12 @@ void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, EC_cell**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
-void compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
-void compute_implicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
-void compute_explicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
-void coupling(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
-void coupling_implicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
-void coupling_explicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
+void compute(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*);
+void compute_implicit(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*);
+void compute_explicit(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*);
+void coupling(double, double*, const grid_parms&, SMC_cell**, EC_cell**,  const conductance&);
+void coupling_implicit(double, double*, const grid_parms&, SMC_cell**, EC_cell**,  const conductance&);
+void coupling_explicit(double, double*, const grid_parms&, SMC_cell**, EC_cell**,  const conductance&);
 
 // Solver wrapper functions.
 #ifdef RK_SUITE
@@ -227,7 +227,7 @@ void arkode_solver(double, double, double, double*, int, double, double, int, ch
 void odeint_solver(double, double, double, double*, int, double, double, int, char*);
 #endif
 
-int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
+int map_solver_output_to_cells(const grid_parms&, double*, SMC_cell**, EC_cell**);
 
 ///These are debugging functions, not used in production runs.
 void dump_rank_info(conductance, grid_parms);
