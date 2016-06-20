@@ -209,6 +209,7 @@ private:
 	int _nc, _na;
 };
 
+// To pass ec and smc data to the solvers
 typedef struct 
 {
     EC_cell** ec;
