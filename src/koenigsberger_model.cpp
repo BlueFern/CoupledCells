@@ -10,7 +10,7 @@
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
-const double
+double
 	/* Constants for homogenically coupled SMCs. */
       Fi = 0.23,  Kri = 1.00,  GCai = 0.00129,  vCa1 = 100.00,
 	  vCa2 = -24.00,  RCai = 8.50,  GNaCai = 0.00316,  cNaCai = 0.5,
@@ -45,22 +45,25 @@ const double
 
 /// Initial values found by running a sufficiently long simulation and recording state values
 /// after they have reached a steady state.
-void initialize_koenigsberger_smc(const grid_parms& grid, double* __restrict__ y, SMC_cell** __restrict__ smc)
+void initialize_koenigsberger_smc(const grid_parms& grid, double* y, SMC_cell** smc)
 {
 	int k = 0, offset;
 	srand(grid.universal_rank);
 
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
-			k = (i - 1) * grid.neq_smc_axially;
+			if (i > 1)
+				k = ((i - 1) * grid.neq_smc_axially);
+			else if (i == 1)
+				k = 0;
 
 			if (grid.random)
 			{
-				y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = (double)rand() / (double)(RAND_MAX / 0.1) + 0.15;
-				y[k + ((j - 1) * grid.neq_smc) + smc_SR] = (double)rand() / (double)(RAND_MAX / 0.2) + 1.3;
-				y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = (double)rand() / (double)(RAND_MAX / 5.0) - 68.0;
-				y[k + ((j - 1) * grid.neq_smc) + smc_w] = (double)rand() / (double)(RAND_MAX / 0.005) + 0.01;
-				y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = (double)rand() / (double)(RAND_MAX / 0.2) + 0.6;
+				y[k + ((j - 1) * grid.neq_smc) + smc_Ca] = (float)rand() / (float)(RAND_MAX / 0.1) + 0.15;
+				y[k + ((j - 1) * grid.neq_smc) + smc_SR] = (float)rand() / (float)(RAND_MAX / 0.2) + 1.3;
+				y[k + ((j - 1) * grid.neq_smc) + smc_Vm] = (float)rand() / (float)(RAND_MAX / 5.0) - 68.0;
+				y[k + ((j - 1) * grid.neq_smc) + smc_w] = (float)rand() / (float)(RAND_MAX / 0.005) + 0.01;
+				y[k + ((j - 1) * grid.neq_smc) + smc_IP3] = (float)rand() / (float)(RAND_MAX / 0.2) + 0.6;
 			}
 			else
 			{
@@ -73,52 +76,48 @@ void initialize_koenigsberger_smc(const grid_parms& grid, double* __restrict__ y
 
 		}
 	}
-#pragma ivdep
-#pragma omp for simd collapse(2)
-	int nc = grid.num_smc_circumferentially + grid.num_ghost_cells;
-        int na = grid.num_smc_axially + grid.num_ghost_cells;
-        for (int ij = 0; ij < nc * na; ij++) {
-	        int i = ij / na;
-                int j = ij % na;
-                double* __restrict__ vars = smc[i][j].vars;
-                double* __restrict__ fluxes = smc[i][j].fluxes;
-                double* __restrict__ homo_fluxes = smc[i][j].homo_fluxes;
-                double* __restrict__ hetero_fluxes = smc[i][j].hetero_fluxes;
-		vars[smc_Ca] = 0.0;
-	        vars[smc_SR] = 0.0;
-		vars[smc_Vm] = 0.0;
-	        vars[smc_w] = 0.0;
-		vars[smc_IP3] = 0.0;
 
-		// TODO: remove initialising fluxes for lemon model even when not used....
-		for (int k = 0; k < grid.num_fluxes_smc; k++) {
-			fluxes[k] = 0.1;
-		}
-		for (int k = 0; k < grid.num_coupling_species_smc; k++) {
-			homo_fluxes[k] = 0.1;
-			hetero_fluxes[k] = 0.1;
+	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++) {
+		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells); j++) {
+			smc[i][j].vars[smc_Ca] = 0.0;
+			smc[i][j].vars[smc_SR] = 0.0;
+			smc[i][j].vars[smc_Vm] = 0.0;
+			smc[i][j].vars[smc_w] = 0.0;
+			smc[i][j].vars[smc_IP3] = 0.0;
+
+			// TODO: remove initialising fluxes for lemon model even when not used....
+			for (int k = 1; k <= grid.num_fluxes_smc; k++) {
+				smc[i][j].fluxes[k - 1] = 0.1;
+			}
+			for (int k = 1; k <= grid.num_coupling_species_smc; k++) {
+				smc[i][j].homo_fluxes[k - 1] = 0.1;
+				smc[i][j].hetero_fluxes[k - 1] = 0.1;
+			}
 		}
 	}
 }
 
 /// Initial values found by running a sufficiently long simulation and recording state values
 /// after they have reached a steady state.
-void initialize_koenigsberger_ec(const grid_parms& grid, double* y, EC_cell** __restrict__ ec)
+void initialize_koenigsberger_ec(const grid_parms& grid, double* y, EC_cell** ec)
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 	srand(grid.universal_rank);
 
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_ec_axially; j++) {
-			k = offset + (i - 1) * grid.neq_ec_axially;
+			if (i > 1)
+				k = offset + ((i - 1) * grid.neq_ec_axially);
+			else if (i == 1)
+				k = offset + 0;
 
 			if (grid.random)
 			{
-				y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = (double)rand() / (double)(RAND_MAX / 0.3) + 0.7;
-				y[k + ((j - 1) * grid.neq_ec) + ec_SR] = (double)rand() / (double)(RAND_MAX / 0.2) + 0.5;
-				y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = (double)rand() / (double)(RAND_MAX / 5.0) - 68.0;
-				y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = (double)rand() / (double)(RAND_MAX / 0.1) + 0.9;
-				y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = (double)rand() / (double)(RAND_MAX / 50.0) + 1450;
+				y[k + ((j - 1) * grid.neq_ec) + ec_Ca] = (float)rand() / (float)(RAND_MAX / 0.3) + 0.7;
+				y[k + ((j - 1) * grid.neq_ec) + ec_SR] = (float)rand() / (float)(RAND_MAX / 0.2) + 0.5;
+				y[k + ((j - 1) * grid.neq_ec) + ec_Vm] = (float)rand() / (float)(RAND_MAX / 5.0) - 68.0;
+				y[k + ((j - 1) * grid.neq_ec) + ec_IP3] = (float)rand() / (float)(RAND_MAX / 0.1) + 0.9;
+				y[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = (float)rand() / (float)(RAND_MAX / 50.0) + 1450;
 			}
 			else
 			{
@@ -139,132 +138,108 @@ void initialize_koenigsberger_ec(const grid_parms& grid, double* y, EC_cell** __
 			ec[i][j].vars[ec_IP3] = 0.0;
 			ec[i][j].vars[ec_Gprot] = 0.0;
 
-			for (int k = 0; k < grid.num_fluxes_ec; k++) {
-				ec[i][j].fluxes[k] = 0.1;
+			for (int k = 1; k <= grid.num_fluxes_ec; k++) {
+				ec[i][j].fluxes[k - 1] = 0.1;
 			}
-			for (int k = 0; k < grid.num_coupling_species_ec; k++) {
-				ec[i][j].homo_fluxes[k] = 0.1;
-				ec[i][j].hetero_fluxes[k] = 0.1;
+			for (int k = 1; k <= grid.num_coupling_species_ec; k++) {
+				ec[i][j].homo_fluxes[k - 1] = 0.1;
+				ec[i][j].hetero_fluxes[k - 1] = 0.1;
 			}
 		}
 	}
 }
 
-void koenigsberger_smc(const grid_parms& grid, SMC_cell** __restrict__ smc)
+void koenigsberger_smc(const grid_parms& grid, SMC_cell** smc)
 {
 	koenigsberger_smc_implicit(grid, smc);
 	koenigsberger_smc_explicit(grid, smc);
 }
 
-void koenigsberger_smc_derivatives(double* __restrict__ f, 
-                                   const grid_parms& grid, SMC_cell** __restrict__ smc)
+void koenigsberger_smc_derivatives(double* f, const grid_parms& grid, SMC_cell** smc)
 {
 	koenigsberger_smc_derivatives_implicit(f, grid, smc);
 	koenigsberger_smc_derivatives_explicit(f, grid, smc);
 }
 
-void koenigsberger_ec(const grid_parms& grid, EC_cell** __restrict__ ec)
+void koenigsberger_ec(const grid_parms& grid, EC_cell** ec)
 {
 	koenigsberger_ec_implicit(grid, ec);
 	koenigsberger_ec_explicit(grid, ec);
 }
 
-void koenigsberger_ec_derivatives(double t, 
-                                  double* __restrict__ f, const grid_parms& grid, 
-                                  EC_cell** __restrict__ ec)
+void koenigsberger_ec_derivatives(double t, double* f, const grid_parms& grid, EC_cell** ec)
 {
 	koenigsberger_ec_derivatives_implicit(t, f, grid, ec);
 	koenigsberger_ec_derivatives_explicit(t, f, grid, ec);
 }
 
-void koenigsberger_smc_implicit(const grid_parms& grid, SMC_cell** __restrict__ smc)
+void koenigsberger_smc_implicit(const grid_parms& grid, SMC_cell** smc)
 {
-        const int na = grid.num_smc_axially;
-        const int nc = grid.num_smc_circumferentially;
 	// Evaluate single cell fluxes.
-#pragma omp parallel for
-	for (int ij = 0; ij < na * nc; ij++) {
-	        int i = ij / na + 1;
-                int j = ij % na + 1;
+	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+		for (int j = 1; j <= grid.num_smc_axially; j++) {
 
-                double* flxs = smc[i][j].fluxes;
-                const double vSmc_Vm = smc[i][j].vars[smc_Vm];
-                const double vSmc_Ca = smc[i][j].vars[smc_Ca];
-
-		//Jvocc
-		flxs[J_VOCC] = GCai * (vSmc_Vm - vCa1) / (1. + exp(-(vSmc_Vm - vCa2) / RCai));
-		//J Na/Ca
-		flxs[J_Na_Ca] = GNaCai * vSmc_Ca * (vSmc_Vm - vNaCai) / (vSmc_Ca + cNaCai);
-		//JNa/K
-		flxs[J_Na_K] = FNaK;
-		//J Cl
-		flxs[J_Cl] = GCli * (vSmc_Vm - vCl);
-		//JK
-		flxs[J_K] = GKi * smc[i][j].vars[smc_w] * (vSmc_Vm - vKi);
+			//Jvocc
+			smc[i][j].fluxes[J_VOCC] = GCai * (smc[i][j].vars[smc_Vm] - vCa1) / (1 + ((double) (exp(((-1) * (smc[i][j].vars[smc_Vm] - vCa2)) / RCai))));
+			//J Na/Ca
+			smc[i][j].fluxes[J_Na_Ca] = GNaCai * smc[i][j].vars[smc_Ca] * (smc[i][j].vars[smc_Vm] - vNaCai) / (smc[i][j].vars[smc_Ca] + cNaCai);
+			//JNa/K
+			smc[i][j].fluxes[J_Na_K] = FNaK;
+			//J Cl
+			smc[i][j].fluxes[J_Cl] = GCli * (smc[i][j].vars[smc_Vm] - vCl);
+			//JK
+			smc[i][j].fluxes[J_K] = GKi * smc[i][j].vars[smc_w] * (smc[i][j].vars[smc_Vm] - vKi);
+		}
 	}
 }
 
-void koenigsberger_smc_explicit(const grid_parms& grid, SMC_cell** __restrict__ smc)
+void koenigsberger_smc_explicit(const grid_parms& grid, SMC_cell** smc)
 {
-        const int na = grid.num_smc_axially;
-        const int nc = grid.num_smc_circumferentially;
 	// Evaluate single cell fluxes.
-#pragma ivdep
-#pragma omp parallel for
-	for (int ij = 0; ij < na * nc; ij++) {
-	        int i = ij / na + 1;
-                int j = ij % na + 1;
+	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+		for (int j = 1; j <= grid.num_smc_axially; j++) {
 
-		double* flxs = smc[i][j].fluxes;
-		const double* vars = smc[i][j].vars;
-		const double vSmc_IP3 = vars[smc_IP3];
-		const double vSmc_Ca = vars[smc_Ca];
-		const double vSmc_SR = vars[smc_SR];
-		const double vSmc_Vm = vars[smc_Vm];
-
-		//JIP3
-		flxs[J_IP3] = (Fi * P2(vSmc_IP3)) / (P2(Kri) + P2(vSmc_IP3));
-		//JSRuptake
-		flxs[J_SERCA] = (Bi * P2(vSmc_Ca)) / (P2(
-					vSmc_Ca) + P2(cbi));
-		//Jcicr
-		flxs[J_CICR] = (CICRi * (P2(vSmc_SR) * P4(
-					vSmc_Ca))) / ((P2(sci) + P2(vSmc_SR))
+			//JIP3
+			smc[i][j].fluxes[J_IP3] = (Fi * P2(smc[i][j].vars[smc_IP3])) / (P2(Kri) + P2(smc[i][j].vars[smc_IP3]));
+			//JSRuptake
+			smc[i][j].fluxes[J_SERCA] = (Bi * P2(smc[i][j].vars[smc_Ca])) / (P2(
+					smc[i][j].vars[smc_Ca]) + P2(cbi));
+			//Jcicr
+			smc[i][j].fluxes[J_CICR] = (CICRi * (P2(smc[i][j].vars[smc_SR]) * P4(
+					smc[i][j].vars[smc_Ca]))) / ((P2(sci) + P2(smc[i][j].vars[smc_SR]))
 			* (P4(cci)+ P4(
-							vSmc_Ca)));
-		//Jextrusion
-		flxs[J_Extrusion] = Di * vSmc_Ca * (1. + ((vSmc_Vm - vdi) / Rdi));
+							smc[i][j].vars[smc_Ca])));
+			//Jextrusion
+			smc[i][j].fluxes[J_Extrusion] = Di * smc[i][j].vars[smc_Ca] * (1 + ((smc[i][j].vars[smc_Vm] - vdi) / Rdi));
 
-		//Jleak
-		flxs[J_Leak] = Li * vSmc_SR;
-		//Jvocc
-		flxs[J_VOCC] = GCai * (vSmc_Vm - vCa1) / (1. + (exp(-(vSmc_Vm - vCa2) / RCai)));
-		//J Na/Ca
-		flxs[J_Na_Ca] = GNaCai * vSmc_Ca * (vSmc_Vm - vNaCai) / (vSmc_Ca + cNaCai);
-		//Kactivation
-		flxs[K_activation] = P2(vSmc_Ca + cwi) / (P2(
-					vSmc_Ca + cwi) + beta * exp(-(vSmc_Vm - vCa3) / RKi));
-		//Jdegradation
-		flxs[J_IP3_deg] = ki * vSmc_IP3;
+			//Jleak
+			smc[i][j].fluxes[J_Leak] = Li * smc[i][j].vars[smc_SR];
+			//Jvocc
+			smc[i][j].fluxes[J_VOCC] = GCai * (smc[i][j].vars[smc_Vm] - vCa1) / (1 + ((double) (exp(((-1) * (smc[i][j].vars[smc_Vm] - vCa2)) / RCai))));
+			//J Na/Ca
+			smc[i][j].fluxes[J_Na_Ca] = GNaCai * smc[i][j].vars[smc_Ca] * (smc[i][j].vars[smc_Vm] - vNaCai) / (smc[i][j].vars[smc_Ca] + cNaCai);
+			//Kactivation
+			smc[i][j].fluxes[K_activation] = P2(smc[i][j].vars[smc_Ca] + cwi) / (P2(
+					smc[i][j].vars[smc_Ca] + cwi) + (beta * ((double) exp((-1) * (smc[i][j].vars[smc_Vm] - vCa3) / RKi))));
+			//Jdegradation
+			smc[i][j].fluxes[J_IP3_deg] = ki * smc[i][j].vars[smc_IP3];
+		}
 	}
 }
 
-void koenigsberger_smc_derivatives_implicit(double* __restrict__ f, 
-                                            const grid_parms& grid, SMC_cell** __restrict__ smc)
+void koenigsberger_smc_derivatives_implicit(double* f, const grid_parms& grid, SMC_cell** smc)
 {
-#pragma ivdep
-        for(int ij = 0; ij < grid.num_smc_circumferentially * grid.num_smc_axially; ij++) {
-	        int i = ij / grid.num_smc_axially + 1;
-                int j = ij % grid.num_smc_axially + 1;
-                int k = (i - 1) * grid.neq_smc_axially;
-                int ktot = k + (j - 1) * grid.neq_smc;
-                const double* flxs = smc[i][j].fluxes;
-                const double* homo_flxs = smc[i][j].homo_fluxes;
-                const double* hetero_flxs = smc[i][j].hetero_fluxes;
+	int k;
+	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
+		for (int j = 1; j <= grid.num_smc_axially; j++) {
+			if (i > 1)
+				k = ((i - 1) * grid.neq_smc_axially);
+			else if (i == 1)
+				k = 0;
 
-		f[ktot + smc_Vm] = gama
-					* (-flxs[J_Na_K] - flxs[J_Cl] - (2 * flxs[J_VOCC]) - flxs[J_Na_Ca] - flxs[J_K])
-					+ homo_flxs[cpl_Vm] + hetero_flxs[cpl_Vm];
+			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = gama
+					* (-smc[i][j].fluxes[J_Na_K] - smc[i][j].fluxes[J_Cl] - (2 * smc[i][j].fluxes[J_VOCC]) - smc[i][j].fluxes[J_Na_Ca] - smc[i][j].fluxes[J_K])
+					+ smc[i][j].homo_fluxes[cpl_Vm] + smc[i][j].hetero_fluxes[cpl_Vm];
 
 #if PLOTTING && EXPLICIT_ONLY
 			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
@@ -274,28 +249,32 @@ void koenigsberger_smc_derivatives_implicit(double* __restrict__ f,
 #endif
 
 #if ! EXPLICIT_ONLY
-			f[ktot + smc_Ca] = 0.0;
-			f[ktot + smc_SR] = 0.0;
-			f[ktot + smc_w] = 0.0;
-			f[ktot + smc_IP3] = 0.0;
+			f[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.0;
+			f[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.0;
+			f[k + ((j - 1) * grid.neq_smc) + smc_w] = 0.0;
+			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = 0.0;
 #endif
+		}
 	}
 }
 
-void koenigsberger_smc_derivatives_explicit(double* __restrict__ f, 
-                                            const grid_parms& grid, SMC_cell** __restrict__ smc)
+void koenigsberger_smc_derivatives_explicit(double* f, const grid_parms& grid, SMC_cell** smc)
 {
+	int k;
 	for (int i = 1; i <= grid.num_smc_circumferentially; i++) {
 		for (int j = 1; j <= grid.num_smc_axially; j++) {
-			int ktot = (i - 1) * grid.neq_smc_axially + (j - 1) * grid.neq_smc;
-			f[ktot + smc_Ca] = smc[i][j].fluxes[J_IP3] - smc[i][j].fluxes[J_SERCA] + smc[i][j].fluxes[J_CICR] - smc[i][j].fluxes[J_Extrusion]
+			if (i > 1)
+				k = ((i - 1) * grid.neq_smc_axially);
+			else if (i == 1)
+				k = 0;
+			f[k + ((j - 1) * grid.neq_smc) + smc_Ca] = smc[i][j].fluxes[J_IP3] - smc[i][j].fluxes[J_SERCA] + smc[i][j].fluxes[J_CICR] - smc[i][j].fluxes[J_Extrusion]
 					+ smc[i][j].fluxes[J_Leak] - smc[i][j].fluxes[J_VOCC] + smc[i][j].fluxes[J_Na_Ca] + smc[i][j].homo_fluxes[cpl_Ca] + smc[i][j].hetero_fluxes[cpl_Ca];
 
-			f[ktot + smc_SR] = smc[i][j].fluxes[J_SERCA] - smc[i][j].fluxes[J_CICR] - smc[i][j].fluxes[J_Leak];
+			f[k + ((j - 1) * grid.neq_smc) + smc_SR] = smc[i][j].fluxes[J_SERCA] - smc[i][j].fluxes[J_CICR] - smc[i][j].fluxes[J_Leak];
 
-			f[ktot + smc_w] = lambda * (smc[i][j].fluxes[K_activation] - smc[i][j].vars[smc_w]);
+			f[k + ((j - 1) * grid.neq_smc) + smc_w] = lambda * (smc[i][j].fluxes[K_activation] - smc[i][j].vars[smc_w]);
 
-			f[ktot + smc_IP3] = -smc[i][j].fluxes[J_IP3_deg] + smc[i][j].homo_fluxes[cpl_IP3] + smc[i][j].hetero_fluxes[cpl_IP3];
+			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = -smc[i][j].fluxes[J_IP3_deg] + smc[i][j].homo_fluxes[cpl_IP3] + smc[i][j].hetero_fluxes[cpl_IP3];
 
 #if PLOTTING && EXPLICIT_ONLY
 			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
@@ -308,14 +287,14 @@ void koenigsberger_smc_derivatives_explicit(double* __restrict__ f,
 #endif
 
 #if ! EXPLICIT_ONLY
-			f[ktot + smc_Vm] = 0.0;
+			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.0;
 #endif
 
 		}
 	}
 }
 
-void koenigsberger_ec_implicit(const grid_parms& grid, EC_cell** __restrict__ ec)
+void koenigsberger_ec_implicit(const grid_parms& grid, EC_cell** ec)
 {
 	// Evaluate single cell fluxes.
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
@@ -328,100 +307,97 @@ void koenigsberger_ec_implicit(const grid_parms& grid, EC_cell** __restrict__ ec
 	}
 }
 
-void koenigsberger_ec_explicit(const grid_parms& grid, EC_cell** __restrict__ ec)
+void koenigsberger_ec_explicit(const grid_parms& grid, EC_cell** ec)
 {
-        const int na = grid.num_ec_axially;
-        const int nc = grid.num_ec_circumferentially;
 	// Evaluate single cell fluxes.
-#pragma omp parallel for
-	for (int ij = 0; ij < na * nc; ij++) {
-	        int i = ij / na + 1;
-                int j = ij % na + 1;
+	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
+		for (int j = 1; j <= grid.num_ec_axially; j++) {
+			//JIP3
+			ec[i][j].fluxes[J_IP3] = (Fj * P2(ec[i][j].vars[ec_IP3])) / (P2(Krj) + P2(ec[i][j].vars[ec_IP3]));
+			//JSRuptake
+			ec[i][j].fluxes[J_SERCA] = (Bj * P2(ec[i][j].vars[ec_Ca])) / (P2(ec[i][j].vars[ec_Ca]) + P2(cbj));
+			//Jcicr
+			ec[i][j].fluxes[J_CICR] = (CICRj * P2(ec[i][j].vars[ec_SR]) * P4(ec[i][j].vars[ec_Ca]))
+					/ ((P2(ec[i][j].vars[ec_SR]) + P2(scj))*(P4(ec[i][j].vars[ec_Ca])+P4(ccj)));
+			//Jextrusion
+			ec[i][j].fluxes[J_Extrusion] = Dj * ec[i][j].vars[ec_Ca];
+			//Jleak
+			ec[i][j].fluxes[J_Leak] = Lj * ec[i][j].vars[ec_SR];
 
-		double* flxs = ec[i][j].fluxes;
-		const double* vars = ec[i][j].vars;
-		const double vEc_Ca = vars[ec_Ca];
-		const double vEc_Vm = vars[ec_Vm];
-		const double vEc_SR = vars[ec_SR];
-		const double vEc_IP3 = vars[ec_IP3];
-		const double log10_ec_Ca = log10(vEc_Ca);
+			//IP3 degradation
+			ec[i][j].fluxes[J_IP3_deg] = kDeg * ec[i][j].vars[ec_IP3];
 
-		//JIP3
-		flxs[J_IP3] = (Fj * P2(vEc_IP3)) / (P2(Krj) + P2(vEc_IP3));
-		//JSRuptake
-		flxs[J_SERCA] = (Bj * P2(vEc_Ca)) / (P2(vEc_Ca) + P2(cbj));
-		//Jcicr
-		flxs[J_CICR] = (CICRj * P2(vEc_SR) * P4(vEc_Ca))
-		  / ((P2(vEc_SR) + P2(scj))*(P4(vEc_Ca)+P4(ccj)));
-		//Jextrusion
-		flxs[J_Extrusion] = Dj * vEc_Ca;
-		//Jleak
-		flxs[J_Leak] = Lj * vEc_SR;
+			//J_NonSelective Cation channels
+			ec[i][j].fluxes[J_NSC] = (Gcatj * (ECa - ec[i][j].vars[ec_Vm]) * 0.5)
+					* (1 + ((double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3cat) / m4cat)))));
+			//BK_channels
+			ec[i][j].fluxes[J_BK_Ca] =
+					(0.4 / 2)
+							* (1
+									+ (double) (tanh(
+											(double) ((((((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - c1j) * (ec[i][j].vars[ec_Vm] - bj)) - a1j)
+													/ ((m3b * (P2(ec[i][j].vars[ec_Vm]+(a2j*((double) (log10 ((double) (ec[i][j].vars[ec_Ca]))) - c1j)) - bj))) + m4b))))));
+			//SK_channels
+			ec[i][j].fluxes[J_SK_Ca] = (0.6 / 2) * (1 + (double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3s) / m4s))));
+			//Grouping all other trivial Ca fluxes
+			ec[i][j].fluxes[J_trivial_Ca] = J0j;
 
-		//IP3 degradation
-		flxs[J_IP3_deg] = kDeg * vEc_IP3;
+			// Ratio of bound to total P2Y
+			ec[i][j].fluxes[L_P_P2Y] = ec[i][j].JPLC / (ec[i][j].JPLC + kATP); // TODO: Does this need to be calculated every time? is JPLC constant?
 
-		//J_NonSelective Cation channels
-		flxs[J_NSC] = (Gcatj * (ECa - vEc_Vm) * 0.5)
-		  * (1 + ((double) (tanh((double) ((log10_ec_Ca - m3cat) / m4cat)))));
-		//BK_channels
-		flxs[J_BK_Ca] = (0.4 / 2.) * (1. + tanh(
-				       ((log10_ec_Ca - c1j) * (vEc_Vm - bj) - a1j)
-						 / ((m3b * (P2(vEc_Vm+(a2j*(log10_ec_Ca - c1j)) - bj))) + m4b)));
-		//SK_channels
-		flxs[J_SK_Ca] = (0.6 / 2.) * (1. + tanh((log10_ec_Ca - m3s) / m4s));
-		//Grouping all other trivial Ca fluxes
-		flxs[J_trivial_Ca] = J0j;
+			// Rate of PIP2 hydrolysis.
+			ec[i][j].fluxes[R_PIP2_H] = alpha_j * (ec[i][j].vars[ec_Ca] / (ec[i][j].vars[ec_Ca] + KCa)) * ec[i][j].vars[ec_Gprot];
 
-		// Ratio of bound to total P2Y
-		flxs[L_P_P2Y] = ec[i][j].JPLC / (ec[i][j].JPLC + kATP); // TODO: Does this need to be calculated every time? is JPLC constant?
+			// Induced IP3 influx
+			ec[i][j].fluxes[J_ind_I] = (ec[i][j].fluxes[R_PIP2_H] * cons_PIP2 * unitcon_a) / (N_a * V_ec);
 
-		// Rate of PIP2 hydrolysis.
-		flxs[R_PIP2_H] = alpha_j * (vEc_Ca / (vEc_Ca + KCa)) * ec[i][j].vars[ec_Gprot];
-
-		// Induced IP3 influx
-		flxs[J_ind_I] = (flxs[R_PIP2_H] * cons_PIP2 * unitcon_a) / (N_a * V_ec);
-
+		}
 	}
 }
 
-void koenigsberger_ec_derivatives_implicit(double t, double* __restrict__ f, 
-                                           const grid_parms& grid, EC_cell** __restrict__ ec)
-{
-	int offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
-        for (int ij = 0; ij < grid.num_ec_circumferentially *  grid.num_ec_axially; ij++) 
-	{
-	        int i = ij / grid.num_ec_axially + 1;
-                int j = ij % grid.num_ec_axially + 1;
-                int ktot = offset + (i - 1) * grid.neq_ec_axially + (j - 1) * grid.neq_ec;
-
-		f[ktot + ec_Vm] =
-		      ((-1. / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
-#if PLOTTING && EXPLICIT_ONLY
-		if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
-		{
-			plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Vm];
-	        }
-#endif
-
-#if !EXPLICIT_ONLY
-
-	       f[ktot + ec_Ca] = 0.0;
-	       f[ktot + ec_SR] = 0.0;
-	       f[ktot + ec_IP3] = 0.0;
-	       f[ktot + ec_Gprot] = 0.0;
-#endif
-	}
-}
-
-void koenigsberger_ec_derivatives_explicit(double t, double* __restrict__ f, const grid_parms& grid, EC_cell** ec)
+void koenigsberger_ec_derivatives_implicit(double t, double* f, const grid_parms& grid, EC_cell** ec)
 {
 	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
 	for(int i = 1; i <= grid.num_ec_circumferentially; i++)
 	{
 		for(int j = 1; j <= grid.num_ec_axially; j++)
 		{
-			k = offset + (i - 1) * grid.neq_ec_axially;
+			if (i > 1)
+				k = offset + ((i - 1) * grid.neq_ec_axially);
+			else if (i == 1)
+				k = offset + 0;
+
+			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
+					((-1 / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
+#if PLOTTING && EXPLICIT_ONLY
+			if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
+			{
+				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Vm];
+			}
+#endif
+
+#if !EXPLICIT_ONLY
+
+			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] = 0.0;
+			f[k + ((j - 1) * grid.neq_ec) + ec_SR] = 0.0;
+			f[k + ((j - 1) * grid.neq_ec) + ec_IP3] = 0.0;
+			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] = 0.0;
+#endif
+		}
+	}
+}
+
+void koenigsberger_ec_derivatives_explicit(double t, double* f, const grid_parms& grid, EC_cell** ec)
+{
+	int k, offset = (grid.neq_smc * grid.num_smc_circumferentially * grid.num_smc_axially);
+	for(int i = 1; i <= grid.num_ec_circumferentially; i++)
+	{
+		for(int j = 1; j <= grid.num_ec_axially; j++)
+		{
+			if (i > 1)
+				k = offset + ((i - 1) * grid.neq_ec_axially);
+			else if (i == 1)
+				k = offset + 0;
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Ca] =
 					ec[i][j].fluxes[J_IP3] - ec[i][j].fluxes[J_SERCA] + ec[i][j].fluxes[J_CICR] - ec[i][j].fluxes[J_Extrusion]

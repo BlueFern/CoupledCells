@@ -4,13 +4,11 @@
 #include "computelib.h"
 #include "koenigsberger_model.h"
 
-#ifdef HAVE_OPENMP
-#include <omp.h>
-#endif
-
 void read_config_file(grid_parms* grid);
 
 conductance cpl_cef;
+SMC_cell **smc;
+EC_cell **ec;
 double **sendbuf, **recvbuf;
 grid_parms grid;
 
@@ -49,16 +47,6 @@ int main(int argc, char* argv[])
 		plotttingBuffer = buf;
 		bufferPos = 0;
 	}
-#endif
-
-#ifdef HAVE_OPENMP
-#pragma omp parallel
- {
-        int thread_id = omp_get_thread_num();
-        int num_threads = omp_get_num_threads();
-        if (thread_id == 0)
-	        printf("Running with %d thread(s)\n", num_threads);
- }
 #endif
 
 	char filename[50];
@@ -130,9 +118,8 @@ int main(int argc, char* argv[])
 	grid.num_fluxes_smc = NUM_FLUXES_SMC;
 	grid.num_fluxes_ec = NUM_FLUXES_EC;
 
-	grid.num_coupling_species_smc = NUM_COUPLING_SPECIES_SMC;
+	grid.num_coupling_species_smc =  NUM_COUPLING_SPECIES_SMC;
 	grid.num_coupling_species_ec = NUM_COUPLING_SPECIES_EC;
-
 	grid.neq_smc = NUM_VARS_SMC;
 	grid.neq_ec = NUM_VARS_EC;
 
@@ -172,26 +159,17 @@ int main(int argc, char* argv[])
 \endverbatim
 */
 
-	int nc2 = grid.num_smc_circumferentially + grid.num_ghost_cells;
-        int na2 = grid.num_smc_axially + grid.num_ghost_cells;
-	SMC_cell** smc = (SMC_cell**) checked_malloc(nc2 * sizeof(SMC_cell*), SRC_LOC);
-	for (int i = 0; i < nc2; i++)
+	smc = (SMC_cell**) checked_malloc((grid.num_smc_circumferentially + grid.num_ghost_cells) * sizeof(SMC_cell*), SRC_LOC);
+	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
 	{
-	        smc[i] = (SMC_cell*) checked_malloc(na2* sizeof(SMC_cell), SRC_LOC);
+		smc[i] = (SMC_cell*) checked_malloc((grid.num_smc_axially + grid.num_ghost_cells) * sizeof(SMC_cell), SRC_LOC);
 	}
 
-        nc2 = grid.num_ec_circumferentially + grid.num_ghost_cells;
-        na2 = grid.num_ec_axially + grid.num_ghost_cells;
-        EC_cell** ec =  (EC_cell**) checked_malloc(nc2 * sizeof(EC_cell*), SRC_LOC);
-	for (int i = 0; i < nc2; i++)
+	ec = (EC_cell**) checked_malloc((grid.num_ec_circumferentially + grid.num_ghost_cells) * sizeof(EC_cell*), SRC_LOC);
+	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++)
 	{
-		ec[i] = (EC_cell*) checked_malloc(na2* sizeof(EC_cell), SRC_LOC);
+		ec[i] = (EC_cell*) checked_malloc((grid.num_ec_axially + grid.num_ghost_cells) * sizeof(EC_cell), SRC_LOC);
 	}
-
-        /// To pass the fields to the solvers
-        All_cell all_cell;
-        all_cell.smc = smc;
-        all_cell.ec = ec;
 
 	/// Allocating memory for coupling data to be sent and received through MPI.
 	/// sendbuf and recvbuf are 2D arrays with up, down, left and right directions as their first dimension.
@@ -328,7 +306,7 @@ int main(int argc, char* argv[])
 
 #elif defined ARK_ODE
 
-	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir, all_cell);
+	arkode_solver(tnow, tfinal, interval, y, grid.NEQ, TOL, absTOL, file_write_per_unit_time, grid.solution_dir);
 
 #elif defined BOOST_ODEINT
 
@@ -347,18 +325,16 @@ int main(int argc, char* argv[])
 
 
 	// Free SMCs.
-        nc2 = grid.num_smc_circumferentially + grid.num_ghost_cells;
-        for (int i = 0; i < nc2; i++) 
+	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
 	{
-	        free(smc[i]);
+		free(smc[i]);
 	}
 	free(smc);
 
 	// Free ECs.
-        nc2 = grid.num_ec_circumferentially + grid.num_ghost_cells;
-        for (int i = 0; i < nc2; i++) 
+	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++)
 	{
-	        free(ec[i]);
+		free(ec[i]);
 	}
 	free(ec);
 
