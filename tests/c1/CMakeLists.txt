@@ -1,4 +1,9 @@
 configure_file(c1_fitzroy.ll.in c1_fitzroy.ll)
+configure_file(c1_fitzroy_2th.ll.in c1_fitzroy_2th.ll)
+configure_file(c1_fitzroy_4th.ll.in c1_fitzroy_4th.ll)
+configure_file(c1_fitzroy_8th.ll.in c1_fitzroy_8th.ll)
+configure_file(c1_fitzroy_16th.ll.in c1_fitzroy_16th.ll)
+configure_file(c1_fitzroy_32th.ll.in c1_fitzroy_32th.ll)
 configure_file(c1_bgp.ll.in c1_bgp.ll)
 configure_file(c1_compare_results.sh.in c1_compare_results.sh)
 
@@ -14,7 +19,9 @@ add_test(NAME c1
 	     -T profiling
 	     -t 10.0 
 	     -w 1.0 
-	     -i 1.e-2)
+	     -i 1.e-2
+	     -C 1
+	     -R 0)
 
 # success is defined as the absence of the regular expression
 # "[1-9][0-9]*[ ]*differences found" in the output

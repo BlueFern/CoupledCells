@@ -17,6 +17,7 @@
 # @ class                = General
 # @ node = 1
 # @ tasks_per_node = 1
+# @ parallel_threads = 8
 #
 # @ queue
 

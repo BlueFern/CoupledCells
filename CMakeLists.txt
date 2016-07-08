@@ -24,7 +24,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	include_directories(/usr/include/malloc/)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-# Unable to run without MPI.
 if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
         # AIX (fitzroy) needs some help
         set(POE "/usr/lpp/ppe.poe")
@@ -35,20 +34,43 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
                 set(MPI_C_LIBRARIES "${MPI_LIBRARIES}")
                 set(MPI_CXX_INCLUDE_PATH "${MPI_INCLUDE_PATH}")
                 set(MPI_CXX_LIBRARIES "${MPI_LIBRARIES}")
+                set(MPI_CXX_COMPILER "mpCC_r")
                 message(STATUS "Setting MPI_CXX_INCLUDE_PATH=${MPI_CXX_INCLUDE_PATH}")
                 message(STATUS "Setting MPI_CXX_LIBRARIES=${MPI_CXX_LIBRARIES}")
 		if (CMAKE_BUILD_TYPE STREQUAL "Release")
-		        set(ADD_FLAGS "-q64 -O3 -qstrict -qmaxmem=-1 -qtune=pwr6 -qarch=pwr6 -qcache=auto -qhot -qsimd -qipa")
+		        set(ADD_FLAGS "-q64 -O3 -qstrict -qmaxmem=-1 -qtune=pwr6 -qarch=pwr6 -qcache=auto -qhot -qipa -qsimd -qreport")
 		        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ADD_FLAGS}")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ADD_FLAGS}")
 			set(CMAKE_Fortran_FLAGS "${CMAKE_CXX_FLAGS} ${ADD_FLAGS}")
 		endif (CMAKE_BUILD_TYPE STREQUAL "Release")
         endif(EXISTS "${POE}/include" AND EXISTS "${POE}/lib")
 endif(${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+       if (CMAKE_BUILD_TYPE STREQUAL "gprof")
+               set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+       endif()
+       if (CMAKE_BUILD_TYPE STREQUAL "Report")
+               set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ftree-vectorize -fopt-info-vec-missed -fopt-info-inline-missed")
+       endif() 
+endif()
+
+# Unable to run without MPI.
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 set(CMAKE_C_COMPILER "${MPI_C_COMPILER}")
 set(CMAKE_CXX_COMPILER "${MPI_CXX_COMPILER}")
+
+option(ENABLE_OPENMP "Turn OpenMP on/off" OFF)
+if (ENABLE_OPENMP)
+find_package(OpenMP)
+        if (OPENMP_FOUND)
+                add_definitions(-DHAVE_OPENMP)
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+                message(STATUS "c++ flags: ${CMAKE_CXX_FLAGS}")
+                message(STATUS "openmp flags: ${OpenMP_CXX_FLAGS}")
+        endif()
+endif()
 
 # Unable to run without HDF5.
 find_package(HDF5 REQUIRED)
@@ -132,7 +154,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "AIX" AND (NOT "${TAU_MAKEFILE}" STREQUAL ""))
             "-optVerbose -O2 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
         set(CMAKE_CXX_COMPILER "tau_cxx.sh")
         set(CMAKE_CXX_FLAGS 
-            "-optVerbose -O2 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
+            "-optVerbose -O3 -qstrict -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6 -qreport -qhot -qsimd")
         set(CMAKE_Fortran_COMPILER "tau_f90.sh") 
         set(CMAKE_Fortran_FLAGS 
             "-optVerbose ${CMAKE_Fortran_FLAGS} -qstrict -qfixed -O2 -qmaxmem=-1 -qarch=pwr6 -qtune=pwr6")
@@ -143,6 +165,7 @@ endif()
 
 # Allow the user to set directory where reference results are stored so
 # we can run ctest on the results
+set(REF_RESULTS_DIR CACHE FILEPATH "")
 set(HAVE_REF_RESULTS "NO")
 if(NOT ${REF_RESULTS_DIR} STREQUAL "" AND (EXISTS ${REF_RESULTS_DIR}))
         message(STATUS "Reference test results directory set to ${REF_RESULTS_DIR}")

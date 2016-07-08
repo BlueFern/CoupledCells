@@ -115,13 +115,13 @@ int main(int argc, char* argv[])
 	grid.num_ec_fundblk_axially = 1;
 	grid.num_ghost_cells = 2;
 
-	grid.num_fluxes_smc = 12;
-	grid.num_fluxes_ec = 15;
+	grid.num_fluxes_smc = NUM_FLUXES_SMC;
+	grid.num_fluxes_ec = NUM_FLUXES_EC;
 
-	grid.num_coupling_species_smc = 3;
-	grid.num_coupling_species_ec = 3;
-	grid.neq_smc = 5;
-	grid.neq_ec = 5;
+	grid.num_coupling_species_smc =  NUM_COUPLING_SPECIES_SMC;
+	grid.num_coupling_species_ec = NUM_COUPLING_SPECIES_EC;
+	grid.neq_smc = NUM_VARS_SMC;
+	grid.neq_ec = NUM_VARS_EC;
 
 
 	// File written every 1 second.
@@ -169,32 +169,6 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++)
 	{
 		ec[i] = (EC_cell*) checked_malloc((grid.num_ec_axially + grid.num_ghost_cells) * sizeof(EC_cell), SRC_LOC);
-	}
-
-	/// Memory allocation for state vectors (the RHS of the ODEs for each cell) and coupling fluxes.
-
-	/// SMC domain.
-	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
-	{
-		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells); j++)
-		{
-			smc[i][j].vars = (double*) checked_malloc(grid.neq_smc * sizeof(double), SRC_LOC);
-			smc[i][j].fluxes = (double*) checked_malloc(grid.num_fluxes_smc * sizeof(double), SRC_LOC);
-			smc[i][j].homo_fluxes = (double*) checked_malloc(grid.num_coupling_species_smc * sizeof(double), SRC_LOC);
-			smc[i][j].hetero_fluxes = (double*) checked_malloc(grid.num_coupling_species_smc * sizeof(double), SRC_LOC);
-		}
-	}
-
-	/// EC domain.
-	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++)
-	{
-		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++)
-		{
-			ec[i][j].vars = (double*) checked_malloc(grid.neq_ec * sizeof(double), SRC_LOC);
-			ec[i][j].fluxes = (double*) checked_malloc(grid.num_fluxes_ec * sizeof(double), SRC_LOC);
-			ec[i][j].homo_fluxes = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), SRC_LOC);
-			ec[i][j].hetero_fluxes = (double*) checked_malloc(grid.num_coupling_species_ec * sizeof(double), SRC_LOC);
-		}
 	}
 
 	/// Allocating memory for coupling data to be sent and received through MPI.
@@ -353,13 +327,6 @@ int main(int argc, char* argv[])
 	// Free SMCs.
 	for (int i = 0; i < (grid.num_smc_circumferentially + grid.num_ghost_cells); i++)
 	{
-		for (int j = 0; j < (grid.num_smc_axially + grid.num_ghost_cells); j++)
-		{
-			free(smc[i][j].vars);
-			free(smc[i][j].fluxes);
-			free(smc[i][j].homo_fluxes);
-			free(smc[i][j].hetero_fluxes);
-		}
 		free(smc[i]);
 	}
 	free(smc);
@@ -367,13 +334,6 @@ int main(int argc, char* argv[])
 	// Free ECs.
 	for (int i = 0; i < (grid.num_ec_circumferentially + grid.num_ghost_cells); i++)
 	{
-		for (int j = 0; j < (grid.num_ec_axially + grid.num_ghost_cells); j++)
-		{
-			free(ec[i][j].vars);
-			free(ec[i][j].fluxes);
-			free(ec[i][j].homo_fluxes);
-			free(ec[i][j].hetero_fluxes);
-		}
 		free(ec[i]);
 	}
 	free(ec);

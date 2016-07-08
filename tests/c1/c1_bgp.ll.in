@@ -19,6 +19,6 @@
 
 exe="@CMAKE_BINARY_DIR@/coupledCellsModel"
 mpirun -mode VN -np 1 -verbose 2 -env BG_COREDUMP_BINARY='*' -cwd `pwd` \
-       -exe $exe -args "-f config.txt -S solution -T profiling -t 10.00 -w 1.0 -i 1e-2"
+       -exe $exe -args "-f config.txt -S solution -T profiling -t 10.00 -w 1.0 -i 1e-2 -C 1 -R 0"
 
 

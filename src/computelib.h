@@ -56,6 +56,16 @@ int errcode = (fn); \
 #define EC_ROW 3
 #define SMC_COL 1
 #define SMC_ROW 33
+
+// Number of variables and fluxes
+#define NUM_VARS_EC 5
+#define NUM_FLUXES_EC 15
+#define NUM_COUPLING_SPECIES_EC 3
+
+#define NUM_VARS_SMC 5
+#define NUM_FLUXES_SMC 12
+#define NUM_COUPLING_SPECIES_SMC 3
+
 extern FILE* var_file;
 
 extern double* plotttingBuffer;
@@ -162,27 +172,20 @@ typedef struct
 
 typedef struct
 {
-	double *vars;		///storage for the state variables corresponding to an SMC.
+	double vars[NUM_VARS_SMC];		            ///storage for the state variables corresponding to an SMC.
+	double fluxes[NUM_FLUXES_SMC];			    ///stores single cell fluxes
+	double homo_fluxes[NUM_COUPLING_SPECIES_SMC];	    ///stores homogeneous coupling fluxes
+	double hetero_fluxes[NUM_COUPLING_SPECIES_SMC];     ///stores heterogeneous coupling fluxes
 	double NO, NE, I_stim;		///specific to Tsoukias model
-	int node_row, node_col;	///stores coordinates of the node on which I am located.
-	int my_row, my_col;		///stores my location on the node.
-	double* fluxes;			    ///stores single cell fluxes
-	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
-	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
-	int cell_index[4];
-	conductance cpl_cef;
 } SMC_cell;
 
 typedef struct
 {
-	double *vars;		///storage for the state variables corresponding to an SMC.
-	int node_row, node_col;	///stores coordinates of the node on which I am located.
-	int my_row, my_col;		///stores my location on the node.
-	double* fluxes;			    ///stores single cell fluxes
-	double* homo_fluxes;			    ///stores homogeneous coupling fluxes
-	double* hetero_fluxes;			    ///stores heterogeneous coupling fluxes
+	double vars[NUM_VARS_EC];		            ///storage for the state variables corresponding to an SMC.
+	double fluxes[NUM_FLUXES_EC];			    ///stores single cell fluxes
+	double homo_fluxes[NUM_COUPLING_SPECIES_EC];	    ///stores homogeneous coupling fluxes
+	double hetero_fluxes[NUM_COUPLING_SPECIES_EC];	    ///stores heterogeneous coupling fluxes
 	double JPLC;			    ///local agonist concentration  on my GPCR receptor (an ith EC)
-	conductance cpl_cef;
 } EC_cell;
 
 typedef struct
@@ -206,12 +209,12 @@ void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, EC_cell**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
-void compute(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
-void compute_implicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
-void compute_explicit(grid_parms, SMC_cell**, EC_cell**, conductance cpl_cef, double, double*, double*);
-void coupling(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
-void coupling_implicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
-void coupling_explicit(double, double*, grid_parms, SMC_cell**, EC_cell**, conductance);
+void compute(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*);
+void compute_implicit(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*);
+void compute_explicit(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*);
+void coupling(double, double*, const grid_parms&, SMC_cell**, EC_cell**,  const conductance&);
+void coupling_implicit(double, double*, const grid_parms&, SMC_cell**, EC_cell**,  const conductance&);
+void coupling_explicit(double, double*, const grid_parms&, SMC_cell**, EC_cell**,  const conductance&);
 
 // Solver wrapper functions.
 #ifdef RK_SUITE
@@ -224,7 +227,7 @@ void arkode_solver(double, double, double, double*, int, double, double, int, ch
 void odeint_solver(double, double, double, double*, int, double, double, int, char*);
 #endif
 
-int map_solver_output_to_cells(grid_parms, double*, SMC_cell**, EC_cell**);
+int map_solver_output_to_cells(const grid_parms&, double*, SMC_cell**, EC_cell**);
 
 ///These are debugging functions, not used in production runs.
 void dump_rank_info(conductance, grid_parms);

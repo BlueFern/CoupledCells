@@ -4,7 +4,7 @@ if [ "@REF_RESULTS_DIR@" != "" ]; then
 
     for f in solution/*.h5; do
         echo "Comparing $f against @REF_RESULTS_DIR@/c1/$f"
-        h5diff -r --delta=1.e-10 $f @REF_RESULTS_DIR@/c1/$f
+        h5diff -r --delta=1.e-3 $f @REF_RESULTS_DIR@/c1/$f
     done
 
 fi
