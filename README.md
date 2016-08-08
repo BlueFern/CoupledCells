@@ -88,18 +88,18 @@ Compiling with TAU instrumentation enabled
 ------------------------------------------
 
 On platforms that have the Tuning and Analysis Utilities (TAU) installed, it is possible 
-to compile with the TAU compilers by setting the TAU_MAKEFILE variable to point to the 
+to compile with the TAU compilers by setting the environment variable TAU_MAKEFILE to point to the 
 location of the TAU Makefile to be used. 
 
 For instance on Fitzroy:
 
 ```bash
 module load tau
-cmake -DTAU_MAKEFILE=$TAU_MAKEFILE [options] <src_dir>
+cmake [options] <src_dir>
 ```
 
 The "module load tau" command will set the environment variable TAU_MAKEFILE. 
-Make sure to have the TAU compilers (tau_cxx.sh) in your PATH.
+Make sure to have the TAU compilers (taucxx) in your PATH.
 
 
 Then type "make" and run the code normally as indicated below. The executable will 
