@@ -23,6 +23,18 @@ INPUT_SMC_MESH_FILES = [
     'vtk/smc_mesh_right_daughter.vtp'
 ]
 
+numEcsAxially = 4
+numEcsCirc = 20
+
+numSmcsAxially = 52
+numSmcsCirc = 4
+
+circScale = 0
+axialScale = 0
+
+circQuads = 0
+axialQuads = 0
+
 
 def read_array(h5_file_name, dataset_name):
     fid = h5py.h5f.open(h5_file_name)
@@ -32,16 +44,42 @@ def read_array(h5_file_name, dataset_name):
     dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
 
     arr = rdata.ravel()
-
+    
     array = vtk.vtkDoubleArray()
-
-    for val in arr:
-        array.InsertNextValue(val)
+    array.SetNumberOfValues(numSmcsAxially * numSmcsCirc * circQuads * axialQuads)
+       
+    requiredQuads = []      
+    
+    for axialquad in range(axialQuads):
+        for circQuad in range(circQuads):
+            if circQuad % circScale == 0 and axialquad % axialScale == 0:
+                requiredQuads.append(circQuad + (axialquad * circQuads))
+       
+    val = 0
+    for i in requiredQuads: 
+        quadOffset = i * numSmcsAxially * numSmcsCirc
+    
+        for extraAxial in range(0, axialScale):
+            axialOffset = extraAxial * numSmcsCirc * numSmcsAxially * circQuads
+            
+            for j in range(0, numSmcsAxially): #smc rows
+                rowOffset = j * numSmcsCirc
+                
+                for extraCirc in range(0, circScale):
+                    circOffset = extraCirc * numSmcsAxially * numSmcsCirc               
+                    
+                    for k in range(0, numSmcsCirc): #smc cols
+                        
+                        cellId = quadOffset + rowOffset + circOffset + axialOffset + k
+                        array.SetValue(cellId,arr[val])
+                        val += 1
 
     return array
 
 
 def HDF5toVTK(start, end):
+
+
     INPUT_SMC_MESHES = []
 
     # Read input SMC meshes.
@@ -196,11 +234,23 @@ def HDF5toVTK(start, end):
         writer.Update()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":   
     argParser = argparse.ArgumentParser(
         description='Fuse Coupled Cells simulation (bifurcation) data in HDF5 format with vessel geomtery data in VTK format and save the result as VTU data.')
     argParser.add_argument('start', type=int, help='Start time')
     argParser.add_argument('end', type=int, help='End time')
+    
+    argParser.add_argument('circQuads', type=int, help='Number of circumferential quads for each branch.')
+    argParser.add_argument('axialQuads', type=int, help='Number of axial quads for each branch.')
+    
+    argParser.add_argument('circScale', type=int, help='Number of circumferential quads joined.')
+    argParser.add_argument('axialScale', type=int, help='Number of axial quads joined.')
     args = argParser.parse_args()
+        
+    circScale = args.circScale
+    axialScale = args.axialScale
+
+    circQuads = args.circQuads
+    axialQuads = args.axialQuads
 
     HDF5toVTK(args.start, args.end)

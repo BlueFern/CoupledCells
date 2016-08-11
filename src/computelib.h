@@ -100,8 +100,8 @@ struct conductance
 #define PARENT_DOMAIN_NUM 4
 #define LEFT_DOMAIN_NUM 5
 #define RIGHT_DOMAIN_NUM 6
-#define AX_ECS 7
-#define CR_SMCS 8
+#define AX_SCALE 7
+#define CR_SCALE 8
 #define NUM_CONFIG_ELEMENTS 9
 
 // TODO: Initialise and use constants correctly within grid_params.
@@ -142,6 +142,7 @@ typedef struct
 	nbrs[2][4],
 	///Node payload information (number of cells laid out on a node).
 	num_ec_axially, num_ec_circumferentially, num_smc_axially, num_smc_circumferentially, neq_ec_axially, neq_smc_axially,
+	base_smc_circumferentially, base_ec_axially,
 	///Total number of state variables in the computational domain
 	NEQ,
 	///This is global and local MPI information
