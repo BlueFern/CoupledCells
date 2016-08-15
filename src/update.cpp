@@ -382,12 +382,12 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 	}
 }
 
-void read_init_ATP(grid_parms *grid, EC_cell **ECs)
+void read_lumanel_values(grid_parms *grid, EC_cell **ECs)
 {
 
 	hid_t       file, space, dset;          /* Handles */
 	herr_t      status;
-	hsize_t     dims[1];
+	hsize_t     dims[2];
 	int ndims;
 
 
@@ -401,48 +401,48 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 		branch = grid->branch_tag;
 	}
 
-	int jplc_per_task_count = grid->num_ec_circumferentially * grid->num_ec_axially;
+	int count_per_task = grid->num_ec_circumferentially * grid->num_ec_axially;
 
-	int jplc_in_size = jplc_per_task_count * grid->num_ranks_branch;
-
+	int count_per_branch = count_per_task * grid->num_ranks_branch;
 
 
 	// The reordered atp array.
-	double *send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
+	double *send_jplc = (double *)checked_malloc(count_per_branch * sizeof(double), SRC_LOC);
+	double *send_wss = (double *)checked_malloc(count_per_branch * sizeof(double), SRC_LOC);
 
 	// Only the IO nodes read the input files.
 	if (grid->rank_branch == 0)
 	{
-		double *read_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
+		double *read_buffer = (double *)checked_malloc(NUM_LUMEN_ATTRIBUTES * count_per_branch * sizeof(double), SRC_LOC);
 
-		char jplc_file_name[64];
+		char lumen_filename[64];
 		switch(branch)
 		{
 			case P:
-				sprintf(jplc_file_name, "files/parent_atp.h5");
+				sprintf(lumen_filename, "files/parent_lumen.h5");
 				break;
 			case L:
-				sprintf(jplc_file_name, "files/left_daughter_atp.h5");
+				sprintf(lumen_filename, "files/left_daughter_lumen.h5");
 				break;
 			case R:
-				sprintf(jplc_file_name, "files/right_daughter_atp.h5");
+				sprintf(lumen_filename, "files/right_daughter_lumen.h5");
 				break;
 			default:
 				; // Do something sensible here otherwise all hell breaks loose...
 		}
-		printf("opening %s\n",jplc_file_name);
-		file = H5Fopen(jplc_file_name, H5F_ACC_RDONLY, H5P_DEFAULT);
+		printf("opening %s\n",lumen_filename);
+		file = H5Fopen(lumen_filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 
-	    dset = H5Dopen(file, "/atp" , H5P_DEFAULT);
+	    dset = H5Dopen(file, "/lumen" , H5P_DEFAULT);
 
 	    space = H5Dget_space (dset);
 		ndims = H5Sget_simple_extent_dims (space, dims, NULL);
 
-	    assert(jplc_in_size == dims[0]);
-	    status = H5Dread(dset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, read_jplc);
+	    assert(count_per_branch == dims[0]);
 
+	    status = H5Dread(dset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, read_buffer);
 
-	    // Reorder send_jplc based on task-quad configuration.
+	    // Reorder jplc and wss based on task-quad configuration.
 
 	    int num_ec_row = grid->base_smc_circumferentially * grid->num_ec_fundblk_circumferentially;
 	    int num_ec_column = grid->base_ec_axially * grid->num_ec_fundblk_axially;
@@ -496,43 +496,47 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 						{
 
 							read_index = quad_offset + axial_offset + circ_offset + (k * num_ec_row) + i;
-							//if (grid->universal_rank == 0) printf("%f\n", read_jplc[read_index]);
-							send_jplc[send_index++] = read_jplc[read_index];
 
+							send_jplc[send_index] = read_buffer[read_index * NUM_LUMEN_ATTRIBUTES];
+							send_wss[send_index] = read_buffer[read_index * NUM_LUMEN_ATTRIBUTES + 1];
+							send_index++;
 						}
-						//if (grid->universal_rank == 0) printf("extra circ quad: %d\n",j);
 
 					}
-					//if (grid->universal_rank == 0) exit(0);
+
 				}
 			}
 	    }
 
-	    assert(send_index == jplc_in_size);
+	    assert(send_index == count_per_branch);
 	    status = H5Dclose (dset);
 		status = H5Sclose (space);
 		status = H5Fclose (file);
-		free(read_jplc);
+		free(read_buffer);
 	}
 
-	int *send_jplc_counts = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
-	int *send_jplc_offsets = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+	int *send_counts = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+	int *send_offsets = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+
 
 	for(int task = 0; task < grid->num_ranks_branch; task++)
 	{
-		send_jplc_counts[task] = jplc_per_task_count;
-		send_jplc_offsets[task] = task * jplc_per_task_count;
+		send_counts[task] = count_per_task;
+		send_offsets[task] = task * count_per_task;
+
 	}
 
-	int recv_jplc_count = jplc_per_task_count;
-	double *recv_jplc = (double *)checked_malloc(recv_jplc_count * sizeof(double), SRC_LOC);
+	int recv_count = count_per_task;
+
+	double *recv_jplc = (double *)checked_malloc(recv_count * sizeof(double), SRC_LOC);
+	double *recv_wss = (double *)checked_malloc(recv_count * sizeof(double), SRC_LOC);
 
 	int root = 0;
 
-	// printf("%s, grid->cart_comm: %p\n", __FUNCTION__, (void *)grid->cart_comm);
 
 	// Scatter JPLC values to the nodes in this Cartesian grid.
-	CHECK_MPI_ERROR(MPI_Scatterv(send_jplc, send_jplc_counts, send_jplc_offsets, MPI_DOUBLE, recv_jplc, recv_jplc_count, MPI_DOUBLE, root, grid->cart_comm));
+	CHECK_MPI_ERROR(MPI_Scatterv(send_jplc, send_counts, send_offsets, MPI_DOUBLE, recv_jplc, recv_count, MPI_DOUBLE, root, grid->cart_comm));
+	CHECK_MPI_ERROR(MPI_Scatterv(send_wss, send_counts, send_offsets, MPI_DOUBLE, recv_wss, recv_count, MPI_DOUBLE, root, grid->cart_comm));
 
 	// Assign received JPLC values to the cells.
 	for(int m = 1; m <= grid->num_ec_circumferentially; m++)
@@ -541,11 +545,14 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 		{
 			// Fortran array referencing!
 			ECs[m][n].JPLC = recv_jplc[(n - 1) * grid->num_ec_circumferentially + m - 1];
+			ECs[m][n].WSS = recv_wss[(n - 1) * grid->num_ec_circumferentially + m - 1];
 		}
 	}
 
 	free(send_jplc);
-	free(send_jplc_counts);
-	free(send_jplc_offsets);
+	free(send_wss);
+	free(send_counts);
+	free(send_offsets);
 	free(recv_jplc);
+	free(recv_wss);
 }

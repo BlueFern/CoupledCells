@@ -166,23 +166,30 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 
 	// Buffer for jplc values for the whole mesh.
 	double *jplc_buffer = 0;
+	double *wss_buffer = 0;
 
 	// Allocate the jplc_buffer.
 	if (grid.rank_branch == 0)
 	{
 		jplc_buffer = (double *)checked_malloc(grid.num_ranks_branch * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
+		wss_buffer = (double *)checked_malloc(grid.num_ranks_branch * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
+
 	}
 
 	// Collect all jplc values in a single buffer on root node.
 	gather_JPLC(&grid, jplc_buffer, ec);
+	gather_WSS(&grid, wss_buffer, ec);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	// Write jplc values to HDF5.
 	if(grid.rank_branch == 0)
 	{
-		write_HDF5_JPLC(&grid, jplc_buffer, path);
+		write_dataset_HDF5(&grid, jplc_buffer, path, JPLC_PATH);
+		write_dataset_HDF5(&grid, wss_buffer, path, WSS_PATH);
+
 		free(jplc_buffer);
+		free(wss_buffer);
 	}
 
 	// Reset JPLC to the uniform map.
@@ -195,7 +202,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		}
 	}
 
-	bool jplc_read_in = false;
+	bool lumen_read_in = false;
 
 	// Profiling.
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
@@ -225,10 +232,10 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		double solver_start = MPI_Wtime();
 
 		// Read JPLC in if it is time to do so.
-		if(t >= grid.stimulus_onset_time && !jplc_read_in)
+		if(t >= grid.stimulus_onset_time && !lumen_read_in)
 		{
-			read_init_ATP(&grid, ec);
-			jplc_read_in = true;
+			read_lumanel_values(&grid, ec);
+			lumen_read_in = true;
 		}
 
 		flag = ARKode(arkode_mem, tout, y, &t, ARK_NORMAL);  // Call integrator.

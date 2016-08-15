@@ -354,3 +354,52 @@ void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec)
 	// printf("[%d] Leaving %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 }
 
+/*
+ * Collect JPLC for each cart grid into an array on the writing cores.
+ */
+void gather_WSS(grid_parms* grid, double *wss_buffer, EC_cell** ec)
+{
+	// printf("[%d] ++++++ Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
+
+	// printf("%s, %d, [%d]\n", __FILE__, __LINE__, grid->rank / grid->num_ranks_branch);
+
+	int local_wss_buffer_size = grid->num_ec_axially * grid->num_ec_circumferentially;
+
+	// Allocate local buffer for wss values.
+	double* local_wss_buffer = (double *)checked_malloc(sizeof(double) * local_wss_buffer_size, SRC_LOC);
+
+	// Collect wss values.
+	int seq_count = 0;
+	for(int i = 0; i < grid->num_ec_axially; i++)
+	{
+		for(int j = 0; j < grid->num_ec_circumferentially; j++, seq_count++)
+		{
+			local_wss_buffer[seq_count] = ec[j + 1][i + 1].WSS;
+		}
+	}
+
+	// Allocate displacements.
+	int *disp = (int*)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+	// Allocate count values.
+	int *recv_count = (int*)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+
+	if(grid->rank_branch == 0)
+	{
+		// Compute displacement values.
+		for (int i = 0; i < grid->num_ranks_branch; i++)
+		{
+			disp[i] = i * local_wss_buffer_size;
+			recv_count[i] = local_wss_buffer_size;
+		}
+	}
+
+	// Gather all local wss buffers into the output wss buffer.
+	CHECK_MPI_ERROR(MPI_Gatherv(local_wss_buffer, local_wss_buffer_size, MPI_DOUBLE, wss_buffer, recv_count, disp, MPI_DOUBLE, 0, grid->cart_comm));
+
+	free(disp);
+	free(recv_count);
+	free(local_wss_buffer);
+
+	// printf("[%d] Leaving %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
+}
+

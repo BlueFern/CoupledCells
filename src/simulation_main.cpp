@@ -295,8 +295,8 @@ int main(int argc, char* argv[])
 	dump_rank_info(cpl_cef, grid);
 
 	// This is read in here for validation purposes in the output.
-	// the solver will reset JPLC and read later it when the time is right.
-	read_init_ATP(&grid, ec);
+	// the solver will reset JPLC, WSS, and read later it when the time is right.
+	read_lumanel_values(&grid, ec);
 
 	//MPI_Barrier(MPI_COMM_WORLD);
 	//printf("[%d] %s:%d\n", grid.universal_rank, __FILE__, __LINE__);

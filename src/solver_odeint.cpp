@@ -106,7 +106,7 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		// Read JPLC in if it is time to do so.
 		if(tnow >= grid.stimulus_onset_time && !jplc_read_in)
 		{
-			read_init_ATP(&grid, ec);
+			read_lumanel_values(&grid, ec);
 			jplc_read_in = true;
 		}
 
@@ -153,7 +153,7 @@ void odeint_solver(double tnow, double tfinal, double interval, double *yInitial
 		// Read JPLC in if it is time to do so.
 		if(tnow >= grid.stimulus_onset_time && !jplc_read_in)
 		{
-			read_init_ATP(&grid, ec);
+			read_lumanel_values(&grid, ec);
 			jplc_read_in = true;
 		}
 

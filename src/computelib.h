@@ -66,6 +66,10 @@ int errcode = (fn); \
 #define NUM_FLUXES_SMC 12
 #define NUM_COUPLING_SPECIES_SMC 3
 
+#define NUM_LUMEN_ATTRIBUTES 2
+#define JPLC_PATH "/jplc"
+#define WSS_PATH "/wss"
+
 extern FILE* var_file;
 
 extern double* plotttingBuffer;
@@ -187,6 +191,7 @@ typedef struct
 	double homo_fluxes[NUM_COUPLING_SPECIES_EC];	    ///stores homogeneous coupling fluxes
 	double hetero_fluxes[NUM_COUPLING_SPECIES_EC];	    ///stores heterogeneous coupling fluxes
 	double JPLC;			    ///local agonist concentration  on my GPCR receptor (an ith EC)
+	double WSS;
 } EC_cell;
 
 typedef struct
@@ -200,7 +205,7 @@ typedef struct
 void set_task_parameters(grid_parms *);
 void make_bifucation_cart_grids(grid_parms *);
 void make_straight_cart_grid(grid_parms *);
-void read_init_ATP(grid_parms *grid, EC_cell **ECs);
+void read_lumanel_values(grid_parms *grid, EC_cell **ECs);
 void set_coupling_parms(int CASE, conductance* cpl_cef);
 
 void determine_source_destination(grid_parms, int*, int*);

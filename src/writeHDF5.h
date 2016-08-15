@@ -16,11 +16,11 @@
     } \
 } while(0)
 
-void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path);
+void write_dataset_HDF5(grid_parms*, double *, char *path, char*);
 
-void write_EC_data_HDF5(grid_parms* grid, ec_data_buffer *ec_buffer, int write_count, char* path);
+void write_EC_data_HDF5(grid_parms*, ec_data_buffer*, int, char*);
 
-void write_SMC_data_HDF5(grid_parms* grid, smc_data_buffer *smc_buffer, int write_count, char* path);
+void write_SMC_data_HDF5(grid_parms*, smc_data_buffer*, int, char*);
 
 #endif
 

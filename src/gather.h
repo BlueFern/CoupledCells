@@ -59,4 +59,7 @@ void gather_SMC_data(grid_parms *grid, smc_data_buffer *smc_buffer, SMC_cell **s
 /* Collect JPLC values from the EC cells in one branch. */
 void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec);
 
+/* Collect WSS values from the EC cells in one branch. */
+void gather_WSS(grid_parms* grid, double *jplc_buffer, EC_cell** ec);
+
 #endif

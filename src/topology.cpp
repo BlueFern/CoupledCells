@@ -47,8 +47,6 @@ void set_task_parameters(grid_parms *grid)
 	grid->neq_smc_axially = grid->num_smc_axially * grid->neq_smc;
 
 	grid->NEQ = grid->neq_smc * (grid->num_smc_axially * grid->num_smc_circumferentially) + grid->neq_ec * (grid->num_ec_axially * grid->num_ec_circumferentially);
-	printf("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",grid->NEQ,grid->num_ec_circumferentially,grid->num_smc_circumferentially,grid->num_smc_axially,grid->num_ec_axially,
-			grid->domain_type,grid->domain_index,grid->n,grid->m);
 
 	for (int i = 0; i < 4; i++) {
 		grid->nbrs[local][i] = MPI_PROC_NULL;

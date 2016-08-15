@@ -13,14 +13,14 @@
 #define _2D 2
 
 // TODO: This function can be made general enough to write any buffer to a file with a given name.
-void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
+void write_dataset_HDF5(grid_parms* grid, double *buffer, char *path, char *name)
 {
 	// printf("[%d] >>>>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	char filename[256];
-	int err = sprintf(filename, "%s/jplc_%d.h5", path, grid->branch_tag);
+	int err = sprintf(filename, "%s%s_%d.h5", path, name, grid->branch_tag);
 
-	printf("[%d] Writing JPLC file: %s\n", grid->universal_rank, filename);
+	printf("[%d] Writing %s file: %s\n", grid->universal_rank, name, filename);
 
 	hid_t file_id;
 	hid_t space_id;
@@ -83,14 +83,14 @@ void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
 	// Create dataset.
 	// hid_t H5Dcreate( hid_t loc_id, const char *name, hid_t type_id, hid_t space_id, hid_t dcpl_id )
 #if H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 6
-	dset_id = H5Dcreate(file_id, "/jplc", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	dset_id = H5Dcreate(file_id, name, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 #else
-	dset_id = H5Dcreate(file_id, "/jplc", H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
+	dset_id = H5Dcreate(file_id, name, H5T_NATIVE_DOUBLE, space_id, H5P_DEFAULT);
 #endif
 
 	// Write dataset.
 	// herr_t H5Dwrite(hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void * buf )
-	status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, jplc_buffer);
+	status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
 	CHECK(status, FAIL, __FUNCTION__);
 
 	// Close everything.
