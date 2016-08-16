@@ -12,21 +12,23 @@
 
 void set_task_parameters(grid_parms *grid)
 {
+
+	int scaling = grid->domain_params[0][AX_SCALE] * grid->domain_params[0][CR_SCALE];
 	// Sanity check: make sure the number of requested cores equals the number of cores required by the domain configuration parameters.
 
 	// If the subdomain type is a straight segment.
 	if(grid->domain_params[0][DOMAIN_TYPE] == STRSEG)
 	{
-		assert(grid->num_ranks == grid->domain_params[0][AX_QUADS] * grid->domain_params[0][CR_QUADS]); // Total number of tasks mapping to the straight segment are m x n.
+		assert(grid->num_ranks == (grid->domain_params[0][AX_QUADS] * grid->domain_params[0][CR_QUADS]) / scaling); // Total number of tasks mapping to the straight segment are m x n.
 	}
 	// If the subdomain is a part of a bifurcation.
 	else if(grid->domain_params[0][DOMAIN_TYPE] == BIF)
 	{
-		assert(grid->num_ranks == 3 * grid->domain_params[0][AX_QUADS] * grid->domain_params[0][CR_QUADS]); // Total number of tasks mapping to the bifurcation are 3 x m x n.
+		assert(grid->num_ranks == 3 * (grid->domain_params[0][AX_QUADS] * grid->domain_params[0][CR_QUADS]) / scaling); // Total number of tasks mapping to the bifurcation are 3 x m x n.
 	}
 
-	grid->m = grid->domain_params[0][AX_QUADS];
-	grid->n = grid->domain_params[0][CR_QUADS];
+	grid->m = grid->domain_params[0][AX_QUADS] / grid->domain_params[0][AX_SCALE];
+	grid->n = grid->domain_params[0][CR_QUADS] / grid->domain_params[0][CR_SCALE];
 
 	grid->domain_index = grid->domain_params[0][DOMAIN_NUM];
 	grid->domain_type = grid->domain_params[0][DOMAIN_TYPE];
@@ -36,15 +38,17 @@ void set_task_parameters(grid_parms *grid)
 	// Topological information of a functional block of coupled cells.
 	// This is the minimum required to simulate a relevant coupled topology.
 
-	grid->num_ec_axially = grid->domain_params[0][AX_ECS] * grid->num_ec_fundblk_axially;
+	grid->num_ec_axially = grid->base_ec_axially * grid->num_ec_fundblk_axially * grid->domain_params[0][AX_SCALE];
 	grid->num_smc_axially = grid->num_ec_axially * grid->num_smc_fundblk_axially;
-	grid->num_smc_circumferentially = grid->domain_params[0][CR_SMCS] * grid->num_smc_fundblk_circumferentially;
+	grid->num_smc_circumferentially = grid->base_smc_circumferentially * grid->num_smc_fundblk_circumferentially * grid->domain_params[0][CR_SCALE];
 	grid->num_ec_circumferentially = grid->num_smc_circumferentially * grid->num_ec_fundblk_circumferentially;
 
 	grid->neq_ec_axially = grid->num_ec_axially * grid->neq_ec;
 	grid->neq_smc_axially = grid->num_smc_axially * grid->neq_smc;
 
 	grid->NEQ = grid->neq_smc * (grid->num_smc_axially * grid->num_smc_circumferentially) + grid->neq_ec * (grid->num_ec_axially * grid->num_ec_circumferentially);
+	printf("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",grid->NEQ,grid->num_ec_circumferentially,grid->num_smc_circumferentially,grid->num_smc_axially,grid->num_ec_axially,
+			grid->domain_type,grid->domain_index,grid->n,grid->m);
 
 	for (int i = 0; i < 4; i++) {
 		grid->nbrs[local][i] = MPI_PROC_NULL;

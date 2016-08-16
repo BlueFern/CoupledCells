@@ -115,6 +115,9 @@ int main(int argc, char* argv[])
 	grid.num_ec_fundblk_axially = 1;
 	grid.num_ghost_cells = 2;
 
+	grid.base_smc_circumferentially = 4;
+	grid.base_ec_axially = 4;
+
 	grid.num_fluxes_smc = NUM_FLUXES_SMC;
 	grid.num_fluxes_ec = NUM_FLUXES_EC;
 

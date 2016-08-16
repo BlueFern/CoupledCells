@@ -144,24 +144,22 @@ The command-line have the following meaning:
     * Element 4: Parent subdomain *Key_val* of current *Key_val*.
     * Element 5: Left child subdomain *Key_val* of the current *Key_val*.
     * Element 6: Right child subdomain *Key_val* of the current *Key_val*.
-    * Element 7: Required number of ECs axially per core.
-    * Element 8: Required number of SMCs circumferentially per core.
+    * Element 7: The number of quads to join in the axial direction.
+    * Element 8: The number of quads to join in the circumferential direction.
 
 The total number of processes (MPI ranks) required to run a simulation should match the number of 
-quads in the axial direction times the number of quads in the circumferential direction. 
-Note that for BIF elements, the required number of processes is three times (3x) the product of 
-(Element 2)*(Element 3) for that element since there there three branches in this case. 
+quads in the axial direction times the number of quads in the circumferential direction, divided by the 
+chosen scaling of quads to MPI tasks.
 
-For example, for a first subdomain of type BIF, with 12 cores along the axial
-direction, 112 cores in the circumferential direction, with no parent or child
-subdomains, and with 32 ECs and 3 SMCs in the axial and circumferential
-directions respectively, the config file will look like
+For example, for a first subdomain of type BIF, with 12 quads along the axial
+direction, 112 quads in the circumferential direction, with no parent or child
+subdomains, and with each MPI task being reponsible for a total of 4 quads, specifically 2x2 quads in the axial and circumferential directions, the config file will look like
 this:
 
     1;
-    0,1,12,112,-1,-1,-1,32,3;
+    0,1,12,112,-1,-1,-1,2,2;
 
-and the total number of processes will be 3 x 12 x 112 = 4032.
+and the total number of processes will be 3 x 12 x 112 / 4 = 1008.
 
 * **S** - Location of the generated output files.
 * **T** - Location of the profiling output files.
@@ -204,8 +202,8 @@ Input Files
 -----------
 
 The *files* subdirectory of the current working directory must contain the input
-ATP files in TXT format: `parent_atp.txt`, `left_daughter_atp.txt`, and `right_daughter_atp.txt`
-for a simulation involving a bifurcation. Only 'parent_atp.txt' is required for a simulation
+ATP files in H5 format: `parent_atp.h5`, `left_daughter_atp.h5`, and `right_daughter_atp.h5`
+for a simulation involving a bifurcation. Only 'parent_atp.h5' is required for a simulation
 involving only a trunk. Details on creating these files can be found in the
 [DBiharMesher](https://github.com/BlueFern/DBiharMesher) repository.
 

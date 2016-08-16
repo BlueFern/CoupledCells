@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <assert.h>
 #include <stdlib.h> // free
+#include <hdf5.h>
 
 #include "computelib.h"
 #include "koenigsberger_model.h"
@@ -383,6 +384,13 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 
 void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 {
+
+	hid_t       file, space, dset;          /* Handles */
+	herr_t      status;
+	hsize_t     dims[1];
+	int ndims;
+
+
 	int branch;
 	if (grid->domain_type == STRSEG)
 	{
@@ -397,49 +405,114 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 
 	int jplc_in_size = jplc_per_task_count * grid->num_ranks_branch;
 
-	// This can be allocated only on the IO nodes.
+
+
+	// The reordered atp array.
 	double *send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
 
 	// Only the IO nodes read the input files.
 	if (grid->rank_branch == 0)
 	{
+		double *read_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
+
 		char jplc_file_name[64];
 		switch(branch)
 		{
 			case P:
-				sprintf(jplc_file_name, "files/parent_atp.txt");
+				sprintf(jplc_file_name, "files/parent_atp.h5");
 				break;
 			case L:
-				sprintf(jplc_file_name, "files/left_daughter_atp.txt");
+				sprintf(jplc_file_name, "files/left_daughter_atp.h5");
 				break;
 			case R:
-				sprintf(jplc_file_name, "files/right_daughter_atp.txt");
+				sprintf(jplc_file_name, "files/right_daughter_atp.h5");
 				break;
 			default:
 				; // Do something sensible here otherwise all hell breaks loose...
 		}
+		printf("opening %s\n",jplc_file_name);
+		file = H5Fopen(jplc_file_name, H5F_ACC_RDONLY, H5P_DEFAULT);
 
-		FILE *fr = fopen(jplc_file_name, "r+");
+	    dset = H5Dopen(file, "/atp" , H5P_DEFAULT);
 
-		if(fr == NULL)
-		{
-			fprintf(stderr, "[%d] Unable to open file %s.\n", grid->universal_rank, jplc_file_name);
-			MPI_Abort(MPI_COMM_WORLD, 911);
-		}
+	    space = H5Dget_space (dset);
+		ndims = H5Sget_simple_extent_dims (space, dims, NULL);
 
-		int count_in = 0;
-		double jplc_val = 0;
-		while(fscanf(fr, "%lf", &jplc_val) == 1)
-		{
-			send_jplc[count_in] = jplc_val;
-			count_in++;
-		}
-		if(feof(fr))
-		{
-			// Check the number of values read.
-			assert(jplc_in_size == count_in);
-		}
-		fclose(fr);
+	    assert(jplc_in_size == dims[0]);
+	    status = H5Dread(dset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, read_jplc);
+
+
+	    // Reorder send_jplc based on task-quad configuration.
+
+	    int num_ec_row = grid->base_smc_circumferentially * grid->num_ec_fundblk_circumferentially;
+	    int num_ec_column = grid->base_ec_axially * grid->num_ec_fundblk_axially;
+
+	    int num_ecs_quad = num_ec_row * num_ec_column;
+
+
+	    int read_index = 0;
+	    int send_index = 0;
+
+	    // Calculate the required new quad starting ids.
+	    int required_quad_num = grid->m * grid->n;
+	    int required_quads[required_quad_num];
+
+	    int loop_index = 0;
+	    int quad_index = 0;
+
+	    for (int axial_quad = 0; axial_quad < grid->domain_params[0][AX_QUADS]; axial_quad++)
+	    {
+		    for (int circ_quad = 0; circ_quad < grid->domain_params[0][CR_QUADS]; circ_quad++)
+		    {
+
+		    	if (circ_quad % grid->domain_params[0][CR_SCALE] == 0 && axial_quad % grid->domain_params[0][AX_SCALE] == 0)
+		    	{
+		    		required_quads[quad_index++] = loop_index;
+		    	}
+		    	loop_index++;
+		    }
+	    }
+
+	    // Loop through the required new quad starting ids.
+	    for (int quad_id = 0; quad_id < required_quad_num; quad_id++)
+	    {
+	    	int quad_offset = required_quads[quad_id] * num_ecs_quad;
+
+			// Extra axial quads to loop through.
+			for (int l = 0; l < grid->domain_params[0][AX_SCALE]; l++)
+			{
+				int axial_offset = l * num_ecs_quad * grid->domain_params[0][CR_QUADS];
+
+				// Axial cells in original quad.
+				for (int k = 0; k < num_ec_column; k++)
+				{
+					// Extra circ quads to loop through.
+					for (int j = 0; j < grid->domain_params[0][CR_SCALE]; j++)
+					{
+						int circ_offset = j * num_ecs_quad;
+
+						// Circ cells in original quad.
+						for (int i = 0; i < num_ec_row; i++)
+						{
+
+							read_index = quad_offset + axial_offset + circ_offset + (k * num_ec_row) + i;
+							//if (grid->universal_rank == 0) printf("%f\n", read_jplc[read_index]);
+							send_jplc[send_index++] = read_jplc[read_index];
+
+						}
+						//if (grid->universal_rank == 0) printf("extra circ quad: %d\n",j);
+
+					}
+					//if (grid->universal_rank == 0) exit(0);
+				}
+			}
+	    }
+
+	    assert(send_index == jplc_in_size);
+	    status = H5Dclose (dset);
+		status = H5Sclose (space);
+		status = H5Fclose (file);
+		free(read_jplc);
 	}
 
 	int *send_jplc_counts = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
