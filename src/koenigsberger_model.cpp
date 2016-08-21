@@ -241,13 +241,6 @@ void koenigsberger_smc_derivatives_implicit(double* f, const grid_parms& grid, S
 					* (-smc[i][j].fluxes[J_Na_K] - smc[i][j].fluxes[J_Cl] - (2 * smc[i][j].fluxes[J_VOCC]) - smc[i][j].fluxes[J_Na_Ca] - smc[i][j].fluxes[J_K])
 					+ smc[i][j].homo_fluxes[cpl_Vm] + smc[i][j].hetero_fluxes[cpl_Vm];
 
-#if PLOTTING && EXPLICIT_ONLY
-			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
-			{
-				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_Vm];
-			}
-#endif
-
 #if ! EXPLICIT_ONLY
 			f[k + ((j - 1) * grid.neq_smc) + smc_Ca] = 0.0;
 			f[k + ((j - 1) * grid.neq_smc) + smc_SR] = 0.0;
@@ -275,16 +268,6 @@ void koenigsberger_smc_derivatives_explicit(double* f, const grid_parms& grid, S
 			f[k + ((j - 1) * grid.neq_smc) + smc_w] = lambda * (smc[i][j].fluxes[K_activation] - smc[i][j].vars[smc_w]);
 
 			f[k + ((j - 1) * grid.neq_smc) + smc_IP3] = -smc[i][j].fluxes[J_IP3_deg] + smc[i][j].homo_fluxes[cpl_IP3] + smc[i][j].hetero_fluxes[cpl_IP3];
-
-#if PLOTTING && EXPLICIT_ONLY
-			if (i == SMC_COL && j == SMC_ROW && grid.universal_rank == RANK)
-			{
-				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_Ca];
-				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_SR];
-				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_w];
-				plotttingBuffer[bufferPos++] = smc[i][j].vars[smc_IP3];
-			}
-#endif
 
 #if ! EXPLICIT_ONLY
 			f[k + ((j - 1) * grid.neq_smc) + smc_Vm] = 0.0;
@@ -369,12 +352,7 @@ void koenigsberger_ec_derivatives_implicit(double t, double* f, const grid_parms
 
 			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] =
 					((-1 / Cmj) * (ec[i][j].fluxes[J_Ktot] + ec[i][j].fluxes[J_Residual])) + ec[i][j].homo_fluxes[cpl_Vm] + ec[i][j].hetero_fluxes[cpl_Vm];
-#if PLOTTING && EXPLICIT_ONLY
-			if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
-			{
-				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Vm];
-			}
-#endif
+
 
 #if !EXPLICIT_ONLY
 
@@ -413,21 +391,6 @@ void koenigsberger_ec_derivatives_explicit(double t, double* f, const grid_parms
 			f[k + ((j - 1) * grid.neq_ec) + ec_Gprot] =
 						(K_G_prot_act * (delta + ec[i][j].fluxes[L_P_P2Y]) * (G_prot_tot - ec[i][j].vars[ec_Gprot]))
 						- (K_G_prot_deact * ec[i][j].vars[ec_Gprot]);
-
-#if PLOTTING && EXPLICIT_ONLY
-			if (i == EC_COL && j == EC_ROW && grid.universal_rank == RANK)
-			{
-				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Ca];
-				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_SR];
-				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_IP3];
-
-				plotttingBuffer[bufferPos++] = ec[i][j].vars[ec_Gprot];
-				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[L_P_P2Y];
-				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[R_PIP2_H];
-				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_IP3_deg];
-				plotttingBuffer[bufferPos++] = ec[i][j].fluxes[J_ind_I];
-			}
-#endif
 
 #if ! EXPLICIT_ONLY
 			f[k + ((j - 1) * grid.neq_ec) + ec_Vm] = 0.0;

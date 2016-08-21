@@ -14,11 +14,7 @@ columns = [
     'ec_ca',
     'ec_sr',
     'ec_i',
-    'ec_Gprot', #active g proteins
-    'ec_P_P2Y', #ratio of bound to total p2y
-    'ec_R_PIP2_H', #rate of pip2 hydrolysis
-    'ec_J_IP3_deg',
-    'ec_J_ind_I',
+    
     't'
 ]
     
@@ -40,7 +36,7 @@ def plot(args):
     
     for i in range(0, len(columns) - 1):
         
-        tmp = fig1.add_subplot(5, 3, val)
+        tmp = fig1.add_subplot(3, 3, val)
         val += 1
         tmp.set_xlabel('Time (s)')
         tmp.set_ylabel(columns[i] + ' value')

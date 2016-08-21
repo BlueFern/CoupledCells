@@ -13,8 +13,6 @@ double **sendbuf, **recvbuf;
 grid_parms grid;
 
 FILE* var_file;
-double* plotttingBuffer;
-int bufferPos;
 
 /**
  * The following steps in the ::main function are necessary for setting up
@@ -38,14 +36,11 @@ int main(int argc, char* argv[])
 	CHECK_MPI_ERROR(MPI_Comm_rank(grid.universe, &grid.universal_rank));
 	CHECK_MPI_ERROR(MPI_Comm_size(grid.universe, &grid.num_ranks));
 
-#if PLOTTING && EXPLICIT_ONLY
+#if PLOTTING
 	if (grid.universal_rank == RANK)
 	{
 		printf("\nWriting to %s\n\n", FILENAME);
 		var_file = fopen(FILENAME, "w");
-		double buf[OUTPUT_PLOTTING_SIZE];
-		plotttingBuffer = buf;
-		bufferPos = 0;
 	}
 #endif
 
@@ -356,7 +351,7 @@ int main(int argc, char* argv[])
 	free(y);
 	free(yp);
 
-#if PLOTTING && EXPLICIT_ONLY
+#if PLOTTING
 	if (grid.universal_rank == RANK)
 	{
 		fclose(var_file);

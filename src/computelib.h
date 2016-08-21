@@ -44,13 +44,12 @@ int errcode = (fn); \
 #define local 0
 #define remote 1
 
-#define FILENAME "PhyFiIP3_plotting.csv"
+#define FILENAME "plotting.csv"
 
 #define PLOTTING 0
 #define EXPLICIT_ONLY 1
 
-// Number of elements to plot for Lemon model
-#define OUTPUT_PLOTTING_SIZE 14
+#define OUTPUT_PLOTTING_SIZE 9
 #define RANK 0
 #define EC_COL 3
 #define EC_ROW 3
@@ -67,9 +66,6 @@ int errcode = (fn); \
 #define NUM_COUPLING_SPECIES_SMC 3
 
 extern FILE* var_file;
-
-extern double* plotttingBuffer;
-extern int bufferPos;
 
 
 /**

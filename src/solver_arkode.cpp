@@ -11,6 +11,7 @@
 #include "computelib.h"
 #include "gather.h"
 #include "writeHDF5.h"
+#include "koenigsberger_model.h"
 
 
 extern conductance cpl_cef;
@@ -124,6 +125,29 @@ void ark_check_flag(int cflag, char *funcname, int rank, double tnow)
 	}
 }
 
+void write_species(FILE* file, double t)
+{
+	double plottting_buffer[OUTPUT_PLOTTING_SIZE];
+	int buffer_pos = 0;
+
+	plottting_buffer[buffer_pos++] = smc[SMC_COL][SMC_ROW].vars[smc_Vm];
+	plottting_buffer[buffer_pos++] = smc[SMC_COL][SMC_ROW].vars[smc_Ca];
+	plottting_buffer[buffer_pos++] = smc[SMC_COL][SMC_ROW].vars[smc_SR];
+	plottting_buffer[buffer_pos++] = smc[SMC_COL][SMC_ROW].vars[smc_w];
+	plottting_buffer[buffer_pos++] = smc[SMC_COL][SMC_ROW].vars[smc_IP3];
+
+	plottting_buffer[buffer_pos++] = ec[EC_COL][EC_ROW].vars[ec_Vm];
+	plottting_buffer[buffer_pos++] = ec[EC_COL][EC_ROW].vars[ec_Ca];
+	plottting_buffer[buffer_pos++] = ec[EC_COL][EC_ROW].vars[ec_SR];
+	plottting_buffer[buffer_pos] = ec[EC_COL][EC_ROW].vars[ec_IP3];
+
+	for (int i = 0; i < OUTPUT_PLOTTING_SIZE; i++)
+	{
+		fprintf(file, "%f,", plottting_buffer[i]);
+	}
+	fprintf(file, "%f\n", t);
+}
+
 void arkode_solver(double tnow, double tfinal, double interval, double *yInitial, int neq, double relTOL, double absTOL,
 		int file_write_per_unit_time, char* path)
 {
@@ -230,6 +254,12 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			read_init_ATP(&grid, ec);
 			jplc_read_in = true;
 		}
+#if PLOTTING
+		if (grid.universal_rank == RANK)
+		{
+			write_species(var_file, t);
+		}
+#endif
 
 		flag = ARKode(arkode_mem, tout, y, &t, ARK_NORMAL);  // Call integrator.
 		ark_check_flag(flag, (char *)"ARKode", grid.universal_rank, tnow);

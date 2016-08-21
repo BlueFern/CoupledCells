@@ -476,25 +476,8 @@ void compute(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conduct
 
 	coupling(t, y, grid, smc, ec, cpl_cef);
 
-#if PLOTTING && EXPLICIT_ONLY
-	bufferPos = 0;
-#endif
-
 	koenigsberger_smc_derivatives(f, grid, smc);
 	koenigsberger_ec_derivatives(t, f, grid, ec);
-
-#if PLOTTING && EXPLICIT_ONLY
-
-	if (grid.universal_rank == RANK)
-	{
-		for (int i = 0; i < OUTPUT_PLOTTING_SIZE; i++)
-		{
-			fprintf(var_file, "%f,", plotttingBuffer[i]);
-		}
-		fprintf(var_file, "%f\n", t);
-	}
-#endif
-
 
 #endif
 }
