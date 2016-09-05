@@ -52,6 +52,7 @@ int main(int argc, char* argv[])
 	double interval = 1e-2;
 	double data_writing_frequency = 10.00;
 	grid.random = 0;
+	int writers_per_branch = 1;
 
 	// Read command line input
 	// t - T_END for the simulation
@@ -76,6 +77,8 @@ int main(int argc, char* argv[])
 					data_writing_frequency = atof(argv[i + 1]);
 				} else if (argv[i][1] == 'i') {
 					interval = atof(argv[i + 1]);
+				} else if (argv[i][1] == 'd') {
+					writers_per_branch = atoi(argv[i + 1]);
 				}
 			}
 		}
@@ -139,6 +142,21 @@ int main(int argc, char* argv[])
 	{
 		make_bifucation_cart_grids(&grid);
 	}
+
+	// Create write group communicators which define how many writers per branch exist, and to which one
+	// each quad belongs.
+
+	// Each write group must have the same number of quads - especially important for writing to hdf5 and converting to vtu.
+	if (grid.num_ranks_branch % writers_per_branch != 0)
+	{
+		MPI_Abort(MPI_COMM_WORLD, 911); // Too many writers per branch
+	}
+
+	// The number of distinct values for the write tag will correspond to the number of writer groups.
+	grid.write_tag = (int) grid.rank_branch / ((float) grid.num_ranks_branch / (float) writers_per_branch);
+	CHECK_MPI_ERROR(MPI_Comm_split(grid.cart_comm, grid.write_tag, 0, &grid.write_group));
+	CHECK_MPI_ERROR(MPI_Comm_rank(grid.write_group, &grid.rank_write_group));
+	CHECK_MPI_ERROR(MPI_Comm_size(grid.write_group, &grid.num_ranks_write_group));
 
 	/// Now allocate memory for the structures representing the cells and the various members of those structures.
 	/// Each of the two cell grids have two additional rows and two additional columns as ghost cells.

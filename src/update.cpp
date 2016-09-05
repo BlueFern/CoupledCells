@@ -400,7 +400,6 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 	{
 		branch = grid->branch_tag;
 	}
-
 	int jplc_per_task_count = grid->num_ec_circumferentially * grid->num_ec_axially;
 
 	int jplc_in_size = jplc_per_task_count * grid->num_ranks_branch;
@@ -428,7 +427,8 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 				sprintf(jplc_file_name, "files/right_daughter_atp.h5");
 				break;
 			default:
-				; // Do something sensible here otherwise all hell breaks loose...
+				// Do something sensible here otherwise all hell breaks loose...
+				;
 		}
 		printf("opening %s\n",jplc_file_name);
 		file = H5Fopen(jplc_file_name, H5F_ACC_RDONLY, H5P_DEFAULT);

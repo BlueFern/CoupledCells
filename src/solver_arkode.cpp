@@ -192,7 +192,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	double *jplc_buffer = 0;
 
 	// Allocate the jplc_buffer.
-	if (grid.rank_branch == 0)
+	if (grid.rank_write_group == 0)
 	{
 		jplc_buffer = (double *)checked_malloc(grid.num_ranks_branch * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
 	}
@@ -203,7 +203,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	// Write jplc values to HDF5.
-	if(grid.rank_branch == 0)
+	if(grid.rank_write_group == 0)
 	{
 		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
@@ -225,26 +225,24 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
 
 	// Data buffers for collecting and writing HDF5 output.
-	ec_data_buffer *ec_buffer;
-	smc_data_buffer *smc_buffer;
+	double *ec_buffer;
+	double *smc_buffer;
+
+	int ec_chunk_size = grid.num_ec_axially * grid.num_ec_circumferentially * (grid.num_coupling_species_ec + grid.neq_ec);
+	int smc_chunk_size = grid.num_smc_axially * grid.num_smc_circumferentially * (grid.num_coupling_species_smc + grid.neq_smc);
 
 	// Allocate the EC and SMC buffers.
-	if(grid.rank_branch == 0)
+	if (grid.rank_write_group == 0)
 	{
-		ec_buffer = allocate_EC_data_buffer(grid.num_ranks_branch, grid.num_ec_axially * grid.num_ec_circumferentially, 1);
-		smc_buffer = allocate_SMC_data_buffer(grid.num_ranks_branch, grid.num_smc_axially * grid.num_smc_circumferentially, 1);
-	}
-	else
-	{
-		ec_buffer = allocate_EC_data_buffer(grid.num_ranks_branch, grid.num_ec_axially * grid.num_ec_circumferentially, 0);
-		smc_buffer = allocate_SMC_data_buffer(grid.num_ranks_branch, grid.num_smc_axially * grid.num_smc_circumferentially, 0);
+		ec_buffer = (double*)checked_malloc(grid.num_ranks_write_group * ec_chunk_size * sizeof(double), SRC_LOC);
+		smc_buffer = (double*)checked_malloc(grid.num_ranks_write_group * smc_chunk_size * sizeof(double), SRC_LOC);
 	}
 
 	t = tnow;
 	tout = tnow + interval;
 
 	// ITERATION loop to go from INITIAL time to FINAL time.
-	while (tfinal - t > 1.0e-15)
+	while (tfinal - t > 1.0e-5)
 	{
 		double solver_start = MPI_Wtime();
 
@@ -286,7 +284,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			t_stamp.aggregate_smc_gather += MPI_Wtime() - smc_gather;
 
 			double ec_write = MPI_Wtime();
-			if(grid.rank_branch == 0)
+			if(grid.rank_write_group == 0)
 			{
 				// Write state variables to HDF5.
 				write_EC_data_HDF5(&grid, ec_buffer, write_count, path);
@@ -294,7 +292,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 			t_stamp.aggregate_ec_write += MPI_Wtime() - ec_write;
 
 			double smc_write = MPI_Wtime();
-			if(grid.rank_branch == 0)
+			if(grid.rank_write_group == 0)
 			{
 				// Write state variables to HDF5.
 				write_SMC_data_HDF5(&grid, smc_buffer, write_count, path);
@@ -309,16 +307,12 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	}
 
 	// Release the EC and SMC buffers used for writing to HDF5.
-	if(grid.rank_branch == 0)
+	if(grid.rank_write_group == 0)
 	{
-		free_EC_data_buffer(ec_buffer, 1);
-		free_SMC_data_buffer(smc_buffer, 1);
+		free(ec_buffer);
+		free(smc_buffer);
 	}
-	else
-	{
-		free_EC_data_buffer(ec_buffer, 0);
-		free_SMC_data_buffer(smc_buffer, 0);
-	}
+
 
 	// Prepare time profiling data.
 	double tmp_array[write_count];
