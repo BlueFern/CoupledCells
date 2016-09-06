@@ -82,7 +82,9 @@ CXX=mpixlcxx CC=mpixlc ccmake -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0 <src_
 
 ### Fitzroy
 
+```bash
 cmake -DODE_SOLVER=SUNDIALS_arkode -DSUNDIALS_DIR=/opt/niwa/sundials/AIX/2.6.2-double/ <src_dir>
+```
 
 Compiling with TAU instrumentation enabled
 ------------------------------------------
