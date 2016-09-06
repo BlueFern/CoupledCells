@@ -68,7 +68,9 @@ def append_datasets(writers, h5_file_base, dataset_name):
     """Appends all data from a number of H5 files""" 
     
     # Create a dictionary of species arrays
-    species_arrays = dict.fromkeys(attributes[output], ())
+    species_arrays = {}
+    for attribute in attributes[output]:
+        species_arrays[attribute] = []
 
     for writer in range(writers):
         h5_file_name = h5_file_base[:-4] + str(writer) + h5_file_base[-3:]
@@ -83,7 +85,7 @@ def append_datasets(writers, h5_file_base, dataset_name):
         arr = rdata.ravel()
     
         for i in range(len(arr)): 
-            species_arrays[attributes[output][i % len(attributes[output])]] += (arr[i],)
+            species_arrays[attributes[output][i % len(attributes[output])]].append(arr[i])
     return species_arrays
         
 
