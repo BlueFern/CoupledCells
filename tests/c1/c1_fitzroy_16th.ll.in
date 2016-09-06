@@ -6,7 +6,7 @@
 #
 # @ wall_clock_limit     = 1:00:00
 #
-# @ account_no = nesi00269
+# @ account_no = nesi00290
 #
 # @ network.MPI = sn_all,shared,US
 # @ task_affinity = core(1)
