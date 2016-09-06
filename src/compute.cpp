@@ -29,15 +29,15 @@ void set_coupling_parms(int CASE, conductance* cpl_cef)
 {
 	// These values are honestly just trial and error guesses at what makes nice waves...
 	// Really need to have a think about what they should be.
-	cpl_cef->ec_diffusion[0] = 1;
-	cpl_cef->ec_diffusion[1] = 1;
-	cpl_cef->ec_diffusion[2] = 1;
-	cpl_cef->ec_diffusion[3] = 1;
+	cpl_cef->ec_diffusion[0] = 0.15;
+	cpl_cef->ec_diffusion[1] = 0.15;
+	cpl_cef->ec_diffusion[2] = 0.35;
+	cpl_cef->ec_diffusion[3] = 0.35;
 
-	cpl_cef->smc_diffusion[0] = 1;
-	cpl_cef->smc_diffusion[1] = 1;
-	cpl_cef->smc_diffusion[2] = 1;
-	cpl_cef->smc_diffusion[3] = 1;
+	cpl_cef->smc_diffusion[0] = 0.35;
+	cpl_cef->smc_diffusion[1] = 0.35;
+	cpl_cef->smc_diffusion[2] = 0.15;
+	cpl_cef->smc_diffusion[3] = 0.15;
 
 
 	if(CASE == 1)
@@ -476,25 +476,8 @@ void compute(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conduct
 
 	coupling(t, y, grid, smc, ec, cpl_cef);
 
-#if PLOTTING && EXPLICIT_ONLY
-	bufferPos = 0;
-#endif
-
 	koenigsberger_smc_derivatives(f, grid, smc);
 	koenigsberger_ec_derivatives(t, f, grid, ec);
-
-#if PLOTTING && EXPLICIT_ONLY
-
-	if (grid.universal_rank == RANK)
-	{
-		for (int i = 0; i < OUTPUT_PLOTTING_SIZE; i++)
-		{
-			fprintf(var_file, "%f,", plotttingBuffer[i]);
-		}
-		fprintf(var_file, "%f\n", t);
-	}
-#endif
-
 
 #endif
 }

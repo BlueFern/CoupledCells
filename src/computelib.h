@@ -44,13 +44,12 @@ int errcode = (fn); \
 #define local 0
 #define remote 1
 
-#define FILENAME "PhyFiIP3_plotting.csv"
+#define FILENAME "plotting.csv"
 
 #define PLOTTING 0
 #define EXPLICIT_ONLY 1
 
-// Number of elements to plot for Lemon model
-#define OUTPUT_PLOTTING_SIZE 14
+#define OUTPUT_PLOTTING_SIZE 9
 #define RANK 0
 #define EC_COL 3
 #define EC_ROW 3
@@ -67,9 +66,6 @@ int errcode = (fn); \
 #define NUM_COUPLING_SPECIES_SMC 3
 
 extern FILE* var_file;
-
-extern double* plotttingBuffer;
-extern int bufferPos;
 
 
 /**
@@ -100,8 +96,8 @@ struct conductance
 #define PARENT_DOMAIN_NUM 4
 #define LEFT_DOMAIN_NUM 5
 #define RIGHT_DOMAIN_NUM 6
-#define AX_ECS 7
-#define CR_SMCS 8
+#define AX_SCALE 7
+#define CR_SCALE 8
 #define NUM_CONFIG_ELEMENTS 9
 
 // TODO: Initialise and use constants correctly within grid_params.
@@ -142,15 +138,17 @@ typedef struct
 	nbrs[2][4],
 	///Node payload information (number of cells laid out on a node).
 	num_ec_axially, num_ec_circumferentially, num_smc_axially, num_smc_circumferentially, neq_ec_axially, neq_smc_axially,
+	base_smc_circumferentially, base_ec_axially,
 	///Total number of state variables in the computational domain
 	NEQ,
-	///This is global and local MPI information
 	num_ranks, universal_rank, /// numtasks = total CPUs in MPI_COMM_WORLD,
 	num_ranks_branch, rank_branch, /// tasks = total CPUs in my-subdomain's comm (branch)
+	num_ranks_write_group, rank_write_group, /// for the variable number of writers.
 
 	//Each processor on the edges of each branch contains brach_tag can have one of four values P=parent = 1, L=Left branch = 2, R=Right branch = 3.
 	//If branch_tag=0, this implies that the rank is located interior or doesn't  contain a remote neighbour on any other branch.
 	branch_tag,
+	write_tag,
 	/// Variables for remote MPI information (P=parent, L & R = Left & Right branch respectively).
 	offset_P, offset_L, offset_R, flip_array[4],
 	/// Number of elements being sent and received.
@@ -161,7 +159,7 @@ typedef struct
 	double uniform_jplc, stimulus_onset_time;	/// the time when spatially varying agonist kicks in
 
 	// MPI_COMM_WORLD, and branch communicatior.
-	MPI_Comm universe, cart_comm;
+	MPI_Comm universe, cart_comm, write_group;
 
 	int smc_model, ec_model; // These are placeholders for the selection of model to be simulated in each cell.
 	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.

@@ -146,24 +146,22 @@ The command-line have the following meaning:
     * Element 4: Parent subdomain *Key_val* of current *Key_val*.
     * Element 5: Left child subdomain *Key_val* of the current *Key_val*.
     * Element 6: Right child subdomain *Key_val* of the current *Key_val*.
-    * Element 7: Required number of ECs axially per core.
-    * Element 8: Required number of SMCs circumferentially per core.
+    * Element 7: The number of quads to join in the axial direction.
+    * Element 8: The number of quads to join in the circumferential direction.
 
 The total number of processes (MPI ranks) required to run a simulation should match the number of 
-quads in the axial direction times the number of quads in the circumferential direction. 
-Note that for BIF elements, the required number of processes is three times (3x) the product of 
-(Element 2)*(Element 3) for that element since there there three branches in this case. 
+quads in the axial direction times the number of quads in the circumferential direction, divided by the 
+chosen scaling of quads to MPI tasks.
 
-For example, for a first subdomain of type BIF, with 12 cores along the axial
-direction, 112 cores in the circumferential direction, with no parent or child
-subdomains, and with 32 ECs and 3 SMCs in the axial and circumferential
-directions respectively, the config file will look like
+For example, for a first subdomain of type BIF, with 12 quads along the axial
+direction, 112 quads in the circumferential direction, with no parent or child
+subdomains, and with each MPI task being reponsible for a total of 8 quads, specifically 2 x 4 quads in the axial and circumferential directions, the config file will look like
 this:
 
     1;
-    0,1,12,112,-1,-1,-1,32,3;
+    0,1,12,112,-1,-1,-1,2,4;
 
-and the total number of processes will be 3 x 12 x 112 = 4032.
+and the total number of processes will be 3 branches x 12 quads axially x 112 quads circumferentially / 8 quads per task = 504 cores.
 
 * **S** - Location of the generated output files.
 * **T** - Location of the profiling output files.
@@ -173,6 +171,7 @@ and the total number of processes will be 3 x 12 x 112 = 4032.
   UV quads/MIP processes.
 * **C** - The coupling case to be used.
 * **R** - Boolean (0 or 1) specifying if random initial conditions should be used or not. Off by default.
+* **d** - Number of h5 output writers should exist per branch. 1 by default.
 
 For example, to run a simulation for 500 seconds, with checkpoints written every
 second, using coupling case 1 and without random initial conditions, the arguments would look like this:
@@ -206,8 +205,8 @@ Input Files
 -----------
 
 The *files* subdirectory of the current working directory must contain the input
-ATP files in TXT format: `parent_atp.txt`, `left_daughter_atp.txt`, and `right_daughter_atp.txt`
-for a simulation involving a bifurcation. Only 'parent_atp.txt' is required for a simulation
+ATP files in H5 format: `parent_atp.h5`, `left_daughter_atp.h5`, and `right_daughter_atp.h5`
+for a simulation involving a bifurcation. Only 'parent_atp.h5' is required for a simulation
 involving only a trunk. Details on creating these files can be found in the
 [DBiharMesher](https://github.com/BlueFern/DBiharMesher) repository.
 
@@ -216,19 +215,20 @@ Output Files and Conversion
 
 Once the simulation completes the solution directory will contain a number of HDF5-format files for
 both ECs and SMCs. To visualise the results these files should be converted to the VTK's VTU format.
-The scripts to convert EC and SMC output for both trunk and bifurcation simulations are provided in
-the util directory. These sripts write to the solution directory and expect start and stop timestep
-parameters (between which timesteps to convert). An example of such a conversion for a bifurcation
-simulation run for 100 physiological seconds for both cell types would be the two commands:
+The script is provided in the util directory. This script writes to the solution directory and expects 
+start and stop timestep parameters (between which timesteps to convert), the number of quads circumferentially and axially,
+the circumferential and axial scaling, and what h5 output type you wish to convert (I.E. ec, smc, or atp).
 
-	python /path/to/util/bifurcation_smc_hdf5ToVTU.py 0 100
-	python /path/to/util/bifurcation_ec_hdf5ToVTU.py 0 100
+An example of such a conversion for a 4080-quad simulation with each branch being 40 circumferential by 34 axial quads, where each task was assigned 8 quads (4 circumferential by 2 axial), run for 100 physiological seconds for both cell types would be the two commands:
 
-A `jplc_*_.h5` file is written out for each branch of a simulation, intended for verifying the
+	python /path/to/util/hdf5ToVTU.py 0 100 40 34 4 2 ec
+	python /path/to/util/hdf5ToVTU.py 0 100 40 34 4 2 smc
+
+An `atp_*_.h5` file is written out for each branch of a simulation, intended for verifying the
 input ATP files where read in correctly. These output files also allo to verify the mesh
-dimensions and the corresponding ATP file are in agreement. The output `jplc_*_.h5` are
-converted to VTU format using either `bifurcation_jplc_hdf5ToVTU.py` or `trunk_jplc_hdf5ToVTU.py`
-scripts, depending on the type of the input mesh.
+dimensions and the corresponding ATP file are in agreement. The output `atp_*_.h5` are
+converted to VTU format using the same pattern, as the previous conversions, but with "atp" as the
+last parameter.
 
 For these conversions the subdirectory `vtk` of the current working directory must exist and 
 contain `*.vtp' files for each branch of the mesh configuration used in the simulation. Again,
