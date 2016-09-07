@@ -1,6 +1,6 @@
 # @ shell = /bin/bash
 #
-# @ job_name = c32
+# @ job_name = c32_4procs
 #
 # @ job_type = parallel
 #
@@ -16,7 +16,7 @@
 # @ notification         = never
 # @ class                = General
 # @ node = 1
-# @ tasks_per_node = 32
+# @ tasks_per_node = 4
 #
 # @ queue
 
