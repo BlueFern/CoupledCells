@@ -1,12 +1,12 @@
 # @ shell = /bin/bash
 #
-# @ job_name = c1
+# @ job_name = c32
 #
 # @ job_type = parallel
 #
 # @ wall_clock_limit     = 1:00:00
 #
-# @ account_no = nesi00269
+# @ account_no = nesi00290
 #
 # @ network.MPI = sn_all,not_shared,US
 # @ task_affinity = core(1)
