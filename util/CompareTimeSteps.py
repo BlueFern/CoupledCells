@@ -39,14 +39,14 @@ def update_mappers(filename_0, filename_1):
     reader_0.Update()
     output_0 = reader_0.GetOutput()
     output_0.GetCellData().SetActiveScalars(active_attrib)
-    mapper_0.SetInput(output_0)
+    mapper_0.SetInputData(output_0)
     cornerAnnotation_0.SetText(0, filename_0)
     
     reader_1.SetFileName(filename_1)
     reader_1.Update()
     output_1 = reader_1.GetOutput()
     output_1.GetCellData().SetActiveScalars(active_attrib)
-    mapper_1.SetInput(output_1)
+    mapper_1.SetInputData(output_1)
     cornerAnnotation_1.SetText(0, filename_1)
 
 def sortNicely(l): 
