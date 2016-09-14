@@ -173,7 +173,6 @@ file(GLOB HDRs src/*.h)
 set (SRCs 
 	src/time_profiling.cpp 
 	src/koenigsberger_model.cpp
-	src/tsoukias_model.cpp
 	src/update.cpp
 	src/compute.cpp
 	src/simulation_main.cpp 

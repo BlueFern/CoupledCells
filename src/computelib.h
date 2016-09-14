@@ -27,8 +27,6 @@ int errcode = (fn); \
 /** @} */
 
 /****** marcos for identifying models ******/
-#define 		KNBGR			0
-#define 		TSK				1
 
 #define UP 0
 #define DOWN 1
@@ -162,8 +160,6 @@ typedef struct
 	MPI_Comm universe, cart_comm, write_group;
 
 	int smc_model, ec_model; // These are placeholders for the selection of model to be simulated in each cell.
-	int NO_path, cGMP_path;	// Specific for Tsoukias model to signal whether to activate NO and cGMP pathways for vasodilation.
-
 	char solution_dir[1024], time_profiling_dir[1024], config_file[1024];
 	bool random;
 } grid_parms;
@@ -174,7 +170,6 @@ typedef struct
 	double fluxes[NUM_FLUXES_SMC];			    ///stores single cell fluxes
 	double homo_fluxes[NUM_COUPLING_SPECIES_SMC];	    ///stores homogeneous coupling fluxes
 	double hetero_fluxes[NUM_COUPLING_SPECIES_SMC];     ///stores heterogeneous coupling fluxes
-	double NO, NE, I_stim;		///specific to Tsoukias model
 } SMC_cell;
 
 typedef struct

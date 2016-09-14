@@ -100,10 +100,6 @@ int main(int argc, char* argv[])
 #endif
 	}
 
-	//grid.NO_path = 0;
-	//grid.cGMP_path = 0;
-	grid.smc_model = KNBGR;
-	grid.ec_model = KNBGR;
 	grid.uniform_jplc = 0.3;
 	grid.stimulus_onset_time = 5.00;
 
