@@ -237,9 +237,8 @@ repository.
 
 The script `genCommands.py` is provided in the util directory for parallel conversions --- it simply prints 
 out a number of calls to the conversion scripts, where these calls can be redirected to a file. 
-It should be copied into the working directory and modified according to the geometry of the mesh, (and so whether `trunk_*_hdf5ToVTU.py` or `bifurcation_*_hdf5ToVTU.py` is called) and the path to these scripts. It expects the
-number of tasks being used and the total number of timesteps to process as arguments. `genCommands.py` is 
-currently being used in conjunction with a load-leveller script, an example of which follows:
+It should be copied into the working directory and modified according to the path to the conversion script. It expects the number of tasks being used,the total number of timesteps to process as arguments, the number of circumferential and axial quads per branch, and the circumferential and axial quad-to-task ratios.
+ `genCommands.py` is currently being used in conjunction with a load-leveller script, an example of which follows:
 
 	# Example multiple Serial LoadLeveler Jobs file on multiple nodes.
 	
@@ -284,7 +283,7 @@ currently being used in conjunction with a load-leveller script, an example of w
 	module load vtk
 	
 	# Create the Input Command file for batcher if using the create_input_command.sh script.
-	python ./genCommands-p7.py 8 100 >> $INPUT_FILE
+	python ./genCommands-p7.py 8 100 40 34 4 2 >> $INPUT_FILE
 	
 	# Do not modify the following command, it will launch your serial jobs with batcher.
 	poe batcher $INPUT_FILE
