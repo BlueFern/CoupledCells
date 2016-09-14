@@ -101,11 +101,10 @@ def HDF5toVTKLumen():
         reader.Update()
 
         input_meshes += [reader.GetOutput()]
-        
-    # Find the number of writers and the number of branches given the 
-    # output files.        
-    writers = len(glob.glob("solution/" + output + "*_b_1*"))
-    branches = len(glob.glob("solution/" + output + "*_b_*_0*"))
+                
+        # Only add parent mesh for a tube (non-bifurcation)
+        if branches == 1:
+            break   
     
     append_filter = vtk.vtkAppendFilter()
         
@@ -156,7 +155,7 @@ def HDF5toVTKCells():
 
     input_meshes = []
 
-    # Read input SMC meshes.
+    # Read input meshes.
     for in_file in input_mesh_files[output]:
         reader = vtk.vtkXMLPolyDataReader()
         reader.SetFileName(in_file)
@@ -164,13 +163,9 @@ def HDF5toVTKCells():
 
         input_meshes += [reader.GetOutput()]
         
-    # Find the number of writers and the number of branches given the 
-    # output files.        
-    writers = len(glob.glob("solution/" + output + "*t_0_b_1*"))
-    branches = len(glob.glob("solution/" + output + "*t_0_b_*_0*"))
-    
-    print "Number of branches detected: " + str(branches)
-    print "Number of writers detected: " + str(writers)
+        # Only add parent mesh for a tube (non-bifurcation)
+        if branches == 1:
+            break   
 
     for time_step in range(args.start, args.end + 1):
         
@@ -242,6 +237,14 @@ if __name__ == "__main__":
     if not glob.glob("solution/" + output + "*.h5"):
         print("No solution files for this cell type!")
         exit()
+
+    # Find the number of writers and the number of branches given the 
+    # output files.        
+    writers = len(glob.glob("solution/ec*t_0_b_1*"))
+    branches = len(glob.glob("solution/ec*t_0_b_*_0*"))
+
+    print "Number of branches detected: " + str(branches)
+    print "Number of writers detected: " + str(writers)
     
     if output in ["smc", "ec"]:
         HDF5toVTKCells()
