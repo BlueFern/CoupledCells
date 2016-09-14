@@ -64,22 +64,6 @@ make
 
 in the build directory. The generated executable is called *coupledCellsModel*.
 
-There are two makefiles for compiling the project on BlueGene/L and BlueGene/P. For the BlueGene/L 
-build, the Makefile.bgp can be used as follows:
-
-```bash
-make -f Makefile.bgp ODEOPTION=ARK_ODE
-```
-
-### BlueGene/P
-
-In the current BlueGene/P build environment CMake should be launched in the following 
-manner in order to specify the MPI compiler and the location of the Sundials library:
-
-```bash
-CXX=mpixlcxx CC=mpixlc ccmake -DSUNDIALS_DIR=/bgp/local/pkg/sundials/2.5.0 <src_dir>
-```
-
 ### Fitzroy
 
 ```bash
@@ -179,27 +163,30 @@ second, using coupling case 1 and without random initial conditions, the argumen
     coupledCellsModel -f config.txt -S solution -T profiling -t 500.00 -w 1000 -i 1e-2 -C 1 -R 0
 
 The following in an example of a load-leveller script to run a 100 physiological second
-simulation with a 1008 quad/core bifurcation mesh using coupling case 1 and without random initial conditions.
+simulation with a 1008 quad/core bifurcation mesh using coupling case 1 and without random initial conditions on Fitzroy.
 
-	#!/bin/ksh
+	# @ shell = /bin/bash
 	#
-	# MPI LoadLeveler Job file for BG/P
+	# MPI LoadLeveler Job file for Fitzroy
 	#
-	# @ group                = UC
-	# @ account_no           = bfcs00321
-	# @ job_type             = bluegene
-	# @ bg_connection        = prefer_torus
+	# @ account_no           = xxxxx
+	# @ job_name		 = load_leveller_example
+	# @ job_type             = parallel
 	# @ output               = $(job_name).$(jobid).out
 	# @ error                = $(job_name).$(jobid).err
 
-	# @ bg_size              = 256
-	# @ class                = bgp
-	# @ wall_clock_limit     = 04:00:00
-	# @ job_name             = CC_1008
+	# @ network.MPI = sn_all,shared,US
+	# @ node  		 = 16 
+	# @ class                = General
+	# @ total_tasks 	 = 1008
+	# @ wall_clock_limit     = 05:00:00
 	
 	# @ queue
 	
-	mpirun -mode VN -np 1008 -verbose 2 -env BG_COREDUMP_BINARY='*' -cwd `pwd` -exe `pwd`/coupledCellsModel -args "-f config.txt -S solution -T profiling -t 100.00 -w 1.0 -i 1e-2 -C 1 -R 0"
+	cmd="time poe ./coupledCellsModel -args \"-f config.txt -S solution -T profiling -t 100.0 -w 1.0 -i 1.e-2 -C 1 -R 1\""
+	echo "running..."
+	echo "$cmd"
+	$cmd
 
 Input Files
 -----------
