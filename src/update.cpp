@@ -382,14 +382,66 @@ void communication_update_recvbuf(grid_parms grid, double** recvbuf, SMC_cell** 
 	}
 }
 
-void read_init_ATP(grid_parms *grid, EC_cell **ECs)
+void read_in_ATP(grid_parms *grid, EC_cell **ECs)
+{
+	int count_per_task = grid->num_ec_circumferentially * grid->num_ec_axially;
+	int count_per_branch = count_per_task * grid->num_ranks_branch;
+
+	double *send_jplc = (double *)checked_malloc(count_per_branch * NUM_TIMESTEPS * sizeof(double), SRC_LOC);
+
+	// Only the IO nodes read the input files.
+	if (grid->rank_branch == 0)
+	{
+		double *read_jplc = (double *)checked_malloc(count_per_branch * NUM_TIMESTEPS * sizeof(double), SRC_LOC);
+
+		read_H5_values(grid, read_jplc, "atp");
+		reorder_values(grid, read_jplc, send_jplc);
+
+		free(read_jplc);
+	}
+
+	int *send_counts = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+	int *send_offsets = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
+
+	int recv_count = count_per_task;
+	double *recv_jplc = (double *)checked_malloc(recv_count * sizeof(double), SRC_LOC);
+	int root = 0;
+
+
+	for (int timestep = 0; timestep < NUM_TIMESTEPS; timestep++)
+	{
+		for(int task = 0; task < grid->num_ranks_branch; task++)
+		{
+			send_counts[task] = count_per_task;
+			send_offsets[task] = task * count_per_task;
+		}
+
+		// Scatter JPLC values to the nodes in this Cartesian grid.
+		CHECK_MPI_ERROR(MPI_Scatterv(&send_jplc[timestep * count_per_branch], send_counts, send_offsets, MPI_DOUBLE, recv_jplc, recv_count, MPI_DOUBLE, root, grid->cart_comm));
+
+		// Assign received JPLC values to the cells.
+		for(int m = 1; m <= grid->num_ec_circumferentially; m++)
+		{
+			for(int n = 1; n <= grid->num_ec_axially; n++)
+			{
+				// Fortran array referencing!
+				ECs[m][n].JPLC[timestep] = recv_jplc[(n - 1) * grid->num_ec_circumferentially + m - 1];
+			}
+		}
+	}
+
+	free(recv_jplc);
+	free(send_jplc);
+	free(send_counts);
+	free(send_offsets);
+
+}
+
+void read_H5_values(grid_parms *grid, double* read_array, char* dataset)
 {
 
-	hid_t       file, space, dset;          /* Handles */
+	hid_t       file, dset;          /* Handles */
 	herr_t      status;
-	hsize_t     dims[1];
-	int ndims;
-
 
 	int branch;
 	if (grid->domain_type == STRSEG)
@@ -400,152 +452,117 @@ void read_init_ATP(grid_parms *grid, EC_cell **ECs)
 	{
 		branch = grid->branch_tag;
 	}
-	int jplc_per_task_count = grid->num_ec_circumferentially * grid->num_ec_axially;
 
-	int jplc_in_size = jplc_per_task_count * grid->num_ranks_branch;
+	int count_per_task = grid->num_ec_circumferentially * grid->num_ec_axially;
+	int count_per_branch = count_per_task * grid->num_ranks_branch;
 
 
-
-	// The reordered atp array.
-	double *send_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
-
-	// Only the IO nodes read the input files.
-	if (grid->rank_branch == 0)
+	char filename[64];
+	switch(branch)
 	{
-		double *read_jplc = (double *)checked_malloc(jplc_in_size * sizeof(double), SRC_LOC);
+		case P:
+			sprintf(filename, "files/parent_%s.h5", dataset);
+			break;
+		case L:
+			sprintf(filename, "files/left_daughter_%s.h5", dataset);
+			break;
+		case R:
+			sprintf(filename, "files/right_daughter_%s.h5", dataset);
+			break;
+		default:
+			; // Do something sensible here otherwise all hell breaks loose...
+	}
+	printf("opening %s\n", filename);
+	file = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 
-		char jplc_file_name[64];
-		switch(branch)
+	// Sufficient for time steps <= 99.
+	char dataset_name[4];
+
+	int time_offset = ((MAX_TIMESTEPS - 1) / (NUM_TIMESTEPS - 1));
+
+	// Number of time steps.
+	for (int timestep = 0; timestep < NUM_TIMESTEPS; timestep++)
+	{
+		sprintf(dataset_name, "/%d", timestep * time_offset);
+
+		dset = H5Dopen(file, dataset_name , H5P_DEFAULT);
+		status = H5Dread(dset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &read_array[timestep * count_per_branch]);
+		status = H5Dclose (dset);
+
+	}
+	status = H5Fclose (file);
+
+}
+
+void reorder_values(grid_parms *grid, double* read_array, double* send_array)
+{
+	// Reorder values based on task-quad configuration.
+
+	int num_ec_row = grid->base_smc_circumferentially * grid->num_ec_fundblk_circumferentially;
+	int num_ec_column = grid->base_ec_axially * grid->num_ec_fundblk_axially;
+
+	int count_per_task = grid->num_ec_circumferentially * grid->num_ec_axially;
+	int count_per_branch = count_per_task * grid->num_ranks_branch;
+
+	int num_ecs_quad = num_ec_row * num_ec_column;
+
+	int read_index = 0;
+	int send_index = 0;
+
+	// Calculate the required new quad starting ids.
+	int required_quad_num = grid->m * grid->n;
+	int required_quads[required_quad_num];
+
+	int loop_index = 0;
+	int quad_index = 0;
+
+	for (int axial_quad = 0; axial_quad < grid->domain_params[0][AX_QUADS]; axial_quad++)
+	{
+		for (int circ_quad = 0; circ_quad < grid->domain_params[0][CR_QUADS]; circ_quad++)
 		{
-			case P:
-				sprintf(jplc_file_name, "files/parent_atp.h5");
-				break;
-			case L:
-				sprintf(jplc_file_name, "files/left_daughter_atp.h5");
-				break;
-			case R:
-				sprintf(jplc_file_name, "files/right_daughter_atp.h5");
-				break;
-			default:
-				// Do something sensible here otherwise all hell breaks loose...
-				;
-		}
-		printf("opening %s\n",jplc_file_name);
-		file = H5Fopen(jplc_file_name, H5F_ACC_RDONLY, H5P_DEFAULT);
 
-	    dset = H5Dopen(file, "/atp" , H5P_DEFAULT);
-
-	    space = H5Dget_space (dset);
-		ndims = H5Sget_simple_extent_dims (space, dims, NULL);
-
-	    assert(jplc_in_size == dims[0]);
-	    status = H5Dread(dset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, read_jplc);
-
-
-	    // Reorder send_jplc based on task-quad configuration.
-
-	    int num_ec_row = grid->base_smc_circumferentially * grid->num_ec_fundblk_circumferentially;
-	    int num_ec_column = grid->base_ec_axially * grid->num_ec_fundblk_axially;
-
-	    int num_ecs_quad = num_ec_row * num_ec_column;
-
-
-	    int read_index = 0;
-	    int send_index = 0;
-
-	    // Calculate the required new quad starting ids.
-	    int required_quad_num = grid->m * grid->n;
-	    int required_quads[required_quad_num];
-
-	    int loop_index = 0;
-	    int quad_index = 0;
-
-	    for (int axial_quad = 0; axial_quad < grid->domain_params[0][AX_QUADS]; axial_quad++)
-	    {
-		    for (int circ_quad = 0; circ_quad < grid->domain_params[0][CR_QUADS]; circ_quad++)
-		    {
-
-		    	if (circ_quad % grid->domain_params[0][CR_SCALE] == 0 && axial_quad % grid->domain_params[0][AX_SCALE] == 0)
-		    	{
-		    		required_quads[quad_index++] = loop_index;
-		    	}
-		    	loop_index++;
-		    }
-	    }
-
-	    // Loop through the required new quad starting ids.
-	    for (int quad_id = 0; quad_id < required_quad_num; quad_id++)
-	    {
-	    	int quad_offset = required_quads[quad_id] * num_ecs_quad;
-
-			// Extra axial quads to loop through.
-			for (int l = 0; l < grid->domain_params[0][AX_SCALE]; l++)
+			if (circ_quad % grid->domain_params[0][CR_SCALE] == 0 && axial_quad % grid->domain_params[0][AX_SCALE] == 0)
 			{
-				int axial_offset = l * num_ecs_quad * grid->domain_params[0][CR_QUADS];
-
-				// Axial cells in original quad.
-				for (int k = 0; k < num_ec_column; k++)
-				{
-					// Extra circ quads to loop through.
-					for (int j = 0; j < grid->domain_params[0][CR_SCALE]; j++)
-					{
-						int circ_offset = j * num_ecs_quad;
-
-						// Circ cells in original quad.
-						for (int i = 0; i < num_ec_row; i++)
-						{
-
-							read_index = quad_offset + axial_offset + circ_offset + (k * num_ec_row) + i;
-							//if (grid->universal_rank == 0) printf("%f\n", read_jplc[read_index]);
-							send_jplc[send_index++] = read_jplc[read_index];
-
-						}
-						//if (grid->universal_rank == 0) printf("extra circ quad: %d\n",j);
-
-					}
-					//if (grid->universal_rank == 0) exit(0);
-				}
+				required_quads[quad_index++] = loop_index;
 			}
-	    }
-
-	    assert(send_index == jplc_in_size);
-	    status = H5Dclose (dset);
-		status = H5Sclose (space);
-		status = H5Fclose (file);
-		free(read_jplc);
-	}
-
-	int *send_jplc_counts = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
-	int *send_jplc_offsets = (int *)checked_malloc(grid->num_ranks_branch * sizeof(int), SRC_LOC);
-
-	for(int task = 0; task < grid->num_ranks_branch; task++)
-	{
-		send_jplc_counts[task] = jplc_per_task_count;
-		send_jplc_offsets[task] = task * jplc_per_task_count;
-	}
-
-	int recv_jplc_count = jplc_per_task_count;
-	double *recv_jplc = (double *)checked_malloc(recv_jplc_count * sizeof(double), SRC_LOC);
-
-	int root = 0;
-
-	// printf("%s, grid->cart_comm: %p\n", __FUNCTION__, (void *)grid->cart_comm);
-
-	// Scatter JPLC values to the nodes in this Cartesian grid.
-	CHECK_MPI_ERROR(MPI_Scatterv(send_jplc, send_jplc_counts, send_jplc_offsets, MPI_DOUBLE, recv_jplc, recv_jplc_count, MPI_DOUBLE, root, grid->cart_comm));
-
-	// Assign received JPLC values to the cells.
-	for(int m = 1; m <= grid->num_ec_circumferentially; m++)
-	{
-		for(int n = 1; n <= grid->num_ec_axially; n++)
-		{
-			// Fortran array referencing!
-			ECs[m][n].JPLC = recv_jplc[(n - 1) * grid->num_ec_circumferentially + m - 1];
+			loop_index++;
 		}
 	}
 
-	free(send_jplc);
-	free(send_jplc_counts);
-	free(send_jplc_offsets);
-	free(recv_jplc);
+	// Loop through the required new quad starting ids.
+	for (int quad_id = 0; quad_id < required_quad_num; quad_id++)
+	{
+		int quad_offset = required_quads[quad_id] * num_ecs_quad;
+
+		// Extra axial quads to loop through.
+		for (int l = 0; l < grid->domain_params[0][AX_SCALE]; l++)
+		{
+			int axial_offset = l * num_ecs_quad * grid->domain_params[0][CR_QUADS];
+
+			// Axial cells in original quad.
+			for (int k = 0; k < num_ec_column; k++)
+			{
+				// Extra circ quads to loop through.
+				for (int j = 0; j < grid->domain_params[0][CR_SCALE]; j++)
+				{
+					int circ_offset = j * num_ecs_quad;
+
+					// Circ cells in original quad.
+					for (int i = 0; i < num_ec_row; i++)
+					{
+						// Multiple ATP files in flattened array, reorder all at once.
+						for (int timestep = 0; timestep < NUM_TIMESTEPS; timestep++)
+						{
+							read_index = quad_offset + axial_offset + circ_offset + (k * num_ec_row) + i;
+
+							send_array[send_index + (timestep * count_per_branch)] = read_array[read_index + (timestep * count_per_branch)];
+						}
+						send_index++;
+					}
+
+				}
+
+			}
+		}
+	}
 }

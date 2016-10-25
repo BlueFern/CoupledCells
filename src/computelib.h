@@ -63,6 +63,9 @@ int errcode = (fn); \
 #define NUM_FLUXES_SMC 12
 #define NUM_COUPLING_SPECIES_SMC 3
 
+#define NUM_TIMESTEPS 9
+#define MAX_TIMESTEPS 81
+
 extern FILE* var_file;
 
 
@@ -178,7 +181,7 @@ typedef struct
 	double fluxes[NUM_FLUXES_EC];			    ///stores single cell fluxes
 	double homo_fluxes[NUM_COUPLING_SPECIES_EC];	    ///stores homogeneous coupling fluxes
 	double hetero_fluxes[NUM_COUPLING_SPECIES_EC];	    ///stores heterogeneous coupling fluxes
-	double JPLC;			    ///local agonist concentration  on my GPCR receptor (an ith EC)
+	double JPLC[NUM_TIMESTEPS];
 } EC_cell;
 
 typedef struct
@@ -192,8 +195,10 @@ typedef struct
 void set_task_parameters(grid_parms *);
 void make_bifucation_cart_grids(grid_parms *);
 void make_straight_cart_grid(grid_parms *);
-void read_init_ATP(grid_parms *grid, EC_cell **ECs);
-void set_coupling_parms(int CASE, conductance* cpl_cef);
+void read_in_ATP(grid_parms *, EC_cell **);
+void reorder_values(grid_parms *, double*, double*);
+void read_H5_values(grid_parms *, double*, char*);
+void set_coupling_parms(int, conductance*);
 
 void determine_source_destination(grid_parms, int*, int*);
 void communication_update_recv_size(grid_parms *);
@@ -202,9 +207,9 @@ void communication_update_recvbuf(grid_parms, double**, SMC_cell**, EC_cell**);
 void communication_async_send_recv(grid_parms, double**, double**, SMC_cell**, EC_cell**);
 
 //Cell dynamics evaluation handlers. These contain the ODEs for representative models from different sources.
-void compute(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*);
+void compute(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*, int);
 void compute_implicit(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*);
-void compute_explicit(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*);
+void compute_explicit(const grid_parms&, SMC_cell**, EC_cell**, const conductance& cpl_cef, double, double*, double*, int);
 void coupling(double, double*, const grid_parms&, SMC_cell**, EC_cell**,  const conductance&);
 void coupling_implicit(double, double*, const grid_parms&, SMC_cell**, EC_cell**,  const conductance&);
 void coupling_explicit(double, double*, const grid_parms&, SMC_cell**, EC_cell**,  const conductance&);
@@ -230,12 +235,12 @@ void print_recv_buffer(FILE*, grid_parms, double**);
 void print_compare(double, double*, grid_parms, SMC_cell**, EC_cell**);
 
 void initialize_t_stamp(time_stamps*);
-void dump_time_profiling(grid_parms grid, time_stamps* t_stamp);
-void dump_time_field(char* file_prefix, grid_parms grid, double field);
+void dump_time_profiling(grid_parms, time_stamps*);
+void dump_time_field(char*, grid_parms grid, double);
 
 /**
  * \brief Catch failed memory allocation.
  */
-void* checked_malloc(size_t bytes, const char* errmsg);
+void* checked_malloc(size_t, const char*);
 
 #endif

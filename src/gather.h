@@ -12,6 +12,6 @@ void gather_EC_data(grid_parms *grid, double *ec_buffer, EC_cell **ec);
 void gather_SMC_data(grid_parms *grid, double *smc_buffer, SMC_cell **smc);
 
 /* Collect JPLC values from the EC cells in one branch. */
-void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec);
+void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec, int);
 
 #endif

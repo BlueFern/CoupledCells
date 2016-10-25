@@ -25,7 +25,9 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 {
 	N_VectorContent_Serial yContent = (N_VectorContent_Serial) y->content;
 	N_VectorContent_Serial yDotContent = (N_VectorContent_Serial) ydot->content;
-	compute(grid, smc, ec, cpl_cef, t, yContent->data, yDotContent->data);
+
+	int *atp_timestep = (int*) user_data;
+	compute(grid, smc, ec, cpl_cef, t, yContent->data, yDotContent->data, *atp_timestep);
 
 	return 0;  // Success.
 }
@@ -45,7 +47,8 @@ static int fe(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 	N_VectorContent_Serial yContent = (N_VectorContent_Serial) y->content;
 	N_VectorContent_Serial yDotContent = (N_VectorContent_Serial) ydot->content;
 
-	compute_explicit(grid, smc, ec, cpl_cef, t, yContent->data, yDotContent->data);
+	int *atp_timestep = (int*) user_data;
+	compute_explicit(grid, smc, ec, cpl_cef, t, yContent->data, yDotContent->data, *atp_timestep);
 
 	return 0;  // Success.
 }
@@ -181,6 +184,13 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	flag = ARKodeSStolerances(arkode_mem, relTOL, absTOL);
 	ark_check_flag(flag, (char *)"ARKodeSVtolerances", grid.universal_rank, 0);
 
+
+	int atp_timestep = 0;
+	int *timestep_p = &atp_timestep;
+	flag = ARKodeSetUserData(arkode_mem, timestep_p);
+	ark_check_flag(flag, (char *)"ARKodeSetUserData", grid.universal_rank, 0);
+
+
 	// Exchange SMC and EC variables in the ghost cells.
 	// Essential for restarts when data is loaded from a checkpoint.
 	communication_async_send_recv(grid, sendbuf, recvbuf, smc, ec);
@@ -197,29 +207,25 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		jplc_buffer = (double *)checked_malloc(grid.num_ranks_branch * grid.num_ec_axially * grid.num_ec_circumferentially * sizeof(double), SRC_LOC);
 	}
 
-	// Collect all jplc values in a single buffer on root node.
-	gather_JPLC(&grid, jplc_buffer, ec);
+	for (int timestep = 0; timestep < NUM_TIMESTEPS; timestep++)
+	{
+		// Collect all jplc values in a single buffer on root node.
+		gather_JPLC(&grid, jplc_buffer, ec, timestep);
 
-	MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
 
-	// Write jplc values to HDF5.
+		// Write jplc values to HDF5.
+		if(grid.rank_write_group == 0)
+		{
+			write_HDF5_JPLC(&grid, jplc_buffer, path, timestep);
+		}
+	}
 	if(grid.rank_write_group == 0)
 	{
-		write_HDF5_JPLC(&grid, jplc_buffer, path);
 		free(jplc_buffer);
 	}
 
-	// Reset JPLC to the uniform map.
-	// The input file will have to be read later when the time is right.
-	for (int i = 1; i <= grid.num_ec_circumferentially; i++)
-	{
-		for (int j = 1; j <= grid.num_ec_axially; j++)
-		{
-			ec[i][j].JPLC = grid.uniform_jplc;
-		}
-	}
 
-	bool jplc_read_in = false;
 
 	// Profiling.
 	double palce_holder_for_timing_max_min[3][int(tfinal / interval)];
@@ -246,12 +252,6 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 	{
 		double solver_start = MPI_Wtime();
 
-		// Read JPLC in if it is time to do so.
-		if(t >= grid.stimulus_onset_time && !jplc_read_in)
-		{
-			read_init_ATP(&grid, ec);
-			jplc_read_in = true;
-		}
 #if PLOTTING
 		if (grid.universal_rank == RANK)
 		{
@@ -263,6 +263,7 @@ void arkode_solver(double tnow, double tfinal, double interval, double *yInitial
 		ark_check_flag(flag, (char *)"ARKode", grid.universal_rank, tnow);
 
 		tout += interval;
+		atp_timestep = (atp_timestep + 1) % NUM_TIMESTEPS;
 
 		t_stamp.aggregate_compute += MPI_Wtime() - solver_start;
 

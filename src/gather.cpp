@@ -109,7 +109,7 @@ void gather_SMC_data(grid_parms *grid, double *smc_buffer, SMC_cell **smc)
 /*
  * Collect JPLC for each cart grid into an array on the writing cores.
  */
-void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec)
+void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec, int timestep)
 {
 
 	int local_jplc_buffer_size = grid->num_ec_axially * grid->num_ec_circumferentially;
@@ -123,7 +123,7 @@ void gather_JPLC(grid_parms* grid, double *jplc_buffer, EC_cell** ec)
 	{
 		for(int j = 0; j < grid->num_ec_circumferentially; j++, seq_count++)
 		{
-			local_jplc_buffer[seq_count] = ec[j + 1][i + 1].JPLC;
+			local_jplc_buffer[seq_count] = ec[j + 1][i + 1].JPLC[timestep];
 		}
 	}
 

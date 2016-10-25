@@ -30,7 +30,7 @@ smc_mesh_files = [
 input_mesh_files = {"ec" : ec_mesh_files, "smc" : smc_mesh_files}
     
 base_names = {"ec" : 'solution/ec_data_t_', "smc" : 'solution/smc_data_t_', "atp" : 'solution/atp', "wss" : 'solution/wss'}
-    
+
 
 def reorder_species(species_array, reordered_array, cellType):
     """ Reorders the values in the species array given the quad to task ratio.
@@ -106,49 +106,54 @@ def HDF5toVTKLumen():
         if branches == 1:
             break   
     
-    append_filter = vtk.vtkAppendFilter()
-        
-    for branch in range(branches):
-        
-        species_array = []
-        
-        mesh = vtk.vtkPolyData()
-        mesh.DeepCopy(input_meshes[branch])
-
-        # The base input h5 filename given the branch and from which writer it came on said branch.
-        h5_file_base = base_names[output] + '_b_' + str(branch + 1) + '_' + 'x' + '.h5'
-        print "Processing file", h5_file_base
-        for writer in range(writers):
-            h5_file_name = h5_file_base[:-4] + str(writer) + h5_file_base[-3:]
+    atp_timesteps = len(glob.glob(base_names[output] + '_b_1_0_*'))
+    print "Number of atp timesteps detected " + str(atp_timesteps)
+    
+    for timestep in range(atp_timesteps):
+    
+        append_filter = vtk.vtkAppendFilter()
             
-            fid = h5py.h5f.open(h5_file_name)
-        
-            dset = h5py.h5d.open(fid, "data")
-            shape = dset.shape
-            rdata = numpy.zeros(shape[0], dtype=numpy.float64)
-            dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
+        for branch in range(branches):
             
-            species_array += list(rdata.ravel())[:]
-        
-        
-        reordered_array = vtk.vtkDoubleArray()
-        reordered_array.SetName(output)
-        reordered_array.SetNumberOfValues(numCells[cellType][0] * numCells[cellType][1] * circQuads * axialQuads)
-        reorder_species(species_array, reordered_array, cellType)
-        mesh.GetCellData().AddArray(reordered_array)
-
-        append_filter.AddInputData(mesh)
-        
-    append_filter.Update()
-
-    # Write the result.
-    vtu_file = base_names[output] + '.vtu'
-    print 'Writing file', os.path.abspath(vtu_file)
-
-    writer = vtk.vtkXMLUnstructuredGridWriter()
-    writer.SetFileName(vtu_file)
-    writer.SetInputData(append_filter.GetOutput())
-    writer.Update()
+            species_array = []
+            
+            mesh = vtk.vtkPolyData()
+            mesh.DeepCopy(input_meshes[branch])
+    
+            # The base input h5 filename given the branch and from which writer it came on said branch.
+            h5_file_base = base_names[output] + '_b_' + str(branch + 1) + '_' + 'x_' + str(timestep) + '.h5'
+            print "Processing file", h5_file_base
+            for writer in range(writers):
+                h5_file_name = h5_file_base[:-6] + str(writer) + h5_file_base[-5:]
+                
+                fid = h5py.h5f.open(h5_file_name)
+            
+                dset = h5py.h5d.open(fid, "data")
+                shape = dset.shape
+                rdata = numpy.zeros(shape[0], dtype=numpy.float64)
+                dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
+                
+                species_array += list(rdata.ravel())[:]
+            
+            
+            reordered_array = vtk.vtkDoubleArray()
+            reordered_array.SetName(output)
+            reordered_array.SetNumberOfValues(numCells[cellType][0] * numCells[cellType][1] * circQuads * axialQuads)
+            reorder_species(species_array, reordered_array, cellType)
+            mesh.GetCellData().AddArray(reordered_array)
+    
+            append_filter.AddInputData(mesh)
+            
+        append_filter.Update()
+    
+        # Write the result.
+        vtu_file = base_names[output] + '_' + str(timestep) + '.vtu'
+        print 'Writing file', os.path.abspath(vtu_file)
+    
+        writer = vtk.vtkXMLUnstructuredGridWriter()
+        writer.SetFileName(vtu_file)
+        writer.SetInputData(append_filter.GetOutput())
+        writer.Update()
 
 
 def HDF5toVTKCells():

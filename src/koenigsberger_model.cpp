@@ -161,10 +161,10 @@ void koenigsberger_smc_derivatives(double* f, const grid_parms& grid, SMC_cell**
 	koenigsberger_smc_derivatives_explicit(f, grid, smc);
 }
 
-void koenigsberger_ec(const grid_parms& grid, EC_cell** ec)
+void koenigsberger_ec(const grid_parms& grid, EC_cell** ec, int atp_timestep)
 {
 	koenigsberger_ec_implicit(grid, ec);
-	koenigsberger_ec_explicit(grid, ec);
+	koenigsberger_ec_explicit(grid, ec, atp_timestep);
 }
 
 void koenigsberger_ec_derivatives(double t, double* f, const grid_parms& grid, EC_cell** ec)
@@ -290,7 +290,7 @@ void koenigsberger_ec_implicit(const grid_parms& grid, EC_cell** ec)
 	}
 }
 
-void koenigsberger_ec_explicit(const grid_parms& grid, EC_cell** ec)
+void koenigsberger_ec_explicit(const grid_parms& grid, EC_cell** ec, int atp_timestep)
 {
 	// Evaluate single cell fluxes.
 	for (int i = 1; i <= grid.num_ec_circumferentially; i++) {
@@ -324,9 +324,8 @@ void koenigsberger_ec_explicit(const grid_parms& grid, EC_cell** ec)
 			ec[i][j].fluxes[J_SK_Ca] = (0.6 / 2) * (1 + (double) (tanh((double) (((double) (log10((double) (ec[i][j].vars[ec_Ca]))) - m3s) / m4s))));
 			//Grouping all other trivial Ca fluxes
 			ec[i][j].fluxes[J_trivial_Ca] = J0j;
-
 			// Ratio of bound to total P2Y
-			ec[i][j].fluxes[L_P_P2Y] = ec[i][j].JPLC / (ec[i][j].JPLC + kATP); // TODO: Does this need to be calculated every time? is JPLC constant?
+			ec[i][j].fluxes[L_P_P2Y] = ec[i][j].JPLC[atp_timestep] / (ec[i][j].JPLC[atp_timestep] + kATP); // TODO: Does this need to be calculated every time? is JPLC constant?
 
 			// Rate of PIP2 hydrolysis.
 			ec[i][j].fluxes[R_PIP2_H] = alpha_j * (ec[i][j].vars[ec_Ca] / (ec[i][j].vars[ec_Ca] + KCa)) * ec[i][j].vars[ec_Gprot];

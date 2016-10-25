@@ -13,12 +13,12 @@
 #define _2D 2
 
 // TODO: This function can be made general enough to write any buffer to a file with a given name.
-void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path)
+void write_HDF5_JPLC(grid_parms* grid, double *jplc_buffer, char *path, int timestep)
 {
 	// printf("[%d] >>>>>> Entering %s:%s\n", grid->universal_rank, __FILE__, __FUNCTION__);
 
 	char filename[256];
-	int err = sprintf(filename, "%s/atp_b_%d_%d.h5", path, grid->branch_tag, grid->write_tag);
+	int err = sprintf(filename, "%s/atp_b_%d_%d_%d.h5", path, grid->branch_tag, grid->write_tag, timestep);
 
 	printf("[%d] Writing ATP file: %s\n", grid->universal_rank, filename);
 

@@ -395,14 +395,14 @@ void coupling(double t, double y[], const grid_parms& grid, SMC_cell** smc, EC_c
 }
 
 
-void compute(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef, double t, double* y, double* f)
+void compute(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef, double t, double* y, double* f, int atp_timestep)
 {
 	int err;
 
 	map_solver_output_to_cells(grid, y, smc, ec);
 
 	koenigsberger_smc(grid, smc);
-	koenigsberger_ec(grid, ec);
+	koenigsberger_ec(grid, ec, atp_timestep);
 
 	coupling(t, y, grid, smc, ec, cpl_cef);
 
@@ -424,12 +424,12 @@ void compute_implicit(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, cons
 	koenigsberger_ec_derivatives_implicit(t, f, grid, ec);
 }
 
-void compute_explicit(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef, double t, double* y, double* f)
+void compute_explicit(const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef, double t, double* y, double* f, int atp_timestep)
 {
 	map_solver_output_to_cells(grid, y, smc, ec);
 
 	koenigsberger_smc_explicit(grid, smc);
-	koenigsberger_ec_explicit(grid, ec);
+	koenigsberger_ec_explicit(grid, ec, atp_timestep);
 
 	coupling_explicit(t, y, grid, smc, ec, cpl_cef);
 
