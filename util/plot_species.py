@@ -1,9 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
+from pylab import rcParams
+from itertools import cycle
+
+rcParams['figure.figsize'] = 9, 5
+rcParams['xtick.labelsize'] = 18
+rcParams['ytick.labelsize'] = 18
+
+
+import colorsys
+N = 13
+HSV_tuples = [(x*1.0/N, 0.5, 0.5) for x in range(N)]
+color_cycle = cycle(map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples))
+
 
 columns = [
-
     'smc_vm', 
     'smc_ca',
     'smc_sr',
@@ -17,6 +29,38 @@ columns = [
     
     't'
 ]
+labels = [
+    'SMC membrane potential (mV)',
+    'SMC cytosolic $Ca^{2+}$ $(\mu M)$',
+    'SMC SR $Ca^{2+}$ $(\mu M)$',
+    'Open state probability of \nthe calcium-activated potassium channels ',
+    'SMC $IP_3$ $(\mu M)$',
+
+    'EC membrane potential (mV)',
+    'EC cytosolic $Ca^{2+}$ $(\mu M)$',
+    'EC SR $Ca^{2+}$ $(\mu M)$',
+    'EC $IP_3$ ($\mu M)$',
+]
+
+
+def plot_singles(args):
+    
+        data = np.genfromtxt(args.data, delimiter=',', skip_header=0,
+                         skip_footer=0, names=columns)
+                         
+        for i in range(0, len(columns) - 1):
+   
+            fig = plt.figure() 
+
+            plt.xlabel('Time (s)',fontsize=20)
+            plt.ylabel(labels[i],fontsize=20,labelpad=18)
+            plt.plot(data[columns[-1]][1:], data[columns[i]][1:], c=color_cycle.next(),linewidth=2.0)
+
+            plt.tight_layout()
+
+            #fig.savefig('path'+columns[i]+'.png', dpi=150)
+                         
+                         
     
 def plot(args):
 

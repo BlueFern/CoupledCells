@@ -7,6 +7,18 @@
 using namespace std;
 time_stamps t_stamp;
 
+// For electro-diffusion.
+#define NUM_SPECIES 4
+
+
+// Electro-diffusion coupling parameters. Most from Jacobsen et al. 2007.
+double
+	PCa = 5e-8, absT = 293.15, zCa = 2, r_cons = 8345, ec_seg = 4.16,
+	sigma = 0.15, f_cons = 96487, PK = 5e-8, PNa = 4e-8, PCl = 3e-8,
+	Cl_cyt = 59400, K_cyt = 140000, Na_cyt = 8400, zCl = -1, zNa = 1, zK = 1,
+	A_smc = 200, A_ec = 500, A_cell = 500;
+
+
 /**
  * Wrapper around malloc to catch failed memory allocation. If allocation fails MPI_Abort is called.
  *
@@ -264,6 +276,24 @@ int map_solver_output_to_cells(const grid_parms& grid, double* y, SMC_cell** smc
 	return (err);
 }
 
+double gap_junction_current(double cell_a_Ca, double cell_b_Ca, double cell_a_vm, double cell_b_vm)
+{
+	double permabilities[NUM_SPECIES] = {PCa, PK, PCl, PNa};
+	int valences[NUM_SPECIES] = {zCa, zK, zCl, zNa};
+	double gradients[NUM_SPECIES] = {cell_a_Ca - cell_b_Ca, 0, 0, 0};
+	double averages[NUM_SPECIES] = {(cell_a_Ca + cell_b_Ca) / 2.0, K_cyt, Cl_cyt, Na_cyt};
+
+	double vm_gradient = cell_a_vm - cell_b_vm;
+
+	double current_coupling = 0;
+	for (int i = 0; i < NUM_SPECIES; i++)
+	{
+		current_coupling += permabilities[i] * A_cell * f_cons * (gradients[i] + ((valences[i] * f_cons * averages[i] * vm_gradient) / (r_cons * absT)));
+	}
+	return current_coupling;
+
+}
+
 void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef)
 {
 	int i, j, k, l;
@@ -274,22 +304,29 @@ void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 		for (j = 1; j <= grid.num_smc_axially; j++) {
 ////******************** HOMOCELLULAR COUPLING SMCs *********************/
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
-			smc[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_smc
-					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_Vm] - smc[i][up].vars[smc_Vm]))
-					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Vm] - smc[i][down].vars[smc_Vm]))
-					+ (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Vm] - smc[left][j].vars[smc_Vm]))
-					+ (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Vm] - smc[right][j].vars[smc_Vm])));
+
+			smc[i][j].homo_fluxes[cpl_Vm] =
+					(0.3 * gap_junction_current(smc[i][j].vars[smc_Ca], smc[i][up].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[i][up].vars[smc_Vm])
+					+ 0.3 * gap_junction_current(smc[i][j].vars[smc_Ca], smc[i][down].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[i][down].vars[smc_Vm])
+					+ 0.15 * gap_junction_current(smc[i][j].vars[smc_Ca], smc[left][j].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[left][j].vars[smc_Vm])
+					+ 0.15 * gap_junction_current(smc[i][j].vars[smc_Ca], smc[right][j].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[right][j].vars[smc_Vm]));
+
+			// Divide by picofarads to get millivolts/s
+			smc[i][j].homo_fluxes[cpl_Vm] /= -Cmj;
 
 ////******************** HETEROCELLULAR COUPLING SMCs *********************/
 			double dummy_smc[3] = { 0.0, 0.0, 0.0 };
 			for (k = 1 + (i - 1) * 5; k <= i * 5; k++)
 			{
-				dummy_smc[cpl_Vm] = dummy_smc[cpl_Vm] + (smc[i][j].vars[smc_Vm] - ec[k][l].vars[ec_Vm]);
+				dummy_smc[cpl_Vm] += gap_junction_current(smc[i][j].vars[smc_Ca], ec[k][l].vars[ec_Ca], smc[i][j].vars[smc_Vm], ec[k][l].vars[ec_Vm]);
 			}
 			if ((j % grid.num_smc_fundblk_axially) == 0) {
 				l++;
 			}
-			smc[i][j].hetero_fluxes[cpl_Vm] = -cpl_cef.Vm_ht_smc * dummy_smc[cpl_Vm];
+
+			// TODO: 1/20 is Hm/Ht vm coupling coef ratio..?
+			// Divide by picofarads to get millivolts/s
+			smc[i][j].hetero_fluxes[cpl_Vm] = 0.05 * dummy_smc[cpl_Vm] / -Cmj;
 		}	//end j
 	}	//end i
 
@@ -301,24 +338,29 @@ void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 ////******************** HOMOCELLULAR COUPLING ECs *********************/
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 
-			ec[i][j].homo_fluxes[cpl_Vm] = -cpl_cef.Vm_hm_ec
-					* (cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_Vm] - ec[i][up].vars[ec_Vm]))
-					+ (cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Vm] - ec[i][down].vars[ec_Vm]))
-					+ (cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Vm] - ec[left][j].vars[ec_Vm]))
-					+ (cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Vm] - ec[right][j].vars[ec_Vm])));
+			ec[i][j].homo_fluxes[cpl_Vm] =
+					(0.3 * gap_junction_current(ec[i][j].vars[ec_Ca], ec[i][up].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[i][up].vars[ec_Vm])
+					+ 0.3 * gap_junction_current(ec[i][j].vars[ec_Ca], ec[i][down].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[i][down].vars[ec_Vm])
+					+ 0.15 * gap_junction_current(ec[i][j].vars[ec_Ca], ec[left][j].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[left][j].vars[ec_Vm])
+					+ 0.15 * gap_junction_current(ec[i][j].vars[ec_Ca], ec[right][j].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[right][j].vars[ec_Vm]));
+
+			// Divide by picofarads to get millivolts/s
+			ec[i][j].homo_fluxes[cpl_Vm] /= -Cmj;
 
 ////******************** HETEROCELLULAR COUPLING ECs *********************/
 			double dummy_ec[3] = { 0.0, 0.0, 0.0 };
 			for (l = 1 + (j - 1) * 13; l <= j * 13; l++)
 			{
-				dummy_ec[cpl_Vm] = dummy_ec[cpl_Vm] + (ec[i][j].vars[ec_Vm] - smc[k][l].vars[smc_Vm]);
+				dummy_ec[cpl_Vm] += gap_junction_current(ec[i][j].vars[ec_Ca], smc[k][l].vars[smc_Ca], ec[i][j].vars[ec_Vm], smc[k][l].vars[smc_Vm]);
 			}
-			ec[i][j].hetero_fluxes[cpl_Vm] = -cpl_cef.Vm_ht_ec * dummy_ec[cpl_Vm];
+
+			// TODO: 1/20 is Hm/Ht vm coupling coef ratio..?
+			// Divide by picofarads to get millivolts/s
+			ec[i][j].hetero_fluxes[cpl_Vm] = 0.05 * dummy_ec[cpl_Vm] / -Cmj;
 		}	//end j
 	}	//end i
 
 }
-
 void coupling_explicit(double t, double y[], const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef)
 {
 	int i, j, k, l;

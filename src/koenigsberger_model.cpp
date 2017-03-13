@@ -35,7 +35,7 @@ double
 	/*Intracellular calcium buffering*/
 	  // k6 = 100.00,  k7 = 300.00,  BT = 120.00;
 
-	// Lemon at al. Constants
+	// Lemon at al. Constants + Jaijus.
 	kATP = 2, alpha_j = 2.781e-5, KCa = 0.4, R_PIP2_r = 10,
 	PIP2_tot = 4e7, K_G_prot_act = 0.017, delta = 1.234e-3,
 	G_prot_tot = 1e5, K_G_prot_deact = 0.15, N_a = 6.02252e23,

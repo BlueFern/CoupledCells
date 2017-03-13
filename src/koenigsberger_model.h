@@ -76,4 +76,6 @@ void koenigsberger_smc_derivatives_explicit(double*, const grid_parms&, SMC_cell
 void koenigsberger_ec_explicit(const grid_parms&, EC_cell**);
 void koenigsberger_ec_derivatives_explicit(double, double*, const grid_parms&, EC_cell**);
 
+extern double Cmj;
+
 #endif /* KOENIGSBERGER_CONSTANTS_H_ */

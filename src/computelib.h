@@ -44,15 +44,15 @@ int errcode = (fn); \
 
 #define FILENAME "plotting.csv"
 
-#define PLOTTING 0
+#define PLOTTING 1
 #define EXPLICIT_ONLY 1
 
 #define OUTPUT_PLOTTING_SIZE 9
 #define RANK 0
-#define EC_COL 3
-#define EC_ROW 3
+#define EC_COL 1
+#define EC_ROW 1
 #define SMC_COL 1
-#define SMC_ROW 33
+#define SMC_ROW 1
 
 // Number of variables and fluxes
 #define NUM_VARS_EC 5
