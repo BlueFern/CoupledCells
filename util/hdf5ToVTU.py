@@ -65,24 +65,26 @@ def reorder_species(species_array, reordered_array, cellType):
                         val += 1
 
 def append_datasets(writers, h5_file_base, dataset_name):
-    """Appends all data from a number of H5 files""" 
-    
-    # Create a dictionary of species arrays
+    """Appends all data from a number of H5 files"""
+
+    # Create a dictionary of species arrays.
     species_arrays = {}
     for attribute in attributes[output]:
         species_arrays[attribute] = []
 
     for writer in range(writers):
         h5_file_name = h5_file_base[:-4] + str(writer) + h5_file_base[-3:]
-        
-        fid = h5py.h5f.open(h5_file_name)
-    
-        dset = h5py.h5d.open(fid, dataset_name)
-        shape = dset.shape
-        rdata = numpy.zeros(shape[0], dtype=numpy.float64)
-        dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
-    
-        arr = rdata.ravel()
+
+        file = h5py.File(h5_file_name, 'r')
+        arr = file[dataset_name][:]
+
+        # The low-level interface in h5py is no longer supported.
+        # fid = h5py.h5f.open(h5_file_name)
+        # dset = h5py.h5d.open(fid, dataset_name)
+        # shape = dset.shape
+        # rdata = numpy.zeros(shape[0], dtype=numpy.float64)
+        # dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
+        # arr = rdata.ravel()
     
         for i in range(len(arr)): 
             species_arrays[attributes[output][i % len(attributes[output])]].append(arr[i])
@@ -117,20 +119,25 @@ def HDF5toVTKLumen():
 
         # The base input h5 filename given the branch and from which writer it came on said branch.
         h5_file_base = base_names[output] + '_b_' + str(branch + 1) + '_' + 'x' + '.h5'
-        print "Processing file", h5_file_base
+        print("Processing file", h5_file_base)
         for writer in range(writers):
             h5_file_name = h5_file_base[:-4] + str(writer) + h5_file_base[-3:]
-            
-            fid = h5py.h5f.open(h5_file_name)
-        
-            dset = h5py.h5d.open(fid, "data")
-            shape = dset.shape
-            rdata = numpy.zeros(shape[0], dtype=numpy.float64)
-            dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
-            
-            species_array += list(rdata.ravel())[:]
-        
-        
+
+            file = h5py.File(h5_file_name, 'r')
+            arr = file["data"][:]
+
+            # The low-level interface in h5py is no longer supported.
+            # fid = h5py.h5f.open(h5_file_name)
+            # dset = h5py.h5d.open(fid, "data")
+            # shape = dset.shape
+            # rdata = numpy.zeros(shape[0], dtype=numpy.float64)
+            # dset.read(h5py.h5s.ALL, h5py.h5s.ALL, rdata)
+            # species_array += list(rdata.ravel())[:]
+
+            print(arr)
+
+            species_array += list(arr)[:];
+
         reordered_array = vtk.vtkDoubleArray()
         reordered_array.SetName(output)
         reordered_array.SetNumberOfValues(numCells[cellType][0] * numCells[cellType][1] * circQuads * axialQuads)
@@ -143,7 +150,7 @@ def HDF5toVTKLumen():
 
     # Write the result.
     vtu_file = base_names[output] + '.vtu'
-    print 'Writing file', os.path.abspath(vtu_file)
+    print("Writing file", os.path.abspath(vtu_file))
 
     writer = vtk.vtkXMLUnstructuredGridWriter()
     writer.SetFileName(vtu_file)
@@ -168,22 +175,22 @@ def HDF5toVTKCells():
             break   
 
     for time_step in range(args.start, args.end + 1):
+        print("Time:", time_step)
         
         append_filter = vtk.vtkAppendFilter()
         
         for branch in range(branches):
             mesh = vtk.vtkPolyData()
             mesh.DeepCopy(input_meshes[branch])
-            
 
             # The base input h5 filename given the branch and from which writer it came on said branch.
             h5_file_base = base_names[output] + str(time_step) + '_b_' + str(branch + 1) + '_' + 'x' + '.h5'
-            print "Processing file", h5_file_base
+            print("Processing file", h5_file_base)
             
             # Group all datasets of a branch at a specific time point given
             # the number of writers the data was split into.
             species_array = append_datasets(writers, h5_file_base, "data")
-            
+
             # Loop through all attirbutes and append them to a new array in the 
             # correct order given the quad to task ratio.            
             for attribute in attributes[output]:
@@ -200,7 +207,7 @@ def HDF5toVTKCells():
 
         # Write the result.
         vtu_file = base_names[output] + str(time_step) + '.vtu'
-        print 'Writing file', os.path.abspath(vtu_file)
+        print("Writing file", os.path.abspath(vtu_file))
 
         writer = vtk.vtkXMLUnstructuredGridWriter()
         writer.SetFileName(vtu_file)
@@ -232,7 +239,7 @@ if __name__ == "__main__":
     
     output = args.output.lower()
     
-    print "Simulation output to convert: " + output
+    print("Simulation output to convert: ", output)
     
     if not glob.glob("solution/" + output + "*.h5"):
         print("No solution files for this cell type!")
@@ -243,8 +250,8 @@ if __name__ == "__main__":
     writers = len(glob.glob("solution/ec*t_0_b_1*"))
     branches = len(glob.glob("solution/ec*t_0_b_*_0*"))
 
-    print "Number of branches detected: " + str(branches)
-    print "Number of writers detected: " + str(writers)
+    print("Number of branches detected: ", str(branches))
+    print("Number of writers detected: ", str(writers))
     
     if output in ["smc", "ec"]:
         HDF5toVTKCells()
@@ -253,5 +260,6 @@ if __name__ == "__main__":
         HDF5toVTKLumen()
 
     else:
-        print "Wrong output type specified..."
+        print("Wrong output type specified...")
         exit()
+
