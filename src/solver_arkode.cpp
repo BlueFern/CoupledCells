@@ -6,7 +6,7 @@
 #include <arkode/arkode.h>            /* prototypes for ARKode fcts., consts. */
 #include <nvector/nvector_serial.h>   /* serial N_Vector types, fcts., macros */
 #include <sundials/sundials_types.h>  /* def. of type 'realtype' */
-#include <arkode/arkode_spgmr.h>
+/* #include <arkode/arkode_spgmr.h> */
 #include <arkode/arkode_bandpre.h>
 #include "computelib.h"
 #include "gather.h"
