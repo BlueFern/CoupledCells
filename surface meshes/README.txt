@@ -1,0 +1,1 @@
+Within each bifurcation angle (50, 80, 110 degrees) directory there are two subdirectories required for coupled cells simulations: "files" and "vtk" are required. "files" provides input ATP concentrations in the form of .h5 files, while "vtk" provides the components of the surface meshes required to map simulation output to 3D geometry for visualisation.

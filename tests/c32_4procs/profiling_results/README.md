@@ -1,1 +1,0 @@
-Profiling results obtained on 8 Sept 2016 on Fitzroy. 
