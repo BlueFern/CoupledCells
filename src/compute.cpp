@@ -16,7 +16,7 @@ double
 	PCa = 5e-8, absT = 293.15, zCa = 2, r_cons = 8345, ec_seg = 4.16,
 	sigma = 0.15, f_cons = 96487, PK = 5e-8, PNa = 4e-8, PCl = 3e-8,
 	Cl_cyt = 59400, K_cyt = 140000, Na_cyt = 8400, zCl = -1, zNa = 1, zK = 1,
-	A_smc = 200, A_ec = 500, A_cell = 500;
+	A_smc = 200, A_ec = 500, A_cell = 350, V_smc = 1, smc_scaling = 25, ec_scaling = 35;
 
 
 /**
@@ -40,6 +40,7 @@ void set_coupling_parms(int CASE, conductance* cpl_cef)
 {
 	// These values are honestly just trial and error guesses at what makes nice waves...
 	// Really need to have a think about what they should be.
+	// Logic is to prioritise waves moving in the direction of larger cell contact (smcs axially, ecs circumferentially)
 	cpl_cef->ec_diffusion[0] = 0.66;
 	cpl_cef->ec_diffusion[1] = 0.66;
 	cpl_cef->ec_diffusion[2] = 1.33;
@@ -49,6 +50,21 @@ void set_coupling_parms(int CASE, conductance* cpl_cef)
 	cpl_cef->smc_diffusion[1] = 1.33;
 	cpl_cef->smc_diffusion[2] = 0.66;
 	cpl_cef->smc_diffusion[3] = 0.66;
+
+
+	// Similar principal to above. From jacobsen et al. 2007. Stands for contact ratio between cells.
+	cpl_cef->ec_rho[0] = 0.15;
+	cpl_cef->ec_rho[1] = 0.15;
+	cpl_cef->ec_rho[2] = 0.3;
+	cpl_cef->ec_rho[3] = 0.3;
+
+	cpl_cef->smc_rho[0] = 0.3;
+	cpl_cef->smc_rho[1] = 0.3;
+	cpl_cef->smc_rho[2] = 0.15;
+	cpl_cef->smc_rho[3] = 0.15;
+
+	// 1/20 (0.05) is estimated contact between EC and SMC based on our EC:SMC ratio per quad/unit area.
+	cpl_cef->ec_smc_rho = 0.05;
 
 
 	if(CASE == 1)
@@ -276,7 +292,17 @@ int map_solver_output_to_cells(const grid_parms& grid, double* y, SMC_cell** smc
 	return (err);
 }
 
-double gap_junction_current(double cell_a_Ca, double cell_b_Ca, double cell_a_vm, double cell_b_vm)
+
+/*
+if using um^2 and uM then we are returning femto amperes
+*/
+double single_electro_diffusion(double average, double gradient, double vm_gradient, double permeability, int valence, double cell_area)
+{
+		return permeability * cell_area * f_cons * (gradient + ((valence * f_cons * average * vm_gradient) / (r_cons * absT)));
+
+}
+
+double gap_junction_current(double cell_a_Ca, double cell_b_Ca, double cell_a_vm, double cell_b_vm, double cell_area)
 {
 	double permabilities[NUM_SPECIES] = {PCa, PK, PCl, PNa};
 	int valences[NUM_SPECIES] = {zCa, zK, zCl, zNa};
@@ -288,11 +314,12 @@ double gap_junction_current(double cell_a_Ca, double cell_b_Ca, double cell_a_vm
 	double current_coupling = 0;
 	for (int i = 0; i < NUM_SPECIES; i++)
 	{
-		current_coupling += permabilities[i] * A_cell * f_cons * (gradients[i] + ((valences[i] * f_cons * averages[i] * vm_gradient) / (r_cons * absT)));
+		current_coupling += single_electro_diffusion(averages[i], gradients[i], vm_gradient, permabilities[i], valences[i], cell_area);
 	}
 	return current_coupling;
 
 }
+
 
 void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef)
 {
@@ -305,11 +332,12 @@ void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 ////******************** HOMOCELLULAR COUPLING SMCs *********************/
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 
+			// 0.3 and 0.15 are the fractions of contact between cells. From Jacobsen et al. 2007.
 			smc[i][j].homo_fluxes[cpl_Vm] =
-					(0.3 * gap_junction_current(smc[i][j].vars[smc_Ca], smc[i][up].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[i][up].vars[smc_Vm])
-					+ 0.3 * gap_junction_current(smc[i][j].vars[smc_Ca], smc[i][down].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[i][down].vars[smc_Vm])
-					+ 0.15 * gap_junction_current(smc[i][j].vars[smc_Ca], smc[left][j].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[left][j].vars[smc_Vm])
-					+ 0.15 * gap_junction_current(smc[i][j].vars[smc_Ca], smc[right][j].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[right][j].vars[smc_Vm]));
+					(cpl_cef.smc_rho[0] * gap_junction_current(smc[i][j].vars[smc_Ca], smc[i][up].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[i][up].vars[smc_Vm], A_smc)
+					+ cpl_cef.smc_rho[1] * gap_junction_current(smc[i][j].vars[smc_Ca], smc[i][down].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[i][down].vars[smc_Vm], A_smc)
+					+ cpl_cef.smc_rho[2] * gap_junction_current(smc[i][j].vars[smc_Ca], smc[left][j].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[left][j].vars[smc_Vm], A_smc)
+					+ cpl_cef.smc_rho[3] * gap_junction_current(smc[i][j].vars[smc_Ca], smc[right][j].vars[smc_Ca], smc[i][j].vars[smc_Vm], smc[right][j].vars[smc_Vm], A_smc));
 
 			// Divide by picofarads to get millivolts/s
 			smc[i][j].homo_fluxes[cpl_Vm] /= -Cmj;
@@ -318,15 +346,14 @@ void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 			double dummy_smc[3] = { 0.0, 0.0, 0.0 };
 			for (k = 1 + (i - 1) * 5; k <= i * 5; k++)
 			{
-				dummy_smc[cpl_Vm] += gap_junction_current(smc[i][j].vars[smc_Ca], ec[k][l].vars[ec_Ca], smc[i][j].vars[smc_Vm], ec[k][l].vars[ec_Vm]);
+				dummy_smc[cpl_Vm] += gap_junction_current(smc[i][j].vars[smc_Ca], ec[k][l].vars[ec_Ca], smc[i][j].vars[smc_Vm], ec[k][l].vars[ec_Vm], A_cell);
 			}
 			if ((j % grid.num_smc_fundblk_axially) == 0) {
 				l++;
 			}
 
-			// TODO: 1/20 is Hm/Ht vm coupling coef ratio..?
 			// Divide by picofarads to get millivolts/s
-			smc[i][j].hetero_fluxes[cpl_Vm] = 0.05 * dummy_smc[cpl_Vm] / -Cmj;
+			smc[i][j].hetero_fluxes[cpl_Vm] = cpl_cef.ec_smc_rho * dummy_smc[cpl_Vm] / -Cmj;
 		}	//end j
 	}	//end i
 
@@ -338,11 +365,12 @@ void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 ////******************** HOMOCELLULAR COUPLING ECs *********************/
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 
+			// 0.3 and 0.15 are the fractions of contact between cells. From Jacobsen et al. 2007.
 			ec[i][j].homo_fluxes[cpl_Vm] =
-					(0.3 * gap_junction_current(ec[i][j].vars[ec_Ca], ec[i][up].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[i][up].vars[ec_Vm])
-					+ 0.3 * gap_junction_current(ec[i][j].vars[ec_Ca], ec[i][down].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[i][down].vars[ec_Vm])
-					+ 0.15 * gap_junction_current(ec[i][j].vars[ec_Ca], ec[left][j].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[left][j].vars[ec_Vm])
-					+ 0.15 * gap_junction_current(ec[i][j].vars[ec_Ca], ec[right][j].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[right][j].vars[ec_Vm]));
+					(cpl_cef.ec_rho[0] * gap_junction_current(ec[i][j].vars[ec_Ca], ec[i][up].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[i][up].vars[ec_Vm], A_ec)
+					+ cpl_cef.ec_rho[1] * gap_junction_current(ec[i][j].vars[ec_Ca], ec[i][down].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[i][down].vars[ec_Vm], A_ec)
+					+ cpl_cef.ec_rho[2] * gap_junction_current(ec[i][j].vars[ec_Ca], ec[left][j].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[left][j].vars[ec_Vm], A_ec)
+					+ cpl_cef.ec_rho[3] * gap_junction_current(ec[i][j].vars[ec_Ca], ec[right][j].vars[ec_Ca], ec[i][j].vars[ec_Vm], ec[right][j].vars[ec_Vm], A_ec));
 
 			// Divide by picofarads to get millivolts/s
 			ec[i][j].homo_fluxes[cpl_Vm] /= -Cmj;
@@ -351,12 +379,12 @@ void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 			double dummy_ec[3] = { 0.0, 0.0, 0.0 };
 			for (l = 1 + (j - 1) * 13; l <= j * 13; l++)
 			{
-				dummy_ec[cpl_Vm] += gap_junction_current(ec[i][j].vars[ec_Ca], smc[k][l].vars[smc_Ca], ec[i][j].vars[ec_Vm], smc[k][l].vars[smc_Vm]);
+				dummy_ec[cpl_Vm] += gap_junction_current(ec[i][j].vars[ec_Ca], smc[k][l].vars[smc_Ca], ec[i][j].vars[ec_Vm], smc[k][l].vars[smc_Vm], A_cell);
 			}
 
-			// TODO: 1/20 is Hm/Ht vm coupling coef ratio..?
+
 			// Divide by picofarads to get millivolts/s
-			ec[i][j].hetero_fluxes[cpl_Vm] = 0.05 * dummy_ec[cpl_Vm] / -Cmj;
+			ec[i][j].hetero_fluxes[cpl_Vm] = cpl_cef.ec_smc_rho * dummy_ec[cpl_Vm] / -Cmj;
 		}	//end j
 	}	//end i
 
@@ -364,18 +392,53 @@ void coupling_implicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 void coupling_explicit(double t, double y[], const grid_parms& grid, SMC_cell** smc, EC_cell** ec, const conductance& cpl_cef)
 {
 	int i, j, k, l;
-
+	double average;
+	double grad;
+	double vm_grad;
 	for (i = 1; i <= grid.num_smc_circumferentially; i++) {
 		l = 1;
 		for (j = 1; j <= grid.num_smc_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 ////******************** HOMOCELLULAR COUPLING SMCs *********************/
-			smc[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc
-					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_Ca] - smc[i][up].vars[smc_Ca]))
-					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Ca] - smc[i][down].vars[smc_Ca]))
-					+ (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Ca] - smc[left][j].vars[smc_Ca]))
-					+ (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Ca] - smc[right][j].vars[smc_Ca])));
 
+
+//			smc[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_smc
+//											* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_Ca] - smc[i][up].vars[smc_Ca]))
+//											   + (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_Ca] - smc[i][down].vars[smc_Ca]))
+//											   + (cpl_cef.smc_diffusion[2] * (smc[i][j].vars[smc_Ca] - smc[left][j].vars[smc_Ca]))
+//											   + (cpl_cef.smc_diffusion[3] * (smc[i][j].vars[smc_Ca] - smc[right][j].vars[smc_Ca])));
+
+			smc[i][j].homo_fluxes[cpl_Ca] = 0.0;
+
+			// coupling with above cell
+			average = (smc[i][j].vars[smc_Ca] + smc[i][up].vars[smc_Ca]) / 2.0;
+			grad = (smc[i][j].vars[smc_Ca] - smc[i][up].vars[smc_Ca]);
+			vm_grad = (smc[i][j].vars[smc_Vm] - smc[i][up].vars[smc_Vm]);
+			smc[i][j].homo_fluxes[cpl_Ca]  += cpl_cef.smc_diffusion[0] * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_smc);
+
+			// coupling with cell below
+			average = (smc[i][j].vars[smc_Ca] + smc[i][down].vars[smc_Ca]) / 2.0;
+			grad = (smc[i][j].vars[smc_Ca] -  smc[i][down].vars[smc_Ca]);
+			vm_grad = (smc[i][j].vars[smc_Vm] - smc[i][down].vars[smc_Vm]);
+			smc[i][j].homo_fluxes[cpl_Ca]  += cpl_cef.smc_diffusion[1] * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_smc);
+
+			// coupling to the left
+			average = (smc[i][j].vars[smc_Ca] + smc[left][j].vars[smc_Ca]) / 2.0;
+			grad = (smc[i][j].vars[smc_Ca] - smc[left][j].vars[smc_Ca]);
+			vm_grad = (smc[i][j].vars[smc_Vm] - smc[left][j].vars[smc_Vm]);
+			smc[i][j].homo_fluxes[cpl_Ca]  += cpl_cef.smc_diffusion[2] * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_smc);
+
+			// coupling to the right
+			average = (smc[i][j].vars[smc_Ca] + smc[right][j].vars[smc_Ca]) / 2.0;
+			grad = (smc[i][j].vars[smc_Ca] - smc[right][j].vars[smc_Ca]);
+			vm_grad = (smc[i][j].vars[smc_Vm] - smc[right][j].vars[smc_Vm]);
+			smc[i][j].homo_fluxes[cpl_Ca]  += cpl_cef.smc_diffusion[3] * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_smc);
+
+
+			// now convert fA to mM/s, then x 1000 to uM/s
+			smc[i][j].homo_fluxes[cpl_Ca] = -1000 * (smc[i][j].homo_fluxes[cpl_Ca] / (f_cons * 2 * V_smc)) * smc_scaling;
+
+			// Not electro diffused give IP3 has no charge.
 			smc[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_smc
 					* (cpl_cef.smc_diffusion[0] * ((smc[i][j].vars[smc_IP3] - smc[i][up].vars[smc_IP3]))
 					+ (cpl_cef.smc_diffusion[1] * (smc[i][j].vars[smc_IP3] - smc[i][down].vars[smc_IP3]))
@@ -404,12 +467,43 @@ void coupling_explicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 		for (j = 1; j <= grid.num_ec_axially; j++) {
 			int up = j - 1, down = j + 1, left = i - 1, right = i + 1;
 ////******************** HOMOCELLULAR COUPLING ECs *********************/
-			ec[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec
-					* cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_Ca] - ec[i][up].vars[ec_Ca])
-					+ cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Ca] - ec[i][down].vars[ec_Ca])
-					+ cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Ca] - ec[left][j].vars[ec_Ca])
-					+ cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Ca] - ec[right][j].vars[ec_Ca]));
 
+
+//			ec[i][j].homo_fluxes[cpl_Ca] = -cpl_cef.Ca_hm_ec
+//										   * cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_Ca] - ec[i][up].vars[ec_Ca])
+//																		+ cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_Ca] - ec[i][down].vars[ec_Ca])
+//																		+ cpl_cef.ec_diffusion[2] * (ec[i][j].vars[ec_Ca] - ec[left][j].vars[ec_Ca])
+//																		+ cpl_cef.ec_diffusion[3] * (ec[i][j].vars[ec_Ca] - ec[right][j].vars[ec_Ca]));
+
+			ec[i][j].homo_fluxes[cpl_Ca] = 0.0;
+
+			// coupling with above cell
+			average = (ec[i][j].vars[ec_Ca] + ec[i][up].vars[ec_Ca]) / 2.0;
+			grad = (ec[i][j].vars[ec_Ca] - ec[i][up].vars[ec_Ca]);
+			vm_grad = (ec[i][j].vars[ec_Vm] - ec[i][up].vars[ec_Vm]);
+			ec[i][j].homo_fluxes[cpl_Ca]  += cpl_cef.ec_diffusion[0] * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_ec);
+
+			// coupling with cell below
+			average = (ec[i][j].vars[ec_Ca] + ec[i][down].vars[ec_Ca]) / 2.0;
+			grad = (ec[i][j].vars[ec_Ca] -  ec[i][down].vars[ec_Ca]);
+			vm_grad = (ec[i][j].vars[ec_Vm] - ec[i][down].vars[ec_Vm]);
+			ec[i][j].homo_fluxes[cpl_Ca]  += cpl_cef.ec_diffusion[1] * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_ec);
+
+			// coupling to the left
+			average = (ec[i][j].vars[ec_Ca] + ec[left][j].vars[ec_Ca]) / 2.0;
+			grad = (ec[i][j].vars[ec_Ca] - ec[left][j].vars[ec_Ca]);
+			vm_grad = (ec[i][j].vars[ec_Vm] - ec[left][j].vars[ec_Vm]);
+			ec[i][j].homo_fluxes[cpl_Ca]  += cpl_cef.ec_diffusion[2] * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_ec);
+
+			// coupling to the right
+			average = (ec[i][j].vars[ec_Ca] + ec[right][j].vars[ec_Ca]) / 2.0;
+			grad = (ec[i][j].vars[ec_Ca] - ec[right][j].vars[ec_Ca]);
+			vm_grad = (ec[i][j].vars[ec_Vm] - ec[right][j].vars[ec_Vm]);
+			ec[i][j].homo_fluxes[cpl_Ca]  += cpl_cef.ec_diffusion[3] * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_ec);
+
+			ec[i][j].homo_fluxes[cpl_Ca] = -1000 * (ec[i][j].homo_fluxes[cpl_Ca] / (f_cons * 2 * V_smc)) * ec_scaling;
+
+			// Not electro diffused give IP3 has no charge.
 			ec[i][j].homo_fluxes[cpl_IP3] = -cpl_cef.IP3_hm_ec
 					* cpl_cef.ec_diffusion[0] * ((ec[i][j].vars[ec_IP3] - ec[i][up].vars[ec_IP3])
 					+ cpl_cef.ec_diffusion[1] * (ec[i][j].vars[ec_IP3] - ec[i][down].vars[ec_IP3])

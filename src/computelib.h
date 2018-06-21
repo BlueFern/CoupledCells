@@ -85,6 +85,9 @@ struct conductance
 			IP3_ht_ec;	///< Heterocellular IP3 coupling between ECs.
 	double ec_diffusion[4];
 	double smc_diffusion[4];
+	double ec_rho[4];
+	double smc_rho[4];
+	double ec_smc_rho;
 };
 
 #define DOMAIN_NUM 0
