@@ -16,7 +16,7 @@ double
 	PCa = 5e-8, absT = 293.15, zCa = 2, r_cons = 8345, ec_seg = 4.16,
 	sigma = 0.15, f_cons = 96487, PK = 5e-8, PNa = 4e-8, PCl = 3e-8,
 	Cl_cyt = 59400, K_cyt = 140000, Na_cyt = 8400, zCl = -1, zNa = 1, zK = 1,
-	A_smc = 200, A_ec = 500, A_cell = 350, V_smc = 1, smc_scaling = 25, ec_scaling = 35;
+	A_smc = 200, A_ec = 500, A_cell = 350, V_smc = 1, smc_scaling = 25, ec_scaling = 35, hetero_scaling = 30;
 
 
 /**
@@ -449,13 +449,24 @@ void coupling_explicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 			double dummy_smc[3] = { 0.0, 0.0, 0.0 };
 			for (k = 1 + (i - 1) * 5; k <= i * 5; k++)
 			{
-				dummy_smc[cpl_Ca] += smc[i][j].vars[smc_Ca] - ec[k][l].vars[ec_Ca];
+				//dummy_smc[cpl_Ca] += smc[i][j].vars[smc_Ca] - ec[k][l].vars[ec_Ca];
+
+                average = (smc[i][j].vars[smc_Ca] + ec[k][l].vars[ec_Ca]) / 2.0;
+                grad = (smc[i][j].vars[smc_Ca] - ec[k][l].vars[ec_Ca]);
+                vm_grad = (smc[i][j].vars[smc_Vm] - ec[k][l].vars[ec_Vm]);
+                dummy_smc[cpl_Ca] += cpl_cef.ec_smc_rho * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_cell);
+
+
 				dummy_smc[cpl_IP3] += smc[i][j].vars[smc_IP3] - ec[k][l].vars[ec_IP3];
 			}
 			if ((j % grid.num_smc_fundblk_axially) == 0) {
 				l++;
 			}
-			smc[i][j].hetero_fluxes[cpl_Ca] = -cpl_cef.Ca_ht_smc * dummy_smc[cpl_Ca];
+			//smc[i][j].hetero_fluxes[cpl_Ca] = -cpl_cef.Ca_ht_smc * dummy_smc[cpl_Ca];
+
+            // now convert fA to mM/s, then x 1000 to uM/s
+            smc[i][j].hetero_fluxes[cpl_Ca] = -1000 * (dummy_smc[cpl_Ca] / (f_cons * 2 * V_smc)) * hetero_scaling;
+
 			smc[i][j].hetero_fluxes[cpl_IP3] = -cpl_cef.IP3_ht_smc * dummy_smc[cpl_IP3];
 		}	//end j
 	}	//end i
@@ -501,6 +512,7 @@ void coupling_explicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 			vm_grad = (ec[i][j].vars[ec_Vm] - ec[right][j].vars[ec_Vm]);
 			ec[i][j].homo_fluxes[cpl_Ca]  += cpl_cef.ec_diffusion[3] * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_ec);
 
+            // now convert fA to mM/s, then x 1000 to uM/s
 			ec[i][j].homo_fluxes[cpl_Ca] = -1000 * (ec[i][j].homo_fluxes[cpl_Ca] / (f_cons * 2 * V_smc)) * ec_scaling;
 
 			// Not electro diffused give IP3 has no charge.
@@ -513,10 +525,20 @@ void coupling_explicit(double t, double y[], const grid_parms& grid, SMC_cell** 
 			double dummy_ec[3] = { 0.0, 0.0, 0.0 };
 			for (l = 1 + (j - 1) * 13; l <= j * 13; l++)
 			{
-				dummy_ec[cpl_Ca] += ec[i][j].vars[ec_Ca] - smc[k][l].vars[smc_Ca];
+				//dummy_ec[cpl_Ca] += ec[i][j].vars[ec_Ca] - smc[k][l].vars[smc_Ca];
+                average = (ec[i][j].vars[ec_Ca] + smc[k][l].vars[smc_Ca]) / 2.0;
+                grad = (ec[i][j].vars[ec_Ca] - smc[k][l].vars[smc_Ca]);
+                vm_grad = (ec[i][j].vars[ec_Vm] - smc[k][l].vars[smc_Vm]);
+
+                dummy_ec[cpl_Ca] += cpl_cef.ec_smc_rho * single_electro_diffusion(average, grad, vm_grad, PCa, 2, A_cell);
+
 				dummy_ec[cpl_IP3] += ec[i][j].vars[ec_IP3] - smc[k][l].vars[smc_IP3];
 			}
-			ec[i][j].hetero_fluxes[cpl_Ca] = -cpl_cef.Ca_ht_ec * dummy_ec[cpl_Ca];
+			//ec[i][j].hetero_fluxes[cpl_Ca] = -cpl_cef.Ca_ht_ec * dummy_ec[cpl_Ca];
+
+            // now convert fA to mM/s, then x 1000 to uM/s
+            ec[i][j].hetero_fluxes[cpl_Ca] = -1000 * (dummy_ec[cpl_Ca] / (f_cons * 2 * V_smc)) * hetero_scaling;
+
 			ec[i][j].hetero_fluxes[cpl_IP3] = -cpl_cef.IP3_ht_ec * dummy_ec[cpl_IP3];
 
 		}	//end j
